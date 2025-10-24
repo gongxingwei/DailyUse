@@ -5,10 +5,7 @@
 </template>
 
 <script setup lang="ts">
-
-import QuickLauncherWindow from './components/QuickLauncherWindow.vue'
-
+import QuickLauncherWindow from './components/QuickLauncherWindow.vue';
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

@@ -153,7 +153,7 @@ export function useAutoStatusRules() {
    * 获取目标的执行历史
    */
   const getGoalHistory = (goalUuid: string): RuleExecutionHistory[] => {
-    return executionHistory.value.filter(h => h.goalUuid === goalUuid);
+    return executionHistory.value.filter((h) => h.goalUuid === goalUuid);
   };
 
   /**

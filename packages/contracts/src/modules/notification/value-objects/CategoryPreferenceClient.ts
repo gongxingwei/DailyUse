@@ -1,37 +1,34 @@
 /**
  * CategoryPreference Value Object (Client)
- * {O}<ùa - ¢7ï
+ * {O}<ï¿½a - ï¿½7ï¿½
  */
 
 import type { ImportanceLevel } from '../enums';
-import type {
-  ChannelPreference,
-  CategoryPreferenceServerDTO,
-} from './CategoryPreferenceServer';
+import type { ChannelPreference, CategoryPreferenceServerDTO } from './CategoryPreferenceServer';
 
-// ============ ¥ãšI ============
+// ============ ï¿½ï¿½I ============
 
 /**
- * {O} - Client ¥ã
+ * {O} - Client ï¿½ï¿½
  */
 export interface ICategoryPreferenceClient {
   enabled: boolean;
   channels: ChannelPreference;
   importance: ImportanceLevel[];
 
-  // UI …©^'
+  // UI ï¿½ï¿½^'
   enabledChannelsCount: number;
-  enabledChannelsList: string[]; // ["”(…", "®ö"]
-  importanceText: string; // "vÍ, ^8Í"
+  enabledChannelsList: string[]; // ["ï¿½(ï¿½", "ï¿½ï¿½"]
+  importanceText: string; // "ï¿½vÍ, ^8Í"
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: ICategoryPreferenceClient): boolean;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): CategoryPreferenceServerDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * CategoryPreference Client DTO
@@ -45,6 +42,6 @@ export interface CategoryPreferenceClientDTO {
   importanceText: string;
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type CategoryPreferenceClient = ICategoryPreferenceClient;

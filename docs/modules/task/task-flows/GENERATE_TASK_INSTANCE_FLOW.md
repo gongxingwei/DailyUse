@@ -57,9 +57,9 @@ POST /api/task-templates/:templateUuid/generate-instances
 ```typescript
 interface GenerateTaskInstancesRequest {
   accountUuid: string;
-  startDate: number;                   // 开始日期（timestamp）
-  endDate: number;                     // 结束日期（timestamp）
-  skipExisting?: boolean;              // 是否跳过已存在的实例（默认true）
+  startDate: number; // 开始日期（timestamp）
+  endDate: number; // 结束日期（timestamp）
+  skipExisting?: boolean; // 是否跳过已存在的实例（默认true）
 }
 ```
 
@@ -68,7 +68,7 @@ interface GenerateTaskInstancesRequest {
 ```typescript
 interface GenerateTaskInstancesResponse {
   instances: TaskInstanceClientDTO[];
-  skippedCount: number;                // 跳过的实例数量
+  skippedCount: number; // 跳过的实例数量
   message: string;
 }
 
@@ -76,8 +76,8 @@ interface TaskInstanceClientDTO {
   uuid: string;
   templateUuid: string;
   accountUuid: string;
-  instanceDate: number;                // 实例日期（timestamp）
-  
+  instanceDate: number; // 实例日期（timestamp）
+
   // 时间配置（继承自模板，可修改）
   timeConfig: {
     timeType: TimeType;
@@ -85,34 +85,34 @@ interface TaskInstanceClientDTO {
     deadline: number | null;
     estimatedDuration: number | null;
   };
-  
-  status: TaskInstanceStatus;          // PENDING | IN_PROGRESS | COMPLETED | CANCELLED | DELETED
-  
+
+  status: TaskInstanceStatus; // PENDING | IN_PROGRESS | COMPLETED | CANCELLED | DELETED
+
   // 完成记录
   completionRecord: {
     completedAt: number;
     actualDuration: number | null;
     note: string | null;
   } | null;
-  
+
   // 跳过记录
   skipRecord: {
     skippedAt: number;
     reason: string | null;
   } | null;
-  
+
   // 实际执行时间
   actualStartTime: number | null;
   actualEndTime: number | null;
   note: string | null;
-  
+
   createdAt: number;
   updatedAt: number;
-  
+
   // 前端计算字段
-  isOverdue: boolean;                  // 是否逾期
-  remainingTime: number | null;        // 剩余时间（分钟）
-  progressPercentage: number;          // 进度百分比
+  isOverdue: boolean; // 是否逾期
+  remainingTime: number | null; // 剩余时间（分钟）
+  progressPercentage: number; // 进度百分比
 }
 ```
 
@@ -127,11 +127,11 @@ interface TaskInstanceClientDTO {
 export class TaskInstance extends AggregateRoot {
   private _templateUuid: string;
   private _accountUuid: string;
-  private _instanceDate: number;               // 实例归属日期
-  private _timeConfig: TaskTimeConfig;         // 值对象（可独立修改）
+  private _instanceDate: number; // 实例归属日期
+  private _timeConfig: TaskTimeConfig; // 值对象（可独立修改）
   private _status: TaskInstanceStatus;
-  private _completionRecord: CompletionRecord | null;  // 值对象
-  private _skipRecord: SkipRecord | null;      // 值对象
+  private _completionRecord: CompletionRecord | null; // 值对象
+  private _skipRecord: SkipRecord | null; // 值对象
   private _actualStartTime: number | null;
   private _actualEndTime: number | null;
   private _note: string | null;
@@ -139,22 +139,19 @@ export class TaskInstance extends AggregateRoot {
   private _updatedAt: number;
 
   // 从模板创建实例
-  public static createFromTemplate(
-    template: TaskTemplate,
-    instanceDate: number
-  ): TaskInstance {
+  public static createFromTemplate(template: TaskTemplate, instanceDate: number): TaskInstance {
     const instance = new TaskInstance();
     instance._uuid = instance.generateUUID();
     instance._templateUuid = template.uuid;
     instance._accountUuid = template.accountUuid;
     instance._instanceDate = instanceDate;
-    
+
     // 复制模板的时间配置
     instance._timeConfig = template.timeConfig.clone();
-    
+
     // 调整时间到实例日期
     instance.adjustTimeToInstanceDate(instanceDate);
-    
+
     instance._status = TaskInstanceStatus.PENDING;
     instance._completionRecord = null;
     instance._skipRecord = null;
@@ -176,10 +173,10 @@ export class TaskInstance extends AggregateRoot {
       const originalTime = new Date(this._timeConfig.scheduledTime);
       const hours = originalTime.getHours();
       const minutes = originalTime.getMinutes();
-      
+
       const newTime = new Date(instanceDay);
       newTime.setHours(hours, minutes, 0, 0);
-      
+
       this._timeConfig = this._timeConfig.withScheduledTime(newTime.getTime());
     }
 
@@ -187,10 +184,10 @@ export class TaskInstance extends AggregateRoot {
       const originalDeadline = new Date(this._timeConfig.deadline);
       const hours = originalDeadline.getHours();
       const minutes = originalDeadline.getMinutes();
-      
+
       const newDeadline = new Date(instanceDay);
       newDeadline.setHours(hours, minutes, 0, 0);
-      
+
       this._timeConfig = this._timeConfig.withDeadline(newDeadline.getTime());
     }
   }
@@ -220,8 +217,10 @@ export class TaskInstance extends AggregateRoot {
 
   // 完成任务
   public complete(note?: string): void {
-    if (this._status !== TaskInstanceStatus.PENDING && 
-        this._status !== TaskInstanceStatus.IN_PROGRESS) {
+    if (
+      this._status !== TaskInstanceStatus.PENDING &&
+      this._status !== TaskInstanceStatus.IN_PROGRESS
+    ) {
       throw new Error('只能完成待处理或进行中的任务');
     }
 
@@ -255,8 +254,10 @@ export class TaskInstance extends AggregateRoot {
 
   // 取消任务
   public cancel(reason?: string): void {
-    if (this._status === TaskInstanceStatus.COMPLETED ||
-        this._status === TaskInstanceStatus.CANCELLED) {
+    if (
+      this._status === TaskInstanceStatus.COMPLETED ||
+      this._status === TaskInstanceStatus.CANCELLED
+    ) {
       throw new Error('不能取消已完成或已取消的任务');
     }
 
@@ -328,8 +329,10 @@ export class TaskInstance extends AggregateRoot {
 
   // 判断是否逾期
   public isOverdue(): boolean {
-    if (this._status === TaskInstanceStatus.COMPLETED ||
-        this._status === TaskInstanceStatus.CANCELLED) {
+    if (
+      this._status === TaskInstanceStatus.COMPLETED ||
+      this._status === TaskInstanceStatus.CANCELLED
+    ) {
       return false;
     }
 
@@ -346,8 +349,10 @@ export class TaskInstance extends AggregateRoot {
       return null;
     }
 
-    if (this._status === TaskInstanceStatus.COMPLETED ||
-        this._status === TaskInstanceStatus.CANCELLED) {
+    if (
+      this._status === TaskInstanceStatus.COMPLETED ||
+      this._status === TaskInstanceStatus.CANCELLED
+    ) {
       return null;
     }
 
@@ -366,11 +371,7 @@ export class CompletionRecord {
   private readonly _actualDuration: number | null;
   private readonly _note: string | null;
 
-  private constructor(
-    completedAt: number,
-    actualDuration: number | null,
-    note: string | null
-  ) {
+  private constructor(completedAt: number, actualDuration: number | null, note: string | null) {
     this._completedAt = completedAt;
     this._actualDuration = actualDuration;
     this._note = note;
@@ -381,11 +382,7 @@ export class CompletionRecord {
     actualDuration: number | null;
     note: string | null;
   }): CompletionRecord {
-    return new CompletionRecord(
-      params.completedAt,
-      params.actualDuration,
-      params.note
-    );
+    return new CompletionRecord(params.completedAt, params.actualDuration, params.note);
   }
 
   public get completedAt(): number {
@@ -413,12 +410,12 @@ export class TaskInstanceApplicationService {
     private taskTemplateRepository: ITaskTemplateRepository,
     private taskInstanceRepository: ITaskInstanceRepository,
     private reminderService: IReminderService,
-    private eventBus: IEventBus
+    private eventBus: IEventBus,
   ) {}
 
   async generateInstances(
     templateUuid: string,
-    request: GenerateTaskInstancesRequest
+    request: GenerateTaskInstancesRequest,
   ): Promise<GenerateTaskInstancesResponse> {
     // 1. 加载模板
     const template = await this.taskTemplateRepository.findByUuid(templateUuid);
@@ -440,27 +437,25 @@ export class TaskInstanceApplicationService {
     const existingInstances = await this.taskInstanceRepository.findByTemplateAndDateRange(
       templateUuid,
       request.startDate,
-      request.endDate
+      request.endDate,
     );
-    const existingDates = new Set(
-      existingInstances.map(i => this.normalizeDate(i.instanceDate))
-    );
+    const existingDates = new Set(existingInstances.map((i) => this.normalizeDate(i.instanceDate)));
 
     // 5. 计算需要生成的日期
     const datesToGenerate = this.calculateGenerationDates(
       template,
       request.startDate,
-      request.endDate
+      request.endDate,
     );
 
     // 6. 过滤已存在的日期
     const newDates = request.skipExisting
-      ? datesToGenerate.filter(date => !existingDates.has(this.normalizeDate(date)))
+      ? datesToGenerate.filter((date) => !existingDates.has(this.normalizeDate(date)))
       : datesToGenerate;
 
     // 7. 生成实例
     const instances: TaskInstance[] = [];
-    newDates.forEach(date => {
+    newDates.forEach((date) => {
       const instance = TaskInstance.createFromTemplate(template, date);
       instances.push(instance);
     });
@@ -478,7 +473,7 @@ export class TaskInstanceApplicationService {
     }
 
     // 10. 发布事件
-    instances.forEach(instance => {
+    instances.forEach((instance) => {
       this.publishDomainEvents(instance);
     });
 
@@ -487,7 +482,7 @@ export class TaskInstanceApplicationService {
     await this.taskTemplateRepository.save(template);
 
     return {
-      instances: instances.map(i => i.toClientDTO()),
+      instances: instances.map((i) => i.toClientDTO()),
       skippedCount: datesToGenerate.length - newDates.length,
       message: `成功生成 ${instances.length} 个任务实例${
         request.skipExisting && existingDates.size > 0
@@ -500,7 +495,7 @@ export class TaskInstanceApplicationService {
   private calculateGenerationDates(
     template: TaskTemplate,
     startDate: number,
-    endDate: number
+    endDate: number,
   ): number[] {
     if (template.taskType === TaskType.ONE_TIME) {
       // 一次性任务只生成一次
@@ -523,7 +518,7 @@ export class TaskInstanceApplicationService {
 
   private publishDomainEvents(instance: TaskInstance): void {
     const events = instance.getDomainEvents();
-    events.forEach(event => {
+    events.forEach((event) => {
       this.eventBus.publish(event);
     });
     instance.clearDomainEvents();
@@ -540,7 +535,7 @@ export class TaskInstanceApplicationService {
 export class TaskInstanceScheduler {
   constructor(
     private taskTemplateRepository: ITaskTemplateRepository,
-    private taskInstanceService: TaskInstanceApplicationService
+    private taskInstanceService: TaskInstanceApplicationService,
   ) {}
 
   // 每日凌晨执行
@@ -549,7 +544,7 @@ export class TaskInstanceScheduler {
 
     // 1. 获取所有激活的任务模板
     const activeTemplates = await this.taskTemplateRepository.findByStatus(
-      TaskTemplateStatus.ACTIVE
+      TaskTemplateStatus.ACTIVE,
     );
 
     console.log(`[TaskScheduler] 找到 ${activeTemplates.length} 个激活的模板`);
@@ -566,28 +561,22 @@ export class TaskInstanceScheduler {
       try {
         const endDate = now + template.generateAheadDays * 24 * 60 * 60 * 1000;
 
-        const response = await this.taskInstanceService.generateInstances(
-          template.uuid,
-          {
-            accountUuid: template.accountUuid,
-            startDate: now,
-            endDate,
-            skipExisting: true,
-          }
-        );
+        const response = await this.taskInstanceService.generateInstances(template.uuid, {
+          accountUuid: template.accountUuid,
+          startDate: now,
+          endDate,
+          skipExisting: true,
+        });
 
         results.processed++;
         results.generated += response.instances.length;
 
         console.log(
-          `[TaskScheduler] 模板 "${template.title}" 生成了 ${response.instances.length} 个实例`
+          `[TaskScheduler] 模板 "${template.title}" 生成了 ${response.instances.length} 个实例`,
         );
       } catch (error) {
         results.failed++;
-        console.error(
-          `[TaskScheduler] 模板 "${template.title}" 生成实例失败:`,
-          error
-        );
+        console.error(`[TaskScheduler] 模板 "${template.title}" 生成实例失败:`, error);
       }
     }
 
@@ -615,22 +604,22 @@ model TaskInstance {
   templateUuid        String
   accountUuid         String
   instanceDate        DateTime              // 实例归属日期
-  
+
   // 时间配置（JSON，可独立修改）
   timeConfig          Json
-  
+
   status              String    @default("PENDING")
-  
+
   // 完成记录（JSON，可选）
   completionRecord    Json?
-  
+
   // 跳过记录（JSON，可选）
   skipRecord          Json?
-  
+
   actualStartTime     DateTime?
   actualEndTime       DateTime?
   note                String?   @db.Text
-  
+
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -656,64 +645,34 @@ model TaskInstance {
 ```vue
 <!-- GenerateInstancesDialog.vue -->
 <template>
-  <el-dialog
-    v-model="visible"
-    title="生成任务实例"
-    width="500px"
-  >
-    <el-alert
-      type="info"
-      :closable="false"
-      show-icon
-    >
-      <template #title>
-        模板: {{ template?.title }}
-      </template>
+  <el-dialog v-model="visible" title="生成任务实例" width="500px">
+    <el-alert type="info" :closable="false" show-icon>
+      <template #title> 模板: {{ template?.title }} </template>
       根据任务模板的重复规则生成指定日期范围内的任务实例。
     </el-alert>
 
-    <el-form 
-      :model="form"
-      label-width="100px"
-      class="mt-4"
-    >
+    <el-form :model="form" label-width="100px" class="mt-4">
       <el-form-item label="开始日期">
-        <el-date-picker
-          v-model="startDate"
-          type="date"
-          placeholder="选择开始日期"
-        />
+        <el-date-picker v-model="startDate" type="date" placeholder="选择开始日期" />
       </el-form-item>
 
       <el-form-item label="结束日期">
-        <el-date-picker
-          v-model="endDate"
-          type="date"
-          placeholder="选择结束日期"
-        />
+        <el-date-picker v-model="endDate" type="date" placeholder="选择结束日期" />
       </el-form-item>
 
       <el-form-item label="跳过已有">
         <el-switch v-model="form.skipExisting" />
-        <span class="ml-2 text-sm text-gray-500">
-          跳过已经生成的实例
-        </span>
+        <span class="ml-2 text-sm text-gray-500"> 跳过已经生成的实例 </span>
       </el-form-item>
 
       <el-form-item>
-        <el-text type="info">
-          预计生成约 {{ estimatedCount }} 个实例
-        </el-text>
+        <el-text type="info"> 预计生成约 {{ estimatedCount }} 个实例 </el-text>
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="visible = false">取消</el-button>
-      <el-button 
-        type="primary"
-        @click="handleGenerate"
-        :loading="isGenerating"
-      >
+      <el-button type="primary" @click="handleGenerate" :loading="isGenerating">
         生成实例
       </el-button>
     </template>

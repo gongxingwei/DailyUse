@@ -15,6 +15,7 @@
 ### 背景与痛点
 
 提醒功能是效能工具的核心，但当前存在以下问题：
+
 - ❌ 提醒频率固定，无法适应用户的实际需求变化
 - ❌ 用户频繁忽略提醒时，系统仍按原频率发送（造成打扰）
 - ❌ 重要提醒淹没在大量无关提醒中，用户错过关键信息
@@ -31,6 +32,7 @@
 **一句话价值**: 根据用户行为自适应调整提醒频率，实现"恰到好处"的提醒体验
 
 **核心收益**:
+
 - ✅ 自动识别用户对提醒的响应模式（点击率、忽略率、延迟时间）
 - ✅ 智能降低频繁被忽略提醒的发送频率
 - ✅ 提升重要提醒的触达率和响应率
@@ -46,6 +48,7 @@
 系统自动分析用户对某类提醒的响应行为，识别提醒效果。
 
 **用户故事**:
+
 ```gherkin
 As a 提醒使用者
 I want 系统自动分析我对提醒的响应情况
@@ -53,6 +56,7 @@ So that 系统可以了解哪些提醒对我有效，哪些无效
 ```
 
 **操作流程**:
+
 1. 系统每天凌晨执行提醒效果分析任务
 2. 统计过去 7 天每个提醒的：
    - **点击率**: 点击次数 / 发送次数
@@ -66,6 +70,7 @@ So that 系统可以了解哪些提醒对我有效，哪些无效
 4. 生成提醒效果报告
 
 **预期结果**:
+
 - Reminder 表新增字段：
   ```typescript
   readonly responseMetrics?: {
@@ -78,11 +83,12 @@ So that 系统可以了解哪些提醒对我有效，哪些无效
   }
   ```
 - 效果评分算法：
+
   ```typescript
-  effectivenessScore = (clickRate × 0.5) + 
-                       ((100 - ignoreRate) × 0.3) + 
+  effectivenessScore = (clickRate × 0.5) +
+                       ((100 - ignoreRate) × 0.3) +
                        (responsiveness × 0.2)
-  
+
   where responsiveness = min(100, (60 / avgResponseTime) × 100)
   ```
 
@@ -94,6 +100,7 @@ So that 系统可以了解哪些提醒对我有效，哪些无效
 系统根据提醒效果自动调整发送频率。
 
 **用户故事**:
+
 ```gherkin
 As a 提醒使用者
 I want 系统自动降低我频繁忽略的提醒的发送频率
@@ -101,6 +108,7 @@ So that 我不会被无效提醒打扰
 ```
 
 **操作流程**:
+
 1. 系统检测到某个提醒（如"每天 10:00 喝水提醒"）的效果评分 < 30
 2. 用户在过去 7 天内忽略了该提醒 5 次
 3. 系统自动触发频率调整：
@@ -113,6 +121,7 @@ So that 我不会被无效提醒打扰
    - 🗑️ 直接关闭提醒
 
 **预期结果**:
+
 - Reminder 表新增 `frequencyAdjustment` 字段：
   ```typescript
   readonly frequencyAdjustment?: {
@@ -127,10 +136,10 @@ So that 我不会被无效提醒打扰
 - 频率调整规则：
   | 效果评分 | 忽略率 | 频率调整策略 |
   |---------|-------|-------------|
-  | < 20    | > 80% | 间隔 ×3（或建议关闭） |
-  | 20-40   | 60-80% | 间隔 ×2 |
-  | 40-60   | 30-60% | 保持不变 |
-  | > 60    | < 30% | 保持或略微增加频率 |
+  | < 20 | > 80% | 间隔 ×3（或建议关闭） |
+  | 20-40 | 60-80% | 间隔 ×2 |
+  | 40-60 | 30-60% | 保持不变 |
+  | > 60 | < 30% | 保持或略微增加频率 |
 
 ---
 
@@ -140,6 +149,7 @@ So that 我不会被无效提醒打扰
 用户查看所有提醒的效果分析，了解哪些提醒有效、哪些无效。
 
 **用户故事**:
+
 ```gherkin
 As a 提醒使用者
 I want 查看提醒效果仪表盘
@@ -147,9 +157,11 @@ So that 我可以了解哪些提醒对我有帮助，手动调整策略
 ```
 
 **操作流程**:
+
 1. 用户打开"提醒设置"页面
 2. 点击"提醒效果分析"标签
 3. 系统展示仪表盘：
+
    ```
    提醒效果分析（过去 30 天）
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -157,20 +169,22 @@ So that 我可以了解哪些提醒对我有帮助，手动调整策略
    - 总提醒数: 150 次
    - 平均点击率: 65%
    - 平均响应时间: 2 分钟
-   
+
    🟢 高效提醒 (3 个)
    ├─ 会议提醒 (点击率 90%, 响应 1 分钟)
    ├─ 目标复盘 (点击率 85%, 响应 3 分钟)
    └─ 重要任务 (点击率 80%, 响应 2 分钟)
-   
+
    🔴 低效提醒 (2 个)
    ├─ 喝水提醒 (点击率 15%, 忽略率 85%) ⚠️ 建议调整
    └─ 运动提醒 (点击率 20%, 忽略率 80%) ⚠️ 建议调整
    ```
+
 4. 用户可点击某个提醒查看详细趋势图
 5. 用户可对低效提醒执行操作：调整频率 / 关闭 / 保持
 
 **预期结果**:
+
 - 仪表盘展示提醒效果排行榜
 - 提供操作建议（调整/关闭）
 - 支持导出提醒效果报告（CSV/PDF）
@@ -183,6 +197,7 @@ So that 我可以了解哪些提醒对我有帮助，手动调整策略
 系统分析用户的响应时间模式，推荐最佳提醒时间。
 
 **用户故事**:
+
 ```gherkin
 As a 提醒使用者
 I want 系统推荐最适合我的提醒时间
@@ -190,22 +205,26 @@ So that 提醒发送时我更可能及时响应
 ```
 
 **操作流程**:
+
 1. 系统分析用户过去 30 天的响应时间分布：
+
    ```
    响应率最高的时间段：
    - 09:00-10:00: 响应率 85%
    - 14:00-15:00: 响应率 78%
    - 20:00-21:00: 响应率 70%
-   
+
    响应率最低的时间段：
    - 12:00-13:00: 响应率 30%（午餐时间）
    - 22:00-23:00: 响应率 25%（准备睡觉）
    ```
+
 2. 用户创建新提醒时，系统推荐："根据您的历史数据，建议将提醒时间设为 09:30（此时段响应率最高）"
 3. 用户可接受推荐或自定义
 4. 系统记录推荐接受率，持续优化推荐算法
 
 **预期结果**:
+
 - 新增 `UserReminderPreferences` 表：
   ```typescript
   {
@@ -236,6 +255,7 @@ So that 提醒发送时我更可能及时响应
 用户手动调整某个提醒的频率后，系统仍持续监控效果并提供优化建议。
 
 **用户故事**:
+
 ```gherkin
 As a 提醒使用者
 I want 手动调整频率后仍能收到智能优化建议
@@ -243,6 +263,7 @@ So that 我可以在必要时参考系统建议进一步优化
 ```
 
 **操作流程**:
+
 1. 用户将"喝水提醒"从"每天 1 次"手动改为"每 3 小时 1 次"
 2. 系统记录为"用户手动调整"
 3. 系统继续监控该提醒的效果
@@ -251,6 +272,7 @@ So that 我可以在必要时参考系统建议进一步优化
 6. 或者，如果效果仍差，系统建议："调整后效果仍不理想，建议改为每 4 小时 1 次或关闭。"
 
 **预期结果**:
+
 - 区分"自动调整"和"手动调整"
 - 手动调整后持续监控，提供反馈
 - 尊重用户意愿，仅提供建议，不强制调整
@@ -268,36 +290,36 @@ So that 我可以在必要时参考系统建议进一步优化
 ```typescript
 export interface ReminderServerDTO {
   // ...existing fields...
-  
+
   // 智能频率相关字段
-  readonly responseMetrics?: ResponseMetrics;           // 响应指标
-  readonly frequencyAdjustment?: FrequencyAdjustment;   // 频率调整
-  readonly smartFrequencyEnabled: boolean;              // 是否启用智能频率
+  readonly responseMetrics?: ResponseMetrics; // 响应指标
+  readonly frequencyAdjustment?: FrequencyAdjustment; // 频率调整
+  readonly smartFrequencyEnabled: boolean; // 是否启用智能频率
 }
 
 /**
  * 响应指标
  */
 export interface ResponseMetrics {
-  readonly clickRate: number;           // 点击率 (0-100)
-  readonly ignoreRate: number;          // 忽略率 (0-100)
-  readonly avgResponseTime: number;     // 平均响应时间（秒）
-  readonly snoozeCount: number;         // 延迟次数
-  readonly effectivenessScore: number;  // 效果评分 (0-100)
-  readonly sampleSize: number;          // 样本数量（最近 N 次）
-  readonly lastAnalysisTime: number;    // 最后分析时间
+  readonly clickRate: number; // 点击率 (0-100)
+  readonly ignoreRate: number; // 忽略率 (0-100)
+  readonly avgResponseTime: number; // 平均响应时间（秒）
+  readonly snoozeCount: number; // 延迟次数
+  readonly effectivenessScore: number; // 效果评分 (0-100)
+  readonly sampleSize: number; // 样本数量（最近 N 次）
+  readonly lastAnalysisTime: number; // 最后分析时间
 }
 
 /**
  * 频率调整
  */
 export interface FrequencyAdjustment {
-  readonly originalInterval: number;    // 原始间隔（秒）
-  readonly adjustedInterval: number;    // 调整后间隔（秒）
-  readonly adjustmentReason: string;    // 调整原因
-  readonly adjustmentTime: number;      // 调整时间
-  readonly isAutoAdjusted: boolean;     // 是否自动调整
-  readonly userConfirmed: boolean;      // 用户是否确认
+  readonly originalInterval: number; // 原始间隔（秒）
+  readonly adjustedInterval: number; // 调整后间隔（秒）
+  readonly adjustmentReason: string; // 调整原因
+  readonly adjustmentTime: number; // 调整时间
+  readonly isAutoAdjusted: boolean; // 是否自动调整
+  readonly userConfirmed: boolean; // 用户是否确认
 }
 
 /**
@@ -305,17 +327,17 @@ export interface FrequencyAdjustment {
  */
 export interface UserReminderPreferences {
   readonly userUuid: string;
-  readonly bestTimeSlots: TimeSlot[];     // 最佳时间段
-  readonly worstTimeSlots: TimeSlot[];    // 最差时间段
+  readonly bestTimeSlots: TimeSlot[]; // 最佳时间段
+  readonly worstTimeSlots: TimeSlot[]; // 最差时间段
   readonly globalSmartFrequency: boolean; // 全局启用智能频率
   readonly updatedAt: number;
 }
 
 export interface TimeSlot {
-  readonly hourStart: number;          // 开始小时 (0-23)
-  readonly hourEnd: number;            // 结束小时 (0-23)
-  readonly avgResponseRate: number;    // 平均响应率 (0-100)
-  readonly sampleCount: number;        // 样本数量
+  readonly hourStart: number; // 开始小时 (0-23)
+  readonly hourEnd: number; // 结束小时 (0-23)
+  readonly avgResponseRate: number; // 平均响应率 (0-100)
+  readonly sampleCount: number; // 样本数量
 }
 ```
 
@@ -327,11 +349,11 @@ export interface TimeSlot {
 
 用户对提醒的每次交互都被记录：
 
-| 交互行为 | 记录字段 | 权重 |
-|---------|---------|------|
-| 点击提醒 | `clicked` | +1.0 |
-| 忽略提醒 | `ignored` | -0.5 |
-| 延迟提醒 | `snoozed` | -0.2 |
+| 交互行为 | 记录字段    | 权重 |
+| -------- | ----------- | ---- |
+| 点击提醒 | `clicked`   | +1.0 |
+| 忽略提醒 | `ignored`   | -0.5 |
+| 延迟提醒 | `snoozed`   | -0.2 |
 | 关闭提醒 | `dismissed` | -0.3 |
 | 标记完成 | `completed` | +1.5 |
 
@@ -345,10 +367,10 @@ function calculateEffectivenessScore(metrics: ResponseMetrics): number {
   const clickWeight = 0.5;
   const ignoreWeight = 0.3;
   const responsivenessWeight = 0.2;
-  
+
   // 响应速度得分（越快越好）
   const responsiveness = Math.min(100, (60 / metrics.avgResponseTime) * 100);
-  
+
   return (
     metrics.clickRate * clickWeight +
     (100 - metrics.ignoreRate) * ignoreWeight +
@@ -366,10 +388,10 @@ function calculateEffectivenessScore(metrics: ResponseMetrics): number {
 function shouldAdjustFrequency(
   effectivenessScore: number,
   ignoreRate: number,
-  sampleSize: number
+  sampleSize: number,
 ): 'decrease' | 'increase' | 'no_change' {
   if (sampleSize < 10) return 'no_change'; // 样本不足
-  
+
   if (effectivenessScore < 20 && ignoreRate > 80) {
     return 'decrease'; // 大幅降低频率（×3）
   } else if (effectivenessScore < 40 && ignoreRate > 60) {
@@ -377,7 +399,7 @@ function shouldAdjustFrequency(
   } else if (effectivenessScore > 80 && ignoreRate < 20) {
     return 'increase'; // 可考虑增加频率
   }
-  
+
   return 'no_change';
 }
 ```
@@ -389,6 +411,7 @@ function shouldAdjustFrequency(
 ### MVP: 基础效果追踪（1-1.5 周）
 
 **范围**:
+
 - ✅ 提醒响应行为追踪（点击、忽略、延迟）
 - ✅ 计算基础响应指标（点击率、忽略率）
 - ✅ 简单效果评分（0-100）
@@ -396,6 +419,7 @@ function shouldAdjustFrequency(
 - ✅ 手动调整频率功能
 
 **技术要点**:
+
 - Contracts: 定义 `ResponseMetrics`, `FrequencyAdjustment`
 - Domain: Reminder 聚合根添加 `recordResponse()` 方法
 - Application: `AnalyzeReminderEffectivenessService` 应用服务
@@ -404,6 +428,7 @@ function shouldAdjustFrequency(
 - UI: 效果仪表盘组件
 
 **验收标准**:
+
 ```gherkin
 Given 用户在过去 7 天内收到"喝水提醒" 10 次
 And 点击了 2 次，忽略了 8 次
@@ -419,6 +444,7 @@ And 用户可在仪表盘查看此数据
 ### MMP: 智能频率调整（+1-2 周）
 
 **在 MVP 基础上新增**:
+
 - ✅ 自动频率调整算法
 - ✅ 调整建议通知
 - ✅ 用户确认/拒绝机制
@@ -426,11 +452,13 @@ And 用户可在仪表盘查看此数据
 - ✅ 调整效果追踪（调整前后对比）
 
 **技术要点**:
+
 - 频率调整决策引擎
 - 时间段响应率分析
 - 通知服务集成
 
 **验收标准**:
+
 ```gherkin
 Given "喝水提醒"的效果评分 < 20
 When 系统执行智能频率调整
@@ -445,6 +473,7 @@ And 接受后频率自动更新
 ### Full Release: 智能学习优化（+2-3 周）
 
 **在 MMP 基础上新增**:
+
 - ✅ 机器学习模型预测最佳频率
 - ✅ 多维度分析（时间、地点、情境）
 - ✅ A/B 测试功能（测试不同频率效果）
@@ -452,11 +481,13 @@ And 接受后频率自动更新
 - ✅ 提醒疲劳度预警
 
 **技术要点**:
+
 - 机器学习模型（如决策树、随机森林）
 - 情境感知（基于日历、位置）
 - A/B 测试框架
 
 **验收标准**:
+
 ```gherkin
 Given 系统积累了 30 天的用户响应数据
 When 用户创建新提醒"锻炼提醒"
@@ -592,7 +623,7 @@ Feature: 智能提醒频率调整
       根据您的历史数据，建议将提醒时间设为：
       1. 09:30（响应率最高 85%）
       2. 18:30（响应率次高 70%）
-      
+
       避免时间段：12:00-13:00（响应率仅 30%）
       """
     And 用户可一键应用推荐时间
@@ -692,6 +723,7 @@ Feature: 智能提醒频率调整
 | 提醒疲劳投诉率下降 | -50% | 用户投诉"提醒太多"的次数 |
 
 **定性指标**:
+
 - 用户反馈"提醒更精准了"
 - 重要提醒的及时响应率提升
 - 用户主动开启智能频率功能
@@ -705,7 +737,7 @@ Feature: 智能提醒频率调整
 ```prisma
 model Reminder {
   // ...existing fields...
-  
+
   // 响应指标
   clickRate              Float?   @map("click_rate")
   ignoreRate             Float?   @map("ignore_rate")
@@ -714,7 +746,7 @@ model Reminder {
   effectivenessScore     Float?   @map("effectiveness_score")
   sampleSize             Int      @default(0) @map("sample_size")
   lastAnalysisTime       BigInt?  @map("last_analysis_time")
-  
+
   // 频率调整
   originalInterval       Int?     @map("original_interval")
   adjustedInterval       Int?     @map("adjusted_interval")
@@ -722,9 +754,9 @@ model Reminder {
   adjustmentTime         BigInt?  @map("adjustment_time")
   isAutoAdjusted         Boolean  @default(false) @map("is_auto_adjusted")
   userConfirmed          Boolean  @default(false) @map("user_confirmed")
-  
+
   smartFrequencyEnabled  Boolean  @default(true) @map("smart_frequency_enabled")
-  
+
   responses              ReminderResponse[]
 }
 
@@ -734,9 +766,9 @@ model ReminderResponse {
   action        String   // clicked, ignored, snoozed, dismissed
   responseTime  Int?     @map("response_time")  // 秒
   timestamp     BigInt
-  
+
   reminder      Reminder @relation(fields: [reminderUuid], references: [uuid])
-  
+
   @@index([reminderUuid, timestamp(sort: Desc)])
   @@map("reminder_responses")
 }
@@ -748,7 +780,7 @@ model UserReminderPreferences {
   worstTimeSlots          Json     @map("worst_time_slots")     // TimeSlot[]
   globalSmartFrequency    Boolean  @default(true) @map("global_smart_frequency")
   updatedAt               DateTime @updatedAt @map("updated_at")
-  
+
   @@map("user_reminder_preferences")
 }
 ```
@@ -762,10 +794,10 @@ export class AnalyzeReminderEffectivenessService {
   async execute(reminderUuid: string): Promise<void> {
     const reminder = await this.reminderRepository.findByUuid(reminderUuid);
     if (!reminder) throw new Error('Reminder not found');
-    
+
     // 获取最近 N 天的响应记录
     const responses = await this.getReminderResponses(reminderUuid, 7);
-    
+
     // 计算指标
     const clickRate = this.calculateClickRate(responses);
     const ignoreRate = this.calculateIgnoreRate(responses);
@@ -773,9 +805,9 @@ export class AnalyzeReminderEffectivenessService {
     const effectivenessScore = this.calculateEffectivenessScore({
       clickRate,
       ignoreRate,
-      avgResponseTime
+      avgResponseTime,
     });
-    
+
     // 更新提醒指标
     reminder.updateResponseMetrics({
       clickRate,
@@ -783,14 +815,14 @@ export class AnalyzeReminderEffectivenessService {
       avgResponseTime,
       effectivenessScore,
       sampleSize: responses.length,
-      lastAnalysisTime: Date.now()
+      lastAnalysisTime: Date.now(),
     });
-    
+
     // 决定是否需要调整频率
     if (this.shouldAdjustFrequency(effectivenessScore, ignoreRate)) {
       await this.suggestFrequencyAdjustment(reminder);
     }
-    
+
     await this.reminderRepository.save(reminder);
   }
 }
@@ -824,12 +856,12 @@ Response: { bestSlots: TimeSlot[], worstSlots: TimeSlot[] }
 
 ## 8. 风险与缓解
 
-| 风险 | 可能性 | 影响 | 缓解措施 |
-|------|-------|------|---------|
-| 错误降低重要提醒频率 | 中 | 高 | 用户确认机制 + 重要提醒白名单 |
-| 数据不足导致误判 | 中 | 中 | 最小样本量要求（≥10 次） |
-| 用户不理解调整原因 | 中 | 中 | 清晰的调整原因说明 + 可视化趋势图 |
-| 隐私问题（行为追踪） | 低 | 高 | 数据本地化 + 明确隐私政策 |
+| 风险                 | 可能性 | 影响 | 缓解措施                          |
+| -------------------- | ------ | ---- | --------------------------------- |
+| 错误降低重要提醒频率 | 中     | 高   | 用户确认机制 + 重要提醒白名单     |
+| 数据不足导致误判     | 中     | 中   | 最小样本量要求（≥10 次）          |
+| 用户不理解调整原因   | 中     | 中   | 清晰的调整原因说明 + 可视化趋势图 |
+| 隐私问题（行为追踪） | 低     | 高   | 数据本地化 + 明确隐私政策         |
 
 ---
 

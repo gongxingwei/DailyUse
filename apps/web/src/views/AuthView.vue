@@ -53,7 +53,6 @@ const activeMode = ref('login');
 
 .form-container {
   width: 800px;
-
 }
 
 .auth-view-card {

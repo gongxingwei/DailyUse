@@ -1,13 +1,13 @@
 export interface ShortcutItem {
   uuid: string;
   name: string;
-  path: string;  // 标题项不需要路径
+  path: string; // 标题项不需要路径
   description?: string;
   icon: string;
   lastUsed?: Date;
   useCount?: number;
   category?: string;
-  isTitle?: boolean;  // 添加标识是否为标题的字段
+  isTitle?: boolean; // 添加标识是否为标题的字段
 }
 
 export interface ShortcutCategory {

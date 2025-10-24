@@ -17,19 +17,19 @@
 
     <v-card-text>
       <div v-if="!keyResultLinks.length" class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1" class="mb-2">
-          mdi-target-variant
-        </v-icon>
-        <div class="text-body-2 text-grey">
-          暂无关键结果链接
-        </div>
+        <v-icon size="48" color="grey-lighten-1" class="mb-2"> mdi-target-variant </v-icon>
+        <div class="text-body-2 text-grey">暂无关键结果链接</div>
         <div class="text-caption text-grey mt-1">
           链接到目标的关键结果，完成任务时将自动增加进度
         </div>
       </div>
 
       <div v-else>
-        <v-row v-for="(link, index) in keyResultLinks" :key="`${link.goalUuid}-${link.keyResultId}`" class="mb-3">
+        <v-row
+          v-for="(link, index) in keyResultLinks"
+          :key="`${link.goalUuid}-${link.keyResultId}`"
+          class="mb-3"
+        >
           <v-col cols="12">
             <v-card variant="tonal" class="pa-3">
               <div class="d-flex align-center">
@@ -85,25 +85,15 @@
                         </template> -->
                       </v-select>
                     </v-col>
-
                   </v-row>
 
                   <!-- 链接信息显示 -->
                   <div v-if="link.goalUuid && link.keyResultId" class="mt-2">
-                    <v-chip
-                      size="small"
-                      variant="tonal"
-                      color="primary"
-                      class="me-2"
-                    >
+                    <v-chip size="small" variant="tonal" color="primary" class="me-2">
                       <v-icon start>mdi-flag</v-icon>
                       {{ getGoalTitle(link.goalUuid) }}
                     </v-chip>
-                    <v-chip
-                      size="small"
-                      variant="tonal"
-                      color="secondary"
-                    >
+                    <v-chip size="small" variant="tonal" color="secondary">
                       <v-icon start>mdi-target</v-icon>
                       {{ getKeyResultTitle(link.goalUuid, link.keyResultId) }}
                     </v-chip>
@@ -128,20 +118,13 @@
       </div>
 
       <!-- 可用关键结果提示 -->
-      <v-alert
-        v-if="!availableKeyResults.length"
-        type="info"
-        variant="tonal"
-        class="mt-4"
-      >
+      <v-alert v-if="!availableKeyResults.length" type="info" variant="tonal" class="mt-4">
         <v-alert-title>无可用关键结果</v-alert-title>
         <div>
           当前没有可链接的关键结果。请先创建目标和关键结果，或检查现有目标是否处于活跃状态。
         </div>
         <template #append>
-          <v-btn variant="text" @click="navigateToGoals">
-            管理目标
-          </v-btn>
+          <v-btn variant="text" @click="navigateToGoals"> 管理目标 </v-btn>
         </template>
       </v-alert>
     </v-card-text>
@@ -174,20 +157,19 @@ const router = useRouter();
 const keyResultLinks = computed(() => props.modelValue.keyResultLinks || []);
 
 const goalOptions = computed(() => {
-  return goalStore.getInProgressGoals.filter(goal => 
-    goal.keyResults && 
-    goal.keyResults.length > 0
+  return goalStore.getInProgressGoals.filter(
+    (goal) => goal.keyResults && goal.keyResults.length > 0,
   );
 });
 
 const availableKeyResults = computed(() => {
-  const results: Array<{ goalUuid: string; keyResultId: string; title: string; }> = [];
-  goalOptions.value.forEach(goal => {
-    goal.keyResults?.forEach(kr => {
+  const results: Array<{ goalUuid: string; keyResultId: string; title: string }> = [];
+  goalOptions.value.forEach((goal) => {
+    goal.keyResults?.forEach((kr) => {
       results.push({
         goalUuid: goal.uuid,
         keyResultId: kr.uuid,
-        title: `${goal.name} - ${kr.name}`
+        title: `${goal.name} - ${kr.name}`,
       });
     });
   });
@@ -199,8 +181,8 @@ const rules = {
   required: (value: any) => !!value || '此字段为必填项',
   positiveNumber: (value: any) => {
     const num = Number(value);
-    return (num > 0) || '增量值必须大于0';
-  }
+    return num > 0 || '增量值必须大于0';
+  },
 };
 
 // 辅助方法
@@ -211,7 +193,7 @@ const getGoalTitle = (goalUuid: string) => {
 
 const getKeyResultTitle = (goalUuid: string, keyResultId: string) => {
   const goal = goalStore.getGoalByUuid(goalUuid);
-  const keyResult = goal?.keyResults?.find(kr => kr.uuid === keyResultId);
+  const keyResult = goal?.keyResults?.find((kr) => kr.uuid === keyResultId);
   return keyResult?.name || '未知关键结果';
 };
 
@@ -236,7 +218,6 @@ const getKeyResultOptions = (goalUuid: string) => {
 //   }
 // };
 
-
 const navigateToGoals = () => {
   router.push('/goals');
 };
@@ -246,9 +227,9 @@ const addKeyResultLink = () => {
   const newLink: KeyResultLink = {
     goalUuid: '',
     keyResultId: '',
-    incrementValue: 1
+    incrementValue: 1,
   };
-  
+
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.addKeyResultLink(newLink);
   emit('update:modelValue', updatedTemplate);
@@ -271,7 +252,7 @@ const updategoalUuid = (index: number, goalUuid: string) => {
     links[index] = {
       ...links[index],
       goalUuid,
-      keyResultId: ''
+      keyResultId: '',
     };
     emit('update:modelValue', updatedTemplate);
   }
@@ -283,7 +264,7 @@ const updateKeyResultId = (index: number, keyResultId: string) => {
   if (links[index]) {
     links[index] = {
       ...links[index],
-      keyResultId
+      keyResultId,
     };
     emit('update:modelValue', updatedTemplate);
   }
@@ -294,11 +275,9 @@ const validateKeyResultLinks = () => {
   if (!keyResultLinks.value.length) {
     return true; // 关键结果链接是可选的
   }
-  
-  return keyResultLinks.value.every(link => {
-    return link.goalUuid && 
-           link.keyResultId && 
-           link.incrementValue > 0;
+
+  return keyResultLinks.value.every((link) => {
+    return link.goalUuid && link.keyResultId && link.incrementValue > 0;
   });
 };
 
@@ -309,7 +288,7 @@ watch(
     const isValid = validateKeyResultLinks();
     emit('update:validation', isValid);
   },
-  { deep: true, immediate: true }
+  { deep: true, immediate: true },
 );
 </script>
 

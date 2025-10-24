@@ -1,4 +1,8 @@
-import { InitializationManager, InitializationPhase, InitializationTask } from './initializationManager';
+import {
+  InitializationManager,
+  InitializationPhase,
+  InitializationTask,
+} from './initializationManager';
 import { registerFileSystemHandlers } from '../ipc/filesystem';
 import { registerGitHandlers } from '../ipc/git';
 import { setupScheduleHandlers } from '../schedule/main';
@@ -27,9 +31,8 @@ const databaseInitTask: InitializationTask = {
   initialize: async () => {
     await initializeDatabase();
     console.log('✓ Database initialized');
-  }
+  },
 };
-
 
 // 文件系统处理器
 const fileSystemInitTask: InitializationTask = {
@@ -39,7 +42,7 @@ const fileSystemInitTask: InitializationTask = {
   initialize: async () => {
     registerFileSystemHandlers();
     console.log('✓ Filesystem handlers registered');
-  }
+  },
 };
 
 // Git 处理器
@@ -51,7 +54,7 @@ const gitInitTask: InitializationTask = {
   initialize: async () => {
     registerGitHandlers();
     console.log('✓ Git handlers registered');
-  }
+  },
 };
 
 // 通知服务
@@ -62,7 +65,7 @@ const notificationInitTask: InitializationTask = {
   initialize: async () => {
     setupNotificationHandler();
     console.log('✓ Notification handlers registered');
-  }
+  },
 };
 
 // 日程服务
@@ -74,7 +77,7 @@ const scheduleInitTask: InitializationTask = {
   initialize: async () => {
     setupScheduleHandlers();
     console.log('✓ Schedule handlers registered');
-  }
+  },
 };
 
 // 事件订阅
@@ -86,7 +89,7 @@ const eventSubscriptionInitTask: InitializationTask = {
   initialize: async () => {
     initializeEventSubscriptions();
     console.log('✓ Event subscriptions initialized');
-  }
+  },
 };
 
 /**
@@ -94,7 +97,7 @@ const eventSubscriptionInitTask: InitializationTask = {
  */
 export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
-  
+
   // 注册基础设施任务
   manager.registerTask(databaseInitTask);
   manager.registerTask(fileSystemInitTask);
@@ -102,7 +105,7 @@ export function registerAllInitializationTasks(): void {
   manager.registerTask(notificationInitTask);
   manager.registerTask(scheduleInitTask);
   manager.registerTask(eventSubscriptionInitTask);
-  
+
   // 注册各模块的任务
   registerAccountInitializationTasks();
   registerTaskInitializationTasks();
@@ -122,14 +125,14 @@ export function registerAllInitializationTasks(): void {
 export async function initializeApp(): Promise<void> {
   console.log('Starting application initialization...');
   console.log('💫 [Debug] initializeApp() 调用堆栈:', new Error().stack);
-  
+
   // 注册所有初始化任务
   registerAllInitializationTasks();
-  
+
   // 执行应用启动阶段的初始化
   const manager = InitializationManager.getInstance();
   await manager.executePhase(InitializationPhase.APP_STARTUP);
-  
+
   console.log('✓ Application initialization completed');
 }
 
@@ -153,14 +156,14 @@ export async function initializeUserSession(accountUuid: string): Promise<void> 
  */
 export async function cleanupUserSession(): Promise<void> {
   console.log('Cleaning up user session...');
-  
+
   const manager = InitializationManager.getInstance();
-  
+
   // 执行用户登出阶段的清理
   await manager.cleanupPhase(InitializationPhase.USER_LOGIN);
-  
+
   manager.setCurrentUser(null);
-  
+
   console.log('✓ User session cleaned up');
 }
 
@@ -169,13 +172,13 @@ export async function cleanupUserSession(): Promise<void> {
  */
 export async function cleanupApp(): Promise<void> {
   console.log('Cleaning up application...');
-  
+
   const manager = InitializationManager.getInstance();
-  
+
   // 清理所有阶段
   await manager.cleanupPhase(InitializationPhase.USER_LOGIN);
   await manager.cleanupPhase(InitializationPhase.APP_STARTUP);
-  
+
   console.log('✓ Application cleanup completed');
 }
 

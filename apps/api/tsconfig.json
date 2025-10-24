@@ -51,8 +51,12 @@
     // 类型定义：只包含 Node.js 类型
     "types": ["node"],
 
-    // 模块解析：使用 Node 策略
-    "moduleResolution": "Node",
+    // 模块解析：使用 Bundler 策略（支持无扩展名导入）
+    // Bundler 策略允许导入时省略 .js 扩展名，由构建工具处理
+    "moduleResolution": "Bundler",
+
+    // 允许导入 JSON 文件
+    "resolveJsonModule": true,
 
     // ============================================================
     // 本地路径别名配置

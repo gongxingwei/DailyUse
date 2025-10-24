@@ -13,12 +13,12 @@
 5. **GoalStatisticsApplicationService** - 应用服务层
 6. **Goal Event Handlers** - 事件监听器 ✅ **本次完成**
 7. **GoalContainer** - 依赖注入容器
-9. **GoalApplicationService** - 发布领域事件 ✅ **本次完成**
+8. **GoalApplicationService** - 发布领域事件 ✅ **本次完成**
 
 ### ⏳ 待完成（2项）
 
 8. **GoalStatisticsController + Routes** - HTTP API 端点
-10. **Test Goal Statistics System** - 单元测试 + 集成测试
+9. **Test Goal Statistics System** - 单元测试 + 集成测试
 
 ---
 
@@ -27,17 +27,19 @@
 ### 1. 创建 `GoalEventPublisher.ts` (~340行)
 
 **职责**：
+
 - 监听 Goal 领域事件（12种类型）
 - 将领域事件转换为统计更新事件
 - 发布聚合根的领域事件到事件总线
 
 **核心代码**：
+
 ```typescript
 export class GoalEventPublisher {
   // 初始化事件监听器
   static async initialize(): Promise<void> {
     const statisticsService = await GoalStatisticsApplicationService.getInstance();
-    
+
     // 监听 goal.created 事件
     eventBus.on('goal.created', async (event: DomainEvent) => {
       await statisticsService.handleStatisticsUpdateEvent({
@@ -47,7 +49,7 @@ export class GoalEventPublisher {
         payload: { importance, urgency, category, newStatus },
       });
     });
-    
+
     // ... 监听其他 11 种事件
   }
 
@@ -63,6 +65,7 @@ export class GoalEventPublisher {
 ```
 
 **事件类型覆盖**：
+
 1. `goal.created` - 目标创建
 2. `goal.deleted` - 目标删除
 3. `goal.status_changed` - 状态变更
@@ -79,6 +82,7 @@ export class GoalEventPublisher {
 ### 2. 更新 `GoalApplicationService.ts`
 
 **修改内容**：
+
 - **导入** `GoalEventPublisher`
 - **移除** `GoalStatisticsDomainService` 字段（废弃旧实现）
 - **更新** 所有保存操作后添加事件发布（9个方法）:
@@ -94,15 +98,16 @@ export class GoalEventPublisher {
 - **重构** `getGoalStatistics()` - 改用 `GoalStatisticsApplicationService`
 
 **代码示例**：
+
 ```typescript
 async createGoal(...) {
   const goal = this.domainService.createGoal(params, parentGoal);
-  
+
   await this.goalRepository.save(goal);
-  
+
   // 🔥 新增：发布领域事件
   await GoalEventPublisher.publishGoalEvents(goal);
-  
+
   return goal.toClientDTO();
 }
 ```
@@ -114,7 +119,7 @@ async createGoal(...) {
 ```typescript
 export function registerGoalInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
-  
+
   manager.registerTask({
     name: 'goalEventHandlers',
     phase: InitializationPhase.APP_STARTUP,
@@ -174,6 +179,7 @@ export function registerAllInitializationTasks(): void {
 ## 性能对比
 
 ### ❌ 旧实现（纯计算）
+
 ```typescript
 // 每次查询统计：O(n) 遍历所有 Goal
 async getGoalStatistics(accountUuid: string) {
@@ -184,6 +190,7 @@ async getGoalStatistics(accountUuid: string) {
 ```
 
 ### ✅ 新实现（事件驱动）
+
 ```typescript
 // 查询统计：O(1) 单次数据库查询
 async getGoalStatistics(accountUuid: string) {
@@ -200,31 +207,34 @@ async getGoalStatistics(accountUuid: string) {
 在实现过程中遇到并修复的类型错误：
 
 1. **GoalStatus 枚举导入**
+
    ```typescript
    // ❌ 错误
-   newStatus: 'COMPLETED'
-   
+   newStatus: 'COMPLETED';
+
    // ✅ 正确
    import { GoalStatus } from '@dailyuse/contracts';
-   newStatus: GoalStatus.COMPLETED
+   newStatus: GoalStatus.COMPLETED;
    ```
 
 2. **GoalStatus.IN_PROGRESS 不存在**
+
    ```typescript
    // ❌ 错误
-   newStatus: GoalStatus.IN_PROGRESS
-   
+   newStatus: GoalStatus.IN_PROGRESS;
+
    // ✅ 正确（枚举值是 ACTIVE）
-   newStatus: GoalStatus.ACTIVE
+   newStatus: GoalStatus.ACTIVE;
    ```
 
 3. **GoalStatisticsDomainService 构造函数参数**
+
    ```typescript
    // ❌ 错误（需要传入 2 个仓储）
-   new GoalStatisticsDomainService()
-   
+   new GoalStatisticsDomainService();
+
    // ✅ 正确（通过 ApplicationService 封装）
-   await GoalStatisticsApplicationService.getInstance()
+   await GoalStatisticsApplicationService.getInstance();
    ```
 
 ---
@@ -232,6 +242,7 @@ async getGoalStatistics(accountUuid: string) {
 ## 测试验证
 
 ### ✅ 编译验证
+
 ```bash
 pnpm nx run api:typecheck
 # 结果：Goal 模块相关的所有类型检查通过 ✅
@@ -239,6 +250,7 @@ pnpm nx run api:typecheck
 ```
 
 ### ⏳ 待添加测试
+
 - 单元测试：聚合根事件方法
 - 集成测试：事件流测试（创建Goal → 验证统计更新）
 - 性能测试：O(1) vs O(n) 性能对比
@@ -250,6 +262,7 @@ pnpm nx run api:typecheck
 ### Task 8: Create GoalStatisticsController + Routes
 
 **需要创建**：
+
 1. `GoalStatisticsController.ts`
    - `GET /api/goal-statistics/:accountUuid` - 获取统计
    - `POST /api/goal-statistics/:accountUuid/initialize` - 初始化统计
@@ -268,10 +281,12 @@ pnpm nx run api:typecheck
 ## 文件清单
 
 ### 本次新增文件（2个）
+
 - `apps/api/src/modules/goal/application/services/GoalEventPublisher.ts` (~340行)
 - `apps/api/src/modules/goal/initialization/goalInitialization.ts` (~30行)
 
 ### 本次修改文件（2个）
+
 - `apps/api/src/modules/goal/application/services/GoalApplicationService.ts`
   - 添加事件发布调用（9个方法）
   - 重构 `getGoalStatistics()` 方法
@@ -279,6 +294,7 @@ pnpm nx run api:typecheck
   - 注册 Goal 模块初始化任务
 
 ### 总代码量统计
+
 - **新增代码**：~370行
 - **修改代码**：~50行
 - **删除代码**：~20行（移除旧 StatisticsDomainService 引用）
@@ -290,12 +306,14 @@ pnpm nx run api:typecheck
 **✅ Step 6 成功完成！**
 
 事件驱动架构的核心连接已建立：
+
 - 🎯 Goal 领域事件 → 事件总线 → 统计更新
 - 📊 12 种事件类型全部覆盖
 - ⚡ 增量更新机制完全运行
 - 🔧 应用启动时自动初始化监听器
 
 **架构优势**：
+
 1. **解耦**：Goal 模块无需知道统计模块存在
 2. **可扩展**：新增事件监听器无需修改 Goal 代码
 3. **可测试**：事件发布和监听可独立测试
@@ -304,6 +322,7 @@ pnpm nx run api:typecheck
 **完成度**：80%（8/10任务）
 
 距离完整交付仅差：
+
 - HTTP API 端点（Controller + Routes）
 - 测试用例（单元测试 + 集成测试）
 

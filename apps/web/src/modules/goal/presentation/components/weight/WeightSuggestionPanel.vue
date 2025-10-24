@@ -20,17 +20,9 @@
 
         <!-- 策略卡片 -->
         <v-row v-else>
-          <v-col
-            v-for="strategy in strategies"
-            :key="strategy.name"
-            cols="12"
-            md="4"
-          >
+          <v-col v-for="strategy in strategies" :key="strategy.name" cols="12" md="4">
             <v-card
-              :class="[
-                'strategy-card',
-                { 'selected': selectedStrategy === strategy.name }
-              ]"
+              :class="['strategy-card', { selected: selectedStrategy === strategy.name }]"
               :color="selectedStrategy === strategy.name ? 'primary' : undefined"
               :variant="selectedStrategy === strategy.name ? 'tonal' : 'outlined'"
               @click="selectedStrategy = strategy.name"
@@ -78,12 +70,7 @@
                 </div>
 
                 <!-- 推荐理由 -->
-                <v-alert
-                  type="info"
-                  variant="tonal"
-                  density="compact"
-                  class="text-caption"
-                >
+                <v-alert type="info" variant="tonal" density="compact" class="text-caption">
                   <v-icon size="small" class="mr-1">mdi-lightbulb-outline</v-icon>
                   {{ strategy.reasoning }}
                 </v-alert>
@@ -118,14 +105,10 @@
               :subtitle="getKeywordHighlight(kr.title)"
             >
               <template #prepend>
-                <v-icon :color="getWeightColor(kr.weight || 0)">
-                  mdi-circle
-                </v-icon>
+                <v-icon :color="getWeightColor(kr.weight || 0)"> mdi-circle </v-icon>
               </template>
               <template #append>
-                <v-chip size="small" variant="text">
-                  当前: {{ kr.weight || 0 }}%
-                </v-chip>
+                <v-chip size="small" variant="text"> 当前: {{ kr.weight || 0 }}% </v-chip>
               </template>
             </v-list-item>
           </v-list>
@@ -175,16 +158,14 @@ const strategies = ref<WeightStrategy[]>([]);
 // 生成推荐策略
 function generateRecommendations() {
   isLoading.value = true;
-  
+
   try {
-    strategies.value = weightRecommendationService.recommendWeights(
-      props.keyResults
-    );
-    
+    strategies.value = weightRecommendationService.recommendWeights(props.keyResults);
+
     // 默认选中置信度最高的策略
     if (strategies.value.length > 0) {
       const bestStrategy = strategies.value.reduce((best, current) =>
-        current.confidence > best.confidence ? current : best
+        current.confidence > best.confidence ? current : best,
       );
       selectedStrategy.value = bestStrategy.name;
     }
@@ -212,14 +193,22 @@ function getWeightColor(weight: number): string {
 // 高亮关键词
 function getKeywordHighlight(title: string): string {
   const keywords = [
-    'critical', 'urgent', 'important', 'key', 'revenue', 'customer',
-    '关键', '核心', '重要', '紧急', '收入', '客户'
+    'critical',
+    'urgent',
+    'important',
+    'key',
+    'revenue',
+    'customer',
+    '关键',
+    '核心',
+    '重要',
+    '紧急',
+    '收入',
+    '客户',
   ];
-  
-  const foundKeywords = keywords.filter(kw =>
-    title.toLowerCase().includes(kw.toLowerCase())
-  );
-  
+
+  const foundKeywords = keywords.filter((kw) => title.toLowerCase().includes(kw.toLowerCase()));
+
   return foundKeywords.length > 0
     ? `包含关键词: ${foundKeywords.slice(0, 3).join(', ')}`
     : '未检测到特殊关键词';
@@ -234,11 +223,9 @@ function selectAndApply(strategy: WeightStrategy) {
 // 确认选择
 function confirmSelection() {
   if (!selectedStrategy.value) return;
-  
-  const strategy = strategies.value.find(
-    s => s.name === selectedStrategy.value
-  );
-  
+
+  const strategy = strategies.value.find((s) => s.name === selectedStrategy.value);
+
   if (strategy) {
     emit('apply', strategy);
     close();
@@ -251,7 +238,7 @@ function open() {
     console.warn('No KeyResults to analyze');
     return;
   }
-  
+
   isOpen.value = true;
   generateRecommendations();
 }

@@ -1,6 +1,6 @@
 /**
  * Task Auto-Status Service
- * 
+ *
  * 负责基于依赖关系自动更新任务状态：
  * - 当所有前置任务完成时，将后继任务从 BLOCKED → READY
  * - 当前置任务变为未完成时，将后继任务从 READY → BLOCKED
@@ -16,7 +16,13 @@ import mitt, { type Emitter } from 'mitt';
 /**
  * 任务状态
  */
-export type TaskStatus = 'PENDING' | 'READY' | 'IN_PROGRESS' | 'BLOCKED' | 'COMPLETED' | 'CANCELLED';
+export type TaskStatus =
+  | 'PENDING'
+  | 'READY'
+  | 'IN_PROGRESS'
+  | 'BLOCKED'
+  | 'COMPLETED'
+  | 'CANCELLED';
 
 /**
  * 状态更新结果
@@ -81,7 +87,9 @@ export class TaskAutoStatusService {
   /**
    * 订阅任务阻塞事件
    */
-  onTaskBlocked(handler: (event: { taskUuid: string; blockingTasks: string[] }) => void): () => void {
+  onTaskBlocked(
+    handler: (event: { taskUuid: string; blockingTasks: string[] }) => void,
+  ): () => void {
     this.eventBus.on('task:blocked', handler);
     return () => this.eventBus.off('task:blocked', handler);
   }
@@ -95,9 +103,9 @@ export class TaskAutoStatusService {
   async updateTaskStatusOnDependencyChange(
     taskUuid: string,
     allTasks: TaskForDAG[],
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): Promise<StatusUpdateResult | null> {
-    const task = allTasks.find(t => t.uuid === taskUuid);
+    const task = allTasks.find((t) => t.uuid === taskUuid);
     if (!task) {
       console.warn(`Task ${taskUuid} not found`);
       return null;
@@ -154,12 +162,10 @@ export class TaskAutoStatusService {
   calculateTaskStatus(
     task: TaskForDAG,
     allTasks: TaskForDAG[],
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): string {
     // 获取前置任务
-    const predecessorDeps = dependencies.filter(
-      dep => dep.successorTaskUuid === task.uuid
-    );
+    const predecessorDeps = dependencies.filter((dep) => dep.successorTaskUuid === task.uuid);
 
     // 如果没有前置任务
     if (predecessorDeps.length === 0) {
@@ -168,8 +174,8 @@ export class TaskAutoStatusService {
     }
 
     // 检查所有前置任务是否完成
-    const allPredecessorsCompleted = predecessorDeps.every(dep => {
-      const predecessor = allTasks.find(t => t.uuid === dep.predecessorTaskUuid);
+    const allPredecessorsCompleted = predecessorDeps.every((dep) => {
+      const predecessor = allTasks.find((t) => t.uuid === dep.predecessorTaskUuid);
       return predecessor?.status === 'COMPLETED';
     });
 
@@ -189,14 +195,14 @@ export class TaskAutoStatusService {
   async cascadeStatusUpdate(
     startingTaskUuid: string,
     allTasks: TaskForDAG[],
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): Promise<StatusUpdateResult[]> {
     const results: StatusUpdateResult[] = [];
     const visited = new Set<string>();
 
     // 构建后继任务图
     const successorGraph = new Map<string, string[]>();
-    dependencies.forEach(dep => {
+    dependencies.forEach((dep) => {
       if (!successorGraph.has(dep.predecessorTaskUuid)) {
         successorGraph.set(dep.predecessorTaskUuid, []);
       }
@@ -214,7 +220,7 @@ export class TaskAutoStatusService {
       const result = await this.updateTaskStatusOnDependencyChange(
         currentUuid,
         allTasks,
-        dependencies
+        dependencies,
       );
 
       if (result) {
@@ -223,7 +229,7 @@ export class TaskAutoStatusService {
 
       // 将后继任务加入队列
       const successors = successorGraph.get(currentUuid) || [];
-      successors.forEach(successor => {
+      successors.forEach((successor) => {
         if (!visited.has(successor)) {
           visited.add(successor);
           queue.push(successor);
@@ -240,15 +246,13 @@ export class TaskAutoStatusService {
   analyzeTaskReadiness(
     task: TaskForDAG,
     allTasks: TaskForDAG[],
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): TaskReadinessAnalysis {
     // 获取前置任务
-    const predecessorDeps = dependencies.filter(
-      dep => dep.successorTaskUuid === task.uuid
-    );
+    const predecessorDeps = dependencies.filter((dep) => dep.successorTaskUuid === task.uuid);
 
-    const predecessors = predecessorDeps.map(dep => {
-      const predecessor = allTasks.find(t => t.uuid === dep.predecessorTaskUuid);
+    const predecessors = predecessorDeps.map((dep) => {
+      const predecessor = allTasks.find((t) => t.uuid === dep.predecessorTaskUuid);
       return {
         uuid: dep.predecessorTaskUuid,
         title: predecessor?.title,
@@ -256,13 +260,11 @@ export class TaskAutoStatusService {
       };
     });
 
-    const completedPredecessors = predecessors.filter(
-      p => p.status === 'COMPLETED'
-    );
+    const completedPredecessors = predecessors.filter((p) => p.status === 'COMPLETED');
 
     const incompletePredecessors = predecessors
-      .filter(p => p.status !== 'COMPLETED')
-      .map(p => p.uuid);
+      .filter((p) => p.status !== 'COMPLETED')
+      .map((p) => p.uuid);
 
     const isReady = incompletePredecessors.length === 0 && predecessors.length > 0;
 
@@ -272,7 +274,7 @@ export class TaskAutoStatusService {
       totalPredecessors: predecessors.length,
       completedPredecessors: completedPredecessors.length,
       incompletePredecessors,
-      blockingTasks: predecessors.filter(p => p.status !== 'COMPLETED'),
+      blockingTasks: predecessors.filter((p) => p.status !== 'COMPLETED'),
     };
   }
 
@@ -281,11 +283,11 @@ export class TaskAutoStatusService {
    */
   batchCalculateTaskStatus(
     tasks: TaskForDAG[],
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): Map<string, string> {
     const statusMap = new Map<string, string>();
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       const newStatus = this.calculateTaskStatus(task, tasks, dependencies);
       statusMap.set(task.uuid, newStatus);
     });
@@ -299,15 +301,13 @@ export class TaskAutoStatusService {
   getBlockingTasksInfo(
     taskUuid: string,
     allTasks: TaskForDAG[],
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): Array<{ uuid: string; title: string; status: string; estimatedMinutes?: number }> {
-    const predecessorDeps = dependencies.filter(
-      dep => dep.successorTaskUuid === taskUuid
-    );
+    const predecessorDeps = dependencies.filter((dep) => dep.successorTaskUuid === taskUuid);
 
     return predecessorDeps
-      .map(dep => {
-        const predecessor = allTasks.find(t => t.uuid === dep.predecessorTaskUuid);
+      .map((dep) => {
+        const predecessor = allTasks.find((t) => t.uuid === dep.predecessorTaskUuid);
         if (!predecessor) return null;
 
         return {
@@ -326,9 +326,9 @@ export class TaskAutoStatusService {
   canTaskStart(
     taskUuid: string,
     allTasks: TaskForDAG[],
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): { canStart: boolean; reason?: string; blockingTasks?: string[] } {
-    const task = allTasks.find(t => t.uuid === taskUuid);
+    const task = allTasks.find((t) => t.uuid === taskUuid);
     if (!task) {
       return { canStart: false, reason: '任务不存在' };
     }

@@ -1,14 +1,8 @@
 # Notification 模块功能文档# Notification 模块功能构思
 
-
-
 本目录收录 Notification 模块的所有 Feature Spec 文档。本文件汇总 Notification 模块所有“超越 CRUD”的功能点，分阶段（MVP/MMP/未来）列出，并链接详细文档。
 
-
-
 ## 📋 功能列表## MVP
-
-
 
 | 编号 | 功能名称 | 优先级 | 文档 |1. 多渠道推送（[01-multichannel-push.md](./01-multichannel-push.md)）
 
@@ -21,8 +15,6 @@
 | NOTIFICATION-003 | 通知摘要 | P2 | [03-notification-digest.md](./03-notification-digest.md) |
 
 | NOTIFICATION-004 | 通知统计分析 | P3 | [04-notification-stats.md](./04-notification-stats.md) |## MMP
-
-
 
 ## 📊 统计信息5. 智能免打扰（[05-smart-dnd.md](./05-smart-dnd.md)）
 
@@ -42,5 +34,4 @@
 
 ---- 通知内容个性化
 
-
-*最后更新: 2025-10-21*
+_最后更新: 2025-10-21_

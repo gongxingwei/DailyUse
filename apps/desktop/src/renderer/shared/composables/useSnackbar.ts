@@ -1,12 +1,12 @@
-import { ref } from "vue";
+import { ref } from 'vue';
 
 /**
  * 通用 Snackbar 通知 Composable
- * 
+ *
  * 用于在应用内全局显示消息提示（如成功、错误、警告、信息）。
- * 
+ *
  * 典型用法：在页面或组件中调用 showSuccess/showError/showWarning/showInfo 显示通知。
- * 
+ *
  * @returns 提供 snackbar 状态和一组操作方法
  * @example
  * ```ts
@@ -22,7 +22,7 @@ export function useSnackbar() {
    * @property message 显示的消息内容
    * @property color 通知类型（决定样式）
    * @property timeout 显示时长（毫秒）
-   * 
+   *
    * @example
    * {
    *   show: true,
@@ -43,7 +43,7 @@ export function useSnackbar() {
     show: false,
     message: '',
     color: 'success',
-    timeout: 4000
+    timeout: 4000,
   });
 
   /**
@@ -55,15 +55,15 @@ export function useSnackbar() {
    * showSnackbar('已保存', 'success', 3000);
    */
   const showSnackbar = (
-    message: string, 
+    message: string,
     color: SnackbarConfig['color'] = 'success',
-    timeout: number = 4000
+    timeout: number = 4000,
   ) => {
     snackbar.value = {
       show: true,
       message,
       color,
-      timeout
+      timeout,
     };
   };
 
@@ -121,12 +121,12 @@ export function useSnackbar() {
   };
 
   return {
-    snackbar,        // 响应式状态对象，适合 v-model 绑定到 UI
-    showSnackbar,    // 通用显示方法
-    closeSnackbar,   // 关闭方法
-    showSuccess,     // 显示成功通知
-    showError,       // 显示错误通知
-    showWarning,     // 显示警告通知
-    showInfo         // 显示信息通知
+    snackbar, // 响应式状态对象，适合 v-model 绑定到 UI
+    showSnackbar, // 通用显示方法
+    closeSnackbar, // 关闭方法
+    showSuccess, // 显示成功通知
+    showError, // 显示错误通知
+    showWarning, // 显示警告通知
+    showInfo, // 显示信息通知
   };
 }

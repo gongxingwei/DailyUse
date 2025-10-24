@@ -12,8 +12,9 @@
 ### 1. 领域层（Domain Layer）✅
 
 #### 1.1 聚合根（Aggregate Root）
+
 - **文件**: `packages/domain-server/src/goal/aggregates/FocusSession.ts` (~580 lines)
-- **功能**: 
+- **功能**:
   - 状态机: DRAFT → IN_PROGRESS ⇄ PAUSED → COMPLETED/CANCELLED
   - 时间追踪: startedAt, pausedAt, resumedAt, completedAt, cancelledAt
   - 暂停累积: pauseCount, pausedDurationMinutes, actualDurationMinutes
@@ -25,8 +26,9 @@
   - 状态转换验证
 
 #### 1.2 领域服务（Domain Service）
+
 - **文件**: `packages/domain-server/src/goal/services/FocusSessionDomainService.ts` (~400 lines)
-- **设计原则**: 
+- **设计原则**:
   - ✅ 零依赖（不注入 Repository）
   - ✅ 纯业务逻辑
   - ✅ 同步方法
@@ -50,6 +52,7 @@
     - createFocusSession() - 创建聚合根
 
 #### 1.3 仓储接口（Repository Interface）
+
 - **文件**: `packages/domain-server/src/goal/repositories/IFocusSessionRepository.ts` (~130 lines)
 - **方法**（8个）:
   - save() - 保存（upsert）
@@ -69,6 +72,7 @@
 ### 2. 应用层（Application Layer）✅
 
 #### 2.1 应用服务（Application Service）
+
 - **文件**: `apps/api/src/modules/goal/application/services/FocusSessionApplicationService.ts` (~400 lines)
 - **设计模式**: 单例 + 依赖注入
 - **职责**: 用例编排（Query → Domain → Persist → DTO）
@@ -93,6 +97,7 @@
 ### 3. 基础设施层（Infrastructure Layer）✅
 
 #### 3.1 数据库迁移
+
 - **Prisma Schema**: `apps/api/prisma/schema.prisma`
 - **迁移文件**: `20251019050504_add_focus_sessions_table/migration.sql`
 - **表结构**: `focus_sessions`
@@ -127,6 +132,7 @@
   - created_at
 
 #### 3.2 Repository 实现
+
 - **文件**: `apps/api/src/modules/goal/infrastructure/repositories/PrismaFocusSessionRepository.ts` (~240 lines)
 - **实现**: IFocusSessionRepository
 - **关键功能**:
@@ -136,6 +142,7 @@
   - 复杂查询: 支持状态过滤、分页、排序、日期范围
 
 #### 3.3 依赖注入容器
+
 - **文件**: `apps/api/src/modules/goal/infrastructure/di/GoalContainer.ts`
 - **更新**:
   - 导入 PrismaFocusSessionRepository
@@ -145,6 +152,7 @@
 ### 4. 接口层（Interface Layer）✅
 
 #### 4.1 控制器（Controller）
+
 - **文件**: `apps/api/src/modules/goal/interface/http/FocusSessionController.ts` (~450 lines)
 - **端点**（10个）:
   1. POST /api/focus-sessions - 创建并开始
@@ -162,6 +170,7 @@
 - **认证**: AuthenticatedRequest 类型
 
 #### 4.2 路由（Routes）
+
 - **文件**: `apps/api/src/modules/goal/interface/http/focusSessionRoutes.ts` (~360 lines)
 - **中间件**: authMiddleware（所有路由需要认证）
 - **文档**: Swagger/OpenAPI 注释
@@ -170,6 +179,7 @@
 ### 5. 契约层（Contract Layer）✅
 
 #### 5.1 Server DTOs
+
 - **文件**: `packages/contracts/src/modules/goal/aggregates/FocusSessionServer.ts`
 - **DTOs**:
   - FocusSessionServer - 服务端接口
@@ -177,12 +187,14 @@
   - FocusSessionCreateServerDTO - 创建请求 DTO
 
 #### 5.2 Client DTOs
+
 - **文件**: `packages/contracts/src/modules/goal/aggregates/FocusSessionClient.ts`
 - **DTOs**:
   - FocusSessionClientDTO - 客户端 DTO
   - FocusSessionCreateRequestDTO - 创建请求 DTO
 
 #### 5.3 领域事件
+
 - **FocusSessionCreatedEvent** - 会话创建
 - **FocusSessionStartedEvent** - 会话开始
 - **FocusSessionPausedEvent** - 会话暂停
@@ -190,6 +202,7 @@
 - **FocusSessionCompletedEvent** - 会话完成
 
 #### 5.4 枚举
+
 - **FocusSessionStatus**: DRAFT, IN_PROGRESS, PAUSED, COMPLETED, CANCELLED
 
 ## 📊 代码统计
@@ -254,26 +267,26 @@ async createAndStartSession(accountUuid, request) {
     accountUuid,
     { status: [IN_PROGRESS, PAUSED] }
   );
-  
+
   // 2. Domain - 领域逻辑验证
   this.domainService.validateSingleActiveSession(existingSessions, accountUuid);
-  
-  const goal = request.goalUuid 
-    ? await this.goalRepository.findById(request.goalUuid) 
+
+  const goal = request.goalUuid
+    ? await this.goalRepository.findById(request.goalUuid)
     : null;
   this.domainService.validateAssociatedGoal(goal, accountUuid);
-  
+
   // 3. Domain - 创建聚合根
   const session = this.domainService.createFocusSession(request, goal);
-  
+
   // 4. Domain - 执行业务逻辑
   if (request.startImmediately !== false) {
     session.start(); // 触发领域事件
   }
-  
+
   // 5. Persist - 持久化
   await this.sessionRepository.save(session);
-  
+
   // 6. DTO - 返回客户端数据
   return session.toClientDTO();
 }
@@ -292,10 +305,10 @@ private async executeSessionAction(
 ) {
   const session = await this.sessionRepository.findById(sessionUuid);
   if (!session) throw new Error('专注周期不存在');
-  
+
   this.domainService.validateSessionOwnership(session, accountUuid);
   action(session); // 唯一变化的部分
-  
+
   await this.sessionRepository.save(session);
   return session.toClientDTO();
 }
@@ -319,6 +332,7 @@ async resumeSession(uuid, accountUuid) {
 ### 4. DomainService 无依赖原则
 
 **错误示例** ❌ (现有代码中的错误模式):
+
 ```typescript
 class GoalDomainService {
   constructor(private repository: IGoalRepository) {} // ❌ 错误！
@@ -326,14 +340,15 @@ class GoalDomainService {
 ```
 
 **正确示例** ✅ (FocusSession 严格遵循):
+
 ```typescript
 class FocusSessionDomainService {
   constructor() {} // ✅ 无依赖
-  
+
   // ✅ 接受查询结果作为参数
   validateSingleActiveSession(sessions: FocusSession[], accountUuid: string) {
     const activeSessions = sessions.filter(
-      s => s.status === 'IN_PROGRESS' || s.status === 'PAUSED'
+      (s) => s.status === 'IN_PROGRESS' || s.status === 'PAUSED',
     );
     if (activeSessions.length > 0) {
       throw new Error('已有活跃的专注周期，请先完成或取消');
@@ -363,17 +378,14 @@ COMPLETED / CANCELLED (完成/取消)
 ```
 
 **状态转换验证**:
+
 ```typescript
 const STATE_TRANSITIONS = {
   start: [FocusSessionStatus.DRAFT],
   pause: [FocusSessionStatus.IN_PROGRESS],
   resume: [FocusSessionStatus.PAUSED],
   complete: [FocusSessionStatus.IN_PROGRESS, FocusSessionStatus.PAUSED],
-  cancel: [
-    FocusSessionStatus.DRAFT,
-    FocusSessionStatus.IN_PROGRESS,
-    FocusSessionStatus.PAUSED,
-  ],
+  cancel: [FocusSessionStatus.DRAFT, FocusSessionStatus.IN_PROGRESS, FocusSessionStatus.PAUSED],
 };
 ```
 
@@ -400,10 +412,10 @@ resume() {
 // 实际专注时长计算
 calculateActualDuration() {
   if (!this.startedAt) return 0;
-  
+
   const endTime = this.completedAt || this.cancelledAt || Date.now();
   const totalMinutes = Math.floor((endTime - this.startedAt) / 60000);
-  
+
   return Math.max(0, totalMinutes - this.pausedDurationMinutes);
 }
 ```
@@ -411,6 +423,7 @@ calculateActualDuration() {
 ## 🔌 API 端点
 
 ### 基础URL
+
 ```
 http://localhost:3888/api
 ```
@@ -419,16 +432,16 @@ http://localhost:3888/api
 
 | 方法   | 路径                           | 描述               | 认证 |
 | ------ | ------------------------------ | ------------------ | ---- |
-| POST   | /focus-sessions                | 创建并开始专注周期 | ✅    |
-| POST   | /focus-sessions/:uuid/pause    | 暂停专注周期       | ✅    |
-| POST   | /focus-sessions/:uuid/resume   | 恢复专注周期       | ✅    |
-| POST   | /focus-sessions/:uuid/complete | 完成专注周期       | ✅    |
-| POST   | /focus-sessions/:uuid/cancel   | 取消专注周期       | ✅    |
-| GET    | /focus-sessions/active         | 获取活跃会话       | ✅    |
-| GET    | /focus-sessions/history        | 获取历史记录       | ✅    |
-| GET    | /focus-sessions/statistics     | 获取统计信息       | ✅    |
-| GET    | /focus-sessions/:uuid          | 获取会话详情       | ✅    |
-| DELETE | /focus-sessions/:uuid          | 删除会话           | ✅    |
+| POST   | /focus-sessions                | 创建并开始专注周期 | ✅   |
+| POST   | /focus-sessions/:uuid/pause    | 暂停专注周期       | ✅   |
+| POST   | /focus-sessions/:uuid/resume   | 恢复专注周期       | ✅   |
+| POST   | /focus-sessions/:uuid/complete | 完成专注周期       | ✅   |
+| POST   | /focus-sessions/:uuid/cancel   | 取消专注周期       | ✅   |
+| GET    | /focus-sessions/active         | 获取活跃会话       | ✅   |
+| GET    | /focus-sessions/history        | 获取历史记录       | ✅   |
+| GET    | /focus-sessions/statistics     | 获取统计信息       | ✅   |
+| GET    | /focus-sessions/:uuid          | 获取会话详情       | ✅   |
+| DELETE | /focus-sessions/:uuid          | 删除会话           | ✅   |
 
 ### 请求示例
 
@@ -448,6 +461,7 @@ Content-Type: application/json
 ```
 
 响应:
+
 ```json
 {
   "success": true,
@@ -479,6 +493,7 @@ Authorization: Bearer <your_token>
 ```
 
 响应（有活跃会话）:
+
 ```json
 {
   "success": true,
@@ -494,6 +509,7 @@ Authorization: Bearer <your_token>
 ```
 
 响应（无活跃会话）:
+
 ```json
 {
   "success": true,
@@ -509,6 +525,7 @@ Authorization: Bearer <your_token>
 ```
 
 响应:
+
 ```json
 {
   "success": true,
@@ -535,16 +552,14 @@ describe('FocusSessionDomainService', () => {
     expect(() => service.validateDuration(0)).toThrow();
     expect(() => service.validateDuration(241)).toThrow();
   });
-  
+
   it('应拒绝创建多个活跃会话', () => {
-    const activeSessions = [
-      createMockSession({ status: 'IN_PROGRESS' })
-    ];
-    expect(() => 
-      service.validateSingleActiveSession(activeSessions, 'account_1')
-    ).toThrow('已有活跃的专注周期');
+    const activeSessions = [createMockSession({ status: 'IN_PROGRESS' })];
+    expect(() => service.validateSingleActiveSession(activeSessions, 'account_1')).toThrow(
+      '已有活跃的专注周期',
+    );
   });
-  
+
   it('应正确计算实际专注时长', () => {
     const session = createSession();
     session.start(); // startedAt = now
@@ -567,11 +582,11 @@ describe('FocusSessionApplicationService', () => {
     expect(result.status).toBe('IN_PROGRESS');
     expect(result.startedAt).toBeDefined();
   });
-  
+
   it('应拒绝创建第二个活跃会话', async () => {
     await service.createAndStartSession('account_1', { durationMinutes: 25 });
     await expect(
-      service.createAndStartSession('account_1', { durationMinutes: 25 })
+      service.createAndStartSession('account_1', { durationMinutes: 25 }),
     ).rejects.toThrow('已有活跃的专注周期');
   });
 });
@@ -648,7 +663,8 @@ Error [ERR_MODULE_NOT_FOUND]: Cannot find module '.../AccountApplicationService'
 
 **影响**: API 服务无法启动，需要先修复 Account 模块。
 
-**解决方案**: 
+**解决方案**:
+
 1. 补充 AccountApplicationService 实现
 2. 或暂时注释掉 AccountController 的导入
 

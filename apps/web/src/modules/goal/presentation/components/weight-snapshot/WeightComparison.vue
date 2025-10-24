@@ -6,17 +6,10 @@
       <v-card-text>
         <!-- 时间点选择器 -->
         <div class="time-selector mb-4">
-          <v-alert type="info" variant="tonal" class="mb-3">
-            最多选择 5 个时间点进行对比
-          </v-alert>
-          
+          <v-alert type="info" variant="tonal" class="mb-3"> 最多选择 5 个时间点进行对比 </v-alert>
+
           <v-row>
-            <v-col
-              v-for="(timePoint, index) in selectedTimePoints"
-              :key="index"
-              cols="12"
-              md="6"
-            >
+            <v-col v-for="(timePoint, index) in selectedTimePoints" :key="index" cols="12" md="6">
               <v-text-field
                 v-model="timePoint.label"
                 :label="`时间点 ${index + 1}`"
@@ -70,20 +63,10 @@
         <!-- 对比图表 -->
         <div v-else>
           <!-- 柱状对比图 -->
-          <v-chart
-            class="chart"
-            :option="barChartOption"
-            autoresize
-            style="height: 400px"
-          />
+          <v-chart class="chart" :option="barChartOption" autoresize style="height: 400px" />
 
           <!-- 雷达对比图 -->
-          <v-chart
-            class="chart mt-4"
-            :option="radarChartOption"
-            autoresize
-            style="height: 400px"
-          />
+          <v-chart class="chart mt-4" :option="radarChartOption" autoresize style="height: 400px" />
 
           <!-- 数据表格 -->
           <v-table class="mt-4">
@@ -100,18 +83,12 @@
               <tr v-for="kr in comparisonData?.keyResults" :key="kr.uuid">
                 <td class="font-weight-medium">{{ kr.title }}</td>
                 <td v-for="(weight, index) in getKRWeights(kr.uuid)" :key="index">
-                  <v-chip
-                    size="small"
-                    :color="getWeightChangeColor(weight, index)"
-                  >
+                  <v-chip size="small" :color="getWeightChangeColor(weight, index)">
                     {{ weight }}%
                   </v-chip>
                 </td>
                 <td>
-                  <v-chip
-                    size="small"
-                    :color="getTotalChangeColor(getTotalChange(kr.uuid))"
-                  >
+                  <v-chip size="small" :color="getTotalChangeColor(getTotalChange(kr.uuid))">
                     {{ getTotalChange(kr.uuid) > 0 ? '+' : '' }}{{ getTotalChange(kr.uuid) }}%
                   </v-chip>
                 </td>
@@ -156,8 +133,7 @@ const props = defineProps<{
   goalUuid: string;
 }>();
 
-const { comparisonData, isLoading, hasComparisonData, fetchWeightComparison } =
-  useWeightSnapshot();
+const { comparisonData, isLoading, hasComparisonData, fetchWeightComparison } = useWeightSnapshot();
 
 // 时间点选择
 interface TimePoint {
@@ -180,7 +156,7 @@ const canCompare = computed(() => {
 const timePointLabels = computed(() => {
   if (!comparisonData.value) return [];
   return comparisonData.value.timePoints.map((tp) =>
-    format(new Date(tp), 'MM-dd HH:mm', { locale: zhCN })
+    format(new Date(tp), 'MM-dd HH:mm', { locale: zhCN }),
   );
 });
 

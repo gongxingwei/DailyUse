@@ -3,7 +3,13 @@ import { ref, computed } from 'vue';
 import { useQuickLauncherStore } from '../store';
 import { ShortcutItem } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { getLinkFileTargetPath, addTitle, getFileIcon, revealInExplorer, hideWindow } from '../utils/utils';
+import {
+  getLinkFileTargetPath,
+  addTitle,
+  getFileIcon,
+  revealInExplorer,
+  hideWindow,
+} from '../utils/utils';
 export function useShortcutManagement() {
   const store = useQuickLauncherStore();
   const editingShortcut = ref<ShortcutItem | null>(null);
@@ -27,7 +33,11 @@ export function useShortcutManagement() {
 
     if (result && result.filePaths && result.filePaths.length > 0) {
       const filePath = result.filePaths[0];
-      const fileName = filePath.split('\\').pop()?.replace(/\.[^/.]+$/, "") || '';
+      const fileName =
+        filePath
+          .split('\\')
+          .pop()
+          ?.replace(/\.[^/.]+$/, '') || '';
       const icon = await getShortcutIcon(filePath);
 
       const shortcut: ShortcutItem = {
@@ -37,7 +47,7 @@ export function useShortcutManagement() {
         description: '',
         icon,
         lastUsed: new Date(),
-        category: categoryId
+        category: categoryId,
       };
 
       store.addShortcut(categoryId, shortcut);
@@ -70,10 +80,9 @@ export function useShortcutManagement() {
   async function addShortcutByDrop(event: DragEvent) {
     event.preventDefault();
     const files = event.dataTransfer?.files;
-  
-    if (files && files.length > 0) {
 
-      console.log(files)
+    if (files && files.length > 0) {
+      console.log(files);
       for (const file of Array.from(files)) {
         try {
           let targetPath = (file as any).path;
@@ -86,12 +95,12 @@ export function useShortcutManagement() {
 
           const shortcut: ShortcutItem = {
             uuid: uuidv4(),
-            name: file.name.replace(/\.[^/.]+$/, ""),
+            name: file.name.replace(/\.[^/.]+$/, ''),
             path: targetPath,
             description: '',
             icon: base64Icon,
             lastUsed: new Date(),
-            category: store.state.selectedCategoryId
+            category: store.state.selectedCategoryId,
           };
 
           store.addShortcut(store.state.selectedCategoryId, shortcut);
@@ -100,7 +109,6 @@ export function useShortcutManagement() {
         }
       }
     } else {
-
     }
   }
   /*
@@ -108,8 +116,6 @@ export function useShortcutManagement() {
    */
   function deleteShortcut() {
     if (selectedCategoryId.value && selectedItemId) {
-
-
       store.removeShortcut(selectedCategoryId.value, selectedItemId.value);
     }
   }
@@ -124,7 +130,7 @@ export function useShortcutManagement() {
 
     editingShortcut.value = item;
 
-    const { uuid, name, path, icon, description, } = editingShortcut.value;
+    const { uuid, name, path, icon, description } = editingShortcut.value;
     shortcutForEdit.value = { uuid, name, path, icon, description: description || '' };
     showEditShortcutDialog.value = true;
   }
@@ -134,7 +140,7 @@ export function useShortcutManagement() {
       const updatedShortcut: ShortcutItem = {
         ...editingShortcut.value,
         name: data.name,
-        description: data.description
+        description: data.description,
       };
 
       store.updateShortcut(store.state.selectedCategoryId, updatedShortcut.uuid, updatedShortcut);
@@ -150,7 +156,6 @@ export function useShortcutManagement() {
     if (!item) return;
     const path = item.path;
     revealInExplorer(path);
-
   }
   /*
    * 删除快捷方式

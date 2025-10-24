@@ -1,9 +1,11 @@
 # Account & Authentication 模块 Contracts 实现总结
 
 ## 实现日期
+
 2025-10-14
 
 ## 概述
+
 成功实现了 Account 和 Authentication 模块的完整 contracts 包，严格参考 repository 模块的实现模式。
 
 ---
@@ -13,7 +15,8 @@
 ### 实现的实体
 
 #### 1. **Account (聚合根)**
-- **文件**: 
+
+- **文件**:
   - `AccountServer.ts`
   - `AccountClient.ts`
 - **包含**:
@@ -35,7 +38,8 @@
   - 统计更新（updateStats, recordLogin, recordActivity）
 
 #### 2. **Subscription (子实体)**
-- **文件**: 
+
+- **文件**:
   - `SubscriptionServer.ts`
   - `SubscriptionClient.ts`
 - **包含**:
@@ -49,7 +53,8 @@
   - upgrade(), downgrade()
 
 #### 3. **AccountHistory (子实体)**
-- **文件**: 
+
+- **文件**:
   - `AccountHistoryServer.ts`
   - `AccountHistoryClient.ts`
 - **包含**:
@@ -64,7 +69,8 @@
 ### 实现的实体
 
 #### 1. **AuthCredential (聚合根)**
-- **文件**: 
+
+- **文件**:
   - `AuthCredentialServer.ts`
   - `AuthCredentialClient.ts`
 - **包含**:
@@ -85,7 +91,8 @@
   - 安全管理（recordFailedLogin, resetFailedAttempts, isLocked, suspend, activate, revoke）
 
 #### 2. **PasswordCredential (子实体)**
-- **文件**: 
+
+- **文件**:
   - `PasswordCredentialServer.ts`
   - `PasswordCredentialClient.ts`
 - **包含**:
@@ -97,7 +104,8 @@
   - verify(), needsRehash()
 
 #### 3. **ApiKeyCredential (子实体)**
-- **文件**: 
+
+- **文件**:
   - `ApiKeyCredentialServer.ts`
   - `ApiKeyCredentialClient.ts`
 - **包含**:
@@ -109,7 +117,8 @@
   - isExpired(), isValid(), revoke(), recordUsage()
 
 #### 4. **RememberMeToken (子实体)** ⭐️ V2.1 新增
-- **文件**: 
+
+- **文件**:
   - `RememberMeTokenServer.ts`
   - `RememberMeTokenClient.ts`
 - **包含**:
@@ -125,7 +134,8 @@
   - recordUsage(), markAsUsed(), revoke()
 
 #### 5. **DeviceInfo (值对象)** ⭐️ V2.1 新增
-- **文件**: 
+
+- **文件**:
   - `DeviceInfoServer.ts`
   - `DeviceInfoClient.ts`
 - **包含**:
@@ -140,7 +150,8 @@
   - matchesFingerprint()
 
 #### 6. **CredentialHistory (子实体)**
-- **文件**: 
+
+- **文件**:
   - `CredentialHistoryServer.ts`
   - `CredentialHistoryClient.ts`
 - **包含**:
@@ -149,7 +160,8 @@
   - 创建时间
 
 #### 7. **AuthSession (聚合根)**
-- **文件**: 
+
+- **文件**:
   - `AuthSessionServer.ts`
   - `AuthSessionClient.ts`
 - **包含**:
@@ -167,7 +179,8 @@
   - revoke(), lock(), activate(), extend()
 
 #### 8. **RefreshToken (子实体)**
-- **文件**: 
+
+- **文件**:
   - `RefreshTokenServer.ts`
   - `RefreshTokenClient.ts`
 - **包含**:
@@ -178,7 +191,8 @@
   - isExpired(), markAsUsed()
 
 #### 9. **SessionHistory (子实体)**
-- **文件**: 
+
+- **文件**:
   - `SessionHistoryServer.ts`
   - `SessionHistoryClient.ts`
 - **包含**:
@@ -231,28 +245,33 @@ packages/contracts/src/modules/
 ## ✅ 实现特点
 
 ### 1. **严格遵循 Repository 模式**
+
 - ✅ Server/Client 接口分离
 - ✅ DTO 定义（ServerDTO, ClientDTO, PersistenceDTO）
 - ✅ 双向转换方法（toServerDTO, toClientDTO, toPersistenceDTO）
 - ✅ 静态工厂方法（create, fromServerDTO, fromClientDTO, fromPersistenceDTO）
 
 ### 2. **时间戳统一使用 `number` (epoch milliseconds)**
+
 - ✅ 性能优势：传输、存储、序列化性能提升 70%+
 - ✅ date-fns 兼容：完全支持 `number | Date` 参数
 - ✅ 零转换成本：跨层传递无需 `toISOString()` / `new Date()`
 
 ### 3. **完整的领域方法**
+
 - ✅ 业务逻辑封装在实体中
 - ✅ 状态管理方法
 - ✅ 验证方法
 - ✅ 转换方法
 
 ### 4. **Persistence DTO 命名规范**
+
 - ✅ 使用 snake_case（如 `account_uuid`, `created_at`）
 - ✅ JSON 字段标注（如 `profile: string; // JSON`）
 - ✅ 与数据库字段对应
 
 ### 5. **V2.1 新特性支持** ⭐️
+
 - ✅ Remember-Me Token 支持长期自动登录
 - ✅ DeviceInfo 值对象支持多端管理
 - ✅ 设备指纹验证
@@ -286,11 +305,13 @@ export * as AuthenticationContracts from './modules/authentication';
 ## 📊 统计
 
 ### Account 模块
+
 - **实体数量**: 3 个（Account, Subscription, AccountHistory）
 - **接口文件**: 6 个（3 Server + 3 Client）
 - **DTO 类型**: 9 个（3 ServerDTO + 3 ClientDTO + 3 PersistenceDTO）
 
 ### Authentication 模块
+
 - **实体数量**: 9 个
   - AuthCredential（聚合根）
   - PasswordCredential
@@ -305,6 +326,7 @@ export * as AuthenticationContracts from './modules/authentication';
 - **DTO 类型**: 27 个（9 ServerDTO + 9 ClientDTO + 9 PersistenceDTO）
 
 ### 总计
+
 - **实体总数**: 12 个
 - **接口文件**: 24 个
 - **DTO 类型**: 36 个

@@ -53,6 +53,7 @@ packages/contracts/        # 契约层（DTO）
 ## 📊 数据流转
 
 ### 1. 查询流程（API → Store）
+
 ```
 API 返回 ClientDTO
   ↓
@@ -66,6 +67,7 @@ Component 使用 Entity
 ```
 
 ### 2. 命令流程（Component → API）
+
 ```
 Component 触发操作
   ↓
@@ -83,6 +85,7 @@ Store 更新 Entity
 ```
 
 ### 3. 持久化流程（LocalStorage）
+
 ```
 Store Entity
   ↓
@@ -106,6 +109,7 @@ Store Entity
 ## 🎯 关键架构决策
 
 ### ✅ Store 存储实体，不是 DTO
+
 ```typescript
 // ✅ 正确
 const userSetting = ref<UserSetting | null>(null);
@@ -115,11 +119,13 @@ const userSetting = ref<UserSettingClientDTO | null>(null);
 ```
 
 **原因**：
+
 - 实体包含业务逻辑（getThemeText(), hasShortcut() 等）
 - 实体提供类型安全和方法约束
 - 遵循 DDD 原则：UI 层使用领域实体
 
 ### ✅ DTO ↔ Entity 转换在边界发生
+
 ```typescript
 // API → Store：DTO to Entity
 const dto = await apiClient.getUserSetting(uuid);
@@ -133,22 +139,28 @@ localStorage.setItem('userSetting', JSON.stringify(dto));
 ```
 
 ### ✅ Singleton 模式
+
 ```typescript
 // Application Service - Singleton
 export class UserSettingWebApplicationService {
   private static instance: UserSettingWebApplicationService | null = null;
-  
-  public static async getInstance() { /* ... */ }
+
+  public static async getInstance() {
+    /* ... */
+  }
 }
 
 // API Client - Singleton
-export class UserSettingApiClient { /* ... */ }
+export class UserSettingApiClient {
+  /* ... */
+}
 export const userSettingApiClient = new UserSettingApiClient();
 ```
 
 ## 📦 组件功能
 
 ### 1. AppearanceSettings.vue
+
 - 主题模式（浅色/深色/自动）
 - 强调色
 - 字体大小
@@ -156,6 +168,7 @@ export const userSettingApiClient = new UserSettingApiClient();
 - 紧凑模式
 
 ### 2. LocaleSettings.vue
+
 - 显示语言（中文、英文、日文等）
 - 时区
 - 日期格式
@@ -164,6 +177,7 @@ export const userSettingApiClient = new UserSettingApiClient();
 - 货币单位
 
 ### 3. WorkflowSettings.vue
+
 - 默认任务视图（列表/看板/日历）
 - 默认目标视图（列表/树形/时间线）
 - 默认日程视图（日/周/月）
@@ -172,6 +186,7 @@ export const userSettingApiClient = new UserSettingApiClient();
 - 删除前确认
 
 ### 4. ShortcutSettings.vue
+
 - 启用快捷键开关
 - 自定义快捷键映射
 - 10+ 预定义快捷键
@@ -179,6 +194,7 @@ export const userSettingApiClient = new UserSettingApiClient();
 - 恢复默认功能
 
 ### 5. PrivacySettings.vue
+
 - 个人资料可见性（公开/仅好友/私密）
 - 显示在线状态
 - 允许通过邮箱搜索
@@ -186,6 +202,7 @@ export const userSettingApiClient = new UserSettingApiClient();
 - 共享使用数据
 
 ### 6. ExperimentalSettings.vue
+
 - 实验性功能总开关
 - 可用功能列表
 - 功能启用/禁用
@@ -194,6 +211,7 @@ export const userSettingApiClient = new UserSettingApiClient();
 ## 🚀 使用方法
 
 ### 在路由中注册
+
 ```typescript
 // router/index.ts
 import { UserSettingsView } from '@/modules/setting';
@@ -203,25 +221,26 @@ const routes = [
     path: '/settings',
     name: 'UserSettings',
     component: UserSettingsView,
-    meta: { requiresAuth: true }
-  }
+    meta: { requiresAuth: true },
+  },
 ];
 ```
 
 ### 在组件中使用
+
 ```vue
 <script setup lang="ts">
 import { useUserSetting } from '@/modules/setting';
 
 const {
-  userSetting,        // 当前设置实体
-  loading,            // 加载状态
-  currentTheme,       // 当前主题
-  currentLanguage,    // 当前语言
-  switchTheme,        // 切换主题
-  switchLanguage,     // 切换语言
-  updateAppearance,   // 更新外观
-  updateWorkflow,     // 更新工作流
+  userSetting, // 当前设置实体
+  loading, // 加载状态
+  currentTheme, // 当前主题
+  currentLanguage, // 当前语言
+  switchTheme, // 切换主题
+  switchLanguage, // 切换语言
+  updateAppearance, // 更新外观
+  updateWorkflow, // 更新工作流
 } = useUserSetting();
 
 // 切换主题
@@ -240,6 +259,7 @@ await updateAppearance({
 ```
 
 ### 使用轻量级 Composable（只读）
+
 ```vue
 <script setup lang="ts">
 import { useUserSettingData } from '@/modules/setting';
@@ -262,6 +282,7 @@ const {
 ### 添加新的设置项
 
 1. **更新 Contracts**（如果需要新类型）
+
 ```typescript
 // packages/contracts/src/modules/setting/api-requests.ts
 export interface UpdateNewFeatureRequest {
@@ -270,19 +291,25 @@ export interface UpdateNewFeatureRequest {
 ```
 
 2. **更新 Domain Client**（如果需要新属性）
+
 ```typescript
 // packages/domain-client/src/setting/aggregates/UserSetting.ts
 export class UserSetting extends AggregateRoot {
   private _newFeature: { newProperty: string };
-  
-  get newFeature() { return this._newFeature; }
-  
+
+  get newFeature() {
+    return this._newFeature;
+  }
+
   // 添加业务方法
-  getNewFeatureText(): string { /* ... */ }
+  getNewFeatureText(): string {
+    /* ... */
+  }
 }
 ```
 
 3. **更新 API Client**（如果需要新接口）
+
 ```typescript
 // infrastructure/api/userSettingApiClient.ts
 async updateNewFeature(uuid: string, newFeature: UpdateNewFeatureRequest) {
@@ -291,6 +318,7 @@ async updateNewFeature(uuid: string, newFeature: UpdateNewFeatureRequest) {
 ```
 
 4. **更新 Application Service**
+
 ```typescript
 // application/services/UserSettingWebApplicationService.ts
 async updateNewFeature(uuid: string, newFeature: UpdateNewFeatureRequest) {
@@ -302,6 +330,7 @@ async updateNewFeature(uuid: string, newFeature: UpdateNewFeatureRequest) {
 ```
 
 5. **更新 Composable**
+
 ```typescript
 // presentation/composables/useUserSetting.ts
 const updateNewFeature = async (newFeature: UpdateNewFeatureRequest) => {
@@ -310,6 +339,7 @@ const updateNewFeature = async (newFeature: UpdateNewFeatureRequest) => {
 ```
 
 6. **创建 UI 组件**
+
 ```vue
 <!-- presentation/components/NewFeatureSettings.vue -->
 <template>

@@ -6,7 +6,7 @@ import type {
   PasswordAuthenticationResponse,
   RememberMeTokenAuthenticationRequest,
   RememberMeTokenAuthenticationResponse,
-} from "@renderer/modules/Authentication/domain/types";
+} from '@renderer/modules/Authentication/domain/types';
 
 export class AuthenticationIpcClient {
   private static instance: AuthenticationIpcClient | null = null;
@@ -18,58 +18,50 @@ export class AuthenticationIpcClient {
     return AuthenticationIpcClient.instance;
   }
   async passwordAuthentication(
-    credentials: PasswordAuthenticationRequest
+    credentials: PasswordAuthenticationRequest,
   ): Promise<ApiResponse<PasswordAuthenticationResponse>> {
-    console.log([
-      "[AuthenticationIpcClient] passwordAuthentication",
-      credentials,
-    ]);
+    console.log(['[AuthenticationIpcClient] passwordAuthentication', credentials]);
     const serializedCredentials = JSON.parse(JSON.stringify(credentials));
     return await window.shared.ipcRenderer.invoke(
-      "authentication:password-authentication",
-      serializedCredentials
+      'authentication:password-authentication',
+      serializedCredentials,
     );
   }
 
-  async getQuickLoginAccounts(): Promise<ApiResponse<Array<{ accountUuid: string; username: string; token: string }>>> {
-    console.log("[AuthenticationIpcClient] 获取快速登录账户列表");
-    return await window.shared.ipcRenderer.invoke(
-      "authentication:get-quick-login-accounts"
-    );
+  async getQuickLoginAccounts(): Promise<
+    ApiResponse<Array<{ accountUuid: string; username: string; token: string }>>
+  > {
+    console.log('[AuthenticationIpcClient] 获取快速登录账户列表');
+    return await window.shared.ipcRenderer.invoke('authentication:get-quick-login-accounts');
   }
   async rememberMeTokenAuthentication(
-    request: RememberMeTokenAuthenticationRequest
+    request: RememberMeTokenAuthenticationRequest,
   ): Promise<ApiResponse<RememberMeTokenAuthenticationResponse>> {
-    console.log("[AuthenticationIpcClient] rememberMeTokenAuthentication");
+    console.log('[AuthenticationIpcClient] rememberMeTokenAuthentication');
     return await window.shared.ipcRenderer.invoke(
-      "authentication:remember-me-token-authentication",
-      request
+      'authentication:remember-me-token-authentication',
+      request,
     );
   }
 
   async loginSuccessEvent(): Promise<void> {
-    console.log("[AuthenticationIpcClient] 发送登录成功事件");
-    return await window.shared.ipcRenderer.send("login:success");
+    console.log('[AuthenticationIpcClient] 发送登录成功事件');
+    return await window.shared.ipcRenderer.send('login:success');
   }
 
   async getLoginInfo(): Promise<ApiResponse<AuthInfo>> {
-    console.log("[AuthenticationIpcClient] 获取登录信息");
-    return await window.shared.ipcRenderer.invoke(
-      "authentication:get-login-info"
-    );
+    console.log('[AuthenticationIpcClient] 获取登录信息');
+    return await window.shared.ipcRenderer.invoke('authentication:get-login-info');
   }
 
   async logout(logoutRequest: LogoutRequest): Promise<ApiResponse<LogoutResult>> {
-    console.log("[AuthenticationIpcClient] 发送登出请求");
-    return await window.shared.ipcRenderer.invoke(
-      "authentication:logout",
-      logoutRequest
-    );
+    console.log('[AuthenticationIpcClient] 发送登出请求');
+    return await window.shared.ipcRenderer.invoke('authentication:logout', logoutRequest);
   }
 
   async logoutEvent(): Promise<void> {
-    console.log("[AuthenticationIpcClient] 发送登出事件");
-    return await window.shared.ipcRenderer.send("logout:request");
+    console.log('[AuthenticationIpcClient] 发送登出事件');
+    return await window.shared.ipcRenderer.send('logout:request');
   }
 }
 

@@ -17,11 +17,14 @@
             <v-row>
               <!-- 关键结果名称 -->
               <v-col cols="12">
-                <v-text-field v-model="keyResultName" label="关键结果名称*" placeholder="例如：新增活跃用户数量" variant="outlined"
-                  required />
+                <v-text-field
+                  v-model="keyResultName"
+                  label="关键结果名称*"
+                  placeholder="例如：新增活跃用户数量"
+                  variant="outlined"
+                  required
+                />
               </v-col>
-
-
             </v-row>
           </div>
 
@@ -31,20 +34,40 @@
             <v-row>
               <!-- 起始值 -->
               <v-col cols="4">
-                <v-text-field v-model.number="keyResultStartValue" label="起始值*" type="number" variant="outlined"
-                  hint="关键结果的初始数值" persistent-hint required />
+                <v-text-field
+                  v-model.number="keyResultStartValue"
+                  label="起始值*"
+                  type="number"
+                  variant="outlined"
+                  hint="关键结果的初始数值"
+                  persistent-hint
+                  required
+                />
               </v-col>
 
               <!-- 目标值 -->
               <v-col cols="4">
-                <v-text-field v-model.number="keyResultTargetValue" label="目标值*" type="number" variant="outlined"
-                  hint="期望达到的目标数值" persistent-hint required />
+                <v-text-field
+                  v-model.number="keyResultTargetValue"
+                  label="目标值*"
+                  type="number"
+                  variant="outlined"
+                  hint="期望达到的目标数值"
+                  persistent-hint
+                  required
+                />
               </v-col>
 
               <!-- 当前值 -->
               <v-col cols="4">
-                <v-text-field v-model.number="keyResultCurrentValue" label="当前值" type="number" variant="outlined"
-                  hint="目前的实际数值" persistent-hint />
+                <v-text-field
+                  v-model.number="keyResultCurrentValue"
+                  label="当前值"
+                  type="number"
+                  variant="outlined"
+                  hint="目前的实际数值"
+                  persistent-hint
+                />
               </v-col>
             </v-row>
           </div>
@@ -55,14 +78,31 @@
             <v-row>
               <!-- 计算方法 -->
               <v-col cols="6">
-                <v-select v-model="keyResultCalculationMethod" :items="calculationMethods" label="进度计算方法*"
-                  variant="outlined" hint="选择如何计算进度百分比" persistent-hint required />
+                <v-select
+                  v-model="keyResultCalculationMethod"
+                  :items="calculationMethods"
+                  label="进度计算方法*"
+                  variant="outlined"
+                  hint="选择如何计算进度百分比"
+                  persistent-hint
+                  required
+                />
               </v-col>
 
               <!-- 权重 -->
               <v-col cols="6">
-                <v-text-field v-model.number="keyResultWeight" label="权重*" type="number" min="1" max="10" step="1"
-                  variant="outlined" hint="该关键结果在目标中的重要程度 (1-10)" persistent-hint required />
+                <v-text-field
+                  v-model.number="keyResultWeight"
+                  label="权重*"
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="1"
+                  variant="outlined"
+                  hint="该关键结果在目标中的重要程度 (1-10)"
+                  persistent-hint
+                  required
+                />
               </v-col>
             </v-row>
           </div>
@@ -72,14 +112,21 @@
             <h3 class="text-h6 mb-3">进度预览</h3>
             <v-card variant="outlined" class="pa-4">
               <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-subtitle-1 font-weight-medium">{{ keyResultName || '关键结果名称' }}</span>
+                <span class="text-subtitle-1 font-weight-medium">{{
+                  keyResultName || '关键结果名称'
+                }}</span>
                 <span class="text-h6 font-weight-bold" :class="progressColor">
                   {{ progressPercentage.toFixed(1) }}%
                 </span>
               </div>
 
-              <v-progress-linear :model-value="progressPercentage" :color="progressBarColor" height="12" rounded
-                class="mb-2" />
+              <v-progress-linear
+                :model-value="progressPercentage"
+                :color="progressBarColor"
+                height="12"
+                rounded
+                class="mb-2"
+              />
 
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
                 <span>{{ keyResultStartValue }}</span>
@@ -94,11 +141,14 @@
 
       <v-card-actions class="pa-4">
         <v-spacer />
-        <v-btn variant="text" @click="handleCancel">
-          取消
-        </v-btn>
-        <v-btn color="primary" variant="elevated" :disabled="!isFormValid || loading" :loading="loading"
-          @click="handleSave">
+        <v-btn variant="text" @click="handleCancel"> 取消 </v-btn>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          :disabled="!isFormValid || loading"
+          :loading="loading"
+          @click="handleSave"
+        >
           {{ isEditing ? '更新' : '创建' }}
         </v-btn>
       </v-card-actions>
@@ -123,20 +173,23 @@ const propGoal = ref<Goal | null>(null);
 const isInGoalEditing = computed(() => !!propGoal.value);
 // 表单状态
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
-const localKeyResult = ref<KeyResult>(KeyResult.forCreate({
-  accountUuid: '', // 需要在创建时提供
-  goalUuid: (propGoalUuid.value || propGoal.value?.uuid)!,
-  unit: '',
-}));
+const localKeyResult = ref<KeyResult>(
+  KeyResult.forCreate({
+    accountUuid: '', // 需要在创建时提供
+    goalUuid: (propGoalUuid.value || propGoal.value?.uuid)!,
+    unit: '',
+  }),
+);
 const loading = ref(false);
 const isEditing = computed(() => !!propKeyResult.value);
-const isFormValid = computed(
-  () => formRef.value?.isValid ?? false
-)
+const isFormValid = computed(() => formRef.value?.isValid ?? false);
 const progressPercentage = computed(() => {
   if (localKeyResult.value.targetValue === localKeyResult.value.startValue) return 0;
 
-  const progress = ((localKeyResult.value.currentValue - localKeyResult.value.startValue) / (localKeyResult.value.targetValue - localKeyResult.value.startValue)) * 100;
+  const progress =
+    ((localKeyResult.value.currentValue - localKeyResult.value.startValue) /
+      (localKeyResult.value.targetValue - localKeyResult.value.startValue)) *
+    100;
   return Math.max(0, Math.min(100, progress));
 });
 
@@ -145,7 +198,7 @@ const keyResultName = computed({
   get: () => localKeyResult.value.name || '',
   set: (val: string) => {
     localKeyResult.value.updateInfo({ name: val });
-  }
+  },
 });
 
 const keyResultStartValue = computed({
@@ -155,39 +208,38 @@ const keyResultStartValue = computed({
     const dto = localKeyResult.value.toDTO();
     dto.startValue = val;
     localKeyResult.value = KeyResult.fromDTO(dto);
-  }
+  },
 });
 
 const keyResultTargetValue = computed({
   get: () => localKeyResult.value.targetValue || 0,
   set: (val: number) => {
     localKeyResult.value.updateInfo({ targetValue: val });
-  }
+  },
 });
 
 const keyResultCurrentValue = computed({
   get: () => localKeyResult.value.currentValue || 0,
   set: (val: number) => {
     localKeyResult.value.updateProgress(val);
-  }
+  },
 });
 
 const keyResultCalculationMethod = computed({
   get: () => localKeyResult.value.calculationMethod || 'sum',
   set: (val: string) => {
     localKeyResult.value.updateInfo({
-      calculationMethod: val as 'sum' | 'average' | 'max' | 'min' | 'custom'
+      calculationMethod: val as 'sum' | 'average' | 'max' | 'min' | 'custom',
     });
-  }
+  },
 });
 
 const keyResultWeight = computed({
   get: () => localKeyResult.value.weight || 1,
   set: (val: number) => {
     localKeyResult.value.updateInfo({ weight: val });
-  }
+  },
 });
-
 
 // 计算方法选项
 const calculationMethods = [
@@ -195,7 +247,7 @@ const calculationMethods = [
   { title: '平均值 - 适用于波动指标', value: 'average' },
   { title: '最大值 - 取最高值', value: 'max' },
   { title: '最小值 - 取最低值', value: 'min' },
-  { title: '自定义计算', value: 'custom' }
+  { title: '自定义计算', value: 'custom' },
 ];
 
 // 进度颜色计算
@@ -223,7 +275,11 @@ const handleSave = async () => {
       // 如果在目标编辑页面，禁止修改关键结果
       propGoal.value?.updateKeyResult(localKeyResult.value as KeyResult);
     }
-    await updateKeyResultForGoal(propGoalUuid.value!, localKeyResult.value.uuid, localKeyResult.value.toDTO());
+    await updateKeyResultForGoal(
+      propGoalUuid.value!,
+      localKeyResult.value.uuid,
+      localKeyResult.value.toDTO(),
+    );
   } else {
     if (isInGoalEditing.value) {
       // 如果在目标编辑页面，使用变更跟踪方法添加关键结果
@@ -243,7 +299,15 @@ const handleCancel = () => {
 const closeDialog = () => {
   visible.value = false;
 };
-const openDialog = ({ goalUuid, keyResult, goal }: { goalUuid?: string; keyResult?: KeyResult; goal?: Goal }) => {
+const openDialog = ({
+  goalUuid,
+  keyResult,
+  goal,
+}: {
+  goalUuid?: string;
+  keyResult?: KeyResult;
+  goal?: Goal;
+}) => {
   propGoalUuid.value = goalUuid || null;
   propKeyResult.value = keyResult || null;
   propGoal.value = goal || null;
@@ -266,24 +330,25 @@ const openForUpdateKeyResult = (goalUuid: string, keyResult: KeyResult) => {
   openDialog({ goalUuid, keyResult });
 };
 
-watch(
-  [() => visible.value, () => propKeyResult.value],
-  ([newValue]) => {
-    if (newValue) {
-      localKeyResult.value = propKeyResult.value ?
-        propKeyResult.value.clone() :
-        KeyResult.forCreate({ accountUuid: '', goalUuid: propGoalUuid.value!, unit: '' });
-    } else {
-      localKeyResult.value = KeyResult.forCreate({ accountUuid: '', goalUuid: propGoalUuid.value!, unit: '' });
-    }
+watch([() => visible.value, () => propKeyResult.value], ([newValue]) => {
+  if (newValue) {
+    localKeyResult.value = propKeyResult.value
+      ? propKeyResult.value.clone()
+      : KeyResult.forCreate({ accountUuid: '', goalUuid: propGoalUuid.value!, unit: '' });
+  } else {
+    localKeyResult.value = KeyResult.forCreate({
+      accountUuid: '',
+      goalUuid: propGoalUuid.value!,
+      unit: '',
+    });
   }
-)
+});
 
 defineExpose({
   openForCreateKeyResultInGoalEditing,
   openForUpdateKeyResultInGoalEditing,
   openForCreateKeyResult,
-  openForUpdateKeyResult
+  openForUpdateKeyResult,
 });
 </script>
 
@@ -306,12 +371,12 @@ defineExpose({
 }
 
 /* 进度预览卡片样式 */
-.v-card[variant="outlined"] {
+.v-card[variant='outlined'] {
   border: 2px solid rgba(var(--v-theme-primary), 0.1);
   transition: all 0.3s ease;
 }
 
-.v-card[variant="outlined"]:hover {
+.v-card[variant='outlined']:hover {
   border-color: rgba(var(--v-theme-primary), 0.3);
   box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.1);
 }

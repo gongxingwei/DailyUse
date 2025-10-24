@@ -11,11 +11,14 @@ export const TEST_USER = {
 /**
  * 测试数据工厂
  */
-export function createTestTask(title: string, options?: {
-  description?: string;
-  duration?: number;
-  status?: 'pending' | 'in-progress' | 'completed' | 'blocked';
-}) {
+export function createTestTask(
+  title: string,
+  options?: {
+    description?: string;
+    duration?: number;
+    status?: 'pending' | 'in-progress' | 'completed' | 'blocked';
+  },
+) {
   return {
     title,
     description: options?.description || `Test description for ${title}`,
@@ -24,10 +27,13 @@ export function createTestTask(title: string, options?: {
   };
 }
 
-export function createTestGoal(title: string, options?: {
-  description?: string;
-  deadline?: string;
-}) {
+export function createTestGoal(
+  title: string,
+  options?: {
+    description?: string;
+    deadline?: string;
+  },
+) {
   return {
     title,
     description: options?.description || `Test goal: ${title}`,
@@ -431,10 +437,7 @@ export async function createTask(
 
   // 填写时长
   if (taskData.duration !== undefined) {
-    await page.fill(
-      'input[name="duration"], input[type="number"]',
-      taskData.duration.toString(),
-    );
+    await page.fill('input[name="duration"], input[type="number"]', taskData.duration.toString());
   }
 
   // 提交表单
@@ -457,9 +460,7 @@ export async function createTaskDependency(
     dependencyType?: 'finish-to-start' | 'start-to-start' | 'finish-to-finish' | 'start-to-finish';
   },
 ) {
-  console.log(
-    `[Task] 创建依赖: ${options.targetTaskTitle} -> ${options.predecessorTaskTitle}`,
-  );
+  console.log(`[Task] 创建依赖: ${options.targetTaskTitle} -> ${options.predecessorTaskTitle}`);
 
   // 点击目标任务
   await page.click(`[data-testid="draggable-task-card"]:has-text("${options.targetTaskTitle}")`);
@@ -471,10 +472,9 @@ export async function createTaskDependency(
   await page.waitForSelector('[role="dialog"]');
 
   // 选择前置任务
-  await page.selectOption(
-    '[name="predecessorTask"], select',
-    { label: options.predecessorTaskTitle },
-  );
+  await page.selectOption('[name="predecessorTask"], select', {
+    label: options.predecessorTaskTitle,
+  });
 
   // 选择依赖类型
   if (options.dependencyType) {
@@ -548,7 +548,9 @@ export async function verifyDependencyExists(
   const dependencyText = page.locator(`text=/依赖.*${sourceTaskTitle}/i`);
   const exists = (await dependencyText.count()) > 0;
 
-  console.log(`[Task] 依赖关系 ${sourceTaskTitle} -> ${targetTaskTitle}: ${exists ? '存在' : '不存在'}`);
+  console.log(
+    `[Task] 依赖关系 ${sourceTaskTitle} -> ${targetTaskTitle}: ${exists ? '存在' : '不存在'}`,
+  );
   return exists;
 }
 
@@ -621,4 +623,3 @@ export async function closeCommandPalette(page: Page) {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 }
-

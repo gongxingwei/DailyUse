@@ -9,15 +9,16 @@
 const result = await prisma.$transaction(async (tx) => {
   // 1. 创建 Account 聚合根
   const account = await this.accountDomainService.createAccount({...});
-  
+
   // 2. 创建 AuthCredential 聚合根
   const credential = await this.authenticationDomainService.createPasswordCredential({...});
-  
+
   return { account, credential };
 });
 ```
 
 **疑问**：
+
 > "Prisma 不是用于仓储层控制数据库的吗？这里怎么看着像是控制服务了，都没有数据库操作？"
 
 ---
@@ -134,11 +135,11 @@ export interface IAccountRepository {
 export class PrismaAccountRepository implements IAccountRepository {
   async save(account: Account, tx?: PrismaTransactionClient): Promise<Account> {
     const data = account.toPersistenceDTO();
-    
+
     // ✅ 如果传递了 tx，使用 tx；否则使用全局 prisma
     const client = tx || prisma;
     const record = await client.account.create({ data });
-    
+
     return Account.fromPersistenceDTO(record);
   }
 }
@@ -151,7 +152,7 @@ export class PrismaAccountRepository implements IAccountRepository {
 export class AccountDomainService {
   async createAccount(params, tx?: PrismaTransactionClient): Promise<Account> {
     const account = Account.create(params);
-    
+
     // ✅ 传递 tx 给 Repository
     return await this.accountRepository.save(account, tx);
   }
@@ -167,10 +168,10 @@ async createAccountAndCredential(params) {
     // ✅ 传递 tx 给 DomainService
     const account = await this.accountDomainService.createAccount(params, tx);
     const credential = await this.authDomainService.createPasswordCredential(params, tx);
-    
+
     return { account, credential };
   });
-  
+
   return result;
 }
 ```
@@ -186,21 +187,22 @@ async createAccountAndCredential(params) {
     // ✅ 直接在 ApplicationService 中调用 Repository，传递 tx
     const account = Account.create(params);
     const savedAccount = await this.accountRepository.save(account, tx);
-    
+
     const credential = AuthCredential.create({
       accountUuid: savedAccount.uuid,
       hashedPassword: params.hashedPassword,
     });
     const savedCredential = await this.credentialRepository.save(credential, tx);
-    
+
     return { account: savedAccount, credential: savedCredential };
   });
-  
+
   return result;
 }
 ```
 
 **缺点**：
+
 - ApplicationService 包含了领域逻辑（创建聚合根）
 - 违反了 DDD 分层原则
 - 但能保证事务性
@@ -216,15 +218,15 @@ async createAccountAndCredential(params) {
     // 创建一个临时的 Repository 实例，注入 tx
     const accountRepoWithTx = new PrismaAccountRepository(tx);
     const credentialRepoWithTx = new PrismaAuthCredentialRepository(tx);
-    
+
     // 创建临时的 DomainService 实例，注入带 tx 的 Repository
     const accountServiceWithTx = new AccountDomainService(accountRepoWithTx);
     const authServiceWithTx = new AuthenticationDomainService(credentialRepoWithTx);
-    
+
     // 调用 DomainService（它们使用的 Repository 已经包含了 tx）
     const account = await accountServiceWithTx.createAccount(params);
     const credential = await authServiceWithTx.createPasswordCredential(params);
-    
+
     return { account, credential };
   });
 }
@@ -232,7 +234,7 @@ async createAccountAndCredential(params) {
 // Repository 构造函数支持传递 tx
 export class PrismaAccountRepository implements IAccountRepository {
   constructor(private readonly client: PrismaClient | PrismaTransactionClient = prisma) {}
-  
+
   async save(account: Account): Promise<Account> {
     const data = account.toPersistenceDTO();
     // ✅ 使用构造函数注入的 client（可能是 tx 或全局 prisma）
@@ -246,11 +248,11 @@ export class PrismaAccountRepository implements IAccountRepository {
 
 ## 📊 三种方案对比
 
-| 方案                          | 优点                              | 缺点                              | 推荐指数 |
-| ----------------------------- | --------------------------------- | --------------------------------- | -------- |
-| **方案 1: 传递 tx 参数**       | 清晰、灵活                        | 需要修改所有方法签名               | ⭐⭐⭐⭐   |
-| **方案 2: ApplicationService 直接调用 Repository** | 简单、保证事务性                  | 违反 DDD 分层原则                 | ⭐⭐      |
-| **方案 3: 构造函数注入 tx**    | 符合 DDD 原则、保证事务性          | 需要重构 Repository 和 DomainService | ⭐⭐⭐⭐⭐ |
+| 方案                                               | 优点                      | 缺点                                 | 推荐指数   |
+| -------------------------------------------------- | ------------------------- | ------------------------------------ | ---------- |
+| **方案 1: 传递 tx 参数**                           | 清晰、灵活                | 需要修改所有方法签名                 | ⭐⭐⭐⭐   |
+| **方案 2: ApplicationService 直接调用 Repository** | 简单、保证事务性          | 违反 DDD 分层原则                    | ⭐⭐       |
+| **方案 3: 构造函数注入 tx**                        | 符合 DDD 原则、保证事务性 | 需要重构 Repository 和 DomainService | ⭐⭐⭐⭐⭐ |
 
 ---
 
@@ -263,16 +265,14 @@ export class PrismaAccountRepository implements IAccountRepository {
 ```typescript
 // packages/domain-server/src/account/repositories/implementations/PrismaAccountRepository.ts
 export class PrismaAccountRepository implements IAccountRepository {
-  constructor(
-    private readonly client: PrismaClient | PrismaTransactionClient = prisma
-  ) {}
-  
+  constructor(private readonly client: PrismaClient | PrismaTransactionClient = prisma) {}
+
   async save(account: Account): Promise<Account> {
     const data = account.toPersistenceDTO();
     const record = await this.client.account.create({ data });
     return Account.fromPersistenceDTO(record);
   }
-  
+
   async findByUuid(uuid: string): Promise<Account | null> {
     const record = await this.client.account.findUnique({ where: { uuid } });
     return record ? Account.fromPersistenceDTO(record) : null;
@@ -286,7 +286,7 @@ export class PrismaAccountRepository implements IAccountRepository {
 // packages/domain-server/src/account/services/AccountDomainService.ts
 export class AccountDomainService {
   constructor(private readonly accountRepository: IAccountRepository) {}
-  
+
   async createAccount(params): Promise<Account> {
     const account = Account.create(params);
     return await this.accountRepository.save(account);
@@ -303,18 +303,18 @@ async createAccountAndCredential(params) {
     // 创建带 tx 的 Repository 实例
     const accountRepoWithTx = new PrismaAccountRepository(tx);
     const credentialRepoWithTx = new PrismaAuthCredentialRepository(tx);
-    
+
     // 创建 DomainService 实例（注入带 tx 的 Repository）
     const accountService = new AccountDomainService(accountRepoWithTx);
     const authService = new AuthenticationDomainService(credentialRepoWithTx);
-    
+
     // 调用 DomainService（保证事务性）
     const account = await accountService.createAccount(params);
     const credential = await authService.createPasswordCredential({
       accountUuid: account.uuid,
       hashedPassword: params.hashedPassword,
     });
-    
+
     return { account, credential };
   });
 }
@@ -347,6 +347,7 @@ async createAccountAndCredential(params) {
 ### **解决方案**：
 
 **推荐方案 3（构造函数注入）**：
+
 - Repository 构造函数接受 `client` 参数（可以是 `prisma` 或 `tx`）
 - ApplicationService 在事务中创建带 `tx` 的 Repository 实例
 - 将这些 Repository 注入到 DomainService

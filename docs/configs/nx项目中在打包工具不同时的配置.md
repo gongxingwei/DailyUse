@@ -45,13 +45,13 @@
 
 ### 配置原则（黄金法则）
 
-| 原则 | 说明 | 理由 |
-|-----|------|-----|
-| **1. 所有包启用 composite** | `composite: true` | 支持类型热更新和增量编译 |
-| **2. 使用 references 声明依赖** | 不要用 paths 指向源码 | 让 TypeScript 自动管理依赖 |
-| **3. 分离类型检查和打包** | typecheck + build 分开 | 各司其职，清晰明确 |
-| **4. 类型检查用 tsc --build** | 不是 tsc --noEmit | 利用增量编译，更快 |
-| **5. 打包工具独立运行** | tsup/Vite 不依赖 tsc | 互不干扰 |
+| 原则                            | 说明                   | 理由                       |
+| ------------------------------- | ---------------------- | -------------------------- |
+| **1. 所有包启用 composite**     | `composite: true`      | 支持类型热更新和增量编译   |
+| **2. 使用 references 声明依赖** | 不要用 paths 指向源码  | 让 TypeScript 自动管理依赖 |
+| **3. 分离类型检查和打包**       | typecheck + build 分开 | 各司其职，清晰明确         |
+| **4. 类型检查用 tsc --build**   | 不是 tsc --noEmit      | 利用增量编译，更快         |
+| **5. 打包工具独立运行**         | tsup/Vite 不依赖 tsc   | 互不干扰                   |
 
 ---
 
@@ -62,6 +62,7 @@
 #### 1. 库包配置（使用 tsup）
 
 **tsconfig.json**:
+
 ```jsonc
 {
   "extends": "../../tsconfig.base.json",
@@ -69,27 +70,26 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": false,
-    
+
     // ✅ 关键：启用 composite
     "composite": true,
     "incremental": true,
     "declaration": true,
     "declarationMap": true,
-    
+
     "paths": {
-      "@/*": ["./src/*"]  // 只配置内部别名
-    }
+      "@/*": ["./src/*"], // 只配置内部别名
+    },
   },
   "include": ["src"],
-  
+
   // ✅ 声明依赖的包
-  "references": [
-    { "path": "../dependency-package" }
-  ]
+  "references": [{ "path": "../dependency-package" }],
 }
 ```
 
 **package.json**:
+
 ```json
 {
   "scripts": {
@@ -101,6 +101,7 @@
 ```
 
 **project.json**:
+
 ```json
 {
   "targets": {
@@ -126,30 +127,28 @@
 #### 2. 应用配置（使用 Vite）
 
 **tsconfig.json**:
+
 ```jsonc
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "noEmit": false,
-    
+
     // ✅ 启用 composite
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    
-    "moduleResolution": "Bundler",  // Vite
-    
+
+    "moduleResolution": "Bundler", // Vite
+
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+    },
   },
-  
+
   // ✅ 引用依赖的包
-  "references": [
-    { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" }
-  ]
+  "references": [{ "path": "../../packages/contracts" }, { "path": "../../packages/domain-core" }],
 }
 ```
 
@@ -166,6 +165,7 @@ pnpm nx watch --all -- nx affected --target=build
 ```
 
 **效果**：
+
 - 修改任何包的类型
 - 依赖它的包自动重新编译
 - IDE 立即显示最新类型
@@ -236,48 +236,54 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 ### ❌ 错误的做法
 
 1. **❌ 用 paths 指向源码**
+
    ```jsonc
    {
      "paths": {
-       "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
-     }
+       "@dailyuse/utils": ["../../packages/utils/src/index.ts"],
+     },
    }
    ```
+
    **问题**: 失去类型热更新，无法增量编译
 
 2. **❌ 混用 composite: true 和 false**
+
    ```
    app (composite: true)
    └─ references: [lib (composite: false)]  ← 错误！
    ```
+
    **问题**: TypeScript 报错
 
 3. **❌ 在 tsconfig.base.json 配置 paths**
+
    ```jsonc
    // tsconfig.base.json
    {
      "paths": { ... }  // ❌ 不要在基础配置中配置
    }
    ```
+
    **问题**: 覆盖子项目配置，导致混乱
 
 4. **❌ package.json 的 types 指向源码**
    ```json
    {
-     "types": "./src/index.ts"  // ❌ 应该指向 dist
+     "types": "./src/index.ts" // ❌ 应该指向 dist
    }
    ```
    **问题**: TypeScript 找不到类型定义
 
 ### 🎯 最佳实践
 
-| 场景 | 推荐方案 | 原因 |
-|-----|---------|-----|
-| **类型检查** | `tsc --build` | 支持增量编译和 references |
-| **代码打包** | `tsup` / `Vite` | 更快、更优化 |
-| **开发模式** | `tsc --build --watch` | 自动类型热更新 |
-| **CI/CD** | typecheck → build | 先检查类型再打包 |
-| **依赖管理** | `references` | 不用 paths 指向源码 |
+| 场景         | 推荐方案              | 原因                      |
+| ------------ | --------------------- | ------------------------- |
+| **类型检查** | `tsc --build`         | 支持增量编译和 references |
+| **代码打包** | `tsup` / `Vite`       | 更快、更优化              |
+| **开发模式** | `tsc --build --watch` | 自动类型热更新            |
+| **CI/CD**    | typecheck → build     | 先检查类型再打包          |
+| **依赖管理** | `references`          | 不用 paths 指向源码       |
 
 ---
 
@@ -286,13 +292,15 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 ### Q: composite 会影响打包性能吗？
 
 **A**: 不会！
+
 - composite 只影响 **tsc 的类型检查**
 - tsup/Vite 等打包工具**不使用** tsc 的 composite 功能
 - 它们直接读取源码进行打包
 
 ### Q: tsup --dts 和 tsc 生成的 .d.ts 有什么区别？
 
-**A**: 
+**A**:
+
 - **tsc**: 严格按照 TypeScript 语义，支持 project references
 - **tsup --dts**: 使用 api-extractor，可能丢失复杂类型
 
@@ -300,20 +308,23 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 
 ### Q: 为什么要用 tsc --build 而不是 tsc --noEmit？
 
-**A**: 
+**A**:
+
 - `tsc --build`: 生成 .tsbuildinfo，支持增量编译，更快
 - `tsc --noEmit`: 每次都全量检查，更慢
 
 ### Q: 开发时是否每次都要运行 typecheck？
 
 **A**: 不需要！
+
 - **开发**: 只运行 `tsc --build --watch` 后台监听
 - **CI/CD**: 执行完整的 typecheck + build
 - **IDE**: 自动类型检查（基于 tsconfig.json）
 
 ### Q: 如何验证类型热更新？
 
-**A**: 
+**A**:
+
 1. 启动: `pnpm tsc --build --watch`
 2. 修改依赖包的类型定义
 3. 观察 IDE 中使用该类型的地方是否立即更新
@@ -356,6 +367,7 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 **配置完成！** 🎉
 
 你现在拥有：
+
 - ✅ 类型热更新（修改即生效）
 - ✅ 增量编译（只编译变化部分）
 - ✅ 清晰的依赖关系（自动管理）

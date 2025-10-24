@@ -6,16 +6,10 @@
     </v-card-title>
 
     <v-card-text class="pa-3">
-      <p class="text-body-2 mb-3">
-        此任务正在等待以下 {{ blockingTasks.length }} 个前置任务完成：
-      </p>
+      <p class="text-body-2 mb-3">此任务正在等待以下 {{ blockingTasks.length }} 个前置任务完成：</p>
 
       <v-list dense>
-        <v-list-item
-          v-for="task in blockingTasks"
-          :key="task.uuid"
-          class="px-0"
-        >
+        <v-list-item v-for="task in blockingTasks" :key="task.uuid" class="px-0">
           <template #prepend>
             <v-icon :color="getStatusColor(task.status)" size="small">
               {{ getStatusIcon(task.status) }}
@@ -27,12 +21,7 @@
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            <v-chip
-              :color="getStatusColor(task.status)"
-              size="x-small"
-              variant="flat"
-              class="mr-2"
-            >
+            <v-chip :color="getStatusColor(task.status)" size="x-small" variant="flat" class="mr-2">
               {{ task.status }}
             </v-chip>
             <span v-if="task.estimatedMinutes" class="text-caption">
@@ -63,9 +52,7 @@
       <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
       <div>
         <div class="font-weight-medium">任务已就绪</div>
-        <div class="text-caption text--secondary">
-          所有前置任务已完成，可以开始执行
-        </div>
+        <div class="text-caption text--secondary">所有前置任务已完成，可以开始执行</div>
       </div>
     </v-card-text>
   </v-card>

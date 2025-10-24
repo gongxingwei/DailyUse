@@ -10,9 +10,7 @@
             </v-avatar>
             <div>
               <h1 class="text-h4 font-weight-bold text-primary mb-1">调度控制台</h1>
-              <p class="text-subtitle-1 text-medium-emphasis mb-0">
-                管理和监控您的自动化任务调度
-              </p>
+              <p class="text-subtitle-1 text-medium-emphasis mb-0">管理和监控您的自动化任务调度</p>
             </div>
           </div>
 

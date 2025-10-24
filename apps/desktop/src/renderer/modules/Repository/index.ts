@@ -1,5 +1,8 @@
 // domain
-export { Repository } from "./domain/aggregates/repository";
+export { Repository } from './domain/aggregates/repository';
 
 // application
-export { createRepositoryApplicationService, getRepositoryApplicationService } from "./application/services/repositoryApplicationService";
+export {
+  createRepositoryApplicationService,
+  getRepositoryApplicationService,
+} from './application/services/repositoryApplicationService';

@@ -22,14 +22,14 @@
 // ❌ DomainService 依赖 Repository
 export class AccountDomainService {
   constructor(private readonly accountRepository: IAccountRepository) {}
-  
+
   async createAccount(params): Promise<Account> {
     // 1. 创建聚合根
     const account = Account.create(params);
-    
+
     // 2. 业务逻辑验证
     this.validateAccount(account);
-    
+
     // ❌ 3. 调用 Repository 持久化
     return await this.accountRepository.save(account);
   }
@@ -52,6 +52,7 @@ export class RegistrationApplicationService {
    - 违反单一职责原则（SRP）
 
 2. **事务控制困难**：
+
    ```typescript
    // ❌ 难以在事务中调用多个 DomainService
    await prisma.$transaction(async (tx) => {
@@ -77,12 +78,8 @@ export class RegistrationApplicationService {
 // ✅ DomainService 不依赖 Repository
 export class AccountDomainService {
   // 不注入任何基础设施依赖
-  
-  createAccount(params: {
-    username: string;
-    email: string;
-    displayName: string;
-  }): Account {
+
+  createAccount(params: { username: string; email: string; displayName: string }): Account {
     // 1. 创建聚合根
     const account = Account.create({
       username: params.username,
@@ -91,25 +88,25 @@ export class AccountDomainService {
       status: AccountStatus.ACTIVE,
       emailVerified: false,
     });
-    
+
     // 2. 业务逻辑验证
     this.validateAccount(account);
-    
+
     // 3. 只返回聚合根，不持久化
     return account;
   }
-  
+
   private validateAccount(account: Account): void {
     // 复杂的业务规则验证
     if (account.username.length < 3) {
       throw new DomainError('Username must be at least 3 characters');
     }
-    
+
     if (!this.isValidEmailDomain(account.email)) {
       throw new DomainError('Email domain not allowed');
     }
   }
-  
+
   private isValidEmailDomain(email: string): boolean {
     // 复杂的业务逻辑：检查邮箱域名是否在黑名单中
     const domain = email.split('@')[1];
@@ -124,37 +121,37 @@ export class RegistrationApplicationService {
     private readonly accountRepository: IAccountRepository,
     private readonly accountDomainService: AccountDomainService,
   ) {}
-  
+
   async registerUser(request: RegisterUserRequest): Promise<RegisterUserResponse> {
     // 1. 输入验证
     this.validateInput(request);
-    
+
     // 2. 唯一性检查（ApplicationService 负责）
     await this.checkUniqueness(request.username, request.email);
-    
+
     // 3. 调用 DomainService 创建聚合根（不持久化）
     const account = this.accountDomainService.createAccount({
       username: request.username,
       email: request.email,
       displayName: request.profile?.nickname || request.username,
     });
-    
+
     // 4. ApplicationService 负责持久化
     const savedAccount = await this.accountRepository.save(account);
-    
+
     // 5. 发布领域事件
     await this.publishDomainEvents(savedAccount);
-    
+
     return { success: true, account: savedAccount.toClientDTO() };
   }
-  
+
   private async checkUniqueness(username: string, email: string): Promise<void> {
     // ApplicationService 负责调用 Repository 进行查询
     const existingByUsername = await this.accountRepository.findByUsername(username);
     if (existingByUsername) {
       throw new Error('Username already exists');
     }
-    
+
     const existingByEmail = await this.accountRepository.findByEmail(email);
     if (existingByEmail) {
       throw new Error('Email already exists');
@@ -170,17 +167,18 @@ export class RegistrationApplicationService {
    - ✅ ApplicationService：用例编排（查询、持久化、事务、事件）
 
 2. **事务控制简单**：
+
    ```typescript
    // ✅ ApplicationService 统一控制事务
    await prisma.$transaction(async (tx) => {
      // 1. DomainService 创建聚合根（不持久化）
      const account = accountService.createAccount(params);
      const credential = authService.createPasswordCredential(params);
-     
+
      // 2. ApplicationService 在事务中持久化
      const savedAccount = await accountRepository.save(account, tx);
      const savedCredential = await credentialRepository.save(credential, tx);
-     
+
      return { account: savedAccount, credential: savedCredential };
    });
    ```
@@ -194,18 +192,18 @@ export class RegistrationApplicationService {
    // ✅ 测试 DomainService 不需要 Mock
    describe('AccountDomainService', () => {
      const service = new AccountDomainService();
-     
+
      it('should create account with valid data', () => {
        const account = service.createAccount({
          username: 'testuser',
          email: 'test@example.com',
          displayName: 'Test User',
        });
-       
+
        expect(account.username).toBe('testuser');
        expect(account.status).toBe(AccountStatus.ACTIVE);
      });
-     
+
      it('should reject invalid username', () => {
        expect(() => {
          service.createAccount({
@@ -233,13 +231,13 @@ export class RegistrationApplicationService {
     if (!organization) {
       throw new Error('Organization not found');
     }
-    
+
     // 2. 传递给 DomainService
     const account = this.accountDomainService.createAccountInOrganization({
       username: request.username,
       organization: organization, // 传递聚合根对象
     });
-    
+
     // 3. ApplicationService 持久化
     return await this.accountRepository.save(account);
   }
@@ -255,12 +253,12 @@ export class AccountDomainService {
       username: params.username,
       organizationId: params.organization.id,
     });
-    
+
     // 复杂的业务规则：检查组织是否允许创建账户
     if (!params.organization.canCreateAccount()) {
       throw new DomainError('Organization has reached account limit');
     }
-    
+
     return account;
   }
 }
@@ -273,6 +271,7 @@ export class AccountDomainService {
 ### **✅ DomainService 应该做的**：
 
 1. **创建聚合根**：
+
    ```typescript
    createAccount(params): Account {
      return Account.create(params);
@@ -280,6 +279,7 @@ export class AccountDomainService {
    ```
 
 2. **复杂的业务规则验证**：
+
    ```typescript
    validateAccountCreation(account: Account, organization: Organization): void {
      if (!organization.canCreateAccount()) {
@@ -289,6 +289,7 @@ export class AccountDomainService {
    ```
 
 3. **复杂的领域计算**：
+
    ```typescript
    calculateAccountTier(account: Account): AccountTier {
      // 复杂的业务逻辑：根据多个因素计算账户等级
@@ -305,7 +306,7 @@ export class AccountDomainService {
      if (organization.memberCount >= organization.maxMembers) {
        throw new DomainError('Organization is full');
      }
-     
+
      // 修改聚合根状态
      account.assignToOrganization(organization.id);
      organization.incrementMemberCount();
@@ -317,6 +318,7 @@ export class AccountDomainService {
 ### **❌ DomainService 不应该做的**：
 
 1. **持久化操作**：
+
    ```typescript
    // ❌ 不要调用 Repository.save()
    async createAccount(params): Promise<Account> {
@@ -326,6 +328,7 @@ export class AccountDomainService {
    ```
 
 2. **查询数据库**：
+
    ```typescript
    // ❌ 不要调用 Repository.find()
    async validateUniqueness(username: string): Promise<void> {
@@ -335,6 +338,7 @@ export class AccountDomainService {
    ```
 
 3. **事务管理**：
+
    ```typescript
    // ❌ 不要使用 prisma.$transaction
    async createAccountAndCredential(params) {
@@ -345,6 +349,7 @@ export class AccountDomainService {
    ```
 
 4. **发布领域事件到事件总线**：
+
    ```typescript
    // ❌ 不要直接发布到 eventBus
    async createAccount(params): Promise<Account> {
@@ -352,7 +357,7 @@ export class AccountDomainService {
      eventBus.publish('account:created', { accountId: account.id }); // ❌
      return account;
    }
-   
+
    // ✅ 应该由聚合根记录领域事件，由 ApplicationService 发布
    createAccount(params): Account {
      const account = Account.create(params);
@@ -372,7 +377,7 @@ export class AccountDomainService {
 // ❌ 当前实现：DomainService 调用 Repository
 export class AccountDomainService {
   constructor(private readonly accountRepository: IAccountRepository) {}
-  
+
   async createAccount(params): Promise<Account> {
     const account = Account.create(params);
     return await this.accountRepository.save(account); // ❌ 持久化
@@ -388,12 +393,8 @@ export class AccountDomainService {
 // ✅ 重构后：DomainService 只返回聚合根
 export class AccountDomainService {
   // 不再注入 Repository
-  
-  createAccount(params: {
-    username: string;
-    email: string;
-    displayName: string;
-  }): Account {
+
+  createAccount(params: { username: string; email: string; displayName: string }): Account {
     // 1. 创建聚合根
     const account = Account.create({
       username: params.username,
@@ -402,14 +403,14 @@ export class AccountDomainService {
       status: AccountStatus.ACTIVE,
       emailVerified: false,
     });
-    
+
     // 2. 业务逻辑验证
     this.validateAccount(account);
-    
+
     // 3. 只返回聚合根
     return account;
   }
-  
+
   private validateAccount(account: Account): void {
     // 复杂的业务规则验证
     if (account.username.length < 3) {
@@ -428,24 +429,24 @@ export class RegistrationApplicationService {
     private readonly accountRepository: IAccountRepository,
     private readonly accountDomainService: AccountDomainService,
   ) {}
-  
+
   async registerUser(request): Promise<RegisterUserResponse> {
     // 1. 输入验证
     this.validateInput(request);
-    
+
     // 2. 唯一性检查（ApplicationService 负责）
     await this.checkUniqueness(request.username, request.email);
-    
+
     // 3. 调用 DomainService 创建聚合根（不持久化）
     const account = this.accountDomainService.createAccount({
       username: request.username,
       email: request.email,
       displayName: request.profile?.nickname || request.username,
     });
-    
+
     // 4. ApplicationService 负责持久化
     const savedAccount = await this.accountRepository.save(account);
-    
+
     return { success: true, account: savedAccount.toClientDTO() };
   }
 }
@@ -461,14 +462,14 @@ export class RegistrationApplicationService {
       // 1. DomainService 创建聚合根（不持久化）
       const account = this.accountDomainService.createAccount(params);
       const credential = this.authDomainService.createPasswordCredential(params);
-      
+
       // 2. ApplicationService 在事务中持久化
       const savedAccount = await this.accountRepository.save(account, tx);
       const savedCredential = await this.credentialRepository.save(credential, tx);
-      
+
       // 3. 发布领域事件
       await this.publishDomainEvents(savedAccount, savedCredential);
-      
+
       return { account: savedAccount, credential: savedCredential };
     });
   }

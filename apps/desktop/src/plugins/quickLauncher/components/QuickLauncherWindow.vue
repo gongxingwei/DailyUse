@@ -10,17 +10,38 @@
       <v-divider></v-divider>
 
       <v-card-text class="pa-0">
-        <v-row no-gutters style="height: 500px;">
+        <v-row no-gutters style="height: 500px">
           <!-- Left side: Categories -->
           <v-col cols="2" class="border-r">
-            <v-list density="compact" class="h-100" @contextmenu.stop.prevent="showCategoryListAreaContextMenu($event, categoryListAreaContextMenuItems)">
-              <Draggable v-model="store.categories" group="categories" item-key="id" @end="handleDragEnd">
+            <v-list
+              density="compact"
+              class="h-100"
+              @contextmenu.stop.prevent="
+                showCategoryListAreaContextMenu($event, categoryListAreaContextMenuItems)
+              "
+            >
+              <Draggable
+                v-model="store.categories"
+                group="categories"
+                item-key="id"
+                @end="handleDragEnd"
+              >
                 <template #item="{ element: category }">
-                  <v-list-item :value="category.uuid" :title="category.name"
-                    :class="{ 'focused': selectedCategoryId === category.uuid }" tabindex="0"
+                  <v-list-item
+                    :value="category.uuid"
+                    :title="category.name"
+                    :class="{ focused: selectedCategoryId === category.uuid }"
+                    tabindex="0"
                     @click="store.state.selectedCategoryId = category.uuid"
                     @keydown="handleKeydown($event, category)"
-                    @contextmenu.stop.prevent="showCategoryListItemContextMenu($event, category.uuid, categoryListItemContextMenuItems)">
+                    @contextmenu.stop.prevent="
+                      showCategoryListItemContextMenu(
+                        $event,
+                        category.uuid,
+                        categoryListItemContextMenuItems,
+                      )
+                    "
+                  >
                     <template #title>
                       {{ category.name }}
                     </template>
@@ -33,17 +54,44 @@
           <v-divider vertical></v-divider>
           <!-- Right side: Shortcuts -->
           <v-col cols="10" class="shortcuts-container">
-            <v-container class="pa-4 h-100" @dragenter.prevent @dragover.prevent @drop.prevent="addShortcutByDrop"
-              @contextmenu.stop.prevent="showShortcutListAreaContextMenu($event, shortcutListAreaContextMenuItems)">
-              <Draggable v-model="currentCategoryItems" item-key="id" class="shortcuts-grid" @end="handleDragEnd">
+            <v-container
+              class="pa-4 h-100"
+              @dragenter.prevent
+              @dragover.prevent
+              @drop.prevent="addShortcutByDrop"
+              @contextmenu.stop.prevent="
+                showShortcutListAreaContextMenu($event, shortcutListAreaContextMenuItems)
+              "
+            >
+              <Draggable
+                v-model="currentCategoryItems"
+                item-key="id"
+                class="shortcuts-grid"
+                @end="handleDragEnd"
+              >
                 <template #item="{ element }">
-                  <v-card class="shortcut-item ma-2" elevation="2" @click="launchItem(element)"
+                  <v-card
+                    class="shortcut-item ma-2"
+                    elevation="2"
+                    @click="launchItem(element)"
                     tabindex="0"
-                    @contextmenu.stop.prevent="showShortcutListItemContextMenu($event, element.uuid, shortcutListItemContextMenuItems)" draggable="true">
+                    @contextmenu.stop.prevent="
+                      showShortcutListItemContextMenu(
+                        $event,
+                        element.uuid,
+                        shortcutListItemContextMenuItems,
+                      )
+                    "
+                    draggable="true"
+                  >
                     <v-card-text class="text-center shortcut-content">
-                      <img v-if="element.icon.startsWith('data:image')" :src="element.icon"
-                        class="shortcut-icon mb-2" />
-                      <v-icon v-else size="32" class="shortcut-icon mb-2">{{ element.icon || 'mdi-application'
+                      <img
+                        v-if="element.icon.startsWith('data:image')"
+                        :src="element.icon"
+                        class="shortcut-icon mb-2"
+                      />
+                      <v-icon v-else size="32" class="shortcut-icon mb-2">{{
+                        element.icon || 'mdi-application'
                       }}</v-icon>
                       <div class="text-caption shortcut-name">{{ element.name }}</div>
                     </v-card-text>
@@ -62,8 +110,13 @@
     </v-card>
 
     <!-- Category Context Menu -->
-    <ContextMenu v-model="showContextMenu" :x="contextMenuX" :y="contextMenuY" :items="contextMenuItems"
-      :target="selectedItem" />
+    <ContextMenu
+      v-model="showContextMenu"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      :items="contextMenuItems"
+      :target="selectedItem"
+    />
 
     <!-- Rename Category Dialog -->
     <v-dialog v-model="showRenameDialog" max-width="400">
@@ -73,8 +126,14 @@
           {{ t('quickLauncher.dialog.rename.title') }}
         </v-card-title>
         <v-card-text class="pa-4">
-          <v-text-field v-model="newCategoryName" :label="t('quickLauncher.dialog.rename.label')" variant="outlined"
-            density="compact" autofocus @keyup.enter="confirmRenameCategory"></v-text-field>
+          <v-text-field
+            v-model="newCategoryName"
+            :label="t('quickLauncher.dialog.rename.label')"
+            variant="outlined"
+            density="compact"
+            autofocus
+            @keyup.enter="confirmRenameCategory"
+          ></v-text-field>
         </v-card-text>
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
@@ -89,9 +148,13 @@
     </v-dialog>
 
     <!-- Edit Shortcut Dialog -->
-    <DialogForEdit v-model="showEditShortcutDialog" :title="t('quickLauncher.dialog.edit.title')" icon="mdi-pencil"
-      :data="shortcutForEdit" @confirm="handleShortcutEdit" />
-
+    <DialogForEdit
+      v-model="showEditShortcutDialog"
+      :title="t('quickLauncher.dialog.edit.title')"
+      icon="mdi-pencil"
+      :data="shortcutForEdit"
+      @confirm="handleShortcutEdit"
+    />
   </div>
 </template>
 
@@ -124,10 +187,8 @@ const {
   getShortcutListAreaContextMenuItems,
   getShortcutListItemContextMenuItems,
   showShortcutListAreaContextMenu,
-  showShortcutListItemContextMenu
+  showShortcutListItemContextMenu,
 } = useContextMenu();
-
-
 
 const {
   editingShortcut,
@@ -149,7 +210,7 @@ const {
   createCategory,
   renameCategory,
   deleteCategory,
-  confirmRenameCategory
+  confirmRenameCategory,
 } = useCategoryManagement();
 
 // const { handleDrop } = useFileHandlers();
@@ -157,35 +218,47 @@ const { t } = useI18n();
 const store = useQuickLauncherStore();
 
 const categoryListAreaContextMenuItems = getCategoryListAreaContextMenuItems(createCategory);
-const categoryListItemContextMenuItems = getCategoryListItemContextMenuItems(renameCategory, deleteCategory);
+const categoryListItemContextMenuItems = getCategoryListItemContextMenuItems(
+  renameCategory,
+  deleteCategory,
+);
 const shortcutListAreaContextMenuItems = getShortcutListAreaContextMenuItems(addShortcut, addTitle);
-const shortcutListItemContextMenuItems = getShortcutListItemContextMenuItems(editShortcut, deleteShortcut, openShortcutLocation);
+const shortcutListItemContextMenuItems = getShortcutListItemContextMenuItems(
+  editShortcut,
+  deleteShortcut,
+  openShortcutLocation,
+);
 const selectedCategoryId = computed(() => store.state.selectedCategoryId);
 
 // Watch for store changes
-watch(() => store.categories, (newCategories) => {
-  if (newCategories.length > 0 && !newCategories.find(c => c.uuid === store.state.selectedCategoryId)) {
-    store.state.selectedCategoryId = newCategories[0].uuid;
-  }
-}, { deep: true });
+watch(
+  () => store.categories,
+  (newCategories) => {
+    if (
+      newCategories.length > 0 &&
+      !newCategories.find((c) => c.uuid === store.state.selectedCategoryId)
+    ) {
+      store.state.selectedCategoryId = newCategories[0].uuid;
+    }
+  },
+  { deep: true },
+);
 
 // 获取当前选中的类别的快捷方式
 const currentCategoryItems = computed({
   get: () => {
-    const category = store.categories.find(c => c.uuid === store.state.selectedCategoryId);
+    const category = store.categories.find((c) => c.uuid === store.state.selectedCategoryId);
     return category?.items || [];
   },
   set: (items) => {
-    const category = store.categories.find(c => c.uuid === store.state.selectedCategoryId);
+    const category = store.categories.find((c) => c.uuid === store.state.selectedCategoryId);
     if (category) {
       store.updateCategory(category.uuid, { ...category, items });
     }
-  }
+  },
 });
 
-function handleDragEnd(_event: any) {
-
-}
+function handleDragEnd(_event: any) {}
 
 function handleKeydown(event: KeyboardEvent, item: ShortcutCategory | ShortcutItem) {
   switch (event.key) {
@@ -200,7 +273,7 @@ function handleKeydown(event: KeyboardEvent, item: ShortcutCategory | ShortcutIt
         shortcutForEdit.value = {
           uuid: item.uuid,
           name: item.name,
-          path: item.path ||'',
+          path: item.path || '',
           icon: item.icon || '',
           description: item.description || '',
         };
@@ -232,7 +305,6 @@ function handleKeydown(event: KeyboardEvent, item: ShortcutCategory | ShortcutIt
       break;
   }
 }
-
 </script>
 
 <style scoped>

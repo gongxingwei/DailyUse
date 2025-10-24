@@ -1,8 +1,8 @@
-import { BrowserWindow } from "electron";
-import { NotificationWindowManager } from "../windows/notificationWindow";
+import { BrowserWindow } from 'electron';
+import { NotificationWindowManager } from '../windows/notificationWindow';
 
-import type { NotificationWindow } from "../types";
-import type { ApiResponse } from "@dailyuse/contracts";
+import type { NotificationWindow } from '../types';
+import type { ApiResponse } from '@dailyuse/contracts';
 
 export interface NotificationServiceConfig {
   mainWindow: BrowserWindow;
@@ -26,9 +26,7 @@ class NotificationService {
     }
     return this.instance;
   }
-  public async showNotification(
-    options: NotificationWindow
-  ): Promise<ApiResponse> {
+  public async showNotification(options: NotificationWindow): Promise<ApiResponse> {
     try {
       const window = this.windowManagementService.createWindow(options);
       const url = this.windowManagementService.buildNotificationUrl(options);
@@ -37,13 +35,13 @@ class NotificationService {
       window.show();
       return {
         success: true,
-        message: "Notification displayed successfully",
+        message: 'Notification displayed successfully',
       };
     } catch (error) {
-      console.error("NotificationService - showNotification Error:", error);
+      console.error('NotificationService - showNotification Error:', error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -52,33 +50,28 @@ class NotificationService {
     try {
       const response = this.windowManagementService.closeWindow(uuid);
       if (!response) {
-        throw new Error(
-          `Notification with ID ${uuid} not found or already closed`
-        );
+        throw new Error(`Notification with ID ${uuid} not found or already closed`);
       }
       return {
         success: true,
-        message: "Notification closed successfully",
+        message: 'Notification closed successfully',
       };
     } catch (error) {
-      console.error("NotificationService - closeNotification Error:", error);
+      console.error('NotificationService - closeNotification Error:', error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 
-  public handleNotificationAction(
-    uuid: string,
-    action: { text: string; type: string }
-  ): void {
+  public handleNotificationAction(uuid: string, action: { text: string; type: string }): void {
     const window = this.windowManagementService.getWindow(uuid);
     if (window) {
-      if (action.type === "cancel" || action.type === "confirm") {
+      if (action.type === 'cancel' || action.type === 'confirm') {
         window.close();
       }
-      window.webContents.send("notification-action", { uuid, action });
+      window.webContents.send('notification-action', { uuid, action });
     } else {
       console.warn(`Notification with ID ${uuid} not found.`);
     }

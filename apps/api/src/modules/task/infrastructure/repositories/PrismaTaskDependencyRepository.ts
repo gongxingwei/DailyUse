@@ -70,7 +70,7 @@ export class PrismaTaskDependencyRepository implements ITaskDependencyRepository
       orderBy: { createdAt: 'asc' },
     });
 
-    return dependencies.map(dep => this.mapToDTO(dep));
+    return dependencies.map((dep) => this.mapToDTO(dep));
   }
 
   /**
@@ -82,7 +82,7 @@ export class PrismaTaskDependencyRepository implements ITaskDependencyRepository
       orderBy: { createdAt: 'asc' },
     });
 
-    return dependencies.map(dep => this.mapToDTO(dep));
+    return dependencies.map((dep) => this.mapToDTO(dep));
   }
 
   /**
@@ -201,10 +201,7 @@ export class PrismaTaskDependencyRepository implements ITaskDependencyRepository
   /**
    * 更新依赖关系
    */
-  async update(
-    uuid: string,
-    data: UpdateTaskDependencyRequest,
-  ): Promise<TaskDependencyServerDTO> {
+  async update(uuid: string, data: UpdateTaskDependencyRequest): Promise<TaskDependencyServerDTO> {
     const dependency = await this.prisma.taskDependency.update({
       where: { uuid },
       data: {

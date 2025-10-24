@@ -1,22 +1,22 @@
-import { Entity } from "@dailyuse/utils";
+import { Entity } from '@dailyuse/utils';
 import type {
   IReminderTemplate,
   RelativeTimeSchedule,
   ReminderSchedule,
-} from "@common/modules/reminder";
+} from '@common/modules/reminder';
 
 export class ReminderTemplate extends Entity implements IReminderTemplate {
   private _groupUuid: string;
   private _name: string;
   private _description?: string;
-  private _importanceLevel: IReminderTemplate["importanceLevel"];
+  private _importanceLevel: IReminderTemplate['importanceLevel'];
   private _selfEnabled: boolean = true; // 默认自身启用
   private _notificationSettings: {
     sound: boolean;
     vibration: boolean;
     popup: boolean;
   };
-  private _timeConfig: IReminderTemplate["timeConfig"];
+  private _timeConfig: IReminderTemplate['timeConfig'];
 
   /**
    * 构造函数（对象参数方式）
@@ -36,14 +36,14 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
   constructor(params: {
     groupUuid: string;
     name: string;
-    importanceLevel: IReminderTemplate["importanceLevel"];
+    importanceLevel: IReminderTemplate['importanceLevel'];
     selfEnabled: boolean;
     notificationSettings: {
       sound: boolean;
       vibration: boolean;
       popup: boolean;
     };
-    timeConfig: IReminderTemplate["timeConfig"];
+    timeConfig: IReminderTemplate['timeConfig'];
     uuid?: string;
     description?: string;
   }) {
@@ -82,10 +82,10 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
     this._description = val;
   }
 
-  get importanceLevel(): IReminderTemplate["importanceLevel"] {
+  get importanceLevel(): IReminderTemplate['importanceLevel'] {
     return this._importanceLevel;
   }
-  set importanceLevel(val: IReminderTemplate["importanceLevel"]) {
+  set importanceLevel(val: IReminderTemplate['importanceLevel']) {
     this._importanceLevel = val;
   }
 
@@ -99,18 +99,14 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
   get notificationSettings() {
     return this._notificationSettings;
   }
-  set notificationSettings(val: {
-    sound: boolean;
-    vibration: boolean;
-    popup: boolean;
-  }) {
+  set notificationSettings(val: { sound: boolean; vibration: boolean; popup: boolean }) {
     this._notificationSettings = val;
   }
 
   get timeConfig() {
     return this._timeConfig;
   }
-  set timeConfig(val: IReminderTemplate["timeConfig"]) {
+  set timeConfig(val: IReminderTemplate['timeConfig']) {
     this._timeConfig = val;
   }
 
@@ -119,8 +115,8 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
     // 这里可以添加逻辑来将模板添加到指定的组中
   }
 
-  isEnabled(groupEnabled: boolean, groupMode: "group" | "individual"): boolean {
-    if (groupMode === "group") {
+  isEnabled(groupEnabled: boolean, groupMode: 'group' | 'individual'): boolean {
+    if (groupMode === 'group') {
       return groupEnabled;
     } else {
       return groupEnabled && this._selfEnabled;
@@ -132,11 +128,8 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
    * @param groupEnabled 组的启用状态
    * @param groupMode 组的控制模式
    */
-  getCalculatedEnabled(
-    groupEnabled: boolean,
-    groupMode: "group" | "individual"
-  ): boolean {
-    if (groupMode === "group") {
+  getCalculatedEnabled(groupEnabled: boolean, groupMode: 'group' | 'individual'): boolean {
+    if (groupMode === 'group') {
       return groupEnabled;
     } else {
       return groupEnabled && this._selfEnabled;
@@ -151,20 +144,14 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
     const schedules: ReminderSchedule[] = [];
     const baseDate = new Date(baseTime);
     console.log('这 baseDate有用吗:', baseTime, 'baseDate:', baseDate);
-    const traverse = (
-      times: RelativeTimeSchedule[],
-      currentTime: Date,
-      parentName?: string
-    ) => {
+    const traverse = (times: RelativeTimeSchedule[], currentTime: Date, parentName?: string) => {
       times.forEach((item) => {
         let duration = 0;
-        if (typeof item.duration === "number") {
+        if (typeof item.duration === 'number') {
           duration = item.duration;
         } else {
           // 随机取区间
-          duration =
-            item.duration.min +
-            Math.random() * (item.duration.max - item.duration.min);
+          duration = item.duration.min + Math.random() * (item.duration.max - item.duration.min);
         }
         const nextTime = new Date(currentTime.getTime() + duration * 1000);
         schedules.push({
@@ -177,7 +164,7 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
         }
       });
     };
-    if (this._timeConfig.type === "absolute") {
+    if (this._timeConfig.type === 'absolute') {
       // 绝对时间配置，直接使用 ISO8601 字符串
       const { name, description, schedule } = this._timeConfig;
       schedules.push({
@@ -185,8 +172,8 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
         description: description,
         time: schedule,
       });
-    } else if (this._timeConfig.type === "relative") {
-      console.log("Calculating relative reminder schedules...");
+    } else if (this._timeConfig.type === 'relative') {
+      console.log('Calculating relative reminder schedules...');
     }
     return schedules;
   }
@@ -214,7 +201,7 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
       notificationSettings: dto.notificationSettings,
       timeConfig: dto.timeConfig,
       uuid: dto.uuid,
-      description: dto.description
+      description: dto.description,
     });
     return reminderTemplate;
   }

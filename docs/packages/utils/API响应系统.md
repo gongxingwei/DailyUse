@@ -83,11 +83,11 @@ import type { GoalClientDTO } from '@dailyuse/contracts';
 // 获取单个资源
 export async function getGoalById(req: Request, res: ExpressResponse) {
   const goal = await goalService.findById(req.params.id);
-  
+
   if (!goal) {
     return Response.notFound(res, '目标不存在');
   }
-  
+
   return Response.ok(res, goal, '获取目标成功');
 }
 
@@ -100,14 +100,14 @@ export async function createGoal(req: Request, res: ExpressResponse) {
 // 列表响应（带分页）
 export async function getGoals(req: Request, res: ExpressResponse) {
   const { items, total } = await goalService.findAll(req.query);
-  
+
   const pagination = {
     page: Number(req.query.page) || 1,
     limit: Number(req.query.limit) || 20,
     total,
     totalPages: Math.ceil(total / 20),
   };
-  
+
   return Response.list(res, items, pagination, '获取目标列表成功');
 }
 ```
@@ -190,7 +190,7 @@ try {
   console.log('获取成功:', goal);
 } catch (error: any) {
   const errorResponse = error.response?.data as ErrorResponse;
-  
+
   // 判断错误类型
   if (errorResponse.code === 401) {
     // 未授权，跳转登录
@@ -200,11 +200,11 @@ try {
     showNotification({ type: 'error', message: '目标不存在' });
   } else if (errorResponse.code === 422 && errorResponse.errors) {
     // 验证错误，显示详细信息
-    errorResponse.errors.forEach(err => {
+    errorResponse.errors.forEach((err) => {
       console.error(`${err.field}: ${err.message}`);
     });
   }
-  
+
   // 显示通用错误消息
   showNotification({
     type: 'error',
@@ -221,17 +221,18 @@ try {
 
 ```typescript
 interface SuccessResponse<T> {
-  code: 200;                      // ResponseCode
-  success: true;                  // 成功标识
-  message: string;                // 提示消息
-  data: T;                        // 业务数据（泛型）
-  timestamp: number;              // 时间戳（毫秒）
-  traceId?: string;               // 链路追踪 ID
-  pagination?: PaginationInfo;    // 分页信息（列表接口）
+  code: 200; // ResponseCode
+  success: true; // 成功标识
+  message: string; // 提示消息
+  data: T; // 业务数据（泛型）
+  timestamp: number; // 时间戳（毫秒）
+  traceId?: string; // 链路追踪 ID
+  pagination?: PaginationInfo; // 分页信息（列表接口）
 }
 ```
 
 **示例**:
+
 ```json
 {
   "code": 200,
@@ -252,26 +253,27 @@ interface SuccessResponse<T> {
 
 ```typescript
 interface ErrorResponse {
-  code: number;                   // ResponseCode (400/401/404/422/500...)
-  success: false;                 // 失败标识
-  message: string;                // 错误消息
-  timestamp: number;              // 时间戳（毫秒）
-  traceId?: string;               // 链路追踪 ID
-  errorCode?: string;             // 业务错误代码
-  errors?: ErrorDetail[];         // 详细错误列表
-  debug?: any;                    // 调试信息（仅开发环境）
+  code: number; // ResponseCode (400/401/404/422/500...)
+  success: false; // 失败标识
+  message: string; // 错误消息
+  timestamp: number; // 时间戳（毫秒）
+  traceId?: string; // 链路追踪 ID
+  errorCode?: string; // 业务错误代码
+  errors?: ErrorDetail[]; // 详细错误列表
+  debug?: any; // 调试信息（仅开发环境）
 }
 
 interface ErrorDetail {
-  code: string;                   // 错误代码
-  field?: string;                 // 相关字段
-  message: string;                // 错误消息
-  value?: any;                    // 当前值
-  constraints?: Record<string, string>;  // 约束信息
+  code: string; // 错误代码
+  field?: string; // 相关字段
+  message: string; // 错误消息
+  value?: any; // 当前值
+  constraints?: Record<string, string>; // 约束信息
 }
 ```
 
 **示例 - 验证错误**:
+
 ```json
 {
   "code": 422,
@@ -301,14 +303,15 @@ interface ErrorDetail {
 
 ```typescript
 interface PaginationInfo {
-  page: number;         // 当前页码
-  limit: number;        // 每页数量
-  total: number;        // 总记录数
-  totalPages: number;   // 总页数
+  page: number; // 当前页码
+  limit: number; // 每页数量
+  total: number; // 总记录数
+  totalPages: number; // 总页数
 }
 ```
 
 **示例 - 列表响应**:
+
 ```json
 {
   "code": 200,
@@ -340,25 +343,25 @@ export enum ResponseCode {
   SUCCESS = 200,
 
   // 客户端错误 (4xx)
-  BAD_REQUEST = 400,          // 请求参数错误
-  UNAUTHORIZED = 401,         // 未授权
-  FORBIDDEN = 403,            // 禁止访问
-  NOT_FOUND = 404,            // 资源不存在
-  CONFLICT = 409,             // 资源冲突
-  VALIDATION_ERROR = 422,     // 验证错误
-  TOO_MANY_REQUESTS = 429,    // 请求过于频繁
+  BAD_REQUEST = 400, // 请求参数错误
+  UNAUTHORIZED = 401, // 未授权
+  FORBIDDEN = 403, // 禁止访问
+  NOT_FOUND = 404, // 资源不存在
+  CONFLICT = 409, // 资源冲突
+  VALIDATION_ERROR = 422, // 验证错误
+  TOO_MANY_REQUESTS = 429, // 请求过于频繁
 
   // 服务器错误 (5xx)
-  INTERNAL_ERROR = 500,       // 服务器内部错误
-  BAD_GATEWAY = 502,          // 网关错误
-  SERVICE_UNAVAILABLE = 503,  // 服务不可用
-  GATEWAY_TIMEOUT = 504,      // 网关超时
+  INTERNAL_ERROR = 500, // 服务器内部错误
+  BAD_GATEWAY = 502, // 网关错误
+  SERVICE_UNAVAILABLE = 503, // 服务不可用
+  GATEWAY_TIMEOUT = 504, // 网关超时
 
   // 业务错误 (1xxx)
-  BUSINESS_ERROR = 1000,      // 通用业务错误
-  DOMAIN_ERROR = 1001,        // 领域逻辑错误
-  EXTERNAL_SERVICE_ERROR = 1002,  // 外部服务错误
-  DATABASE_ERROR = 1003,      // 数据库错误
+  BUSINESS_ERROR = 1000, // 通用业务错误
+  DOMAIN_ERROR = 1001, // 领域逻辑错误
+  EXTERNAL_SERVICE_ERROR = 1002, // 外部服务错误
+  DATABASE_ERROR = 1003, // 数据库错误
 }
 ```
 
@@ -367,12 +370,12 @@ export enum ResponseCode {
 ```typescript
 import { getHttpStatusCode, ResponseCode } from '@dailyuse/contracts';
 
-getHttpStatusCode(ResponseCode.SUCCESS);          // 200
-getHttpStatusCode(ResponseCode.UNAUTHORIZED);     // 401
-getHttpStatusCode(ResponseCode.NOT_FOUND);        // 404
+getHttpStatusCode(ResponseCode.SUCCESS); // 200
+getHttpStatusCode(ResponseCode.UNAUTHORIZED); // 401
+getHttpStatusCode(ResponseCode.NOT_FOUND); // 404
 getHttpStatusCode(ResponseCode.VALIDATION_ERROR); // 422
-getHttpStatusCode(ResponseCode.INTERNAL_ERROR);   // 500
-getHttpStatusCode(ResponseCode.BUSINESS_ERROR);   // 400 (业务错误映射到 400)
+getHttpStatusCode(ResponseCode.INTERNAL_ERROR); // 500
+getHttpStatusCode(ResponseCode.BUSINESS_ERROR); // 400 (业务错误映射到 400)
 ```
 
 ---
@@ -381,20 +384,20 @@ getHttpStatusCode(ResponseCode.BUSINESS_ERROR);   // 400 (业务错误映射到 
 
 ### 可用函数
 
-| 函数 | HTTP 状态 | ResponseCode | 说明 |
-|------|-----------|--------------|------|
-| `ok(res, data?, message?)` | 200 | 200 | 成功响应 |
-| `created(res, data?, message?)` | 201 | 200 | 资源创建成功 |
-| `list(res, data, pagination, message?)` | 200 | 200 | 列表响应（带分页） |
-| `badRequest(res, message, errors?)` | 400 | 400 | 请求参数错误 |
-| `unauthorized(res, message)` | 401 | 401 | 未授权 |
-| `forbidden(res, message)` | 403 | 403 | 禁止访问 |
-| `notFound(res, message)` | 404 | 404 | 资源不存在 |
-| `conflict(res, message)` | 409 | 409 | 资源冲突 |
-| `validationError(res, message, errors?)` | 422 | 422 | 验证错误 |
-| `businessError(res, message, errorCode?, errors?)` | 400 | 1000 | 业务错误 |
-| `error(res, message, debug?)` | 500 | 500 | 服务器错误 |
-| `serviceUnavailable(res, message)` | 503 | 503 | 服务不可用 |
+| 函数                                               | HTTP 状态 | ResponseCode | 说明               |
+| -------------------------------------------------- | --------- | ------------ | ------------------ |
+| `ok(res, data?, message?)`                         | 200       | 200          | 成功响应           |
+| `created(res, data?, message?)`                    | 201       | 200          | 资源创建成功       |
+| `list(res, data, pagination, message?)`            | 200       | 200          | 列表响应（带分页） |
+| `badRequest(res, message, errors?)`                | 400       | 400          | 请求参数错误       |
+| `unauthorized(res, message)`                       | 401       | 401          | 未授权             |
+| `forbidden(res, message)`                          | 403       | 403          | 禁止访问           |
+| `notFound(res, message)`                           | 404       | 404          | 资源不存在         |
+| `conflict(res, message)`                           | 409       | 409          | 资源冲突           |
+| `validationError(res, message, errors?)`           | 422       | 422          | 验证错误           |
+| `businessError(res, message, errorCode?, errors?)` | 400       | 1000         | 业务错误           |
+| `error(res, message, debug?)`                      | 500       | 500          | 服务器错误         |
+| `serviceUnavailable(res, message)`                 | 503       | 503          | 服务不可用         |
 
 ### 完整示例
 
@@ -406,7 +409,7 @@ export class GoalController {
   // 成功响应
   static async getGoals(req: Request, res: ExpressResponse) {
     const { items, total } = await goalService.findAll(req.query);
-    
+
     return Response.list(
       res,
       items,
@@ -429,22 +432,22 @@ export class GoalController {
   // 资源不存在
   static async getGoalById(req: Request, res: ExpressResponse) {
     const goal = await goalService.findById(req.params.id);
-    
+
     if (!goal) {
       return Response.notFound(res, '目标不存在');
     }
-    
+
     return Response.ok(res, goal, '获取目标成功');
   }
 
   // 验证错误
   static async updateGoal(req: Request, res: ExpressResponse) {
     const errors = validateGoalInput(req.body);
-    
+
     if (errors.length > 0) {
       return Response.validationError(res, '输入数据验证失败', errors);
     }
-    
+
     const goal = await goalService.update(req.params.id, req.body);
     return Response.ok(res, goal, '目标更新成功');
   }
@@ -456,11 +459,7 @@ export class GoalController {
       return Response.ok(res, goal, '目标已完成');
     } catch (error) {
       if (error instanceof GoalAlreadyCompletedError) {
-        return Response.businessError(
-          res,
-          '目标已经完成',
-          'GOAL_ALREADY_COMPLETED',
-        );
+        return Response.businessError(res, '目标已经完成', 'GOAL_ALREADY_COMPLETED');
       }
       throw error;
     }
@@ -496,28 +495,28 @@ axios.interceptors.response.use(
   // 成功响应 - 自动提取 data 字段
   (response) => {
     const data = response.data as SuccessResponse<any>;
-    
+
     if (data.success) {
       // 返回业务数据，而不是整个响应对象
       return data.data;
     }
-    
+
     return Promise.reject(response);
   },
-  
+
   // 错误响应 - 抛出包含 message 的异常
   (error) => {
     const errorResponse = error.response?.data as ErrorResponse;
-    
+
     // 统一错误处理
     if (errorResponse?.code === 401) {
       // 未授权，清除登录状态
       authStore.logout();
       router.push('/login');
     }
-    
+
     return Promise.reject(error);
-  }
+  },
 );
 ```
 
@@ -559,6 +558,7 @@ export function useGoal(goalId: string) {
 ### 1. 始终使用响应工具函数
 
 ❌ **不推荐**:
+
 ```typescript
 res.status(200).json({
   success: true,
@@ -568,6 +568,7 @@ res.status(200).json({
 ```
 
 ✅ **推荐**:
+
 ```typescript
 return Response.ok(res, goal, '获取目标成功');
 ```
@@ -575,11 +576,13 @@ return Response.ok(res, goal, '获取目标成功');
 ### 2. 提供清晰的错误消息
 
 ❌ **不推荐**:
+
 ```typescript
 return Response.badRequest(res, '错误');
 ```
 
 ✅ **推荐**:
+
 ```typescript
 return Response.badRequest(res, '邮箱格式不正确，请输入有效的邮箱地址');
 ```
@@ -587,6 +590,7 @@ return Response.badRequest(res, '邮箱格式不正确，请输入有效的邮�
 ### 3. 使用适当的错误代码
 
 ❌ **不推荐**（所有错误都返回 400）:
+
 ```typescript
 if (!goal) {
   return Response.badRequest(res, '目标不存在');
@@ -594,6 +598,7 @@ if (!goal) {
 ```
 
 ✅ **推荐**（使用 404）:
+
 ```typescript
 if (!goal) {
   return Response.notFound(res, '目标不存在');
@@ -603,18 +608,21 @@ if (!goal) {
 ### 4. 前端明确指定返回类型
 
 ❌ **不推荐**:
+
 ```typescript
-const goal = await apiClient.get('/goals/123');  // goal 类型为 any
+const goal = await apiClient.get('/goals/123'); // goal 类型为 any
 ```
 
 ✅ **推荐**:
+
 ```typescript
-const goal = await apiClient.get<GoalClientDTO>('/goals/123');  // 类型安全
+const goal = await apiClient.get<GoalClientDTO>('/goals/123'); // 类型安全
 ```
 
 ### 5. 统一的分页处理
 
 ✅ **后端**:
+
 ```typescript
 const pagination: PaginationInfo = {
   page: Number(query.page) || 1,
@@ -627,6 +635,7 @@ return Response.list(res, items, pagination);
 ```
 
 ✅ **前端**:
+
 ```typescript
 const response = await apiClient.get<GoalListResponse>('/goals', {
   params: { page: 1, limit: 20 },
@@ -687,15 +696,10 @@ export class GoalController {
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('Invalid UUID')) {
-          return GoalController.sendError(
-            res,
-            ResponseCode.VALIDATION_ERROR,
-            error.message,
-            error,
-          );
+          return GoalController.sendError(res, ResponseCode.VALIDATION_ERROR, error.message, error);
         }
       }
-      
+
       return GoalController.sendError(
         res,
         ResponseCode.INTERNAL_ERROR,
@@ -771,9 +775,9 @@ export interface ErrorDetail {
 
 ## 📝 变更历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
-| 1.0.0 | 2025-01-01 | 初始版本 |
+| 版本  | 日期       | 变更                    |
+| ----- | ---------- | ----------------------- |
+| 1.0.0 | 2025-01-01 | 初始版本                |
 | 1.1.0 | 2025-10-03 | GoalController 集成完成 |
 
 ---

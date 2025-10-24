@@ -1,15 +1,10 @@
 <template>
   <v-app>
     <div v-if="isLoading" class="loading-container">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="64"
-      ></v-progress-circular>
+      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
       <p class="mt-4">正在初始化应用...</p>
     </div>
     <router-view v-else></router-view>
-
   </v-app>
 </template>
 
@@ -21,15 +16,9 @@ useThemeInit();
 
 const isLoading = ref(false);
 
-
-
-
 onMounted(() => {
-
   // init();
 });
-
-
 </script>
 
 <style scoped>

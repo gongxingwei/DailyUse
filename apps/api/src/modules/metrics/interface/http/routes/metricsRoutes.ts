@@ -11,18 +11,17 @@ const router = Router();
 router.get('/performance', (_req: Request, res: Response) => {
   try {
     const metrics = getAllMetrics();
-    
+
     // Calculate overall statistics
     const allEndpoints = Object.entries(metrics);
     const totalRequests = allEndpoints.reduce((sum, [_, stats]) => sum + (stats?.count || 0), 0);
-    
-    const avgResponseTimes = allEndpoints
-      .map(([_, stats]) => stats?.avg || 0)
-      .filter(Boolean);
-    const overallAvg = avgResponseTimes.length > 0
-      ? Math.round(avgResponseTimes.reduce((a, b) => a + b, 0) / avgResponseTimes.length)
-      : 0;
-    
+
+    const avgResponseTimes = allEndpoints.map(([_, stats]) => stats?.avg || 0).filter(Boolean);
+    const overallAvg =
+      avgResponseTimes.length > 0
+        ? Math.round(avgResponseTimes.reduce((a, b) => a + b, 0) / avgResponseTimes.length)
+        : 0;
+
     // Find slow endpoints (avg > 200ms)
     const slowEndpoints = allEndpoints
       .filter(([_, stats]) => (stats?.avg || 0) > 200)
@@ -33,7 +32,7 @@ router.get('/performance', (_req: Request, res: Response) => {
         p99Ms: stats?.p99,
         maxMs: stats?.max,
       }));
-    
+
     res.json({
       summary: {
         totalRequests,

@@ -19,17 +19,12 @@ export class DAGExportService {
   /**
    * Export ECharts chart to PNG using native ECharts API
    */
-  async exportPNG(
-    chartInstance: echarts.ECharts,
-    options: ExportOptions
-  ): Promise<Blob> {
+  async exportPNG(chartInstance: echarts.ECharts, options: ExportOptions): Promise<Blob> {
     const url = chartInstance.getDataURL({
       type: 'png',
       pixelRatio: options.resolution,
       backgroundColor:
-        options.backgroundColor === 'transparent'
-          ? 'rgba(0,0,0,0)'
-          : options.backgroundColor,
+        options.backgroundColor === 'transparent' ? 'rgba(0,0,0,0)' : options.backgroundColor,
     });
 
     const response = await fetch(url);
@@ -40,13 +35,10 @@ export class DAGExportService {
    * Export to SVG using ECharts native SVG renderer
    * Note: Chart must be initialized with SVG renderer
    */
-  async exportSVG(
-    chartInstance: echarts.ECharts,
-    options: ExportOptions
-  ): Promise<Blob> {
+  async exportSVG(chartInstance: echarts.ECharts, options: ExportOptions): Promise<Blob> {
     try {
       const svgString = chartInstance.renderToSVGString?.();
-      
+
       if (!svgString) {
         throw new Error('Chart must be initialized with SVG renderer to export SVG');
       }
@@ -57,13 +49,13 @@ export class DAGExportService {
       // Fallback: Convert PNG to SVG (wrapped in <image> tag)
       const pngBlob = await this.exportPNG(chartInstance, options);
       const dataUrl = await this.blobToDataURL(pngBlob);
-      
+
       const svgContent = `
         <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">
           <image href="${dataUrl}" width="1200" height="800" />
         </svg>
       `;
-      
+
       return new Blob([svgContent], { type: 'image/svg+xml' });
     }
   }
@@ -74,7 +66,7 @@ export class DAGExportService {
   async exportPDF(
     chartInstance: echarts.ECharts,
     options: ExportOptions,
-    metadata: ExportMetadata
+    metadata: ExportMetadata,
   ): Promise<Blob> {
     // First get PNG data at 2x resolution for better quality
     const pngBlob = await this.exportPNG(chartInstance, {
@@ -138,7 +130,7 @@ export class DAGExportService {
     const sanitizedTitle = goalTitle
       .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-') // Replace special chars
       .slice(0, 50); // Limit length
-    
+
     return `goal-dag-${sanitizedTitle}-${timestamp}.${format}`;
   }
 

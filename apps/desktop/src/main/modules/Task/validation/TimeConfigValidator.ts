@@ -42,7 +42,7 @@ export class TimeConfigValidator implements ITemplateValidator {
       type as any,
       '时间类型',
       ['allDay', 'timed', 'timeRange'],
-      true
+      true,
     );
   }
 
@@ -100,7 +100,6 @@ export class TimeConfigValidator implements ITemplateValidator {
     return ValidationUtils.success();
   }
 
-
   /**
    * 验证持续时间
    */
@@ -109,7 +108,7 @@ export class TimeConfigValidator implements ITemplateValidator {
       min: 1,
       max: 24 * 60, // 最长24小时
       required: false,
-      integer: true
+      integer: true,
     });
   }
 
@@ -127,7 +126,8 @@ export class TimeConfigValidator implements ITemplateValidator {
     }
 
     // 验证时区格式（简单验证）
-    const validTimezonePattern = /^[A-Za-z]+\/[A-Za-z_]+$|^UTC[+-]?\d{1,2}(:\d{2})?$|^GMT[+-]?\d{1,2}(:\d{2})?$/;
+    const validTimezonePattern =
+      /^[A-Za-z]+\/[A-Za-z_]+$|^UTC[+-]?\d{1,2}(:\d{2})?$|^GMT[+-]?\d{1,2}(:\d{2})?$/;
     if (!validTimezonePattern.test(timezone)) {
       return ValidationUtils.success(['时区格式可能不标准，建议使用标准IANA时区格式']);
     }
@@ -153,11 +153,7 @@ export class TimeConfigValidator implements ITemplateValidator {
     }
 
     // 检查时间段任务的持续时间
-    if (
-      timeConfig.type === 'timeRange' &&
-      timeConfig.baseTime.start &&
-      timeConfig.baseTime.end
-    ) {
+    if (timeConfig.type === 'timeRange' && timeConfig.baseTime.start && timeConfig.baseTime.end) {
       const start = timeConfig.baseTime.start;
       const end = timeConfig.baseTime.end;
       if (start instanceof Date && end instanceof Date) {

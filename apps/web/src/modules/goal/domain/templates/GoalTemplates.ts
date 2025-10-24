@@ -1,7 +1,7 @@
 /**
  * Goal Templates - Built-in OKR Templates
  * 目标模板 - 内置 OKR 模板
- * 
+ *
  * NOTE: 此文件属于模板数据，非核心领域逻辑，允许保留在应用层的 domain/templates/ 目录中。
  * 参考：FRONTEND_ARCHITECTURE_GUIDE.md - "临时例外" 规则
  */
@@ -435,7 +435,7 @@ export function getTemplatesByCategory(category: GoalTemplate['category']): Goal
  */
 export function getTemplatesByRole(role: string): GoalTemplate[] {
   return BUILT_IN_TEMPLATES.filter((t) =>
-    t.roles.some((r) => r.toLowerCase().includes(role.toLowerCase()))
+    t.roles.some((r) => r.toLowerCase().includes(role.toLowerCase())),
   );
 }
 
@@ -444,7 +444,7 @@ export function getTemplatesByRole(role: string): GoalTemplate[] {
  */
 export function getTemplatesByIndustry(industry: string): GoalTemplate[] {
   return BUILT_IN_TEMPLATES.filter((t) =>
-    t.industries.some((i) => i.toLowerCase().includes(industry.toLowerCase()))
+    t.industries.some((i) => i.toLowerCase().includes(industry.toLowerCase())),
   );
 }
 

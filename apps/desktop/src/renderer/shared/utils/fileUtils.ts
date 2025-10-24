@@ -15,21 +15,23 @@ export class FileUtils {
   static openFileInExplorer(filePath: string): Promise<void> {
     return window.shared.ipcRenderer.invoke('open-file-in-explorer', filePath);
   }
-  
+
   /**
    * 读取文件夹内容
    */
   static readFolder(path: string): Promise<Array<string>> {
-    return window.shared.ipcRenderer.invoke<Array<string>>('read-folder', path).then((result: Array<string>) => {
-      // Ensure the result is serializable
-      return JSON.parse(JSON.stringify(result));
-    });
+    return window.shared.ipcRenderer
+      .invoke<Array<string>>('read-folder', path)
+      .then((result: Array<string>) => {
+        // Ensure the result is serializable
+        return JSON.parse(JSON.stringify(result));
+      });
   }
 
   /**
    * 选择文件夹
    */
-  static selectFolder(): Promise<ApiResponse<{folderPath: string, files: Array<string>}>> {
+  static selectFolder(): Promise<ApiResponse<{ folderPath: string; files: Array<string> }>> {
     return window.shared.ipcRenderer.invoke('select-folder');
   }
 
@@ -78,7 +80,11 @@ export class FileUtils {
   /**
    * 写入文件
    */
-  static writeFile(path: string, data: string | Buffer, encoding?: BufferEncoding | null): Promise<void> {
+  static writeFile(
+    path: string,
+    data: string | Buffer,
+    encoding?: BufferEncoding | null,
+  ): Promise<void> {
     return window.shared.ipcRenderer.invoke('write-file', path, data, encoding);
   }
 
@@ -92,7 +98,9 @@ export class FileUtils {
   /**
    * 刷新文件夹
    */
-  static refreshFolder(path: string): Promise<ApiResponse<{folderTreeData: any[], folderPath: string}>> {
+  static refreshFolder(
+    path: string,
+  ): Promise<ApiResponse<{ folderTreeData: any[]; folderPath: string }>> {
     return window.shared.ipcRenderer.invoke('refresh-folder', path);
   }
 

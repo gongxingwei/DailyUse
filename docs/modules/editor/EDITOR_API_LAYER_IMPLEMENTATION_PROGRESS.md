@@ -3,6 +3,7 @@
 ## ✅ 已完成工作
 
 ### 1. Domain 层重构（packages/domain-server）
+
 - ✅ DDD 架构修正完成
   - EditorSession 从 aggregates 移至 entities
   - 正确的聚合层级：EditorWorkspace → EditorSession → EditorGroup → EditorTab
@@ -17,6 +18,7 @@
   - 类型检查全部通过
 
 ### 2. Domain Service 创建
+
 - ✅ `EditorWorkspaceDomainService.ts` 完成
   - 协调聚合根和仓储
   - 实现所有业务用例方法
@@ -27,6 +29,7 @@
   - `editor/index.ts` 添加 services 导出
 
 ### 3. Application Service 创建
+
 - ✅ `EditorWorkspaceApplicationService.ts` 完成
   - 委托给 DomainService 处理业务逻辑
   - DTO 转换（Domain ↔ Contracts）
@@ -34,6 +37,7 @@
 - ⚠️ 存在类型错误（map 参数 implicit any）
 
 ### 4. Infrastructure 层
+
 - ✅ `EditorContainer.ts` 完成
   - DI 容器实现
   - 懒加载仓储实例
@@ -43,6 +47,7 @@
 ## ❌ 待完成工作
 
 ### 1. Prisma Schema 定义
+
 **问题**: 数据库中缺少 Editor 模块表结构
 
 需要在 `apps/api/prisma/schema.prisma` 中添加：
@@ -61,9 +66,9 @@ model EditorWorkspace {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   accessedAt  DateTime @default(now())
-  
+
   sessions    EditorSession[]
-  
+
   @@map("editor_workspaces")
 }
 
@@ -76,10 +81,10 @@ model EditorSession {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   workspace     EditorWorkspace @relation(fields: [workspaceUuid], references: [uuid], onDelete: Cascade)
   groups        EditorGroup[]
-  
+
   @@map("editor_sessions")
 }
 
@@ -93,10 +98,10 @@ model EditorGroup {
   splitDirection String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
+
   session        EditorSession @relation(fields: [sessionUuid], references: [uuid], onDelete: Cascade)
   tabs           EditorTab[]
-  
+
   @@map("editor_groups")
 }
 
@@ -115,19 +120,21 @@ model EditorTab {
   isActive      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   group         EditorGroup @relation(fields: [groupUuid], references: [uuid], onDelete: Cascade)
-  
+
   @@map("editor_tabs")
 }
 ```
 
 **操作步骤**:
+
 1. 添加上述 schema 到 `schema.prisma`
 2. 运行 `npx prisma migrate dev --name add-editor-module`
 3. 运行 `npx prisma generate`
 
 ### 2. EditorWorkspace PersistenceDTO 修正
+
 **问题**: 当前 PersistenceDTO 缺少 `accessed_at` 和 `sessions` 字段
 
 需要修改 `packages/contracts/src/modules/editor/aggregates/EditorWorkspaceServer.ts`:
@@ -145,14 +152,15 @@ export interface EditorWorkspacePersistenceDTO {
   is_active: boolean;
   created_at: number;
   updated_at: number;
-  accessed_at: number;  // ← 添加
-  
+  accessed_at: number; // ← 添加
+
   // 子实体（可选，用于急加载）
-  sessions?: EditorSessionPersistenceDTO[];  // ← 添加
+  sessions?: EditorSessionPersistenceDTO[]; // ← 添加
 }
 ```
 
 ### 3. IEditorWorkspaceRepository 接口补充
+
 **问题**: 仓储接口缺少多个方法
 
 需要在 `packages/domain-server/src/editor/repositories/IEditorWorkspaceRepository.ts` 添加：
@@ -167,6 +175,7 @@ countByAccountUuid(accountUuid: string): Promise<number>;
 ```
 
 ### 4. PrismaEditorWorkspaceRepository 完善
+
 **问题**: 需要实现缺失的接口方法
 
 在 `PrismaEditorWorkspaceRepository.ts` 中添加：
@@ -186,7 +195,7 @@ async findByAccountUuidAndName(
       },
     },
   });
-  
+
   return workspace ? this.mapWorkspaceToEntity(workspace) : null;
 }
 
@@ -201,7 +210,7 @@ async findActiveByAccountUuid(accountUuid: string): Promise<EditorWorkspace[]> {
       },
     },
   });
-  
+
   return workspaces.map((w) => this.mapWorkspaceToEntity(w));
 }
 
@@ -226,6 +235,7 @@ async countByAccountUuid(accountUuid: string): Promise<number> {
 ```
 
 ### 5. HTTP Interface 层
+
 **目标**: 创建 REST API 路由
 
 需要创建 `apps/api/src/modules/editor/interface/http/` 目录结构：
@@ -299,7 +309,11 @@ const router = Router();
 // Workspace routes
 router.post('/workspaces', authMiddleware, EditorWorkspaceController.createWorkspace);
 router.get('/workspaces/:uuid', authMiddleware, EditorWorkspaceController.getWorkspace);
-router.get('/accounts/:accountUuid/workspaces', authMiddleware, EditorWorkspaceController.listWorkspaces);
+router.get(
+  '/accounts/:accountUuid/workspaces',
+  authMiddleware,
+  EditorWorkspaceController.listWorkspaces,
+);
 router.put('/workspaces/:uuid', authMiddleware, EditorWorkspaceController.updateWorkspace);
 router.delete('/workspaces/:uuid', authMiddleware, EditorWorkspaceController.deleteWorkspace);
 
@@ -309,6 +323,7 @@ export default router;
 ```
 
 ### 6. 注册路由到主应用
+
 在 `apps/api/src/app.ts` 中添加：
 
 ```typescript

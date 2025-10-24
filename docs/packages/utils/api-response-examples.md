@@ -20,16 +20,16 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 20;
-    
+
     const { items, total } = await userService.getUsers({ page, limit });
-    
+
     const pagination = {
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
     };
-    
+
     return ApiResponse.list(res, items, pagination, '获取用户列表成功');
   } catch (error: any) {
     return ApiResponse.error(res, error.message);
@@ -40,11 +40,11 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const user = await userService.getUserById(req.params.id);
-    
+
     if (!user) {
       return ApiResponse.notFound(res, '用户不存在');
     }
-    
+
     return ApiResponse.ok(res, user, '获取用户信息成功');
   } catch (error: any) {
     return ApiResponse.error(res, error.message);
@@ -57,19 +57,15 @@ router.post('/', async (req: Request, res: Response) => {
     // 验证输入
     const validationErrors = validateUserInput(req.body);
     if (validationErrors.length > 0) {
-      return ApiResponse.validationError(
-        res,
-        '输入数据验证失败',
-        validationErrors
-      );
+      return ApiResponse.validationError(res, '输入数据验证失败', validationErrors);
     }
-    
+
     // 检查邮箱是否已存在
     const existingUser = await userService.findByEmail(req.body.email);
     if (existingUser) {
       return ApiResponse.conflict(res, '该邮箱已被注册');
     }
-    
+
     const user = await userService.createUser(req.body);
     return ApiResponse.created(res, user, '用户创建成功');
   } catch (error: any) {
@@ -81,21 +77,17 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const user = await userService.getUserById(req.params.id);
-    
+
     if (!user) {
       return ApiResponse.notFound(res, '用户不存在');
     }
-    
+
     // 验证输入
     const validationErrors = validateUserInput(req.body);
     if (validationErrors.length > 0) {
-      return ApiResponse.validationError(
-        res,
-        '输入数据验证失败',
-        validationErrors
-      );
+      return ApiResponse.validationError(res, '输入数据验证失败', validationErrors);
     }
-    
+
     const updatedUser = await userService.updateUser(req.params.id, req.body);
     return ApiResponse.ok(res, updatedUser, '用户更新成功');
   } catch (error: any) {
@@ -110,13 +102,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
     if (!req.user?.isAdmin) {
       return ApiResponse.forbidden(res, '只有管理员可以删除用户');
     }
-    
+
     const user = await userService.getUserById(req.params.id);
-    
+
     if (!user) {
       return ApiResponse.notFound(res, '用户不存在');
     }
-    
+
     await userService.deleteUser(req.params.id);
     return ApiResponse.ok(res, null, '用户删除成功');
   } catch (error: any) {
@@ -146,38 +138,28 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error: any) {
     // 处理余额不足错误
     if (error instanceof InsufficientBalanceError) {
-      return ApiResponse.businessError(
-        res,
-        '余额不足，无法创建订单',
-        'INSUFFICIENT_BALANCE',
-        [
-          {
-            code: 'INSUFFICIENT_BALANCE',
-            field: 'balance',
-            message: `当前余额: ¥${error.currentBalance}, 需要: ¥${error.requiredBalance}`,
-            value: error.currentBalance,
-          },
-        ]
-      );
+      return ApiResponse.businessError(res, '余额不足，无法创建订单', 'INSUFFICIENT_BALANCE', [
+        {
+          code: 'INSUFFICIENT_BALANCE',
+          field: 'balance',
+          message: `当前余额: ¥${error.currentBalance}, 需要: ¥${error.requiredBalance}`,
+          value: error.currentBalance,
+        },
+      ]);
     }
-    
+
     // 处理商品无效错误
     if (error instanceof InvalidProductError) {
-      return ApiResponse.businessError(
-        res,
-        '订单中包含无效的商品',
-        'INVALID_PRODUCT',
-        [
-          {
-            code: 'INVALID_PRODUCT',
-            field: 'productId',
-            message: error.message,
-            value: error.productId,
-          },
-        ]
-      );
+      return ApiResponse.businessError(res, '订单中包含无效的商品', 'INVALID_PRODUCT', [
+        {
+          code: 'INVALID_PRODUCT',
+          field: 'productId',
+          message: error.message,
+          value: error.productId,
+        },
+      ]);
     }
-    
+
     // 其他错误
     return ApiResponse.error(res, error.message);
   }
@@ -187,25 +169,21 @@ router.post('/', async (req: Request, res: Response) => {
 router.post('/:id/cancel', async (req: Request, res: Response) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
-    
+
     if (!order) {
       return ApiResponse.notFound(res, '订单不存在');
     }
-    
+
     // 检查订单所有者
     if (order.userId !== req.user!.id) {
       return ApiResponse.forbidden(res, '无权操作此订单');
     }
-    
+
     // 检查订单状态
     if (order.status === 'DELIVERED') {
-      return ApiResponse.businessError(
-        res,
-        '订单已发货，无法取消',
-        'ORDER_ALREADY_DELIVERED'
-      );
+      return ApiResponse.businessError(res, '订单已发货，无法取消', 'ORDER_ALREADY_DELIVERED');
     }
-    
+
     const cancelledOrder = await orderService.cancelOrder(req.params.id);
     return ApiResponse.ok(res, cancelledOrder, '订单取消成功');
   } catch (error: any) {
@@ -231,7 +209,7 @@ export interface UserInput {
 
 export function validateUserInput(input: UserInput): ErrorDetail[] {
   const errors: ErrorDetail[] = [];
-  
+
   // 验证姓名
   if (!input.name || input.name.trim().length === 0) {
     errors.push({
@@ -251,7 +229,7 @@ export function validateUserInput(input: UserInput): ErrorDetail[] {
       },
     });
   }
-  
+
   // 验证邮箱
   if (!input.email || input.email.trim().length === 0) {
     errors.push({
@@ -270,7 +248,7 @@ export function validateUserInput(input: UserInput): ErrorDetail[] {
       },
     });
   }
-  
+
   // 验证密码
   if (!input.password || input.password.length === 0) {
     errors.push({
@@ -297,7 +275,7 @@ export function validateUserInput(input: UserInput): ErrorDetail[] {
       },
     });
   }
-  
+
   // 验证年龄（可选）
   if (input.age !== undefined) {
     if (input.age < 0 || input.age > 150) {
@@ -313,7 +291,7 @@ export function validateUserInput(input: UserInput): ErrorDetail[] {
       });
     }
   }
-  
+
   return errors;
 }
 
@@ -365,26 +343,26 @@ export function useUsers() {
   const currentPage = ref(1);
   const pageSize = ref(20);
   const total = ref(0);
-  
+
   const totalPages = computed(() => Math.ceil(total.value / pageSize.value));
-  
+
   // 获取用户列表
   const fetchUsers = async (page = 1) => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       currentPage.value = page;
-      
+
       const data = await apiClient.get<User[]>('/users', {
         params: {
           page,
           limit: pageSize.value,
         },
       });
-      
+
       users.value = data;
-      
+
       showNotification({
         type: 'success',
         message: '用户列表加载成功',
@@ -392,7 +370,7 @@ export function useUsers() {
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
       error.value = errorResponse?.message || '获取用户列表失败';
-      
+
       showNotification({
         type: 'error',
         message: error.value,
@@ -401,18 +379,18 @@ export function useUsers() {
       loading.value = false;
     }
   };
-  
+
   // 获取单个用户
   const fetchUser = async (id: string) => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const user = await apiClient.get<User>(`/users/${id}`);
       return user;
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
-      
+
       if (errorResponse?.code === ResponseCode.NOT_FOUND) {
         showNotification({
           type: 'warning',
@@ -425,41 +403,41 @@ export function useUsers() {
           message: error.value,
         });
       }
-      
+
       throw err;
     } finally {
       loading.value = false;
     }
   };
-  
+
   // 创建用户
   const createUser = async (input: UserInput) => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const user = await apiClient.post<User>('/users', input);
-      
+
       // 添加到列表
       users.value.unshift(user);
       total.value++;
-      
+
       showNotification({
         type: 'success',
         message: '用户创建成功',
       });
-      
+
       return user;
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
       error.value = errorResponse?.message || '创建用户失败';
-      
+
       // 处理验证错误
       if (errorResponse?.code === ResponseCode.VALIDATION_ERROR && errorResponse.errors) {
         const validationMessages = errorResponse.errors
           .map((e) => `${e.field}: ${e.message}`)
           .join(', ');
-        
+
         showNotification({
           type: 'error',
           message: `验证失败: ${validationMessages}`,
@@ -480,37 +458,37 @@ export function useUsers() {
           message: error.value,
         });
       }
-      
+
       throw err;
     } finally {
       loading.value = false;
     }
   };
-  
+
   // 更新用户
   const updateUser = async (id: string, input: Partial<UserInput>) => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const user = await apiClient.put<User>(`/users/${id}`, input);
-      
+
       // 更新列表中的用户
       const index = users.value.findIndex((u) => u.id === id);
       if (index !== -1) {
         users.value[index] = user;
       }
-      
+
       showNotification({
         type: 'success',
         message: '用户更新成功',
       });
-      
+
       return user;
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
       error.value = errorResponse?.message || '更新用户失败';
-      
+
       if (errorResponse?.code === ResponseCode.NOT_FOUND) {
         showNotification({
           type: 'warning',
@@ -520,7 +498,7 @@ export function useUsers() {
         const validationMessages = errorResponse.errors
           .map((e) => `${e.field}: ${e.message}`)
           .join(', ');
-        
+
         showNotification({
           type: 'error',
           message: `验证失败: ${validationMessages}`,
@@ -532,28 +510,28 @@ export function useUsers() {
           message: error.value,
         });
       }
-      
+
       throw err;
     } finally {
       loading.value = false;
     }
   };
-  
+
   // 删除用户
   const deleteUser = async (id: string) => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       await apiClient.delete(`/users/${id}`);
-      
+
       // 从列表中移除
       const index = users.value.findIndex((u) => u.id === id);
       if (index !== -1) {
         users.value.splice(index, 1);
         total.value--;
       }
-      
+
       showNotification({
         type: 'success',
         message: '用户删除成功',
@@ -561,7 +539,7 @@ export function useUsers() {
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
       error.value = errorResponse?.message || '删除用户失败';
-      
+
       if (errorResponse?.code === ResponseCode.FORBIDDEN) {
         showNotification({
           type: 'error',
@@ -578,13 +556,13 @@ export function useUsers() {
           message: error.value,
         });
       }
-      
+
       throw err;
     } finally {
       loading.value = false;
     }
   };
-  
+
   return {
     users,
     loading,
@@ -638,25 +616,25 @@ export interface CreateOrderInput {
 export function useOrders() {
   const loading = ref(false);
   const error = ref<string | null>(null);
-  
+
   // 创建订单
   const createOrder = async (input: CreateOrderInput) => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const order = await apiClient.post<Order>('/orders', input);
-      
+
       showNotification({
         type: 'success',
         message: '订单创建成功',
       });
-      
+
       return order;
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
       error.value = errorResponse?.message || '创建订单失败';
-      
+
       // 处理业务错误
       if (errorResponse?.code === ResponseCode.BUSINESS_ERROR) {
         // 余额不足
@@ -683,31 +661,31 @@ export function useOrders() {
           message: error.value,
         });
       }
-      
+
       throw err;
     } finally {
       loading.value = false;
     }
   };
-  
+
   // 取消订单
   const cancelOrder = async (orderId: string) => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const order = await apiClient.post<Order>(`/orders/${orderId}/cancel`);
-      
+
       showNotification({
         type: 'success',
         message: '订单取消成功',
       });
-      
+
       return order;
     } catch (err: any) {
       const errorResponse = err.response?.data as ErrorResponse;
       error.value = errorResponse?.message || '取消订单失败';
-      
+
       if (errorResponse?.code === ResponseCode.NOT_FOUND) {
         showNotification({
           type: 'warning',
@@ -731,13 +709,13 @@ export function useOrders() {
           message: error.value,
         });
       }
-      
+
       throw err;
     } finally {
       loading.value = false;
     }
   };
-  
+
   return {
     loading,
     error,
@@ -765,7 +743,7 @@ export function useOrders() {
         {{ fieldErrors.name }}
       </div>
     </div>
-    
+
     <div class="form-group">
       <label for="email">邮箱</label>
       <input
@@ -778,7 +756,7 @@ export function useOrders() {
         {{ fieldErrors.email }}
       </div>
     </div>
-    
+
     <div class="form-group">
       <label for="password">密码</label>
       <input
@@ -791,7 +769,7 @@ export function useOrders() {
         {{ fieldErrors.password }}
       </div>
     </div>
-    
+
     <div class="form-group">
       <label for="age">年龄（可选）</label>
       <input
@@ -804,7 +782,7 @@ export function useOrders() {
         {{ fieldErrors.age }}
       </div>
     </div>
-    
+
     <button type="submit" :disabled="loading">
       {{ loading ? '提交中...' : '提交' }}
     </button>
@@ -833,10 +811,10 @@ const handleSubmit = async () => {
   Object.keys(fieldErrors).forEach((key) => {
     delete fieldErrors[key];
   });
-  
+
   try {
     await createUser(form);
-    
+
     // 重置表单
     form.name = '';
     form.email = '';
@@ -844,7 +822,7 @@ const handleSubmit = async () => {
     form.age = undefined;
   } catch (err: any) {
     const errorResponse = err.response?.data as ErrorResponse;
-    
+
     // 处理验证错误
     if (errorResponse?.code === ResponseCode.VALIDATION_ERROR && errorResponse.errors) {
       errorResponse.errors.forEach((error: ErrorDetail) => {
@@ -1007,7 +985,7 @@ const handleSubmit = async () => {
       "code": "INSUFFICIENT_BALANCE",
       "field": "balance",
       "message": "当前余额: ¥50.00, 需要: ¥100.00",
-      "value": 50.00
+      "value": 50.0
     }
   ]
 }

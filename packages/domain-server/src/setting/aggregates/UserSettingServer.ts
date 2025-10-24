@@ -250,14 +250,14 @@ export class UserSettingServer extends AggregateRoot implements IUserSettingServ
     return {
       uuid: this.uuid,
       accountUuid: this._accountUuid,
-      
+
       // Appearance - 扁平化
       appearanceTheme: this._appearance.theme,
       appearanceAccentColor: this._appearance.accentColor,
       appearanceFontSize: this._appearance.fontSize,
       appearanceFontFamily: this._appearance.fontFamily ?? null,
       appearanceCompactMode: this._appearance.compactMode,
-      
+
       // Locale - 扁平化
       localeLanguage: this._locale.language,
       localeTimezone: this._locale.timezone,
@@ -265,7 +265,7 @@ export class UserSettingServer extends AggregateRoot implements IUserSettingServ
       localeTimeFormat: this._locale.timeFormat,
       localeWeekStartsOn: this._locale.weekStartsOn,
       localeCurrency: this._locale.currency,
-      
+
       // Workflow - 扁平化
       workflowDefaultTaskView: this._workflow.defaultTaskView,
       workflowDefaultGoalView: this._workflow.defaultGoalView,
@@ -273,22 +273,22 @@ export class UserSettingServer extends AggregateRoot implements IUserSettingServ
       workflowAutoSave: this._workflow.autoSave,
       workflowAutoSaveInterval: this._workflow.autoSaveInterval,
       workflowConfirmBeforeDelete: this._workflow.confirmBeforeDelete,
-      
+
       // Shortcuts - custom 为 JSON
       shortcutsEnabled: this._shortcuts.enabled,
       shortcutsCustom: JSON.stringify(this._shortcuts.custom),
-      
+
       // Privacy - 扁平化
       privacyProfileVisibility: this._privacy.profileVisibility,
       privacyShowOnlineStatus: this._privacy.showOnlineStatus,
       privacyAllowSearchByEmail: this._privacy.allowSearchByEmail,
       privacyAllowSearchByPhone: this._privacy.allowSearchByPhone,
       privacyShareUsageData: this._privacy.shareUsageData,
-      
+
       // Experimental - features 为 JSON
       experimentalEnabled: this._experimental.enabled,
       experimentalFeatures: JSON.stringify(this._experimental.features),
-      
+
       // Timestamps
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,

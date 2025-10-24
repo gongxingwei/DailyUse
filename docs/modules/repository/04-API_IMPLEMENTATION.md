@@ -212,7 +212,7 @@ export class RepositoryRepositoryImpl implements IRepositoryRepository {
 
   async findByAccountUuid(accountUuid: string): Promise<Repository[]> {
     const entities = await this.repository.find({ where: { accountUuid } });
-    return entities.map(entity => entity.toDomain());
+    return entities.map((entity) => entity.toDomain());
   }
 
   async findByPath(accountUuid: string, path: string): Promise<Repository | null> {
@@ -229,7 +229,7 @@ export class RepositoryRepositoryImpl implements IRepositoryRepository {
     const entities = await this.repository.find({
       where: { accountUuid, status },
     });
-    return entities.map(entity => entity.toDomain());
+    return entities.map((entity) => entity.toDomain());
   }
 
   async delete(uuid: string): Promise<void> {
@@ -270,9 +270,7 @@ import { Repository } from '../../domain/aggregates/Repository';
  */
 @Injectable()
 export class RepositoryApplicationService {
-  constructor(
-    private readonly repositoryRepository: IRepositoryRepository,
-  ) {}
+  constructor(private readonly repositoryRepository: IRepositoryRepository) {}
 
   /**
    * 创建仓库
@@ -360,9 +358,7 @@ export class RepositoryApplicationService {
   /**
    * 获取仓库详情
    */
-  async getRepositoryByUuid(
-    uuid: string,
-  ): Promise<RepositoryContracts.RepositoryServerDTO> {
+  async getRepositoryByUuid(uuid: string): Promise<RepositoryContracts.RepositoryServerDTO> {
     const repository = await this.repositoryRepository.findByUuid(uuid);
     if (!repository) {
       throw new NotFoundException('Repository not found');
@@ -378,7 +374,7 @@ export class RepositoryApplicationService {
     accountUuid: string,
   ): Promise<RepositoryContracts.RepositoryServerDTO[]> {
     const repositories = await this.repositoryRepository.findByAccountUuid(accountUuid);
-    return repositories.map(repo => repo.toDTO());
+    return repositories.map((repo) => repo.toDTO());
   }
 
   /**
@@ -476,11 +472,9 @@ import { DailyUseApiResponse } from '../../../common/types/api-response';
  * Repository 控制器
  */
 @Controller('repositories')
-@UseGuards(JwtAuthGuard)  // ⚠️ 全局启用认证
+@UseGuards(JwtAuthGuard) // ⚠️ 全局启用认证
 export class RepositoryController {
-  constructor(
-    private readonly repositoryApplicationService: RepositoryApplicationService,
-  ) {}
+  constructor(private readonly repositoryApplicationService: RepositoryApplicationService) {}
 
   /**
    * 创建仓库
@@ -496,7 +490,7 @@ export class RepositoryController {
 
     const repository = await this.repositoryApplicationService.createRepository({
       ...request,
-      accountUuid,  // ⚠️ 从认证信息获取
+      accountUuid, // ⚠️ 从认证信息获取
     });
 
     return {
@@ -534,9 +528,7 @@ export class RepositoryController {
    * DELETE /repositories/:uuid
    */
   @Delete(':uuid')
-  async delete(
-    @Param('uuid') uuid: string,
-  ): Promise<DailyUseApiResponse<void>> {
+  async delete(@Param('uuid') uuid: string): Promise<DailyUseApiResponse<void>> {
     await this.repositoryApplicationService.deleteRepository(uuid);
 
     return {
@@ -575,9 +567,8 @@ export class RepositoryController {
   ): Promise<DailyUseApiResponse<RepositoryContracts.RepositoryListResponseDTO>> {
     const accountUuid = req.user.accountUuid;
 
-    const repositories = await this.repositoryApplicationService.getRepositoriesByAccountUuid(
-      accountUuid,
-    );
+    const repositories =
+      await this.repositoryApplicationService.getRepositoriesByAccountUuid(accountUuid);
 
     return {
       success: true,
@@ -686,22 +677,16 @@ import { RepositoryApplicationService } from './application/services/RepositoryA
 import { RepositoryController } from './presentation/controllers/RepositoryController';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([RepositoryEntity]),
-  ],
-  controllers: [
-    RepositoryController,
-  ],
+  imports: [TypeOrmModule.forFeature([RepositoryEntity])],
+  controllers: [RepositoryController],
   providers: [
     RepositoryApplicationService,
     {
-      provide: 'IRepositoryRepository',  // ⚠️ 使用接口名作为 token
+      provide: 'IRepositoryRepository', // ⚠️ 使用接口名作为 token
       useClass: RepositoryRepositoryImpl,
     },
   ],
-  exports: [
-    RepositoryApplicationService,
-  ],
+  exports: [RepositoryApplicationService],
 })
 export class RepositoryModule {}
 ```
@@ -711,6 +696,7 @@ export class RepositoryModule {}
 ## ⚠️ 易错点总结
 
 ❌ **错误 1**：Controller 包含业务逻辑
+
 ```typescript
 // 错误示例
 @Post()
@@ -725,6 +711,7 @@ async create(@Body() request: CreateRepositoryRequestDTO) {
 ```
 
 ✅ **正确**：Controller 调用 Service
+
 ```typescript
 @Post()
 async create(@Body() request: CreateRepositoryRequestDTO) {
@@ -735,6 +722,7 @@ async create(@Body() request: CreateRepositoryRequestDTO) {
 ```
 
 ❌ **错误 2**：忘记使用统一响应格式
+
 ```typescript
 // 错误示例
 @Get(':uuid')
@@ -744,6 +732,7 @@ async getOne(@Param('uuid') uuid: string) {
 ```
 
 ✅ **正确**：使用统一响应格式
+
 ```typescript
 @Get(':uuid')
 async getOne(@Param('uuid') uuid: string) {
@@ -759,6 +748,7 @@ async getOne(@Param('uuid') uuid: string) {
 ```
 
 ❌ **错误 3**：忘记从认证信息获取 accountUuid
+
 ```typescript
 // 错误示例
 @Post()
@@ -769,6 +759,7 @@ async create(@Body() request: CreateRepositoryRequestDTO) {
 ```
 
 ✅ **正确**：从 JWT 获取 accountUuid
+
 ```typescript
 @Post()
 async create(@Body() request: CreateRepositoryRequestDTO, @Request() req: any) {

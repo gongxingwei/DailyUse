@@ -11,6 +11,7 @@
 ## 📊 Summary
 
 成功实现了项目关键路径法 (CPM) 分析功能，包括：
+
 - 关键路径计算服务（拓扑排序、ES/LS 计算、松弛时间分析）
 - 项目优化建议生成
 - 可视化 UI 组件（时间线面板、统计卡片）
@@ -25,6 +26,7 @@
 **File**: `apps/web/src/modules/task/application/services/TaskCriticalPathService.ts`
 
 **Implemented Methods**:
+
 ```typescript
 // 核心算法
 - calculateCriticalPath(): 计算关键路径
@@ -40,6 +42,7 @@
 ```
 
 **Key Features**:
+
 - ✅ 拓扑排序 (Kahn's Algorithm)
 - ✅ 正向计算最早开始时间 (ES)
 - ✅ 反向计算最晚开始时间 (LS)
@@ -49,6 +52,7 @@
 - ✅ 环检测 (依赖 topological sort)
 
 **Algorithm Complexity**:
+
 - Time: O(V + E) - 拓扑排序
 - Space: O(V + E) - 邻接表 + 时序信息
 
@@ -57,6 +61,7 @@
 **File**: `apps/web/src/modules/task/presentation/components/critical-path/CriticalPathPanel.vue`
 
 **UI Components**:
+
 - ✅ 项目统计卡片（总工期、关键任务数、平均松弛时间）
 - ✅ 关键路径任务列表（带序号、工期、松弛时间）
 - ✅ 非关键任务列表（可折叠）
@@ -65,6 +70,7 @@
 - ✅ 帮助说明（关键路径概念解释）
 
 **Visual Design**:
+
 ```
 ┌──────────────────────────────────────────────┐
 │  关键路径分析                    [帮助]      │
@@ -98,12 +104,14 @@
 **Test Suites** (20 test cases):
 
 #### topologicalSort (4 tests)
+
 - ✅ 线性依赖排序 (A → B → C)
 - ✅ 菱形依赖排序 (Diamond pattern)
 - ✅ 多起点任务处理
 - ✅ 环检测 (返回空数组)
 
 #### calculateTaskTimings (5 tests)
+
 - ✅ ES/EF 计算（线性任务）
 - ✅ LS/LF 计算（反向遍历）
 - ✅ 松弛时间计算
@@ -111,6 +119,7 @@
 - ✅ 非关键任务识别 (slack > 0)
 
 #### calculateCriticalPath (5 tests)
+
 - ✅ 单条关键路径识别
 - ✅ 多条关键路径识别
 - ✅ 零工期任务处理（里程碑）
@@ -118,11 +127,13 @@
 - ✅ 项目总工期计算
 
 #### getOptimizationSuggestions (3 tests)
+
 - ✅ 建议缩短关键任务工期 (> 1小时)
 - ✅ 建议并行化有松弛时间的任务
 - ✅ 限制建议数量 (最多 5 个)
 
 #### Helper Methods (3 tests)
+
 - ✅ formatProjectTimeline: 项目时间线格式化
 - ✅ isCritical: 关键任务判断
 - ✅ getSlackTime: 松弛时间获取
@@ -165,30 +176,35 @@ None (all new implementations)
 ## 🎯 Acceptance Criteria Check
 
 ### AC-1: Critical Path Calculation ✅
+
 - ✅ AC-1.1: 计算最长路径（正向 + 反向遍历）
 - ✅ AC-1.2: 识别零松弛任务
 - ✅ AC-1.3: O(V + E) 时间复杂度（已验证）
 - ✅ AC-1.4: 处理多条独立路径
 
 ### AC-2: Task Timing Analysis ✅
+
 - ✅ AC-2.1: 计算 ES (Earliest Start)
 - ✅ AC-2.2: 计算 LS (Latest Start)
 - ✅ AC-2.3: 计算 Slack (LS - ES)
 - ✅ AC-2.4: 显示预估完成日期
 
 ### AC-3: Visual Highlighting ✅
+
 - ✅ AC-3.1: 关键任务红色高亮（通过 Panel 实现）
 - ✅ AC-3.2: 非关键任务默认颜色
 - ✅ AC-3.3: 可折叠视图切换
 - ✅ AC-3.4: 松弛时间作为任务元数据显示
 
 ### AC-4: Timeline Panel ✅
+
 - ✅ AC-4.1: 显示项目总工期
 - ✅ AC-4.2: 关键路径任务列表（有序）
 - ✅ AC-4.3: 每个任务工期 + 依赖
 - ✅ AC-4.4: 优化建议（3 种类型）
 
 ### AC-5: Performance ✅
+
 - ✅ AC-5.1: < 100ms for 100 tasks（算法 O(V+E) 保证）
 - ✅ AC-5.2: 实时更新（reactive computed）
 - ✅ AC-5.3: 高效内存使用（Map 数据结构）
@@ -200,6 +216,7 @@ None (all new implementations)
 ## 🧪 Testing Results
 
 ### Unit Tests
+
 ```bash
 pnpm nx test web -- TaskCriticalPathService.spec.ts
 
@@ -217,21 +234,25 @@ Coverage: ~95%
 ### Manual Testing Scenarios
 
 #### Scenario 1: Linear Path
+
 **Setup**: A → B → C (60min, 120min, 90min)
 **Expected**: All critical, total = 270min
 **Result**: ✅ Pass
 
 #### Scenario 2: Diamond Dependencies
+
 **Setup**: A → B,C → D (两条并行路径)
 **Expected**: 长路径为关键路径
 **Result**: ✅ Pass
 
 #### Scenario 3: Complex Graph
+
 **Setup**: 10 tasks, multiple branches
 **Expected**: 正确识别关键路径和松弛时间
 **Result**: ✅ Pass
 
 #### Scenario 4: Cycle Detection
+
 **Setup**: A → B → A (循环)
 **Expected**: 抛出错误 "Cyclic dependency"
 **Result**: ✅ Pass
@@ -243,6 +264,7 @@ Coverage: ~95%
 ### 1. Critical Path Method (CPM) Implementation
 
 **Algorithm**: Industry-standard Project Management technique
+
 ```
 Step 1: Topological Sort (Kahn's Algorithm)
 Step 2: Forward Pass → Calculate ES, EF
@@ -252,16 +274,19 @@ Step 5: Critical Task Identification → Slack = 0
 ```
 
 **Time Complexity**: O(V + E)
+
 - V = 任务数 (vertices)
 - E = 依赖数 (edges)
 
 **Space Complexity**: O(V + E)
+
 - 邻接表: O(V + E)
 - 时序信息: O(V)
 
 ### 2. Optimization Suggestions
 
 **3 Types of Suggestions**:
+
 1. **Reduce Duration** (缩短工期)
    - 针对 > 1 小时的关键任务
    - 假设可缩短 20%
@@ -283,6 +308,7 @@ Step 5: Critical Task Identification → Slack = 0
 ### 3. Reactive UI Updates
 
 使用 Vue 3 Composition API:
+
 ```typescript
 const timeline = computed(() => {
   // Auto-recalculate when result changes
@@ -291,13 +317,14 @@ const timeline = computed(() => {
 
 const nonCriticalTasks = computed(() => {
   // Filter tasks dynamically
-  return allTasks.filter(t => !criticalPath.includes(t.uuid));
+  return allTasks.filter((t) => !criticalPath.includes(t.uuid));
 });
 ```
 
 ### 4. Export Functionality
 
 JSON report包含：
+
 - Project duration
 - Critical tasks with timings
 - Optimization suggestions
@@ -309,16 +336,19 @@ JSON report包含：
 ## 📈 Performance Metrics
 
 ### Algorithm Performance
+
 - **50 tasks**: ~20ms ✅
 - **100 tasks**: ~50ms ✅ (target: < 100ms)
 - **200 tasks**: ~120ms ✅
 
 ### UI Rendering
+
 - **Initial render**: < 100ms
 - **Update on change**: < 50ms
 - **60 FPS maintained**: Yes ✅
 
 ### Memory Usage
+
 - **100 tasks**: ~2MB
 - **200 tasks**: ~4MB
 - **No memory leaks**: Verified ✅
@@ -391,20 +421,14 @@ None - all features working as expected.
 
 ```vue
 <template>
-  <CriticalPathPanel
-    :result="criticalPathResult"
-    :all-tasks="tasks"
-  />
+  <CriticalPathPanel :result="criticalPathResult" :all-tasks="tasks" />
 </template>
 
 <script setup>
 import { taskCriticalPathService } from '@/services/TaskCriticalPathService';
 
 const criticalPathResult = computed(() => {
-  return taskCriticalPathService.calculateCriticalPath(
-    tasks.value,
-    dependencies.value
-  );
+  return taskCriticalPathService.calculateCriticalPath(tasks.value, dependencies.value);
 });
 </script>
 ```
@@ -414,17 +438,20 @@ const criticalPathResult = computed(() => {
 ## 🎓 Lessons Learned
 
 ### What Went Well ✅
+
 1. **Clear Algorithm Design**: CPM is well-defined, implementation straightforward
 2. **Comprehensive Testing**: 20 test cases caught edge cases early
 3. **Reusable Code**: Service can be used in multiple contexts
 4. **Performance**: O(V+E) complexity works well even for large graphs
 
 ### Areas for Improvement
+
 1. **UI Polish**: Could add animations for path visualization
 2. **Suggestion Quality**: ML-based suggestions would be better
 3. **Export Formats**: Add PDF/CSV export options
 
 ### Technical Debt
+
 - None identified
 
 ---
@@ -432,6 +459,7 @@ const criticalPathResult = computed(() => {
 ## 📊 Sprint 4 Progress
 
 ### Completed Stories
+
 - ✅ STORY-022: Task Dependency Data Model (3 SP)
 - ✅ STORY-023: Task DAG Visualization (4 SP)
 - ✅ STORY-024: Dependency Validation & Auto-status (3 SP)
@@ -440,6 +468,7 @@ const criticalPathResult = computed(() => {
 **Total**: 12/24 SP (50%)
 
 ### Next Story
+
 - **STORY-026**: Global Search & Command Palette (3 SP)
 - **STORY-027**: Drag & Drop Task Management (2 SP)
 
@@ -448,14 +477,17 @@ const criticalPathResult = computed(() => {
 ## 🚀 Deployment
 
 ### Backend Changes
+
 None - pure frontend feature
 
 ### Frontend Changes
+
 1. New service: TaskCriticalPathService
 2. New component: CriticalPathPanel
 3. No breaking changes
 
 ### Migration Required
+
 No
 
 ---
@@ -465,6 +497,7 @@ No
 **Status**: ✅ 100% Complete
 
 **Deliverables**:
+
 - ✅ Planning document
 - ✅ Critical path service (500 lines)
 - ✅ UI panel component (350 lines)
@@ -474,6 +507,7 @@ No
 **Story Points**: 2 SP (Estimated: 10 hours, Actual: ~8 hours)
 
 **Quality**: Production-ready
+
 - Code review: Ready ✅
 - Tests passing: 100% ✅
 - Documentation: Complete ✅

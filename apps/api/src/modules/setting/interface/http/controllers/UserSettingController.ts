@@ -45,8 +45,7 @@ export class UserSettingController {
       const { UserSettingApplicationService } = await import(
         '../../../application/services/UserSettingApplicationService'
       );
-      UserSettingController.userSettingService =
-        await UserSettingApplicationService.getInstance();
+      UserSettingController.userSettingService = await UserSettingApplicationService.getInstance();
     }
     return UserSettingController.userSettingService;
   }

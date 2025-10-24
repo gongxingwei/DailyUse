@@ -14,12 +14,7 @@
     <!-- 加载状态 -->
     <v-row v-if="initializing" justify="center">
       <v-col cols="12" class="text-center py-16">
-        <v-progress-circular
-          indeterminate
-          color="primary"
-          size="64"
-          class="mb-4"
-        />
+        <v-progress-circular indeterminate color="primary" size="64" class="mb-4" />
         <p class="text-body-1">加载设置中...</p>
       </v-col>
     </v-row>
@@ -38,17 +33,8 @@
       <v-col cols="12">
         <v-card>
           <!-- 标签页导航 -->
-          <v-tabs
-            v-model="activeTab"
-            bg-color="surface"
-            color="primary"
-            grow
-          >
-            <v-tab
-              v-for="tab in tabs"
-              :key="tab.key"
-              :value="tab.key"
-            >
+          <v-tabs v-model="activeTab" bg-color="surface" color="primary" grow>
+            <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key">
               <v-icon start>{{ tab.icon }}</v-icon>
               {{ tab.label }}
             </v-tab>
@@ -135,7 +121,7 @@ onMounted(async () => {
     // TODO: 从认证系统获取当前用户的 accountUuid
     // const accountUuid = useAuth().currentUser?.uuid;
     const mockAccountUuid = 'mock-account-uuid'; // 临时 Mock
-    
+
     await initialize(mockAccountUuid);
   } catch (e) {
     error.value = e instanceof Error ? e.message : '初始化设置失败';
@@ -153,7 +139,7 @@ onMounted(async () => {
 const handleRetry = async () => {
   initializing.value = true;
   error.value = '';
-  
+
   try {
     const mockAccountUuid = 'mock-account-uuid';
     await initialize(mockAccountUuid);

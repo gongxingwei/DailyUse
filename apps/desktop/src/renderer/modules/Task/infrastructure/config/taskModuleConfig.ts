@@ -1,13 +1,13 @@
 /**
  * 渲染进程 Task 模块配置
- * 
+ *
  * 统一配置和管理 Task 模块的数据持久化策略
  * 新架构：IPC 持久化 + Store 状态管理
  */
 
 /**
  * 渲染进程 Task 模块配置
- * 
+ *
  * 统一配置和管理 Task 模块的数据持久化策略
  * 新架构：IPC 持久化 + Store 状态管理
  */
@@ -23,7 +23,7 @@ export enum DataFetchStrategy {
   /** 仅缓存：只使用 Store 数据，不主动同步 */
   CACHE_ONLY = 'cache-only',
   /** 仅实时：强制通过 IPC 获取，不使用 Store 缓存 */
-  REALTIME_ONLY = 'realtime-only'
+  REALTIME_ONLY = 'realtime-only',
 }
 
 /**
@@ -59,7 +59,7 @@ export const TaskModulePresets = {
     enableReactiveState: true,
     ipcTimeout: 5000, // 5秒
     enableRetry: true,
-    retryCount: 3
+    retryCount: 3,
   } as TaskModuleConfig,
 
   /** 实时配置：数据一致性优先 */
@@ -70,7 +70,7 @@ export const TaskModulePresets = {
     enableReactiveState: true,
     ipcTimeout: 3000, // 3秒，更快的响应
     enableRetry: true,
-    retryCount: 2
+    retryCount: 2,
   } as TaskModuleConfig,
 
   /** 离线配置：性能优先 */
@@ -81,7 +81,7 @@ export const TaskModulePresets = {
     enableReactiveState: true,
     ipcTimeout: 1000, // 1秒，快速失败
     enableRetry: false,
-    retryCount: 0
+    retryCount: 0,
   } as TaskModuleConfig,
 
   /** 混合配置：平衡性能与一致性 */
@@ -92,7 +92,7 @@ export const TaskModulePresets = {
     enableReactiveState: true,
     ipcTimeout: 4000, // 4秒
     enableRetry: true,
-    retryCount: 2
+    retryCount: 2,
   } as TaskModuleConfig,
 
   /** 高性能配置：最小化 IPC 调用 */
@@ -103,8 +103,8 @@ export const TaskModulePresets = {
     enableReactiveState: true,
     ipcTimeout: 2000, // 2秒
     enableRetry: false,
-    retryCount: 0
-  } as TaskModuleConfig
+    retryCount: 0,
+  } as TaskModuleConfig,
 };
 
 /**
@@ -132,7 +132,7 @@ export class TaskModuleConfigValidator {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
@@ -142,27 +142,30 @@ export class TaskModuleConfigValidator {
  */
 export function createTaskModuleConfig(override: Partial<TaskModuleConfig> = {}): TaskModuleConfig {
   const config = { ...TaskModulePresets.DEFAULT, ...override };
-  
+
   const validation = TaskModuleConfigValidator.validate(config);
   if (!validation.isValid) {
     console.warn('Task 模块配置验证失败:', validation.errors);
   }
-  
+
   return config;
 }
 
 /**
  * 根据网络状态获取推荐配置
  */
-export function getRecommendedConfig(isOnline: boolean, isHighPerformance: boolean = false): TaskModuleConfig {
+export function getRecommendedConfig(
+  isOnline: boolean,
+  isHighPerformance: boolean = false,
+): TaskModuleConfig {
   if (!isOnline) {
     return TaskModulePresets.OFFLINE;
   }
-  
+
   if (isHighPerformance) {
     return TaskModulePresets.PERFORMANCE;
   }
-  
+
   return TaskModulePresets.DEFAULT;
 }
 
@@ -174,20 +177,20 @@ export const TaskModuleConfigDocs = {
     [DataFetchStrategy.OFFLINE_FIRST]: '适合大多数场景，提供良好的用户体验和数据一致性平衡',
     [DataFetchStrategy.REALTIME_FIRST]: '适合需要强一致性的场景，如多用户协作',
     [DataFetchStrategy.CACHE_ONLY]: '适合离线场景或性能要求极高的场景',
-    [DataFetchStrategy.REALTIME_ONLY]: '适合数据一致性要求极高的场景，不推荐日常使用'
+    [DataFetchStrategy.REALTIME_ONLY]: '适合数据一致性要求极高的场景，不推荐日常使用',
   },
-  
+
   syncInterval: {
     '30000': '默认值，适合大多数场景',
     '60000': '较低频率同步，适合性能敏感场景',
-    '10000': '高频同步，适合数据变化频繁的场景'
+    '10000': '高频同步，适合数据变化频繁的场景',
   },
-  
+
   bestPractices: [
     '在网络不稳定的环境下使用 OFFLINE_FIRST 策略',
     '在需要实时协作的场景下使用 REALTIME_FIRST 策略',
     '在性能敏感的场景下使用 CACHE_ONLY 策略并延长同步间隔',
     '始终启用 enableReactiveState 以获得更好的用户体验',
-    '根据网络状况调整 ipcTimeout 和 retryCount'
-  ]
+    '根据网络状况调整 ipcTimeout 和 retryCount',
+  ],
 };

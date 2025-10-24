@@ -11,12 +11,14 @@
 Task 模块与 Goal 模块架构**完全一致**，区别仅在于业务逻辑。
 
 ### 主要聚合根
+
 1. **TaskTemplate** - 任务模板（类似 Goal）
 2. **TaskInstance** - 任务实例（类似 KeyResult，但更独立）
 3. **TaskFolder** - 任务文件夹（类似 GoalFolder）
 4. **TaskStatistics** - 任务统计（类似 GoalStatistics）
 
 ### 主要实体
+
 1. **TaskStep** - 任务步骤/子任务
 2. **TaskAttachment** - 任务附件
 3. **TaskComment** - 任务评论（可选）
@@ -27,25 +29,25 @@ Task 模块与 Goal 模块架构**完全一致**，区别仅在于业务逻辑�
 
 ```typescript
 // Server DTO
-TaskTemplateServerDTO
-TaskInstanceServerDTO
-TaskFolderServerDTO
-TaskStatisticsServerDTO
-TaskStepServerDTO
+TaskTemplateServerDTO;
+TaskInstanceServerDTO;
+TaskFolderServerDTO;
+TaskStatisticsServerDTO;
+TaskStepServerDTO;
 
 // Client DTO（注意 Client 后缀）
-TaskTemplateClientDTO
-TaskInstanceClientDTO
-TaskFolderClientDTO
-TaskStatisticsClientDTO
-TaskStepClientDTO
+TaskTemplateClientDTO;
+TaskInstanceClientDTO;
+TaskFolderClientDTO;
+TaskStatisticsClientDTO;
+TaskStepClientDTO;
 
 // Persistence DTO
-TaskTemplatePersistenceDTO
-TaskInstancePersistenceDTO
-TaskFolderPersistenceDTO
-TaskStatisticsPersistenceDTO
-TaskStepPersistenceDTO
+TaskTemplatePersistenceDTO;
+TaskInstancePersistenceDTO;
+TaskFolderPersistenceDTO;
+TaskStatisticsPersistenceDTO;
+TaskStepPersistenceDTO;
 ```
 
 ---
@@ -53,6 +55,7 @@ TaskStepPersistenceDTO
 ## 🔄 DTO 转换方法
 
 ### Domain-Server 层
+
 ```typescript
 export class TaskTemplate extends AggregateRoot {
   public toServerDTO(includeChildren = false): TaskTemplateServerDTO;
@@ -63,6 +66,7 @@ export class TaskTemplate extends AggregateRoot {
 ```
 
 ### Domain-Client 层
+
 ```typescript
 export class TaskTemplateClient extends AggregateRoot {
   public toServerDTO(includeChildren = false): TaskTemplateServerDTO;
@@ -82,7 +86,7 @@ export enum TaskTemplateStatus {
   Active = 'active',
   Completed = 'completed',
   Archived = 'archived',
-  Deleted = 'deleted',  // 逻辑删除
+  Deleted = 'deleted', // 逻辑删除
 }
 
 export enum TaskInstanceStatus {
@@ -106,11 +110,11 @@ export class TaskTemplate extends AggregateRoot {
   public archive(): void;
   public softDelete(): void;
   public restore(): void;
-  
+
   // 实例管理
   public createInstance(params: CreateTaskInstanceParams): TaskInstance;
   public updateInstance(instanceId: string, params: UpdateParams): void;
-  
+
   // 步骤管理
   public addStep(params: CreateTaskStepParams): TaskStep;
   public updateStep(stepId: string, params: UpdateParams): void;
@@ -127,12 +131,12 @@ export interface ITaskTemplateRepository {
   save(template: TaskTemplate): Promise<void>;
   findByUuid(uuid: string): Promise<TaskTemplate | null>;
   findByAccountUuid(accountUuid: string, includeDeleted?: boolean): Promise<TaskTemplate[]>;
-  
+
   // 逻辑删除
   softDelete(uuid: string): Promise<void>;
   restore(uuid: string): Promise<void>;
   hardDelete(uuid: string): Promise<void>;
-  
+
   // 查询
   findByStatus(accountUuid: string, status: TaskTemplateStatus): Promise<TaskTemplate[]>;
   findByFolder(folderUuid: string): Promise<TaskTemplate[]>;

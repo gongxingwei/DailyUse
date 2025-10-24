@@ -1,4 +1,4 @@
-import type { ReminderTemplateGroup } from "../aggregates/reminderTemplateGroup";
+import type { ReminderTemplateGroup } from '../aggregates/reminderTemplateGroup';
 
 export interface IReminderTemplateGroupRepository {
   create(accountUuid: string, group: ReminderTemplateGroup): Promise<boolean>;

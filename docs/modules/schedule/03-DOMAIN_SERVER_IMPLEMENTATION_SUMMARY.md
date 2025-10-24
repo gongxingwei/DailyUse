@@ -1,10 +1,13 @@
 # Schedule Module - Domain-Server Implementation Summary
+
 # 调度模块 Domain-Server 层实现总结
 
 ## 实施日期
+
 2025-01-XX
 
 ## 当前状态
+
 ✅ **Domain-Server 层基本完成** (95%)
 ⏳ **Domain-Client 层框架完成** (80%)
 ⏳ **API 层开始** (10% - Prisma Schema)
@@ -16,6 +19,7 @@
 ### ✅ 1. 值对象 (Value Objects) - 100%
 
 **已完成文件:**
+
 - `ScheduleConfig.ts` - Cron 调度配置
 - `ExecutionInfo.ts` - 执行信息追踪
 - `RetryPolicy.ts` - 指数退避重试策略
@@ -24,6 +28,7 @@
 - `value-objects/index.ts` - 统一导出
 
 **特性:**
+
 - ✅ 不可变性 (Object.freeze)
 - ✅ 值相等性 (equals 方法)
 - ✅ DTO 转换 (toDTO, fromDTO)
@@ -33,10 +38,12 @@
 ### ✅ 2. 实体 (Entities) - 100%
 
 **已完成文件:**
+
 - `ScheduleExecution.ts` - 执行记录实体
 - `entities/index.ts` - 统一导出
 
 **特性:**
+
 - ✅ 继承自 Entity 基类
 - ✅ 私有构造函数
 - ✅ 业务方法 (markSuccess, markFailed 等)
@@ -46,11 +53,13 @@
 ### ✅ 3. 聚合根 (Aggregates) - 95%
 
 **已完成文件:**
+
 - `ScheduleTask.ts` (650+ 行) - 任务调度聚合根
-- `ScheduleStatistics.ts` (900+ 行) - 统计聚合根  
+- `ScheduleStatistics.ts` (900+ 行) - 统计聚合根
 - `aggregates/index.ts` - 统一导出
 
 **ScheduleTask 特性:**
+
 - ✅ 完整生命周期管理 (pause, resume, complete, cancel, fail)
 - ✅ 调度配置管理 (updateSchedule, calculateNextRun)
 - ✅ 执行追踪 (recordExecution, resetFailures)
@@ -63,6 +72,7 @@
 - ✅ 类型检查通过
 
 **ScheduleStatistics 特性:**
+
 - ✅ 账户级别统计聚合
 - ✅ 任务计数管理 (increment/decrementTaskCount)
 - ✅ 状态统计 (pause/resume/complete/fail tracking)
@@ -76,11 +86,13 @@
 ### ✅ 4. 仓储接口 (Repository Interfaces) - 100%
 
 **已完成文件:**
+
 - `IScheduleTaskRepository.ts` - 任务仓储接口
 - `IScheduleStatisticsRepository.ts` - 统计仓储接口
 - `repositories/index.ts` - 统一导出
 
 **特性:**
+
 - ✅ 基本 CRUD 操作
 - ✅ 复杂查询方法 (findBySourceModule, findDueTasksForExecution 等)
 - ✅ 批量操作支持
@@ -90,11 +102,13 @@
 ### ✅ 5. 领域服务 (Domain Services) - 100%
 
 **已完成文件:**
+
 - `ScheduleDomainService.ts` (500+ 行) - 调度领域服务
 - `ScheduleStatisticsDomainService.ts` (180+ 行) - 统计领域服务
 - `services/index.ts` - 统一导出
 
 **ScheduleDomainService 特性:**
+
 - ✅ 任务创建 (create, createBatch)
 - ✅ 任务执行 (executeScheduleTask with callback)
 - ✅ 生命周期管理 (pause, resume, complete, cancel, fail)
@@ -104,6 +118,7 @@
 - ⚠️ 存在类型不匹配 (与 Contracts 对齐后可修复)
 
 **ScheduleStatisticsDomainService 特性:**
+
 - ✅ 统计初始化 (ensureStatisticsExists)
 - ✅ 重新计算 (recalculateStatistics)
 - ✅ 模块查询 (getModuleStatistics, getAllModuleStatistics)
@@ -113,6 +128,7 @@
 ### ✅ 6. 统一导出 - 100%
 
 **已完成文件:**
+
 - `schedule/index.ts` - Domain-Server 层统一导出
 
 ---
@@ -120,11 +136,13 @@
 ## 二、Domain-Client 层完成情况 (80%)
 
 **已完成文件:**
+
 - `ScheduleTaskClient.ts` (350+ 行)
 - `ScheduleStatisticsClient.ts` (280+ 行)
 - `schedule/index.ts`
 
 **特性:**
+
 - ✅ 客户端友好的 API
 - ✅ UI 辅助属性 (statusText, statusColor, isActive 等)
 - ✅ 中文显示文本
@@ -133,6 +151,7 @@
 - ⚠️ **存在大量类型不匹配** (因 DTO 定义不同步)
 
 **待修复:**
+
 - ⚠️ ScheduleTaskClientDTO 字段名称不匹配
 - ⚠️ ScheduleStatisticsClientDTO 类型定义缺失
 - ⚠️ 需要与 Contracts 层完全对齐
@@ -142,9 +161,11 @@
 ## 三、API 层开始 (10%)
 
 **已完成文件:**
+
 - `schedule.schema.prisma` - Prisma 数据库 Schema
 
 **Schema 设计:**
+
 - ✅ ScheduleTask 表 (主表)
 - ✅ ScheduleExecution 表 (子表, 1:N)
 - ✅ ScheduleStatistics 表 (每账户一条)
@@ -153,6 +174,7 @@
 - ⚠️ Account 关联待补全
 
 **待实现:**
+
 - ⏳ Repository 实现类
 - ⏳ Service 层 (API)
 - ⏳ Controller 层
@@ -164,6 +186,7 @@
 ## 四、领域事件总结
 
 **ScheduleTask 发布的事件 (8 个):**
+
 1. `ScheduleTaskCreated` - 任务创建
 2. `ScheduleTaskPaused` - 任务暂停
 3. `ScheduleTaskResumed` - 任务恢复
@@ -174,12 +197,14 @@
 8. `ScheduleTaskExecuted` - 任务执行
 
 **ScheduleStatistics 发布的事件 (4 个):**
+
 1. `ScheduleStatisticsCreated` - 统计创建
 2. `ScheduleStatisticsTaskCountIncremented` - 任务数增加
 3. `ScheduleStatisticsTaskCountDecremented` - 任务数减少
 4. `ScheduleStatisticsExecutionRecorded` - 执行记录
 
 **事件格式 (已修复):**
+
 ```typescript
 {
   eventType: 'ScheduleTaskCreated',  // PascalCase, not 'schedule.task.created'
@@ -195,6 +220,7 @@
 ## 五、与 Repository 模块对齐情况
 
 ✅ **已对齐的模式:**
+
 - ✅ 值对象: 不可变 + ValueObject 基类
 - ✅ 实体: Entity 基类 + 私有构造函数
 - ✅ 聚合根: AggregateRoot 基类 + 领域事件
@@ -204,6 +230,7 @@
 - ✅ 静态工厂: create(), fromDTO(), fromPersistenceDTO()
 
 ⚠️ **待对齐的差异:**
+
 - ⚠️ Contracts 层定义与实现存在差异
 - ⚠️ DTO 字段名称不一致 (camelCase vs snake_case)
 - ⚠️ 某些枚举值不匹配 ('active' vs ScheduleTaskStatus)
@@ -213,24 +240,28 @@
 ## 六、关键技术决策
 
 ### 1. 事件格式修复
+
 - **问题**: 初始使用错误的事件格式 `{type, timestamp}`
 - **解决**: 统一改为 `{eventType, occurredOn, accountUuid, aggregateId, payload}`
 - **来源**: 参考 TaskTemplate 的正确实现
 
 ### 2. ScheduleStatistics 设计
+
 - **决策**: 使用平铺字段而非 Map<SourceModule, ModuleStatistics>
-- **原因**: 
+- **原因**:
   - 简化数据库映射
   - 避免值对象序列化复杂性
   - 参考 RepositoryStatistics 的成功模式
 - **实现**: 每个模块 5 个字段 (totalTasks, activeTasks, executions, successfulExecutions, failedExecutions)
 
 ### 3. AggregateRoot 构造函数
+
 - **发现**: AggregateRoot 只需要一个参数 (uuid)，不是三个 (uuid, createdAt, updatedAt)
 - **来源**: Repository.ts 实现
-- **修复**: 统一使用 `super(uuid)` 
+- **修复**: 统一使用 `super(uuid)`
 
 ### 4. Cron-Parser 临时处理
+
 - **问题**: cron-parser 导入问题
 - **临时方案**: 暂时注释掉，使用 placeholder
 - **待办**: API 层实现时正确配置
@@ -322,6 +353,7 @@
 ## 九、文件清单
 
 ### Domain-Server (packages/domain-server/src/schedule/)
+
 ```
 schedule/
 ├── value-objects/
@@ -350,6 +382,7 @@ schedule/
 ```
 
 ### Domain-Client (packages/domain-client/src/schedule/)
+
 ```
 schedule/
 ├── ScheduleTaskClient.ts           ⚠️ 框架完成，有类型错误
@@ -358,6 +391,7 @@ schedule/
 ```
 
 ### API (apps/api/)
+
 ```
 prisma/
 └── schedule.schema.prisma          ✅ 完成 (有 Account 关联警告)
@@ -370,6 +404,7 @@ src/modules/schedule/
 ```
 
 ### Web (apps/web/)
+
 ```
 src/modules/schedule/
 ├── components/                     ⏳ 待实现
@@ -387,7 +422,7 @@ src/modules/schedule/
 - **类数量**: 12 个类
 - **接口数量**: 10+ 个接口
 - **领域事件**: 12 种事件类型
-- **完成度**: 
+- **完成度**:
   - Domain-Server: 95%
   - Domain-Client: 80%
   - API: 10%
@@ -441,8 +476,9 @@ Domain-Server 层已经基本完成并且质量很高，遵循了严格的 DDD �
 主要成就是 **ScheduleTask** 和 **ScheduleStatistics** 两个聚合根的完整实现，它们是调度系统的核心，具备完整的业务逻辑和事件发布能力。
 
 下一步的重点是：
+
 1. 修复 Contracts 类型定义
-2. 修复 Domain-Client 类型错误  
+2. 修复 Domain-Client 类型错误
 3. 完成 API 层实现
 4. 实现 Web 层
 

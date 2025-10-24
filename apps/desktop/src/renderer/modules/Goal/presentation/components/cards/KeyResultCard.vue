@@ -1,11 +1,20 @@
 <template>
-  <v-card class="key-result-card" :class="{ 'key-result-card--completed': keyResult.progress >= 100 }"
-    variant="outlined" elevation="0" :hover="true" @click="navigateToKeyResultInfo">
+  <v-card
+    class="key-result-card"
+    :class="{ 'key-result-card--completed': keyResult.progress >= 100 }"
+    variant="outlined"
+    elevation="0"
+    :hover="true"
+    @click="navigateToKeyResultInfo"
+  >
     <!-- 进度背景层 -->
-    <div class="progress-background" :style="{
-      background: `linear-gradient(90deg, ${goal?.color || '#FF5733'} 0%, ${goal?.color || '#FF5733'}88 100%)`,
-      width: `${keyResult.progress}%`,
-    }"></div>
+    <div
+      class="progress-background"
+      :style="{
+        background: `linear-gradient(90deg, ${goal?.color || '#FF5733'} 0%, ${goal?.color || '#FF5733'}88 100%)`,
+        width: `${keyResult.progress}%`,
+      }"
+    ></div>
 
     <!-- 卡片头部 -->
     <v-card-title class="pa-4 pb-2">
@@ -13,18 +22,25 @@
         <div class="key-result-title">
           <h3 class="text-h6 font-weight-bold mb-0">{{ keyResult.name }}</h3>
           <div class="d-flex align-center mt-1">
-            <v-icon :color="keyResult.progress >= 100 ? 'success' : 'medium-emphasis'" size="16" class="mr-1">
+            <v-icon
+              :color="keyResult.progress >= 100 ? 'success' : 'medium-emphasis'"
+              size="16"
+              class="mr-1"
+            >
               {{ keyResult.progress >= 100 ? 'mdi-check-circle' : 'mdi-target' }}
             </v-icon>
-            <span class="text-caption text-medium-emphasis">
-              权重: {{ keyResult.weight }}
-            </span>
+            <span class="text-caption text-medium-emphasis"> 权重: {{ keyResult.weight }} </span>
           </div>
         </div>
 
         <!-- 进度圆环 -->
-        <v-progress-circular :model-value="keyResult.progress" :color="goal?.color || 'primary'" size="48" width="4"
-          class="progress-ring">
+        <v-progress-circular
+          :model-value="keyResult.progress"
+          :color="goal?.color || 'primary'"
+          size="48"
+          width="4"
+          class="progress-ring"
+        >
           <span class="text-caption font-weight-bold">{{ Math.round(keyResult.progress) }}%</span>
         </v-progress-circular>
       </div>
@@ -45,19 +61,28 @@
         </div>
 
         <!-- 添加记录按钮 -->
-        <v-btn :color="goal?.color || 'primary'" icon="mdi-plus" size="small" variant="tonal" class="add-record-btn"
-          @click.stop="startAddGoalRecord(goal.uuid, keyResult.uuid)">
+        <v-btn
+          :color="goal?.color || 'primary'"
+          icon="mdi-plus"
+          size="small"
+          variant="tonal"
+          class="add-record-btn"
+          @click.stop="startAddGoalRecord(goal.uuid, keyResult.uuid)"
+        >
           <v-icon>mdi-plus</v-icon>
-          <v-tooltip activator="parent" location="bottom">
-            添加记录
-          </v-tooltip>
+          <v-tooltip activator="parent" location="bottom"> 添加记录 </v-tooltip>
         </v-btn>
       </div>
 
       <!-- 进度条 -->
       <div class="mt-3">
-        <v-progress-linear :model-value="keyResult.progress" :color="goal?.color || 'primary'" height="6" rounded
-          class="progress-bar" />
+        <v-progress-linear
+          :model-value="keyResult.progress"
+          :color="goal?.color || 'primary'"
+          height="6"
+          rounded
+          class="progress-bar"
+        />
         <div class="d-flex justify-space-between align-center mt-1">
           <span class="text-caption text-medium-emphasis">进度</span>
           <span class="text-caption font-weight-medium">
@@ -73,12 +98,15 @@
       <span class="text-caption font-weight-bold text-success">已完成</span>
     </div>
     <!-- 记录对话框 -->
-    <GoalRecordDialog :model-value="recordDialog.show" :record="(recordDialog.record as GoalRecord)"
-      :goalUuid="recordDialog.goalUuid" :keyResultUuid="recordDialog.keyResultUuid"
-      @create-record="handleAddGoalRecordToGoal" @update:model-value="recordDialog.show = $event" />
+    <GoalRecordDialog
+      :model-value="recordDialog.show"
+      :record="recordDialog.record as GoalRecord"
+      :goalUuid="recordDialog.goalUuid"
+      :keyResultUuid="recordDialog.keyResultUuid"
+      @create-record="handleAddGoalRecordToGoal"
+      @update:model-value="recordDialog.show = $event"
+    />
   </v-card>
-
-
 </template>
 
 <script lang="ts" setup>
@@ -104,8 +132,8 @@ const navigateToKeyResultInfo = () => {
     name: 'key-result-info',
     params: {
       goalUuid: props.goal.uuid,
-      keyResultUuid: props.keyResult.uuid
-    }
+      keyResultUuid: props.keyResult.uuid,
+    },
   });
 };
 </script>

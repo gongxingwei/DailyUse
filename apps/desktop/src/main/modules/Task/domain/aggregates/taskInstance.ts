@@ -1,9 +1,6 @@
-import { AggregateRoot } from "@dailyuse/utils";
+import { AggregateRoot } from '@dailyuse/utils';
 
-import {
-  TaskCompletedEvent,
-  TaskUndoCompletedEvent,
-} from "../events/taskEvents";
+import { TaskCompletedEvent, TaskUndoCompletedEvent } from '../events/taskEvents';
 
 import {
   KeyResultLink,
@@ -15,11 +12,10 @@ import {
   TaskReminderConfig,
   TaskInstanceTimeConfig,
   ITaskInstanceDTO,
-} from "@common/modules/task/types/task";
-import { ImportanceLevel } from "@dailyuse/contracts";
-import { UrgencyLevel } from "@dailyuse/contracts";
-import { addDays } from "date-fns/addDays";
-
+} from '@common/modules/task/types/task';
+import { ImportanceLevel } from '@dailyuse/contracts';
+import { UrgencyLevel } from '@dailyuse/contracts';
+import { addDays } from 'date-fns/addDays';
 
 export class TaskInstance extends AggregateRoot implements ITaskInstance {
   private _templateUuid: string;
@@ -28,7 +24,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   private _timeConfig: TaskInstanceTimeConfig;
   private _reminderStatus: TaskInstanceReminderStatus;
   private _lifecycle: {
-    status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue";
+    status: 'pending' | 'inProgress' | 'completed' | 'cancelled' | 'overdue';
     createdAt: Date;
     updatedAt: Date;
     startedAt?: Date;
@@ -59,7 +55,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     timeConfig?: Partial<TaskInstanceTimeConfig>;
     estimatedDuration?: number;
     keyResultLinks?: KeyResultLink[];
-    reminderAlerts?: TaskReminderConfig["alerts"];
+    reminderAlerts?: TaskReminderConfig['alerts'];
     category?: string;
     tags?: string[];
     location?: string;
@@ -72,12 +68,11 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     this._description = params.description;
 
     this._timeConfig = {
-      type: params.timeConfig?.type || "timed",
+      type: params.timeConfig?.type || 'timed',
       scheduledTime: params.scheduledTime,
       endTime: params.timeConfig?.endTime,
-      estimatedDuration:
-        params.estimatedDuration || params.timeConfig?.estimatedDuration,
-      timezone: params.timeConfig?.timezone || "Asia/Shanghai",
+      estimatedDuration: params.estimatedDuration || params.timeConfig?.estimatedDuration,
+      timezone: params.timeConfig?.timezone || 'Asia/Shanghai',
       allowReschedule: params.timeConfig?.allowReschedule ?? true,
       maxDelayDays: params.timeConfig?.maxDelayDays || 3,
     };
@@ -91,7 +86,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         params.reminderAlerts?.map((alert) => ({
           uuid: alert.uuid,
           alertConfig: alert,
-          status: "pending" as const,
+          status: 'pending' as const,
           scheduledTime: this.calculateReminderTime(alert, params.scheduledTime),
           snoozeHistory: [],
         })) || [],
@@ -99,14 +94,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     };
 
     this._lifecycle = {
-      status: "pending",
+      status: 'pending',
       createdAt: now,
       updatedAt: now,
       events: [],
     };
 
     this._metadata = {
-      category: params.category || "general",
+      category: params.category || 'general',
       tags: params.tags || [],
       estimatedDuration: params.estimatedDuration,
       location: params.location,
@@ -120,14 +115,11 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     if (params.reminderAlerts?.length) {
       params.reminderAlerts.forEach((alert) => {
         this._lifecycle.events.push({
-          type: "reminder_scheduled",
+          type: 'reminder_scheduled',
           timestamp: now,
           alertId: alert.uuid,
           details: {
-            scheduledFor: this.calculateReminderTime(
-              alert,
-              params.scheduledTime
-            ).toISOString(),
+            scheduledFor: this.calculateReminderTime(alert, params.scheduledTime).toISOString(),
           },
         });
       });
@@ -136,14 +128,13 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   // 计算提醒时间
   private calculateReminderTime(
-    alert: TaskReminderConfig["alerts"][number],
-    scheduledTime: Date
+    alert: TaskReminderConfig['alerts'][number],
+    scheduledTime: Date,
   ): Date {
-    if (alert.timing.type === "absolute" && alert.timing.absoluteTime) {
+    if (alert.timing.type === 'absolute' && alert.timing.absoluteTime) {
       return alert.timing.absoluteTime;
-    } else if (alert.timing.type === "relative" && alert.timing.minutesBefore) {
-      const reminderTimestamp =
-        scheduledTime.getTime() - alert.timing.minutesBefore * 60 * 1000;
+    } else if (alert.timing.type === 'relative' && alert.timing.minutesBefore) {
+      const reminderTimestamp = scheduledTime.getTime() - alert.timing.minutesBefore * 60 * 1000;
       return new Date(reminderTimestamp);
     }
     return scheduledTime;
@@ -182,12 +173,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     return this._metadata.importance;
   }
 
-  get status():
-    | "pending"
-    | "inProgress"
-    | "completed"
-    | "cancelled"
-    | "overdue" {
+  get status(): 'pending' | 'inProgress' | 'completed' | 'cancelled' | 'overdue' {
     return this._lifecycle.status;
   }
 
@@ -209,63 +195,61 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   // Status check methods
   isPending(): boolean {
-    return this._lifecycle.status === "pending";
+    return this._lifecycle.status === 'pending';
   }
 
   isInProgress(): boolean {
-    return this._lifecycle.status === "inProgress";
+    return this._lifecycle.status === 'inProgress';
   }
 
   isCompleted(): boolean {
-    return this._lifecycle.status === "completed";
+    return this._lifecycle.status === 'completed';
   }
 
   isCancelled(): boolean {
-    return this._lifecycle.status === "cancelled";
+    return this._lifecycle.status === 'cancelled';
   }
 
   isOverdue(): boolean {
-    return this._lifecycle.status === "overdue";
+    return this._lifecycle.status === 'overdue';
   }
 
   // Business methods
 
   updateTitle(newTitle: string): void {
-    if (!newTitle || newTitle.trim() === "") {
-      throw new Error("Title cannot be empty");
+    if (!newTitle || newTitle.trim() === '') {
+      throw new Error('Title cannot be empty');
     }
-    if (this._lifecycle.status !== "pending" && this._lifecycle.status !== "inProgress") {
+    if (this._lifecycle.status !== 'pending' && this._lifecycle.status !== 'inProgress') {
       throw new Error(`Cannot update title in status: ${this._lifecycle.status}`);
     }
     this._title = newTitle;
     this._lifecycle.updatedAt = new Date();
     this._lifecycle.events.push({
-      type: "task_title_updated",
+      type: 'task_title_updated',
       timestamp: this._lifecycle.updatedAt,
       details: { newTitle },
     });
   }
 
   updateDescription(newDescription: string): void {
-    if (this._lifecycle.status !== "pending" && this._lifecycle.status !== "inProgress") {
+    if (this._lifecycle.status !== 'pending' && this._lifecycle.status !== 'inProgress') {
       throw new Error(`Cannot update description in status: ${this._lifecycle.status}`);
     }
     this._description = newDescription;
     this._lifecycle.updatedAt = new Date();
     this._lifecycle.events.push({
-      type: "reminder_scheduled",
+      type: 'reminder_scheduled',
       timestamp: this._lifecycle.updatedAt,
       details: { newDescription },
     });
   }
 
   updateConfig(newTimeConfig: Partial<TaskInstanceTimeConfig>): void {
-    if (this._lifecycle.status === "completed" || this._lifecycle.status === "cancelled")
-      throw new Error(
-        "Cannot update time config for completed or cancelled tasks"
-      );
+    if (this._lifecycle.status === 'completed' || this._lifecycle.status === 'cancelled')
+      throw new Error('Cannot update time config for completed or cancelled tasks');
     if (!this._timeConfig.allowReschedule) {
-      throw new Error("This task instance does not allow rescheduling");
+      throw new Error('This task instance does not allow rescheduling');
     }
     if (newTimeConfig.scheduledTime) {
       this._timeConfig.scheduledTime = newTimeConfig.scheduledTime;
@@ -290,20 +274,15 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     }
     this._lifecycle.updatedAt = new Date();
     this._lifecycle.events.push({
-      type: "reminder_scheduled",
+      type: 'reminder_scheduled',
       timestamp: this._lifecycle.updatedAt,
       details: { newTimeConfig },
     });
   }
 
-  updateReminderStatus(
-    enabled: boolean,
-    alerts?: TaskReminderConfig["alerts"]
-  ): void {
-    if (this._lifecycle.status === "completed" || this._lifecycle.status === "cancelled") {
-      throw new Error(
-        "Cannot update reminders for completed or cancelled tasks"
-      );
+  updateReminderStatus(enabled: boolean, alerts?: TaskReminderConfig['alerts']): void {
+    if (this._lifecycle.status === 'completed' || this._lifecycle.status === 'cancelled') {
+      throw new Error('Cannot update reminders for completed or cancelled tasks');
     }
 
     this._reminderStatus.enabled = enabled;
@@ -312,7 +291,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       this._reminderStatus.alerts = alerts.map((alert) => ({
         uuid: alert.uuid,
         alertConfig: alert,
-        status: "pending",
+        status: 'pending',
         scheduledTime: this.calculateReminderTime(alert, this.scheduledTime),
         snoozeHistory: [],
       }));
@@ -320,26 +299,25 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
     this._lifecycle.updatedAt = new Date();
     this._lifecycle.events.push({
-      type: "task_rescheduled",
+      type: 'task_rescheduled',
       timestamp: this._lifecycle.updatedAt,
       details: { enabled, alerts },
     });
   }
 
-
   complete(accountUuid: string): void {
-    if (this._lifecycle.status !== "inProgress" && this._lifecycle.status !== "pending") {
+    if (this._lifecycle.status !== 'inProgress' && this._lifecycle.status !== 'pending') {
       throw new Error(`Cannot complete task in status: ${this._lifecycle.status}`);
     }
 
     const now = new Date();
-    this._lifecycle.status = "completed";
+    this._lifecycle.status = 'completed';
     this._lifecycle.completedAt = now;
     this._lifecycle.updatedAt = now;
 
     if (this._keyResultLinks?.length) {
       const event: TaskCompletedEvent = {
-        eventType: "TaskCompleted",
+        eventType: 'TaskCompleted',
         aggregateId: this._uuid,
         occurredOn: new Date(),
         payload: {
@@ -354,7 +332,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     }
 
     this._lifecycle.events.push({
-      type: "task_completed",
+      type: 'task_completed',
       timestamp: now,
       details: {
         actualDuration: this._metadata.actualDuration,
@@ -363,35 +341,35 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   cancel(): void {
-    if (this._lifecycle.status === "completed") {
-      throw new Error("Cannot cancel completed task");
+    if (this._lifecycle.status === 'completed') {
+      throw new Error('Cannot cancel completed task');
     }
 
     const now = new Date();
-    this._lifecycle.status = "cancelled";
+    this._lifecycle.status = 'cancelled';
     this._lifecycle.cancelledAt = now;
     this._lifecycle.updatedAt = now;
 
     this._lifecycle.events.push({
-      type: "task_cancelled",
+      type: 'task_cancelled',
       timestamp: now,
     });
   }
 
   markOverdue(): void {
-    if (this._lifecycle.status === "pending") {
-      this._lifecycle.status = "overdue";
+    if (this._lifecycle.status === 'pending') {
+      this._lifecycle.status = 'overdue';
       this._lifecycle.updatedAt = new Date();
     }
   }
 
   reschedule(newScheduledTime: Date, newEndTime?: Date): void {
-    if (this._lifecycle.status === "completed") {
-      throw new Error("Cannot reschedule completed task");
+    if (this._lifecycle.status === 'completed') {
+      throw new Error('Cannot reschedule completed task');
     }
 
     if (!this._timeConfig.allowReschedule) {
-      throw new Error("This task instance does not allow rescheduling");
+      throw new Error('This task instance does not allow rescheduling');
     }
 
     const oldTime = this._timeConfig.scheduledTime;
@@ -400,9 +378,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     if (this._timeConfig.maxDelayDays) {
       const maxAllowedTime = addDays(oldTime, this._timeConfig.maxDelayDays);
       if (newScheduledTime.getTime() > maxAllowedTime.getTime()) {
-        throw new Error(
-          `Cannot reschedule beyond ${this._timeConfig.maxDelayDays} days`
-        );
+        throw new Error(`Cannot reschedule beyond ${this._timeConfig.maxDelayDays} days`);
       }
     }
 
@@ -414,15 +390,15 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     };
 
     // Reset overdue status if rescheduled
-    if (this._lifecycle.status === "overdue") {
-      this._lifecycle.status = "pending";
+    if (this._lifecycle.status === 'overdue') {
+      this._lifecycle.status = 'pending';
     }
 
     const now = new Date();
     this._lifecycle.updatedAt = now;
 
     this._lifecycle.events.push({
-      type: "task_rescheduled",
+      type: 'task_rescheduled',
       timestamp: now,
       details: {
         oldTime: oldTime.toISOString(),
@@ -434,11 +410,8 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
     // 重新计算提醒时间
     this._reminderStatus.alerts.forEach((alert) => {
-      if (alert.status === "pending") {
-        alert.scheduledTime = this.calculateReminderTime(
-          alert.alertConfig,
-          newScheduledTime
-        );
+      if (alert.status === 'pending') {
+        alert.scheduledTime = this.calculateReminderTime(alert.alertConfig, newScheduledTime);
       }
     });
   }
@@ -446,14 +419,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   // 提醒相关方法
   triggerReminder(alertId: string): void {
     const alert = this._reminderStatus.alerts.find((a) => a.uuid === alertId);
-    if (alert && alert.status === "pending") {
+    if (alert && alert.status === 'pending') {
       const now = new Date();
-      alert.status = "triggered";
+      alert.status = 'triggered';
       alert.triggeredAt = now;
       this._reminderStatus.lastTriggeredAt = now;
 
       this._lifecycle.events.push({
-        type: "reminder_triggered",
+        type: 'reminder_triggered',
         timestamp: now,
         alertId,
         details: { alertType: alert.alertConfig.type },
@@ -465,10 +438,10 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   snoozeReminder(alertId: string, snoozeUntil: Date, reason?: string): void {
     const alert = this._reminderStatus.alerts.find((a) => a.uuid === alertId);
-    if (alert && (alert.status === "triggered" || alert.status === "snoozed")) {
+    if (alert && (alert.status === 'triggered' || alert.status === 'snoozed')) {
       const now = new Date();
 
-      alert.status = "snoozed";
+      alert.status = 'snoozed';
       alert.scheduledTime = snoozeUntil;
       alert.snoozeHistory.push({
         snoozedAt: now,
@@ -479,7 +452,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       this._reminderStatus.globalSnoozeCount++;
 
       this._lifecycle.events.push({
-        type: "reminder_snoozed",
+        type: 'reminder_snoozed',
         timestamp: now,
         alertId,
         details: { snoozeUntil: snoozeUntil.toISOString(), reason },
@@ -491,13 +464,13 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   dismissReminder(alertId: string): void {
     const alert = this._reminderStatus.alerts.find((a) => a.uuid === alertId);
-    if (alert && (alert.status === "triggered" || alert.status === "snoozed")) {
+    if (alert && (alert.status === 'triggered' || alert.status === 'snoozed')) {
       const now = new Date();
-      alert.status = "dismissed";
+      alert.status = 'dismissed';
       alert.dismissedAt = now;
 
       this._lifecycle.events.push({
-        type: "reminder_dismissed",
+        type: 'reminder_dismissed',
         timestamp: now,
         alertId,
       });
@@ -512,9 +485,9 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
     // 取消所有待定的提醒
     this._reminderStatus.alerts.forEach((alert) => {
-      if (alert.status === "pending" || alert.status === "snoozed") {
+      if (alert.status === 'pending' || alert.status === 'snoozed') {
         this._lifecycle.events.push({
-          type: "reminder_cancelled",
+          type: 'reminder_cancelled',
           timestamp: now,
           alertId: alert.uuid,
         });
@@ -534,9 +507,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     if (!this._reminderStatus.enabled) return null;
 
     const pendingAlerts = this._reminderStatus.alerts
-      .filter(
-        (alert) => alert.status === "pending" || alert.status === "snoozed"
-      )
+      .filter((alert) => alert.status === 'pending' || alert.status === 'snoozed')
       .sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
 
     if (pendingAlerts.length > 0) {
@@ -552,15 +523,9 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   // 获取提醒统计
   getReminderStats() {
     const total = this._reminderStatus.alerts.length;
-    const triggered = this._reminderStatus.alerts.filter(
-      (a) => a.status === "triggered"
-    ).length;
-    const dismissed = this._reminderStatus.alerts.filter(
-      (a) => a.status === "dismissed"
-    ).length;
-    const snoozed = this._reminderStatus.alerts.filter(
-      (a) => a.status === "snoozed"
-    ).length;
+    const triggered = this._reminderStatus.alerts.filter((a) => a.status === 'triggered').length;
+    const dismissed = this._reminderStatus.alerts.filter((a) => a.status === 'dismissed').length;
+    const snoozed = this._reminderStatus.alerts.filter((a) => a.status === 'snoozed').length;
 
     return {
       total,
@@ -573,29 +538,27 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   undoComplete(accountUuid: string): void {
-    if (this._lifecycle.status !== "completed") {
-      throw new Error(
-        `Cannot undo completion for task in status: ${this._lifecycle.status}`
-      );
+    if (this._lifecycle.status !== 'completed') {
+      throw new Error(`Cannot undo completion for task in status: ${this._lifecycle.status}`);
     }
 
     const now = new Date();
-    this._lifecycle.status = "inProgress";
+    this._lifecycle.status = 'inProgress';
     this._metadata.actualDuration = undefined;
     this._lifecycle.completedAt = undefined;
     this._lifecycle.updatedAt = now;
     this._lifecycle.events.push({
-      type: "task_undo",
+      type: 'task_undo',
       timestamp: now,
       details: {
-        previousStatus: "completed",
-        newStatus: "inProgress",
+        previousStatus: 'completed',
+        newStatus: 'inProgress',
       },
     });
 
     if (this._keyResultLinks?.length) {
       const event: TaskUndoCompletedEvent = {
-        eventType: "TaskUndoCompleted",
+        eventType: 'TaskUndoCompleted',
         aggregateId: this._uuid,
         occurredOn: new Date(),
         payload: {
@@ -610,21 +573,21 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   // ✅ 添加重置为特定状态的方法
-  resetToStatus(status: "pending" | "inProgress", reason?: string): void {
-    if (this._lifecycle.status === "completed" || this._lifecycle.status === "cancelled") {
+  resetToStatus(status: 'pending' | 'inProgress', reason?: string): void {
+    if (this._lifecycle.status === 'completed' || this._lifecycle.status === 'cancelled') {
       const now = new Date();
       const previousStatus = this._lifecycle.status;
 
       this._lifecycle.status = status;
       this._lifecycle.updatedAt = now;
 
-      if (status === "pending") {
+      if (status === 'pending') {
         this._metadata.actualDuration = undefined;
         this._lifecycle.completedAt = undefined;
       }
 
       this._lifecycle.events.push({
-        type: "task_rescheduled",
+        type: 'task_rescheduled',
         timestamp: now,
         details: {
           previousStatus,
@@ -654,10 +617,10 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       };
       keyResultLinks?: KeyResultLink[];
       reminderConfig: TaskReminderConfig;
-      schedulingPolicy?: ITaskTemplate["schedulingPolicy"];
+      schedulingPolicy?: ITaskTemplate['schedulingPolicy'];
     },
     scheduledTime: Date,
-    endTime?: Date
+    endTime?: Date,
   ): TaskInstance {
     return new TaskInstance({
       uuid: instanceId,
@@ -684,8 +647,6 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       },
     });
   }
-
-
 
   // ============= 数据辅助方法 =============
 
@@ -780,12 +741,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         allowReschedule: data.timeConfig.allowReschedule === 1,
         maxDelayDays: data.timeConfig.maxDelayDays,
       },
-      reminderAlerts: data.reminderStatus.alerts.map(alert => ({
+      reminderAlerts: data.reminderStatus.alerts.map((alert) => ({
         uuid: alert.alertConfig.uuid,
         timing: {
           type: alert.alertConfig.timing.type,
           minutesBefore: alert.alertConfig.timing.minutesBefore,
-          absoluteTime: alert.alertConfig.timing.absoluteTime ? new Date(alert.alertConfig.timing.absoluteTime) : undefined,
+          absoluteTime: alert.alertConfig.timing.absoluteTime
+            ? new Date(alert.alertConfig.timing.absoluteTime)
+            : undefined,
         },
         type: alert.alertConfig.type,
         message: alert.alertConfig.message,
@@ -800,7 +763,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       startedAt: data.lifecycle.startedAt ? new Date(data.lifecycle.startedAt) : undefined,
       completedAt: data.lifecycle.completedAt ? new Date(data.lifecycle.completedAt) : undefined,
       cancelledAt: data.lifecycle.cancelledAt ? new Date(data.lifecycle.cancelledAt) : undefined,
-      events: data.lifecycle.events.map(event => ({
+      events: data.lifecycle.events.map((event) => ({
         type: event.type,
         timestamp: new Date(event.timestamp),
         alertId: event.alertId,
@@ -811,14 +774,16 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     // 恢复提醒状态
     instance._reminderStatus = {
       enabled: data.reminderStatus.enabled === 1,
-      alerts: data.reminderStatus.alerts.map(alert => ({
+      alerts: data.reminderStatus.alerts.map((alert) => ({
         uuid: alert.uuid,
         alertConfig: {
           uuid: alert.alertConfig.uuid,
           timing: {
             type: alert.alertConfig.timing.type,
             minutesBefore: alert.alertConfig.timing.minutesBefore,
-            absoluteTime: alert.alertConfig.timing.absoluteTime ? new Date(alert.alertConfig.timing.absoluteTime) : undefined,
+            absoluteTime: alert.alertConfig.timing.absoluteTime
+              ? new Date(alert.alertConfig.timing.absoluteTime)
+              : undefined,
           },
           type: alert.alertConfig.type,
           message: alert.alertConfig.message,
@@ -827,14 +792,16 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         scheduledTime: new Date(alert.scheduledTime),
         triggeredAt: alert.triggeredAt ? new Date(alert.triggeredAt) : undefined,
         dismissedAt: alert.dismissedAt ? new Date(alert.dismissedAt) : undefined,
-        snoozeHistory: alert.snoozeHistory.map(snooze => ({
+        snoozeHistory: alert.snoozeHistory.map((snooze) => ({
           snoozedAt: new Date(snooze.snoozedAt),
           snoozeUntil: new Date(snooze.snoozeUntil),
           reason: snooze.reason,
         })),
       })),
       globalSnoozeCount: data.reminderStatus.globalSnoozeCount,
-      lastTriggeredAt: data.reminderStatus.lastTriggeredAt ? new Date(data.reminderStatus.lastTriggeredAt) : undefined,
+      lastTriggeredAt: data.reminderStatus.lastTriggeredAt
+        ? new Date(data.reminderStatus.lastTriggeredAt)
+        : undefined,
     };
 
     // 恢复元数据

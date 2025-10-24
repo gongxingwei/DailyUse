@@ -1,11 +1,11 @@
-import type { Database } from "better-sqlite3";
-import { AccountTables } from "./accountTables";
-import { AuthenticationTables } from "./authenticationTables";
-import { SessionLoggingTables } from "./sessionLoggingTables";
-import { TaskTables } from "./taskTables";
-import { GoalTables } from "./goalTables";
-import { RepositoryTables } from "./repositoryTables";
-import { ReminderTables } from "./reminderTables";
+import type { Database } from 'better-sqlite3';
+import { AccountTables } from './accountTables';
+import { AuthenticationTables } from './authenticationTables';
+import { SessionLoggingTables } from './sessionLoggingTables';
+import { TaskTables } from './taskTables';
+import { GoalTables } from './goalTables';
+import { RepositoryTables } from './repositoryTables';
+import { ReminderTables } from './reminderTables';
 /**
  * 数据库表管理器
  * 统一管理所有模块的数据表
@@ -20,7 +20,6 @@ export class DatabaseManager {
     // 按照依赖顺序创建表
 
     AccountTables.createTables(db);
-
 
     AuthenticationTables.createTables(db);
 
@@ -91,12 +90,14 @@ export class DatabaseManager {
         'key_results',
         'goal_records',
         'goal_reviews',
-        'goal_relationships'
+        'goal_relationships',
       ];
 
       for (const table of tables) {
         try {
-          const result = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number };
+          const result = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as {
+            count: number;
+          };
           stats[table] = result.count;
         } catch (error) {
           stats[table] = 0; // 表不存在或其他错误
@@ -104,17 +105,20 @@ export class DatabaseManager {
       }
 
       // 获取数据库大小
-      const dbSize = db.prepare("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()").get() as { size: number };
+      const dbSize = db
+        .prepare(
+          'SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()',
+        )
+        .get() as { size: number };
       stats.database_size = dbSize.size;
 
       // 获取数据库版本
-      const version = db.prepare("PRAGMA user_version").get() as { user_version: number };
+      const version = db.prepare('PRAGMA user_version').get() as { user_version: number };
       stats.database_version = version.user_version;
 
       // 获取 WAL 模式状态
-      const walMode = db.prepare("PRAGMA journal_mode").get() as { journal_mode: string };
+      const walMode = db.prepare('PRAGMA journal_mode').get() as { journal_mode: string };
       stats.journal_mode = walMode.journal_mode;
-
     } catch (error) {
       console.error('❌ [数据库管理器] 获取数据库统计信息失败:', error);
     }
@@ -130,14 +134,16 @@ export class DatabaseManager {
       console.log('🔍 [数据库管理器] 开始验证数据库完整性...');
 
       // 检查外键约束
-      const foreignKeyCheck = db.prepare("PRAGMA foreign_key_check").all();
+      const foreignKeyCheck = db.prepare('PRAGMA foreign_key_check').all();
       if (foreignKeyCheck.length > 0) {
         console.error('❌ [数据库管理器] 外键约束检查失败:', foreignKeyCheck);
         return false;
       }
 
       // 检查数据库完整性
-      const integrityCheck = db.prepare("PRAGMA integrity_check").get() as { integrity_check: string };
+      const integrityCheck = db.prepare('PRAGMA integrity_check').get() as {
+        integrity_check: string;
+      };
       if (integrityCheck.integrity_check !== 'ok') {
         console.error('❌ [数据库管理器] 数据库完整性检查失败:', integrityCheck);
         return false;
@@ -159,13 +165,13 @@ export class DatabaseManager {
       console.log('🚀 [数据库管理器] 开始优化数据库性能...');
 
       // 重建索引
-      db.exec("REINDEX");
+      db.exec('REINDEX');
 
       // 分析表统计信息
-      db.exec("ANALYZE");
+      db.exec('ANALYZE');
 
       // 清理未使用的页面
-      db.exec("VACUUM");
+      db.exec('VACUUM');
 
       console.log('✅ [数据库管理器] 数据库性能优化完成');
     } catch (error) {
@@ -190,8 +196,10 @@ export class DatabaseManager {
    */
   static getAllTableNames(db: Database): string[] {
     try {
-      const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
-      return tables.map(table => table.name);
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        .all() as { name: string }[];
+      return tables.map((table) => table.name);
     } catch (error) {
       console.error('❌ [数据库管理器] 获取所有表名失败:', error);
       return [];
@@ -203,7 +211,9 @@ export class DatabaseManager {
    */
   static tableExists(db: Database, tableName: string): boolean {
     try {
-      const result = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?").get(tableName);
+      const result = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
+        .get(tableName);
       return result !== undefined;
     } catch (error) {
       console.error(`❌ [数据库管理器] 检查表 ${tableName} 是否存在失败:`, error);

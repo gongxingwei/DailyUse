@@ -4,7 +4,7 @@
 **Sprint**: Sprint 3  
 **Story Points**: 1 SP  
 **Priority**: P2  
-**Status**: 📋 Backlog  
+**Status**: 📋 Backlog
 
 ---
 

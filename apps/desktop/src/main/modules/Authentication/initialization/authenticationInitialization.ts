@@ -1,4 +1,8 @@
-import { InitializationManager, InitializationPhase, InitializationTask } from '../../../shared/initialization/initializationManager';
+import {
+  InitializationManager,
+  InitializationPhase,
+  InitializationTask,
+} from '../../../shared/initialization/initializationManager';
 import { AuthenticationIpcHandler } from '../infrastructure/ipc/authenticationIpcHandler';
 
 const authenticationIpcInitTask: InitializationTask = {
@@ -9,13 +13,11 @@ const authenticationIpcInitTask: InitializationTask = {
   initialize: async () => {
     await AuthenticationIpcHandler.registerIpcHandlers();
     console.log('✓ Authentication IPC handlers registered');
-  }
+  },
 };
 
-
-export function registerAuthenticationInitializationTasks(): void { 
-    const manager = InitializationManager.getInstance();
-    manager.registerTask(authenticationIpcInitTask);
-    console.log('Authentication module initialization tasks registered');
-    
+export function registerAuthenticationInitializationTasks(): void {
+  const manager = InitializationManager.getInstance();
+  manager.registerTask(authenticationIpcInitTask);
+  console.log('Authentication module initialization tasks registered');
 }

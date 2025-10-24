@@ -14,8 +14,14 @@
             </div>
           </div>
 
-          <v-btn color="primary" size="large" prepend-icon="mdi-plus" variant="elevated" class="create-btn"
-            @click="startCreateGoal">
+          <v-btn
+            color="primary"
+            size="large"
+            prepend-icon="mdi-plus"
+            variant="elevated"
+            class="create-btn"
+            @click="startCreateGoal"
+          >
             {{ t('goal.create') }}
           </v-btn>
         </div>
@@ -28,8 +34,13 @@
         <v-row no-gutters class="h-100">
           <!-- 侧边栏 - 目标节点 -->
           <v-col cols="12" md="3" class="pr-md-6 mb-6 mb-md-0 h-100">
-            <goal-dir :goal-dirs="allGoalDirs" @selected-goal-dir="getSelectedGoalDir"
-              @start-create-goal-dir="startCreateGoalDir" @start-edit-goal-dir="startEditGoalDir" class="h-100" />
+            <goal-dir
+              :goal-dirs="allGoalDirs"
+              @selected-goal-dir="getSelectedGoalDir"
+              @start-create-goal-dir="startCreateGoalDir"
+              @start-edit-goal-dir="startEditGoalDir"
+              class="h-100"
+            />
           </v-col>
 
           <!-- 目标列表区域 -->
@@ -41,13 +52,27 @@
                   <h2 class="text-h6 font-weight-medium">目标列表</h2>
 
                   <!-- 状态标签 -->
-                  <v-chip-group v-model="selectedStatusIndex" selected-class="text-primary" mandatory
-                    class="status-tabs">
-                    <v-chip v-for="(tab, index) in statusTabs" :key="tab.value" :value="index" variant="outlined" filter
-                      class="status-chip">
+                  <v-chip-group
+                    v-model="selectedStatusIndex"
+                    selected-class="text-primary"
+                    mandatory
+                    class="status-tabs"
+                  >
+                    <v-chip
+                      v-for="(tab, index) in statusTabs"
+                      :key="tab.value"
+                      :value="index"
+                      variant="outlined"
+                      filter
+                      class="status-chip"
+                    >
                       {{ tab.label }}
-                      <v-badge :content="getGoalCountByStatus(tab.value)"
-                        :color="selectedStatusIndex === index ? 'primary' : 'surface-bright'" inline class="ml-2" />
+                      <v-badge
+                        :content="getGoalCountByStatus(tab.value)"
+                        :color="selectedStatusIndex === index ? 'primary' : 'surface-bright'"
+                        inline
+                        class="ml-2"
+                      />
                     </v-chip>
                   </v-chip-group>
                 </div>
@@ -60,18 +85,36 @@
                 <!-- 有目标时显示 -->
                 <div v-if="goalsInCurStatus?.length">
                   <v-row>
-                    <v-col v-for="goal in goalsInCurStatus" :key="goal.uuid" cols="12" lg="6" xl="4">
-                      <GoalCard :goal="Goal.ensureGoalNeverNull(goal)" @edit-goal="startEditGoal"
-                        @start-delete-goal="startDeleteGoal"/>
+                    <v-col
+                      v-for="goal in goalsInCurStatus"
+                      :key="goal.uuid"
+                      cols="12"
+                      lg="6"
+                      xl="4"
+                    >
+                      <GoalCard
+                        :goal="Goal.ensureGoalNeverNull(goal)"
+                        @edit-goal="startEditGoal"
+                        @start-delete-goal="startDeleteGoal"
+                      />
                     </v-col>
                   </v-row>
                 </div>
 
                 <!-- 空状态 -->
                 <div v-else class="d-flex align-center justify-center h-100">
-                  <v-empty-state icon="mdi-target" :title="t('goal.empty')" :text="t('goal.emptyTip')">
+                  <v-empty-state
+                    icon="mdi-target"
+                    :title="t('goal.empty')"
+                    :text="t('goal.emptyTip')"
+                  >
                     <template v-slot:actions>
-                      <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="startCreateGoal">
+                      <v-btn
+                        color="primary"
+                        variant="elevated"
+                        prepend-icon="mdi-plus"
+                        @click="startCreateGoal"
+                      >
                         创建一个目标
                       </v-btn>
                     </template>
@@ -85,19 +128,36 @@
     </div>
 
     <!-- 目标对话框 -->
-    <GoalDialog :visible="goalDialog.show" :goal="Goal.ensureGoal(goalDialog.goal)"
-      @update:modelValue="goalDialog.show = $event" @create-goal="handleCreateGoal" @update-goal="handleUpdateGoal" />
+    <GoalDialog
+      :visible="goalDialog.show"
+      :goal="Goal.ensureGoal(goalDialog.goal)"
+      @update:modelValue="goalDialog.show = $event"
+      @create-goal="handleCreateGoal"
+      @update-goal="handleUpdateGoal"
+    />
 
     <!-- 对话框 -->
-    <GoalDirDialog :model-value="goalDirDialog.show" :goal-dir="GoalDirEntity.ensureGoalDir(goalDirDialog.goalDir)"
-      @update:modelValue="goalDirDialog.show = $event" @create-goal-dir="handleCreateGoalDir"
-      @edit-goal-dir="handleUpdateGoalDir" />
+    <GoalDirDialog
+      :model-value="goalDirDialog.show"
+      :goal-dir="GoalDirEntity.ensureGoalDir(goalDirDialog.goalDir)"
+      @update:modelValue="goalDirDialog.show = $event"
+      @create-goal-dir="handleCreateGoalDir"
+      @edit-goal-dir="handleUpdateGoalDir"
+    />
     <!-- 确认对话框 -->
-    <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
-      confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
-      @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
+    <ConfirmDialog
+      v-model="confirmDialog.show"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      confirm-text="确认"
+      cancel-text="取消"
+      @update:modelValue="confirmDialog.show = $event"
+      @confirm="confirmDialog.onConfirm"
+      @cancel="confirmDialog.onCancel"
+    />
     <!-- snackbar -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">{{ snackbar.message
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">{{
+      snackbar.message
     }}</v-snackbar>
   </div>
 </template>
@@ -146,14 +206,14 @@ const currentDir = ref<GoalDirEntity | null>(null);
 
 const allGoalDirs = computed(() => {
   const allGoalDirs = goalStore.getAllGoalDirs;
-  const ensuredDirs = allGoalDirs.map(dir => GoalDirEntity.ensureGoalDirNeverNull(dir));
+  const ensuredDirs = allGoalDirs.map((dir) => GoalDirEntity.ensureGoalDirNeverNull(dir));
   return ensuredDirs;
 });
 
 const goalsInCurDir = computed(() => {
   if (!currentDir.value) return [];
   const goals = goalStore.getGoalsByDirUuid(currentDir.value.uuid);
-  const ensuredGoals = goals.map(goal => Goal.ensureGoalNeverNull(goal));
+  const ensuredGoals = goals.map((goal) => Goal.ensureGoalNeverNull(goal));
   return ensuredGoals;
 });
 
@@ -163,37 +223,37 @@ const getSelectedGoalDir = (goalDir: GoalDirEntity) => {
 };
 
 const statusTabs = [
-  { label: "全部的", value: "all" },
-  { label: "进行中", value: "active" },
-  { label: "已完成", value: "completed" },
+  { label: '全部的', value: 'all' },
+  { label: '进行中', value: 'active' },
+  { label: '已完成', value: 'completed' },
 ];
 const selectedStatus = ref(statusTabs[0].value);
 // 计算选中的状态索引
 const selectedStatusIndex = computed({
-  get: () => statusTabs.findIndex(tab => tab.value === selectedStatus.value),
+  get: () => statusTabs.findIndex((tab) => tab.value === selectedStatus.value),
   set: (index) => {
     if (index >= 0 && index < statusTabs.length) {
       selectedStatus.value = statusTabs[index].value;
     }
-  }
+  },
 });
 const goalsInCurStatus = computed(() => {
   let goals = goalsInCurDir.value;
 
-  if (selectedStatus.value === "all") {
+  if (selectedStatus.value === 'all') {
     return goals;
   }
 
-  if (selectedStatus.value === "active") {
+  if (selectedStatus.value === 'active') {
     const activeGoals = goals.filter((goal: Goal) => {
-      return goal.lifecycle.status === "active"
+      return goal.lifecycle.status === 'active';
     });
     return activeGoals;
   }
 
-  if (selectedStatus.value === "completed") {
+  if (selectedStatus.value === 'completed') {
     const completedGoals = goals.filter((goal: Goal) => {
-      return goal.lifecycle.status === "completed"
+      return goal.lifecycle.status === 'completed';
     });
     return completedGoals;
   }
@@ -205,20 +265,20 @@ const goalsInCurStatus = computed(() => {
 const getGoalCountByStatus = (status: string) => {
   const goals = goalsInCurDir.value;
 
-  if (status === "all") {
+  if (status === 'all') {
     return goals.length;
   }
 
-  if (status === "active") {
+  if (status === 'active') {
     const activeGoals = goals.filter((goal: IGoal) => {
-      return goal.lifecycle.status === "active";
+      return goal.lifecycle.status === 'active';
     });
     return activeGoals.length;
   }
 
-  if (status === "completed") {
+  if (status === 'completed') {
     const completedGoals = goals.filter((goal: IGoal) => {
-      return goal.lifecycle.status === "completed";
+      return goal.lifecycle.status === 'completed';
     });
     return completedGoals.length;
   }
@@ -244,7 +304,7 @@ const goalDirDialog = ref<{
   goalDir: GoalDirEntity | null;
 }>({
   show: false,
-  goalDir: null
+  goalDir: null,
 });
 
 const startDeleteGoal = (goalUuid: string) => {
@@ -257,36 +317,39 @@ const startDeleteGoal = (goalUuid: string) => {
     },
     onCancel: () => {
       console.log('❌ 删除目标操作已取消');
-    }
+    },
   };
 };
 const startCreateGoalDir = () => {
   goalDirDialog.value = {
     show: true,
-    goalDir: null
+    goalDir: null,
   };
 };
 
 const startEditGoalDir = (goalDir: GoalDirEntity) => {
   goalDirDialog.value = {
     show: true,
-    goalDir: goalDir
+    goalDir: goalDir,
   };
 };
 
 onMounted(() => {
   // 查找 uuid 为 "system_all" 的目录
-  const allDir = allGoalDirs.value.find(dir => dir.uuid === "system_all");
+  const allDir = allGoalDirs.value.find((dir) => dir.uuid === 'system_all');
   if (allDir) {
     currentDir.value = allDir;
   }
 });
-
 </script>
 
 <style scoped>
 .goal-management {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.02) 0%, rgba(var(--v-theme-surface), 1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.02) 0%,
+    rgba(var(--v-theme-surface), 1) 100%
+  );
   /* 确保占据全部视口高度 */
   height: 100vh;
   /* 防止页面滚动 */
@@ -294,7 +357,11 @@ onMounted(() => {
 }
 
 .goal-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-secondary), 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05) 0%,
+    rgba(var(--v-theme-secondary), 0.05) 100%
+  );
   border-radius: 0 0 24px 24px;
   /* 确保头部不会被压缩 */
   min-height: auto;

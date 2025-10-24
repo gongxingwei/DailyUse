@@ -38,6 +38,7 @@ category: 实现指南
 **职责**：定义类型，前后端共享
 
 **包含**：
+
 - ✅ 枚举（RepositoryType、RepositoryStatus）
 - ✅ Server DTO（RepositoryServerDTO）
 - ✅ Client DTO（RepositoryDTO - 简化命名）
@@ -46,6 +47,7 @@ category: 实现指南
 - ✅ 值对象（RepositoryConfig、GitInfo）
 
 **易错点**：
+
 - ❌ Server DTO 和 Client DTO 命名混淆
 - ❌ 忘记导出类型
 - ❌ API DTO 包含过多内部细节
@@ -57,11 +59,13 @@ category: 实现指南
 **职责**：后端业务逻辑
 
 **包含**：
+
 - ✅ 聚合根（Repository 类）
 - ✅ 实体（Resource 类）
 - ✅ 仓储接口（IRepositoryRepository）
 
 **规范**：
+
 - ✅ 继承 AggregateRoot/Entity
 - ✅ private 构造函数 + 静态工厂方法
 - ✅ 所有属性 private + getter
@@ -70,6 +74,7 @@ category: 实现指南
 - ✅ 提供 create()、fromDTO()、toDTO()
 
 **易错点**：
+
 - ❌ 使用 public 构造函数
 - ❌ 直接暴露可变属性
 - ❌ 忘记发布领域事件
@@ -82,11 +87,13 @@ category: 实现指南
 **职责**：前端业务逻辑（简化）
 
 **包含**：
+
 - ✅ 客户端聚合根（RepositoryClient 类）
 - ✅ 客户端实体（ResourceClient 类）
 - ✅ DTO 转换工具
 
 **规范**：
+
 - ✅ 继承 AggregateRoot/Entity
 - ✅ 可以使用 public 属性（简化）
 - ✅ 提供 fromServerDTO()、toClientDTO()
@@ -95,6 +102,7 @@ category: 实现指南
 - ✅ 提供前端常用方法（isXxx、getXxx）
 
 **易错点**：
+
 - ❌ 忘记处理日期类型转换
 - ❌ 直接引用数组/对象（共享引用）
 - ❌ 缺少 UI 辅助方法
@@ -106,6 +114,7 @@ category: 实现指南
 **职责**：后端接口
 
 **包含**：
+
 - ✅ TypeORM Entity（数据库实体）
 - ✅ Repository Implementation（仓储实现）
 - ✅ Application Service（应用服务）
@@ -113,6 +122,7 @@ category: 实现指南
 - ✅ Module（模块注册）
 
 **规范**：
+
 - ✅ TypeORM Entity 提供 fromDomain()、toDomain()
 - ✅ Repository 实现接口，返回领域实体
 - ✅ Application Service 负责业务流程编排
@@ -120,6 +130,7 @@ category: 实现指南
 - ✅ 从认证信息获取 accountUuid
 
 **易错点**：
+
 - ❌ Controller 包含业务逻辑
 - ❌ 忘记使用统一响应格式
 - ❌ 直接使用请求中的 accountUuid（不安全）
@@ -132,6 +143,7 @@ category: 实现指南
 **职责**：前端界面
 
 **包含**：
+
 - ✅ Store（Pinia 状态管理）
 - ✅ Application Service（前端应用服务）
 - ✅ API Client（HTTP 请求）
@@ -140,6 +152,7 @@ category: 实现指南
 - ✅ Views（页面视图）
 
 **规范**：
+
 - ✅ Store 使用 Map 存储领域模型
 - ✅ Application Service 进行 DTO → Domain 转换
 - ✅ API Client 只返回 DTO
@@ -148,6 +161,7 @@ category: 实现指南
 - ✅ 使用组合式 API（setup script）
 
 **易错点**：
+
 - ❌ Store 存储 DTO
 - ❌ 使用数组存储（查询 O(n)）
 - ❌ API Client 返回领域模型
@@ -160,6 +174,7 @@ category: 实现指南
 ### 1. DTO 命名不一致
 
 ❌ **错误**：
+
 ```typescript
 // Server
 export interface RepositoryDTO { ... }  // ❌ 不清楚是 Server 还是 Client
@@ -169,6 +184,7 @@ export interface RepositoryClientDTO { ... }  // ❌ 命名不对称
 ```
 
 ✅ **正确**：
+
 ```typescript
 // Server
 export interface RepositoryServerDTO { ... }  // ✅ 明确 Server
@@ -182,6 +198,7 @@ export interface RepositoryDTO { ... }  // ✅ 简化命名
 ### 2. 日期类型转换
 
 ❌ **错误**：
+
 ```typescript
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
   return new RepositoryClient(
@@ -192,6 +209,7 @@ static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
 ```
 
 ✅ **正确**：
+
 ```typescript
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
   return new RepositoryClient(
@@ -206,6 +224,7 @@ static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
 ### 3. 数组/对象共享引用
 
 ❌ **错误**：
+
 ```typescript
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
   return new RepositoryClient(
@@ -217,6 +236,7 @@ static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
 ```
 
 ✅ **正确**：
+
 ```typescript
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
   return new RepositoryClient(
@@ -232,6 +252,7 @@ static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
 ### 4. 忘记发布领域事件
 
 ❌ **错误**：
+
 ```typescript
 activate(): void {
   this._status = RepositoryStatus.ACTIVE;
@@ -241,11 +262,12 @@ activate(): void {
 ```
 
 ✅ **正确**：
+
 ```typescript
 activate(): void {
   this._status = RepositoryStatus.ACTIVE;
   this.markAsModified();
-  
+
   // ✅ 发布领域事件
   this.addDomainEvent({
     eventType: 'RepositoryStatusChanged',
@@ -260,13 +282,15 @@ activate(): void {
 ### 5. Store 存储 DTO
 
 ❌ **错误**：
+
 ```typescript
-const repositories = ref<RepositoryDTO[]>([]);  // ❌ 存储 DTO
+const repositories = ref<RepositoryDTO[]>([]); // ❌ 存储 DTO
 ```
 
 ✅ **正确**：
+
 ```typescript
-const repositories = ref<Map<string, RepositoryClient>>(new Map());  // ✅ 领域模型 + Map
+const repositories = ref<Map<string, RepositoryClient>>(new Map()); // ✅ 领域模型 + Map
 ```
 
 ---
@@ -274,6 +298,7 @@ const repositories = ref<Map<string, RepositoryClient>>(new Map());  // ✅ 领�
 ### 6. Controller 包含业务逻辑
 
 ❌ **错误**：
+
 ```typescript
 @Post()
 async create(@Body() request: CreateRepositoryRequestDTO) {
@@ -289,6 +314,7 @@ async create(@Body() request: CreateRepositoryRequestDTO) {
 ```
 
 ✅ **正确**：
+
 ```typescript
 @Post()
 async create(@Body() request: CreateRepositoryRequestDTO) {
@@ -308,6 +334,7 @@ async create(@Body() request: CreateRepositoryRequestDTO) {
 ### 7. 忘记统一响应格式
 
 ❌ **错误**：
+
 ```typescript
 @Get(':uuid')
 async getOne(@Param('uuid') uuid: string) {
@@ -316,6 +343,7 @@ async getOne(@Param('uuid') uuid: string) {
 ```
 
 ✅ **正确**：
+
 ```typescript
 @Get(':uuid')
 async getOne(@Param('uuid') uuid: string) {
@@ -335,6 +363,7 @@ async getOne(@Param('uuid') uuid: string) {
 ### 8. 不安全的 accountUuid 获取
 
 ❌ **错误**：
+
 ```typescript
 @Post()
 async create(@Body() request: CreateRepositoryRequestDTO) {
@@ -344,6 +373,7 @@ async create(@Body() request: CreateRepositoryRequestDTO) {
 ```
 
 ✅ **正确**：
+
 ```typescript
 @Post()
 async create(@Body() request: CreateRepositoryRequestDTO, @Request() req: any) {
@@ -360,6 +390,7 @@ async create(@Body() request: CreateRepositoryRequestDTO, @Request() req: any) {
 ### 9. API Client 返回领域模型
 
 ❌ **错误**：
+
 ```typescript
 async createRepository(request: CreateRepositoryRequestDTO): Promise<RepositoryClient> {
   const response = await apiClient.post(...);
@@ -368,6 +399,7 @@ async createRepository(request: CreateRepositoryRequestDTO): Promise<RepositoryC
 ```
 
 ✅ **正确**：
+
 ```typescript
 async createRepository(request: CreateRepositoryRequestDTO): Promise<RepositoryServerDTO> {
   const response = await apiClient.post(...);
@@ -380,6 +412,7 @@ async createRepository(request: CreateRepositoryRequestDTO): Promise<RepositoryS
 ### 10. 组件直接调用 API
 
 ❌ **错误**：
+
 ```vue
 <script setup>
 import { repositoryApiClient } from '@/api/repositoryApiClient';
@@ -394,6 +427,7 @@ async function createRepository() {
 ```
 
 ✅ **正确**：
+
 ```vue
 <script setup>
 import { useRepository } from '@/composables/useRepository';
@@ -411,15 +445,15 @@ async function handleCreate() {
 
 ## 📝 命名规范总结
 
-| 类型 | Server 端 | Client 端 |
-|------|----------|-----------|
-| **DTO** | `XxxServerDTO` | `XxxDTO` |
-| **聚合根** | `Xxx` (class) | `XxxClient` (class) |
-| **实体** | `Xxx` (class) | `XxxClient` (class) |
-| **API Request** | `CreateXxxRequestDTO` | - |
-| **API Response** | `XxxListResponseDTO` | - |
-| **仓储接口** | `IXxxRepository` | - |
-| **仓储实现** | `XxxRepositoryImpl` | - |
+| 类型             | Server 端             | Client 端           |
+| ---------------- | --------------------- | ------------------- |
+| **DTO**          | `XxxServerDTO`        | `XxxDTO`            |
+| **聚合根**       | `Xxx` (class)         | `XxxClient` (class) |
+| **实体**         | `Xxx` (class)         | `XxxClient` (class) |
+| **API Request**  | `CreateXxxRequestDTO` | -                   |
+| **API Response** | `XxxListResponseDTO`  | -                   |
+| **仓储接口**     | `IXxxRepository`      | -                   |
+| **仓储实现**     | `XxxRepositoryImpl`   | -                   |
 
 ---
 
@@ -452,7 +486,7 @@ async function handleCreate() {
     await withLoading(async () => {
       await service.create(...);
     }, '创建中...');
-    
+
     message.success('创建成功');
   } catch (error) {
     message.error('创建失败');
@@ -465,6 +499,7 @@ async function handleCreate() {
 ## ✅ 完整检查清单
 
 ### Contracts 层
+
 - [ ] 枚举定义完整
 - [ ] Server DTO 和 Client DTO 命名正确
 - [ ] API Request/Response DTO 定义
@@ -472,6 +507,7 @@ async function handleCreate() {
 - [ ] 所有类型已导出
 
 ### Domain-Server 层
+
 - [ ] 聚合根继承 AggregateRoot
 - [ ] 使用 private 构造函数
 - [ ] 提供 create()、fromDTO()、toDTO()
@@ -481,6 +517,7 @@ async function handleCreate() {
 - [ ] 实体包含聚合根外键
 
 ### Domain-Client 层
+
 - [ ] 继承 AggregateRoot/Entity
 - [ ] 提供 fromServerDTO()、toClientDTO()
 - [ ] 日期类型显式转换
@@ -488,6 +525,7 @@ async function handleCreate() {
 - [ ] 提供 UI 辅助方法
 
 ### API 层
+
 - [ ] TypeORM Entity 使用装饰器
 - [ ] 提供 fromDomain()、toDomain()
 - [ ] Repository 实现接口
@@ -498,6 +536,7 @@ async function handleCreate() {
 - [ ] Module 正确注册依赖
 
 ### Web 层
+
 - [ ] Store 使用 Map 存储领域模型
 - [ ] Application Service 进行 DTO → Domain 转换
 - [ ] API Client 只返回 DTO
@@ -525,6 +564,7 @@ async function handleCreate() {
 ---
 
 📖 **相关文档**:
+
 - [[01-CONTRACTS_IMPLEMENTATION|Contracts 实现]]
 - [[02-DOMAIN_SERVER_IMPLEMENTATION|Domain Server 实现]]
 - [[03-DOMAIN_CLIENT_IMPLEMENTATION|Domain Client 实现]]

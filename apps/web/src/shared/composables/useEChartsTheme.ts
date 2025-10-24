@@ -12,14 +12,14 @@ export function getEChartsThemeColors() {
   return {
     // Background colors
     backgroundColor: isDark.value ? '#121212' : '#FFFFFF',
-    
+
     // Text colors
     textColor: isDark.value ? '#E1E1E1' : '#333333',
     axisLineColor: isDark.value ? '#5C5C5C' : '#DDDDDD',
     splitLineColor: isDark.value ? '#2D2D2D' : '#F1F3F5',
-    
+
     // Chart colors (consistent across themes but with adjusted brightness)
-    colorPalette: isDark.value 
+    colorPalette: isDark.value
       ? [
           '#8AB4F8', // Blue
           '#A5D6A7', // Green
@@ -43,16 +43,16 @@ export function getEChartsThemeColors() {
 
 /**
  * Composable for integrating ECharts with theme system
- * 
+ *
  * Automatically updates ECharts instance when theme changes
- * 
+ *
  * @param chartRef - Ref to VChart component instance
  * @param getOption - Function that returns ECharts option (receives theme colors)
- * 
+ *
  * @example
  * ```typescript
  * const chartRef = ref<InstanceType<typeof VChart>>();
- * 
+ *
  * useEChartsTheme(chartRef, (colors) => ({
  *   backgroundColor: colors.backgroundColor,
  *   textStyle: { color: colors.textColor },
@@ -66,7 +66,7 @@ export function getEChartsThemeColors() {
  */
 export function useEChartsTheme(
   chartRef: Ref<any>,
-  getOption: (colors: ReturnType<typeof getEChartsThemeColors>) => EChartsOption
+  getOption: (colors: ReturnType<typeof getEChartsThemeColors>) => EChartsOption,
 ) {
   const { isDark } = useTheme();
 
@@ -85,7 +85,7 @@ export function useEChartsTheme(
         chart.setOption(newOption, { notMerge: true });
       }
     },
-    { immediate: false } // Don't trigger on mount (initial option already set)
+    { immediate: false }, // Don't trigger on mount (initial option already set)
   );
 
   return {

@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue';
 
 export function useTaskTemplateForm() {
   // 表单验证状态
@@ -12,9 +12,7 @@ export function useTaskTemplateForm() {
   });
 
   // 整体表单验证状态
-  const isFormValid = computed(() =>
-    Object.values(formValidations.value).every((valid) => valid)
-  );
+  const isFormValid = computed(() => Object.values(formValidations.value).every((valid) => valid));
 
   // 验证更新函数
   const updateBasicValidation = (isValid: boolean) => {

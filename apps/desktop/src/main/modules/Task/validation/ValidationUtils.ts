@@ -8,11 +8,15 @@ export class ValidationUtils {
   /**
    * 创建验证结果
    */
-  static createResult(isValid: boolean, errors: string[] = [], warnings: string[] = []): ValidationResult {
+  static createResult(
+    isValid: boolean,
+    errors: string[] = [],
+    warnings: string[] = [],
+  ): ValidationResult {
     return {
       isValid,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -55,9 +59,12 @@ export class ValidationUtils {
    * 验证必填字段
    */
   static validateRequired(value: any, fieldName: string): ValidationResult {
-    if (value === null || value === undefined || 
-        (typeof value === 'string' && value.trim() === '') ||
-        (Array.isArray(value) && value.length === 0)) {
+    if (
+      value === null ||
+      value === undefined ||
+      (typeof value === 'string' && value.trim() === '') ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
       return this.failure([`${fieldName}不能为空`]);
     }
     return this.success();
@@ -67,9 +74,9 @@ export class ValidationUtils {
    * 验证字符串长度
    */
   static validateStringLength(
-    value: string | undefined, 
-    fieldName: string, 
-    options: { min?: number; max?: number; required?: boolean } = {}
+    value: string | undefined,
+    fieldName: string,
+    options: { min?: number; max?: number; required?: boolean } = {},
   ): ValidationResult {
     if (!value) {
       if (options.required) {
@@ -98,7 +105,7 @@ export class ValidationUtils {
   static validateNumberRange(
     value: number | undefined,
     fieldName: string,
-    options: { min?: number; max?: number; required?: boolean; integer?: boolean } = {}
+    options: { min?: number; max?: number; required?: boolean; integer?: boolean } = {},
   ): ValidationResult {
     if (value === undefined) {
       if (options.required) {
@@ -136,7 +143,7 @@ export class ValidationUtils {
     value: T,
     fieldName: string,
     allowedValues: T[],
-    required: boolean = true
+    required: boolean = true,
   ): ValidationResult {
     if (!required && (value === null || value === undefined)) {
       return this.success();
@@ -155,12 +162,12 @@ export class ValidationUtils {
   static validateArray(
     value: any[] | undefined,
     fieldName: string,
-    options: { 
-      required?: boolean; 
-      minLength?: number; 
+    options: {
+      required?: boolean;
+      minLength?: number;
       maxLength?: number;
       elementValidator?: (item: any, index: number) => ValidationResult;
-    } = {}
+    } = {},
   ): ValidationResult {
     if (!value) {
       if (options.required) {
@@ -188,7 +195,7 @@ export class ValidationUtils {
       value.forEach((item, index) => {
         const result = options.elementValidator!(item, index);
         if (!result.isValid) {
-          errors.push(...result.errors.map(err => `${fieldName}[${index}]: ${err}`));
+          errors.push(...result.errors.map((err) => `${fieldName}[${index}]: ${err}`));
         }
       });
     }
@@ -201,7 +208,7 @@ export class ValidationUtils {
    */
   static validateEmail(email: string, fieldName: string = '邮箱'): ValidationResult {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!email || !emailRegex.test(email)) {
       return this.failure([`${fieldName}格式不正确`]);
     }
@@ -227,13 +234,13 @@ export class ValidationUtils {
   static validateDate(
     date: any,
     fieldName: string,
-    options: { 
+    options: {
       required?: boolean;
       minDate?: Date;
       maxDate?: Date;
       futureOnly?: boolean;
       pastOnly?: boolean;
-    } = {}
+    } = {},
   ): ValidationResult {
     if (!date) {
       if (options.required) {
@@ -286,7 +293,7 @@ export class ValidationUtils {
   static custom(
     validator: () => boolean,
     errorMessage: string,
-    warningMessage?: string
+    warningMessage?: string,
   ): ValidationResult {
     if (validator()) {
       return warningMessage ? this.success([warningMessage]) : this.success();
@@ -298,10 +305,7 @@ export class ValidationUtils {
   /**
    * 条件验证
    */
-  static conditional(
-    condition: boolean,
-    validator: () => ValidationResult
-  ): ValidationResult {
+  static conditional(condition: boolean, validator: () => ValidationResult): ValidationResult {
     if (condition) {
       return validator();
     }
@@ -316,14 +320,14 @@ export class ValidationUtils {
     field: string,
     message: string,
     value?: any,
-    expected?: any
+    expected?: any,
   ): ValidationError {
     return {
       type,
       field,
       message,
       value,
-      expected
+      expected,
     };
   }
 }

@@ -52,6 +52,7 @@
 - **事件类型**: 校验生命周期事件
 
 **设计亮点**:
+
 - 使用联合类型确保类型安全
 - 泛型支持提供灵活性
 - 完整的事件系统类型定义
@@ -67,6 +68,7 @@
 - **错误处理**: 健壮的错误处理和恢复机制
 
 **核心方法**:
+
 - `validateField()`: 校验单个字段
 - `validateForm()`: 校验整个表单
 - `addRule()/removeRule()`: 动态规则管理
@@ -81,6 +83,7 @@
 - **国际化支持**: 多语言错误消息
 
 **设计特点**:
+
 - 静态方法设计，便于使用
 - 链式调用支持
 - 国际化消息支持
@@ -177,18 +180,22 @@ const rule = enValidator.required('This field is required');
 ## 性能优化
 
 ### 1. 防抖机制
+
 - 异步校验自动防抖，避免频繁请求
 - 可配置防抖时间
 
 ### 2. 取消机制
+
 - 自动取消过期的异步校验
 - 避免竞态条件
 
 ### 3. 事件优化
+
 - 使用useCallback避免React重渲染
 - Vue中使用响应式引用优化性能
 
 ### 4. 内存管理
+
 - 提供destroy方法清理资源
 - 自动清理事件监听器
 
@@ -204,7 +211,7 @@ const customRule: ValidationRule = {
   validator: (value: string) => {
     // 自定义校验逻辑
     return calculatePasswordStrength(value) >= 3;
-  }
+  },
 };
 ```
 
@@ -223,6 +230,7 @@ export function useAngularFormValidation(config: FormConfig) {
 ```
 
 ### 3. 插件系统
+
 - 支持通过插件扩展校验规则
 - 支持自定义错误消息格式化器
 
@@ -239,10 +247,10 @@ const validator = new FormValidator({
       name: 'email',
       rules: [
         BuiltinValidators.required('邮箱不能为空'),
-        BuiltinValidators.email('邮箱格式不正确')
-      ]
-    }
-  ]
+        BuiltinValidators.email('邮箱格式不正确'),
+      ],
+    },
+  ],
 });
 ```
 
@@ -253,7 +261,7 @@ import { useReactFormValidation } from '@dailyuse/utils/validation';
 
 function MyForm() {
   const { state, methods } = useReactFormValidation({ config });
-  
+
   return (
     <form onSubmit={(e) => methods.validateForm()}>
       {/* 表单字段 */}
@@ -271,28 +279,32 @@ export default {
   setup() {
     const { state, methods } = useVueFormValidation({ config });
     return { state, methods };
-  }
+  },
 };
 ```
 
 ## 项目收益
 
 ### 1. 开发效率提升
+
 - 统一的校验API，减少学习成本
 - 丰富的内置规则，开箱即用
 - 完整的TypeScript支持，减少运行时错误
 
 ### 2. 代码质量提升
+
 - 类型安全的校验规则定义
 - 统一的错误处理机制
 - 完善的测试覆盖
 
 ### 3. 用户体验提升
+
 - 实时校验反馈
 - 防抖优化，减少服务器压力
 - 国际化支持，适配多语言用户
 
 ### 4. 维护成本降低
+
 - 框架无关设计，减少技术栈迁移成本
 - 模块化架构，便于功能扩展
 - 完善的文档和示例
@@ -300,16 +312,19 @@ export default {
 ## 后续优化方向
 
 ### 1. 功能增强
+
 - 添加更多内置校验规则
 - 支持表单级别的依赖校验
 - 添加可视化的校验规则配置器
 
 ### 2. 性能优化
+
 - 实现虚拟校验（大表单优化）
 - 添加校验结果缓存机制
 - 优化内存使用
 
 ### 3. 开发者体验
+
 - 添加校验规则的可视化调试工具
 - 提供更多框架的适配器
 - 添加校验性能分析工具

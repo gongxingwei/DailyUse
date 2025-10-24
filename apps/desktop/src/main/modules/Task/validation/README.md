@@ -73,6 +73,7 @@ console.log(report); // 详细的文本报告
 ## 🎯 验证模式
 
 ### 创建模式
+
 ```typescript
 import { TaskTemplateValidator } from './validation';
 
@@ -80,16 +81,19 @@ const result = TaskTemplateValidator.validateForCreate(template);
 ```
 
 ### 更新模式
+
 ```typescript
 const result = TaskTemplateValidator.validateForUpdate(template);
 ```
 
 ### 快速验证（跳过非关键验证器）
+
 ```typescript
 const result = TaskTemplateValidator.quickValidate(template);
 ```
 
 ### 严格验证（遇到错误立即停止）
+
 ```typescript
 const result = TaskTemplateValidator.strictValidate(template);
 ```
@@ -120,16 +124,18 @@ import { ValidationRuleBuilder, ValidatorFactory } from './validation';
 const customValidator = new ValidationRuleBuilder()
   .field(
     (template) => template.title,
-    (title) => title.includes('重要') ? 
-      { isValid: true, errors: [] } : 
-      { isValid: false, errors: ['重要任务必须包含"重要"关键词'] },
-    '标题关键词'
+    (title) =>
+      title.includes('重要')
+        ? { isValid: true, errors: [] }
+        : { isValid: false, errors: ['重要任务必须包含"重要"关键词'] },
+    '标题关键词',
   )
   .when(
     (template) => template.priority === 4,
-    (template) => template.timeConfig.reminder?.enabled ?
-      { isValid: true, errors: [] } :
-      { isValid: false, errors: ['高优先级任务必须启用提醒'] }
+    (template) =>
+      template.timeConfig.reminder?.enabled
+        ? { isValid: true, errors: [] }
+        : { isValid: false, errors: ['高优先级任务必须启用提醒'] },
   )
   .build();
 
@@ -146,8 +152,8 @@ ValidatorFactory.registerRuleSet({
   validators: ['BasicInfoValidator', 'TimeConfigValidator', 'RecurrenceValidator'],
   config: {
     mode: 'create',
-    skipValidators: ['SchedulingPolicyValidator']
-  }
+    skipValidators: ['SchedulingPolicyValidator'],
+  },
 });
 ```
 
@@ -226,12 +232,14 @@ runAllTests(); // 在控制台输出测试结果
 ## 📝 最佳实践
 
 ### 1. 选择合适的验证模式
+
 - **创建新模板**：使用 `validateForCreate`
-- **更新现有模板**：使用 `validateForUpdate` 
+- **更新现有模板**：使用 `validateForUpdate`
 - **快速检查**：使用 `quickValidate`
 - **严格验证**：使用 `strictValidate`
 
 ### 2. 处理验证结果
+
 ```typescript
 const result = validateTaskTemplate(template);
 
@@ -250,12 +258,14 @@ if (result.warnings && result.warnings.length > 0) {
 ```
 
 ### 3. 自定义验证器设计原则
+
 - 单一职责：每个验证器只负责特定的验证逻辑
 - 可组合：可以与其他验证器组合使用
 - 清晰的错误信息：提供具体、可操作的错误提示
 - 性能考虑：避免重复验证和复杂计算
 
 ### 4. 错误信息指导原则
+
 - 具体明确：准确描述问题所在
 - 可操作：告诉用户如何修复问题
 - 用户友好：使用易懂的语言

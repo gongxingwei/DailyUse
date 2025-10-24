@@ -1,48 +1,44 @@
 <template>
-    <Teleport to="body">
-      <div class="confirm-overlay" v-if="modelValue" @click="cancel">
-        <div class="confirm-dialog" @click.stop>
-          <div class="confirm-dialog__title">{{ title }}</div>
-          <div class="confirm-dialog__message">{{ message }}</div>
-          <div class="confirm-dialog__actions">
-            <button class="cancel-button" @click="cancel">{{ cancelText }}</button>
-            <button class="confirm-button" @click="confirm">{{ confirmText }}</button>
-          </div>
+  <Teleport to="body">
+    <div class="confirm-overlay" v-if="modelValue" @click="cancel">
+      <div class="confirm-dialog" @click.stop>
+        <div class="confirm-dialog__title">{{ title }}</div>
+        <div class="confirm-dialog__message">{{ message }}</div>
+        <div class="confirm-dialog__actions">
+          <button class="cancel-button" @click="cancel">{{ cancelText }}</button>
+          <button class="confirm-button" @click="confirm">{{ confirmText }}</button>
         </div>
       </div>
-    </Teleport>
-  </template>
+    </div>
+  </Teleport>
+</template>
 
 <script setup lang="ts">
-
 interface Props {
-    modelValue: boolean
-    title: string
-    message: string
-    cancelText: string
-    confirmText: string
+  modelValue: boolean;
+  title: string;
+  message: string;
+  cancelText: string;
+  confirmText: string;
 }
 
-const { modelValue, title, message, cancelText, confirmText } = defineProps<Props>()
+const { modelValue, title, message, cancelText, confirmText } = defineProps<Props>();
 
 const emit = defineEmits<{
-    (e: 'update:modelValue', value: boolean): void
-    (e: 'confirm'): void
-    (e: 'cancel'): void
-}>()
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'confirm'): void;
+  (e: 'cancel'): void;
+}>();
 
 const cancel = () => {
-    emit('update:modelValue', false)
-    emit('cancel')
-}
+  emit('update:modelValue', false);
+  emit('cancel');
+};
 
 const confirm = () => {
-    emit('update:modelValue', false)
-    emit('confirm')
-}
-
-
-
+  emit('update:modelValue', false);
+  emit('confirm');
+};
 </script>
 
 <style scoped>
@@ -72,7 +68,6 @@ const confirm = () => {
   color: rgb(var(--v-theme-info));
   font-size: 20px;
   font-weight: bold;
-
 }
 
 .confirm-dialog__message {
@@ -106,11 +101,9 @@ const confirm = () => {
 
 .cancel-button {
   color: rgb(var(--v-theme-error));
-
 }
 
 .confirm-button {
   color: rgb(var(--v-theme-success));
-
 }
 </style>

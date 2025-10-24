@@ -73,7 +73,7 @@
             </div>
             <v-list v-else lines="two" density="comfortable">
               <v-list-item v-for="record in records" :key="record.uuid" class="mb-2">
-                <GoalRecordCard :record="(record as GoalRecord)" />
+                <GoalRecordCard :record="record as GoalRecord" />
               </v-list-item>
             </v-list>
           </div>
@@ -118,7 +118,7 @@ const goal = computed(() => {
 
 // 关键结果
 const keyResult = computed(() => {
-  const keyResult = goal.value.keyResults.find(kr => kr.uuid === keyResultUuid);
+  const keyResult = goal.value.keyResults.find((kr) => kr.uuid === keyResultUuid);
   if (!keyResult) {
     throw new Error('Key result not found');
   }
@@ -133,12 +133,11 @@ const tabs = [
 
 onMounted(async () => {
   // taskTemplates.value = await taskStore.getTaskTemplatesByKeyResultUuid(keyResultUuid);
-
-})
+});
 
 // 计算所有记录
 const records = computed(() => {
-  const records = goal.value.records.filter(record => record.keyResultUuid === keyResultUuid);
+  const records = goal.value.records.filter((record) => record.keyResultUuid === keyResultUuid);
   return records;
 });
 </script>

@@ -21,7 +21,7 @@ export class TaskDAGPage {
 
   constructor(page: Page) {
     this.page = page;
-    
+
     // Initialize locators
     this.container = page.getByTestId('task-dag-visualization');
     this.chart = page.getByTestId('dag-chart');
@@ -96,7 +96,7 @@ export class TaskDAGPage {
   async getCriticalPathDuration(): Promise<number | null> {
     const chipVisible = await this.criticalPathChip.isVisible();
     if (!chipVisible) return null;
-    
+
     const text = await this.criticalPathChip.textContent();
     const match = text?.match(/(\d+)/);
     return match ? parseInt(match[1]) : null;
@@ -116,30 +116,30 @@ export class TaskDAGPage {
   // Export
   async exportAsPNG() {
     console.log('[TaskDAGPage] Exporting as PNG');
-    
+
     // Set up download listener
     const downloadPromise = this.page.waitForEvent('download');
-    
+
     await this.exportBtn.click();
-    
+
     // Wait for export dialog and click PNG option
     await this.page.click('button:has-text("PNG"), [data-format="png"]');
-    
+
     const download = await downloadPromise;
     const filename = download.suggestedFilename();
-    
+
     console.log(`[TaskDAGPage] Downloaded: ${filename}`);
     return filename;
   }
 
   async exportAsJSON() {
     console.log('[TaskDAGPage] Exporting as JSON');
-    
+
     const downloadPromise = this.page.waitForEvent('download');
-    
+
     await this.exportBtn.click();
     await this.page.click('button:has-text("JSON"), [data-format="json"]');
-    
+
     const download = await downloadPromise;
     return download.suggestedFilename();
   }
@@ -147,22 +147,19 @@ export class TaskDAGPage {
   // Chart Interactions
   async clickNode(nodeId: string) {
     console.log(`[TaskDAGPage] Clicking node: ${nodeId}`);
-    
+
     // ECharts uses canvas, so we need to calculate position
     const chartBox = await this.chart.boundingBox();
     if (!chartBox) throw new Error('Chart not found');
-    
+
     // Click center of chart (simplified - real implementation would need node coordinates)
-    await this.page.mouse.click(
-      chartBox.x + chartBox.width / 2,
-      chartBox.y + chartBox.height / 2
-    );
+    await this.page.mouse.click(chartBox.x + chartBox.width / 2, chartBox.y + chartBox.height / 2);
   }
 
   async zoomIn() {
     const chartBox = await this.chart.boundingBox();
     if (!chartBox) throw new Error('Chart not found');
-    
+
     // Mouse wheel zoom
     await this.page.mouse.move(chartBox.x + chartBox.width / 2, chartBox.y + chartBox.height / 2);
     await this.page.mouse.wheel(0, -100);
@@ -172,7 +169,7 @@ export class TaskDAGPage {
   async zoomOut() {
     const chartBox = await this.chart.boundingBox();
     if (!chartBox) throw new Error('Chart not found');
-    
+
     await this.page.mouse.move(chartBox.x + chartBox.width / 2, chartBox.y + chartBox.height / 2);
     await this.page.mouse.wheel(0, 100);
     await this.page.waitForTimeout(300);
@@ -181,15 +178,15 @@ export class TaskDAGPage {
   async panChart(deltaX: number, deltaY: number) {
     const chartBox = await this.chart.boundingBox();
     if (!chartBox) throw new Error('Chart not found');
-    
+
     const startX = chartBox.x + chartBox.width / 2;
     const startY = chartBox.y + chartBox.height / 2;
-    
+
     await this.page.mouse.move(startX, startY);
     await this.page.mouse.down();
     await this.page.mouse.move(startX + deltaX, startY + deltaY);
     await this.page.mouse.up();
-    
+
     await this.page.waitForTimeout(300);
   }
 
@@ -277,7 +274,7 @@ export class TaskDAGPage {
       ({ id, pos }) => {
         localStorage.setItem(`dag-layout-${id}`, JSON.stringify(pos));
       },
-      { id: taskId, pos: positions }
+      { id: taskId, pos: positions },
     );
   }
 

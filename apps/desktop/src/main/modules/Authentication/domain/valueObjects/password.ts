@@ -1,5 +1,4 @@
-import { IPassword } from "@common/modules/authentication/types/authentication";
-
+import { IPassword } from '@common/modules/authentication/types/authentication';
 
 /**
  * 密码值对象
@@ -41,11 +40,11 @@ export class Password implements IPassword {
    * 从已有的哈希值和时间戳创建密码对象（用于从数据库恢复）
    */
   static fromHashWithTimestamp(
-    hashedValue: string, 
-    salt: string, 
-    algorithm: string, 
+    hashedValue: string,
+    salt: string,
+    algorithm: string,
     createdAt: Date,
-    expiresAt?: Date | undefined
+    expiresAt?: Date | undefined,
   ): Password {
     const password = Object.create(Password.prototype);
     password._hashedValue = hashedValue;
@@ -65,22 +64,24 @@ export class Password implements IPassword {
   }
 
   /**
- * 验证密码强度（至少满足3个条件）
- */
-static validateStrength(password: string): boolean {
-  if (password.length < 8) {
-    return false;
+   * 验证密码强度（至少满足3个条件）
+   */
+  static validateStrength(password: string): boolean {
+    if (password.length < 8) {
+      return false;
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    const criteriaMet = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(
+      Boolean,
+    ).length;
+
+    return criteriaMet >= 3;
   }
-
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-
-  const criteriaMet = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
-
-  return criteriaMet >= 3;
-}
 
   /**
    * 获取密码强度等级
@@ -88,13 +89,15 @@ static validateStrength(password: string): boolean {
   static getStrengthLevel(password: string): 'weak' | 'medium' | 'strong' | 'very-strong' {
     if (password.length < 6) return 'weak';
     if (password.length < 8) return 'medium';
-    
+
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
     const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
 
-    const criteriaCount = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
+    const criteriaCount = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(
+      Boolean,
+    ).length;
 
     if (criteriaCount >= 4 && password.length >= 12) return 'very-strong';
     if (criteriaCount >= 3) return 'strong';
@@ -138,7 +141,9 @@ static validateStrength(password: string): boolean {
    */
   private generateSalt(): string {
     // 实际应用中应使用加密库生成随机盐值
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return (
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    );
   }
 
   /**
@@ -151,7 +156,7 @@ static validateStrength(password: string): boolean {
     let hash = 0;
     for (let i = 0; i < combined.length; i++) {
       const char = combined.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // 转换为32位整数
     }
     return hash.toString(36);

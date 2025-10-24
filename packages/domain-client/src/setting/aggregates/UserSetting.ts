@@ -252,8 +252,7 @@ export class UserSetting extends AggregateRoot implements UserSettingClient {
         custom: { ...this._shortcuts.custom },
       },
       privacy: {
-        profileVisibility: this._privacy
-          .profileVisibility as 'PUBLIC' | 'PRIVATE' | 'FRIENDS_ONLY',
+        profileVisibility: this._privacy.profileVisibility as 'PUBLIC' | 'PRIVATE' | 'FRIENDS_ONLY',
         showOnlineStatus: this._privacy.showOnlineStatus,
         allowSearchByEmail: this._privacy.allowSearchByEmail,
         allowSearchByPhone: this._privacy.allowSearchByPhone,

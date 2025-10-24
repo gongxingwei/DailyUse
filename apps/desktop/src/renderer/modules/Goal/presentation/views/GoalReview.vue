@@ -1,25 +1,34 @@
 <template>
-  <div v-if="loading" class="d-flex justify-center align-center" style="height:200px;">
+  <div v-if="loading" class="d-flex justify-center align-center" style="height: 200px">
     <span>加载中...</span>
   </div>
-  <div v-else-if="!localGoalReview" class="d-flex justify-center align-center" style="height:200px;">
+  <div
+    v-else-if="!localGoalReview"
+    class="d-flex justify-center align-center"
+    style="height: 200px"
+  >
     <span>加载失败,未获取目标信息</span>
   </div>
   <div v-else id="goal-review" class="h-100 w-100 d-flex flex-column">
     <!-- header -->
     <header class="goal-review-header d-flex justify-space-between align-center px-4 py-2">
       <div>
-        <v-btn @click="router.back()" variant="tonal">
-          取消
-        </v-btn>
+        <v-btn @click="router.back()" variant="tonal"> 取消 </v-btn>
       </div>
       <div class="goal-review-header-content d-flex flex-column align-center text-center">
-        <span class="font-weight-bold" style="font-size:2rem;">目标复盘</span>
+        <span class="font-weight-bold" style="font-size: 2rem">目标复盘</span>
         <span class="font-weight-medium">{{ goal.name }}</span>
-        <span class="font-weight-light">{{ format(goal.startTime, 'yyyy-MM-dd') }} 到 {{ format(goal.endTime, 'yyyy-MM-dd') }}</span>
+        <span class="font-weight-light"
+          >{{ format(goal.startTime, 'yyyy-MM-dd') }} 到
+          {{ format(goal.endTime, 'yyyy-MM-dd') }}</span
+        >
       </div>
       <div>
-        <v-btn color="primary" size="large" @click="handleAddReviewToGoal(localGoalReview as GoalReview)">
+        <v-btn
+          color="primary"
+          size="large"
+          @click="handleAddReviewToGoal(localGoalReview as GoalReview)"
+        >
           完成复盘
         </v-btn>
       </div>
@@ -33,7 +42,9 @@
             <div class="card-header pa-4 d-flex flex-column align-start">
               <div>
                 <span class="font-weight-light">进度</span>
-                <span class="font-weight-bold" style="font-size:2rem;">{{ localGoalReview.snapshot.weightedProgress }}</span>
+                <span class="font-weight-bold" style="font-size: 2rem">{{
+                  localGoalReview.snapshot.weightedProgress
+                }}</span>
                 <span class="font-weight-light">%</span>
               </div>
               <div>
@@ -41,8 +52,11 @@
               </div>
             </div>
             <div class="card-content d-flex flex-column">
-              <div v-for="kr in localGoalReview.snapshot.keyResultsSnapshot || []" :key="kr.uuid"
-                class="card-content-item d-flex justify-space-between align-center pa-3">
+              <div
+                v-for="kr in localGoalReview.snapshot.keyResultsSnapshot || []"
+                :key="kr.uuid"
+                class="card-content-item d-flex justify-space-between align-center pa-3"
+              >
                 <span class="item-name">{{ kr.name }}</span>
                 <span class="item-value">{{ kr.currentValue }} -> {{ kr.targetValue }}</span>
               </div>
@@ -52,7 +66,9 @@
           <div class="goal-review-card task-info">
             <div class="card-header pa-4 d-flex flex-column align-start">
               <div>
-                <span class="font-weight-bold" style="font-size:2rem;">{{ taskStatus.overall.incomplete }}</span>
+                <span class="font-weight-bold" style="font-size: 2rem">{{
+                  taskStatus.overall.incomplete
+                }}</span>
                 <span class="font-weight-light">条任务未完成</span>
               </div>
               <div>
@@ -60,8 +76,11 @@
               </div>
             </div>
             <div class="card-content d-flex flex-column">
-              <div v-for="task in taskStatus.taskDetails as any[]" :key="task.templateId"
-                class="card-content-item d-flex justify-space-between align-center pa-3">
+              <div
+                v-for="task in taskStatus.taskDetails as any[]"
+                :key="task.templateId"
+                class="card-content-item d-flex justify-space-between align-center pa-3"
+              >
                 <span class="item-name">{{ task.title }}</span>
                 <span class="item-value">{{ task.completed }}/{{ task.total }}</span>
               </div>
@@ -71,15 +90,15 @@
       </section>
       <section class="goal-review-charts">
         <v-row>
-            <v-col cols="12" md="6">
-              <GoalProgressChart :goal="(goal as Goal)" />
-            </v-col>
-            <v-col cols="12" md="6">
-                <KrProgressChart :goal="(goal as Goal)" />
-            </v-col>
-            <v-col cols="12">
-                <PeriodBarChart :goal="(goal as Goal)" />
-            </v-col>
+          <v-col cols="12" md="6">
+            <GoalProgressChart :goal="goal as Goal" />
+          </v-col>
+          <v-col cols="12" md="6">
+            <KrProgressChart :goal="goal as Goal" />
+          </v-col>
+          <v-col cols="12">
+            <PeriodBarChart :goal="goal as Goal" />
+          </v-col>
         </v-row>
       </section>
 
@@ -87,15 +106,27 @@
       <section class="self-diagnosis mt-8">
         <div class="diagnosis-container pa-10">
           <h2 class="diagnosis-title text-center mb-8">自我诊断</h2>
-          <div class="diagnosis-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:1200px;margin:0 auto;">
+          <div
+            class="diagnosis-grid"
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 1.5rem;
+              max-width: 1200px;
+              margin: 0 auto;
+            "
+          >
             <div class="diagnosis-card">
               <div class="diagnosis-card-header d-flex align-center gap-3 pa-6">
                 <v-icon class="diagnosis-icon" color="success">mdi-trophy</v-icon>
                 <h3>主要成就</h3>
               </div>
               <div class="diagnosis-card-content pa-6">
-                <textarea v-model="localGoalReview.content.achievements" placeholder="列出这段时间的主要成就..."
-                  class="diagnosis-textarea"></textarea>
+                <textarea
+                  v-model="localGoalReview.content.achievements"
+                  placeholder="列出这段时间的主要成就..."
+                  class="diagnosis-textarea"
+                ></textarea>
               </div>
             </div>
             <div class="diagnosis-card">
@@ -104,8 +135,11 @@
                 <h3>遇到的挑战</h3>
               </div>
               <div class="diagnosis-card-content pa-6">
-                <textarea v-model="localGoalReview.content.challenges" placeholder="记录遇到的主要挑战..."
-                  class="diagnosis-textarea"></textarea>
+                <textarea
+                  v-model="localGoalReview.content.challenges"
+                  placeholder="记录遇到的主要挑战..."
+                  class="diagnosis-textarea"
+                ></textarea>
               </div>
             </div>
             <div class="diagnosis-card">
@@ -114,8 +148,11 @@
                 <h3>经验总结</h3>
               </div>
               <div class="diagnosis-card-content pa-6">
-                <textarea v-model="localGoalReview.content.learnings" placeholder="总结经验教训..."
-                  class="diagnosis-textarea"></textarea>
+                <textarea
+                  v-model="localGoalReview.content.learnings"
+                  placeholder="总结经验教训..."
+                  class="diagnosis-textarea"
+                ></textarea>
               </div>
             </div>
             <div class="diagnosis-card">
@@ -124,8 +161,11 @@
                 <h3>下一步计划</h3>
               </div>
               <div class="diagnosis-card-content pa-6">
-                <textarea v-model="localGoalReview.content.nextSteps" placeholder="制定下一步计划..."
-                  class="diagnosis-textarea"></textarea>
+                <textarea
+                  v-model="localGoalReview.content.nextSteps"
+                  placeholder="制定下一步计划..."
+                  class="diagnosis-textarea"
+                ></textarea>
               </div>
             </div>
           </div>
@@ -159,7 +199,7 @@ const { handleAddReviewToGoal } = useGoalServices();
 
 const taskStatus = ref({
   overall: { incomplete: 0, total: 0 },
-  taskDetails: []
+  taskDetails: [],
 });
 
 onMounted(async () => {
@@ -169,8 +209,11 @@ onMounted(async () => {
 
 <style scoped>
 #goal-review {
-
-  background: linear-gradient(120deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-background), 0.95) 100%);
+  background: linear-gradient(
+    120deg,
+    rgba(var(--v-theme-primary), 0.08) 0%,
+    rgba(var(--v-theme-background), 0.95) 100%
+  );
 
   overflow: hidden;
 }
@@ -190,7 +233,9 @@ onMounted(async () => {
   border-radius: 12px;
   margin-bottom: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -240,7 +285,11 @@ onMounted(async () => {
   text-align: center;
 }
 .self-diagnosis {
-  background: linear-gradient(135deg, rgba(var(--v-theme-surface), 0.95), rgba(var(--v-theme-background), 0.98));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-surface), 0.95),
+    rgba(var(--v-theme-background), 0.98)
+  );
   border-radius: 16px;
   margin: 2rem 0;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);

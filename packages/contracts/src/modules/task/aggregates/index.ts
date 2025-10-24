@@ -7,7 +7,6 @@ export type {
   TaskInstanceServerDTO,
   TaskInstancePersistenceDTO,
   TaskInstanceServer,
-  
 } from './TaskInstanceServer';
 
 export type { TaskInstanceClientDTO, TaskInstanceClient } from './TaskInstanceClient';
@@ -33,7 +32,12 @@ export type {
   DistributionStatsInfo,
 } from './TaskStatisticsServer';
 
-export type { TaskStatisticsClientDTO, TaskStatisticsClient, ChartData, TrendData } from './TaskStatisticsClient';
+export type {
+  TaskStatisticsClientDTO,
+  TaskStatisticsClient,
+  ChartData,
+  TrendData,
+} from './TaskStatisticsClient';
 
 // TaskDependency
 export type {

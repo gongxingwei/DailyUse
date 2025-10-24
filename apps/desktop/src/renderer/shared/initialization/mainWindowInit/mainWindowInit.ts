@@ -1,10 +1,10 @@
-import { authenticationService } from "@renderer/modules/Authentication/application/services/authenticationService";
+import { authenticationService } from '@renderer/modules/Authentication/application/services/authenticationService';
 
 import {
   InitializationManager,
   InitializationPhase,
   InitializationTask,
-} from "@main/shared/initialization/initializationManager";
+} from '@main/shared/initialization/initializationManager';
 export class MainWindowInit {
   async initialize() {
     // 只在主窗口执行
@@ -13,13 +13,11 @@ export class MainWindowInit {
       return;
     }
     try {
-      console.log("🚀 [MainWindowInit] 初始化主窗口登录信息");
+      console.log('🚀 [MainWindowInit] 初始化主窗口登录信息');
       const response = await authenticationService.getAuthInfo();
       if (!response.success || !response.data) {
-        throw new Error("获取认证信息失败");
+        throw new Error('获取认证信息失败');
       }
-
-
     } catch (error) {
       console.error('初始化账户信息失败:', error);
     }
@@ -28,14 +26,14 @@ export class MainWindowInit {
 
 const mainWindowInitTask: InitializationTask = {
   name: 'src-mainWindowInitTask',
-    phase: InitializationPhase.APP_STARTUP,
-    priority: 100,
-    dependencies: [''],
-    initialize: async () => {
-        const mainWindowInit = new MainWindowInit();
-        await mainWindowInit.initialize();
-        console.log('✓ 渲染进程主窗口初始化用户信息任务完成');
-        }
+  phase: InitializationPhase.APP_STARTUP,
+  priority: 100,
+  dependencies: [''],
+  initialize: async () => {
+    const mainWindowInit = new MainWindowInit();
+    await mainWindowInit.initialize();
+    console.log('✓ 渲染进程主窗口初始化用户信息任务完成');
+  },
 };
 
 export function registerMainWindowInitTask(): void {

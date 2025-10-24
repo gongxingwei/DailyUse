@@ -56,25 +56,25 @@ import type { RepositoryContracts } from '@dailyuse/contracts';
 
 /**
  * Repository Store
- * 
+ *
  * ⚠️ 存储领域模型，不是 DTO
  */
 export const useRepositoryStore = defineStore('repository', () => {
   // ============ State ============
-  
+
   // ✅ 使用 Map 优化查询
   const repositories = ref<Map<string, RepositoryClient>>(new Map());
   const resources = ref<Map<string, ResourceClient>>(new Map());
-  
+
   // 当前选中的仓库
   const selectedRepositoryUuid = ref<string | null>(null);
-  
+
   // 加载状态
   const isLoading = ref(false);
   const isInitialized = ref(false);
 
   // ============ Getters ============
-  
+
   /**
    * 获取所有仓库（数组）
    */
@@ -86,7 +86,7 @@ export const useRepositoryStore = defineStore('repository', () => {
    * 获取活跃仓库
    */
   const getActiveRepositories = computed(() => {
-    return getAllRepositories.value.filter(repo => repo.isActive());
+    return getAllRepositories.value.filter((repo) => repo.isActive());
   });
 
   /**
@@ -118,9 +118,7 @@ export const useRepositoryStore = defineStore('repository', () => {
    */
   const getResourcesByRepositoryUuid = computed(() => {
     return (repositoryUuid: string) => {
-      return getAllResources.value.filter(
-        res => res.repositoryUuid === repositoryUuid
-      );
+      return getAllResources.value.filter((res) => res.repositoryUuid === repositoryUuid);
     };
   });
 
@@ -153,7 +151,7 @@ export const useRepositoryStore = defineStore('repository', () => {
    */
   function setRepositories(repos: RepositoryClient[]): void {
     repositories.value.clear();
-    repos.forEach(repo => {
+    repos.forEach((repo) => {
       repositories.value.set(repo.uuid, repo);
     });
   }
@@ -170,15 +168,15 @@ export const useRepositoryStore = defineStore('repository', () => {
    */
   function removeRepository(uuid: string): void {
     repositories.value.delete(uuid);
-    
+
     // 如果删除的是当前选中的仓库，清除选择
     if (selectedRepositoryUuid.value === uuid) {
       selectedRepositoryUuid.value = null;
     }
-    
+
     // 删除相关资源
     const relatedResources = getResourcesByRepositoryUuid.value(uuid);
-    relatedResources.forEach(res => resources.value.delete(res.uuid));
+    relatedResources.forEach((res) => resources.value.delete(res.uuid));
   }
 
   /**
@@ -193,7 +191,7 @@ export const useRepositoryStore = defineStore('repository', () => {
    */
   function setResources(res: ResourceClient[]): void {
     resources.value.clear();
-    res.forEach(resource => {
+    res.forEach((resource) => {
       resources.value.set(resource.uuid, resource);
     });
   }
@@ -265,25 +263,29 @@ export const useRepositoryStore = defineStore('repository', () => {
 ### ⚠️ 易错点
 
 ❌ **错误**：Store 存储 DTO
+
 ```typescript
 // 错误示例
-const repositories = ref<RepositoryDTO[]>([]);  // ❌ 存储 DTO
+const repositories = ref<RepositoryDTO[]>([]); // ❌ 存储 DTO
 ```
 
 ✅ **正确**：Store 存储领域模型
+
 ```typescript
-const repositories = ref<Map<string, RepositoryClient>>(new Map());  // ✅ 领域模型
+const repositories = ref<Map<string, RepositoryClient>>(new Map()); // ✅ 领域模型
 ```
 
 ❌ **错误**：使用数组存储
+
 ```typescript
 // 错误示例
-const repositories = ref<RepositoryClient[]>([]);  // ❌ 查询 O(n)
+const repositories = ref<RepositoryClient[]>([]); // ❌ 查询 O(n)
 ```
 
 ✅ **正确**：使用 Map 优化查询
+
 ```typescript
-const repositories = ref<Map<string, RepositoryClient>>(new Map());  // ✅ 查询 O(1)
+const repositories = ref<Map<string, RepositoryClient>>(new Map()); // ✅ 查询 O(1)
 ```
 
 ---
@@ -306,12 +308,15 @@ const repositories = ref<Map<string, RepositoryClient>>(new Map());  // ✅ 查�
 import { useRepositoryStore } from '../../stores/repositoryStore';
 import { repositoryApiClient } from '../../infrastructure/api/repositoryApiClient';
 import { RepositoryClient, ResourceClient } from '@dailyuse/domain-client';
-import { convertRepositoryListFromServer, convertResourceListFromServer } from '@dailyuse/domain-client';
+import {
+  convertRepositoryListFromServer,
+  convertResourceListFromServer,
+} from '@dailyuse/domain-client';
 import type { RepositoryContracts } from '@dailyuse/contracts';
 
 /**
  * Repository Application Service
- * 
+ *
  * 前端应用服务，负责：
  * 1. 调用 API Client
  * 2. DTO → Domain 转换
@@ -350,7 +355,7 @@ class RepositoryApplicationService {
    * 创建仓库
    */
   async createRepository(
-    request: RepositoryContracts.CreateRepositoryRequestDTO
+    request: RepositoryContracts.CreateRepositoryRequestDTO,
   ): Promise<RepositoryClient> {
     // 1. 调用 API
     const dto = await repositoryApiClient.createRepository(request);
@@ -368,7 +373,7 @@ class RepositoryApplicationService {
    * 更新仓库
    */
   async updateRepository(
-    request: RepositoryContracts.UpdateRepositoryRequestDTO
+    request: RepositoryContracts.UpdateRepositoryRequestDTO,
   ): Promise<RepositoryClient> {
     // 1. 调用 API
     const dto = await repositoryApiClient.updateRepository(request);
@@ -493,7 +498,7 @@ import type { DailyUseApiResponse } from '@/common/types/api-response';
 
 /**
  * Repository API Client
- * 
+ *
  * ⚠️ 只负责 HTTP 请求，返回 DTO
  */
 class RepositoryApiClient {
@@ -503,7 +508,7 @@ class RepositoryApiClient {
    * 创建仓库
    */
   async createRepository(
-    request: RepositoryContracts.CreateRepositoryRequestDTO
+    request: RepositoryContracts.CreateRepositoryRequestDTO,
   ): Promise<RepositoryContracts.RepositoryServerDTO> {
     const response = await apiClient.post<
       DailyUseApiResponse<RepositoryContracts.RepositoryServerDTO>
@@ -516,7 +521,7 @@ class RepositoryApiClient {
    * 更新仓库
    */
   async updateRepository(
-    request: RepositoryContracts.UpdateRepositoryRequestDTO
+    request: RepositoryContracts.UpdateRepositoryRequestDTO,
   ): Promise<RepositoryContracts.RepositoryServerDTO> {
     const response = await apiClient.put<
       DailyUseApiResponse<RepositoryContracts.RepositoryServerDTO>
@@ -535,9 +540,7 @@ class RepositoryApiClient {
   /**
    * 获取仓库详情
    */
-  async getRepositoryByUuid(
-    uuid: string
-  ): Promise<RepositoryContracts.RepositoryServerDTO> {
+  async getRepositoryByUuid(uuid: string): Promise<RepositoryContracts.RepositoryServerDTO> {
     const response = await apiClient.get<
       DailyUseApiResponse<RepositoryContracts.RepositoryServerDTO>
     >(`${this.baseUrl}/${uuid}`);
@@ -559,9 +562,7 @@ class RepositoryApiClient {
   /**
    * 激活仓库
    */
-  async activateRepository(
-    uuid: string
-  ): Promise<RepositoryContracts.RepositoryServerDTO> {
+  async activateRepository(uuid: string): Promise<RepositoryContracts.RepositoryServerDTO> {
     const response = await apiClient.post<
       DailyUseApiResponse<RepositoryContracts.RepositoryServerDTO>
     >(`${this.baseUrl}/${uuid}/activate`);
@@ -572,9 +573,7 @@ class RepositoryApiClient {
   /**
    * 归档仓库
    */
-  async archiveRepository(
-    uuid: string
-  ): Promise<RepositoryContracts.RepositoryServerDTO> {
+  async archiveRepository(uuid: string): Promise<RepositoryContracts.RepositoryServerDTO> {
     const response = await apiClient.post<
       DailyUseApiResponse<RepositoryContracts.RepositoryServerDTO>
     >(`${this.baseUrl}/${uuid}/archive`);
@@ -586,7 +585,7 @@ class RepositoryApiClient {
    * 获取仓库资源
    */
   async getResourcesByRepository(
-    repositoryUuid: string
+    repositoryUuid: string,
   ): Promise<RepositoryContracts.ResourceListResponseDTO> {
     const response = await apiClient.get<
       DailyUseApiResponse<RepositoryContracts.ResourceListResponseDTO>
@@ -624,7 +623,7 @@ import type { RepositoryContracts } from '@dailyuse/contracts';
 
 /**
  * Repository Composable
- * 
+ *
  * 封装通用的仓库操作逻辑
  */
 export function useRepository() {
@@ -642,10 +641,11 @@ export function useRepository() {
       return repositoryStore.getAllRepositories;
     }
 
-    return repositoryStore.getAllRepositories.filter(repo =>
-      repo.name.toLowerCase().includes(query) ||
-      repo.path.toLowerCase().includes(query) ||
-      repo.tags.some(tag => tag.toLowerCase().includes(query))
+    return repositoryStore.getAllRepositories.filter(
+      (repo) =>
+        repo.name.toLowerCase().includes(query) ||
+        repo.path.toLowerCase().includes(query) ||
+        repo.tags.some((tag) => tag.toLowerCase().includes(query)),
     );
   });
 
@@ -658,7 +658,7 @@ export function useRepository() {
    * 创建仓库
    */
   async function createRepository(
-    request: RepositoryContracts.CreateRepositoryRequestDTO
+    request: RepositoryContracts.CreateRepositoryRequestDTO,
   ): Promise<boolean> {
     try {
       await withLoading(async () => {
@@ -677,7 +677,7 @@ export function useRepository() {
    * 更新仓库
    */
   async function updateRepository(
-    request: RepositoryContracts.UpdateRepositoryRequestDTO
+    request: RepositoryContracts.UpdateRepositoryRequestDTO,
   ): Promise<boolean> {
     try {
       await withLoading(async () => {
@@ -762,7 +762,7 @@ export function useRepository() {
   return {
     // State
     searchQuery,
-    
+
     // Computed
     repositories: computed(() => repositoryStore.getAllRepositories),
     filteredRepositories,
@@ -792,18 +792,12 @@ export function useRepository() {
 
 ```vue
 <template>
-  <v-card
-    :class="['repository-card', { 'selected': isSelected }]"
-    @click="handleClick"
-  >
+  <v-card :class="['repository-card', { selected: isSelected }]" @click="handleClick">
     <v-card-title class="d-flex align-center">
       <v-icon :icon="repository.getIconName()" class="mr-2" />
       {{ repository.name }}
       <v-spacer />
-      <v-chip
-        :color="repository.getStatusColor()"
-        size="small"
-      >
+      <v-chip :color="repository.getStatusColor()" size="small">
         {{ repository.status }}
       </v-chip>
     </v-card-title>
@@ -826,32 +820,15 @@ export function useRepository() {
       </div>
 
       <div v-if="repository.tags.length > 0" class="mt-2">
-        <v-chip
-          v-for="tag in repository.tags"
-          :key="tag"
-          size="x-small"
-          class="mr-1"
-        >
+        <v-chip v-for="tag in repository.tags" :key="tag" size="x-small" class="mr-1">
           {{ tag }}
         </v-chip>
       </div>
     </v-card-text>
 
     <v-card-actions>
-      <v-btn
-        size="small"
-        variant="text"
-        @click.stop="handleEdit"
-      >
-        编辑
-      </v-btn>
-      <v-btn
-        size="small"
-        variant="text"
-        @click.stop="handleDelete"
-      >
-        删除
-      </v-btn>
+      <v-btn size="small" variant="text" @click.stop="handleEdit"> 编辑 </v-btn>
+      <v-btn size="small" variant="text" @click.stop="handleDelete"> 删除 </v-btn>
       <v-spacer />
       <v-btn
         size="small"

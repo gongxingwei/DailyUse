@@ -1,1 +1,1 @@
-export * from "@common/modules/notification/types/notification";
+export * from '@common/modules/notification/types/notification';

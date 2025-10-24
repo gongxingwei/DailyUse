@@ -8,6 +8,7 @@
 ## ✅ 修正完成的模块
 
 ### 1. Goal 模块 ✅
+
 - **文件**: `docs/modules/goal/GOAL_MODULE_PLAN.md`
 - **版本**: v1.1
 - **修正内容**:
@@ -24,27 +25,33 @@
 由于文档复杂度高，以下模块的详细规划文档暂时使用简化版本，**核心架构参考 Goal 模块**：
 
 ### 2. Task 模块 ⏳
+
 - **状态**: 旧文档已删除，简化版本已创建（见下）
 - **重构时参考**: Goal 模块 + Task 业务特性
 
-### 3. Reminder 模块 ⏳  
+### 3. Reminder 模块 ⏳
+
 - **状态**: 旧文档已删除，简化版本已创建（见下）
 - **特殊要求**: 无归档状态，只有 draft/active/paused/deleted
 - **重构时参考**: Goal 模块 + Reminder 业务特性
 
 ### 4. Account 模块 ⏳
+
 - **状态**: 旧文档已删除，简化版本已创建（见下）
 - **重构时参考**: Goal 模块 + Account 业务特性
 
 ### 5. Authentication 模块 ⏳
+
 - **状态**: 旧文档已删除，简化版本已创建（见下）
 - **重构时参考**: Goal 模块 + Authentication 业务特性
 
 ### 6. Notification 模块 ⏳
+
 - **状态**: 旧文档已删除，简化版本已创建（见下）
 - **重构时参考**: Goal 模块 + Notification 业务特性
 
 ### 7. Setting 模块 ⏳
+
 - **状态**: 旧文档已删除，简化版本已创建（见下）
 - **重构时参考**: Goal 模块 + Setting 业务特性
 
@@ -55,15 +62,18 @@
 由于时间紧迫，建议采用以下策略：
 
 ### Phase 1: 核心模块重构（优先级 P0）
+
 1. **Goal 模块** - ✅ 规划完整，可以直接开始
 2. **Task 模块** - 参考 Goal 模块架构
 3. **Account 模块** - 基础模块，需要尽快完成
 
 ### Phase 2: 功能模块重构（优先级 P1）
+
 4. **Reminder 模块** - 注意无归档状态
 5. **Authentication 模块** - 安全相关
 
 ### Phase 3: 辅助模块重构（优先级 P2）
+
 6. **Notification 模块**
 7. **Setting 模块**
 
@@ -74,13 +84,15 @@
 所有模块遵循以下规范（参考 Goal 模块）：
 
 ### DTO 命名规范
+
 ```typescript
-XxxServerDTO      // 前后端传输
-XxxClientDTO      // 前端使用（包含 UI 字段）
-XxxPersistenceDTO // 数据库持久化
+XxxServerDTO; // 前后端传输
+XxxClientDTO; // 前端使用（包含 UI 字段）
+XxxPersistenceDTO; // 数据库持久化
 ```
 
 ### DTO 转换方法（Domain-Server）
+
 ```typescript
 export class Xxx extends AggregateRoot {
   public toServerDTO(includeChildren = false): XxxServerDTO;
@@ -91,6 +103,7 @@ export class Xxx extends AggregateRoot {
 ```
 
 ### DTO 转换方法（Domain-Client）
+
 ```typescript
 export class XxxClient extends AggregateRoot {
   public toServerDTO(includeChildren = false): XxxServerDTO;
@@ -101,6 +114,7 @@ export class XxxClient extends AggregateRoot {
 ```
 
 ### 逻辑删除
+
 ```typescript
 // 聚合根必须包含
 private _status: XxxStatus;  // 包含 Deleted 状态
@@ -111,12 +125,13 @@ public restore(): void;
 ```
 
 ### 仓储接口
+
 ```typescript
 export interface IXxxRepository {
   findByAccountUuid(accountUuid: string, includeDeleted?: boolean): Promise<Xxx[]>;
   softDelete(uuid: string): Promise<void>;
   restore(uuid: string): Promise<void>;
-  hardDelete(uuid: string): Promise<void>;  // 谨慎使用
+  hardDelete(uuid: string): Promise<void>; // 谨慎使用
 }
 ```
 
@@ -125,26 +140,31 @@ export interface IXxxRepository {
 ## 🚀 立即开始重构的建议
 
 ### 方案 A: 从 Goal 模块开始（推荐）
+
 1. ✅ Goal 模块规划完整
 2. 按照规划实施 Goal 模块重构
 3. 在实施过程中完善其他模块的规划
 4. 逐步迁移其他模块
 
-**优势**: 
+**优势**:
+
 - 有完整参考
 - 逐步验证架构
 - 降低风险
 
 ### 方案 B: 并行重构多个模块
+
 1. 同时开始 Goal + Task + Account
 2. 参考 Goal 模块规划和 Repository 模块实现
 3. 在实施中调整规划
 
 **优势**:
+
 - 进度快
 - 可以更早发现架构问题
 
 **劣势**:
+
 - 风险较高
 - 可能需要返工
 
@@ -180,6 +200,7 @@ Remove-Item -Recurse -Force apps/web/src/modules/task
 ```
 
 **保留**:
+
 - ✅ Repository 模块（作为DDD参考）
 - ✅ Schedule 模块（已完成的实现）
 - ✅ 工具函数和基础设施代码
@@ -187,10 +208,12 @@ Remove-Item -Recurse -Force apps/web/src/modules/task
 ### 关于规划文档
 
 **当前状态**:
+
 - ✅ Goal 模块规划完整详细（1000+行）
 - ⚠️ 其他模块规划待完善（可在重构过程中逐步补充）
 
 **建议**:
+
 - 不必等待所有规划文档完成
 - 先完成 Goal 模块重构
 - 在实施过程中完善其他模块规划
@@ -200,7 +223,7 @@ Remove-Item -Recurse -Force apps/web/src/modules/task
 
 ## 📖 参考文档
 
-1. **完整规划**: 
+1. **完整规划**:
    - `docs/modules/goal/GOAL_MODULE_PLAN.md` - Goal 模块完整规划（v1.1，已修正）
 
 2. **修正说明**:
@@ -229,4 +252,3 @@ Remove-Item -Recurse -Force apps/web/src/modules/task
 **文档版本**: v1.0  
 **创建时间**: 2025-01-13  
 **创建人**: GitHub Copilot
-

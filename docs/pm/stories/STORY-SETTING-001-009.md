@@ -147,7 +147,7 @@ Scenario: 多次登录保持设置
   When 我登出应用
   And 我重新登录
   Then 所有偏好设置应该保持不变
-  
+
 Scenario: 多设备同步
   Given 我在电脑 A 上配置了偏好
   When 我在电脑 B 上登录同一账户
@@ -256,6 +256,7 @@ Scenario: 并发修改
 ### Playwright 配置
 
 **apps/web/playwright.config.ts**:
+
 ```typescript
 import { defineConfig, devices } from '@playwright/test';
 
@@ -266,7 +267,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
-  
+
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -295,6 +296,7 @@ export default defineConfig({
 ### 测试 Fixtures
 
 **e2e/fixtures/auth.fixture.ts**:
+
 ```typescript
 import { test as base } from '@playwright/test';
 
@@ -310,7 +312,7 @@ export const test = base.extend<AuthFixture>({
     await page.fill('input[name="password"]', 'TestPassword123');
     await page.click('button[type="submit"]');
     await page.waitForURL('/dashboard');
-    
+
     await use(page);
   },
 });
@@ -321,6 +323,7 @@ export { expect } from '@playwright/test';
 ### 外观设置测试
 
 **e2e/settings/appearance.spec.ts**:
+
 ```typescript
 import { test, expect } from '../fixtures/auth.fixture';
 
@@ -332,11 +335,11 @@ test.describe('Appearance Settings', () => {
   test('should change theme to dark', async ({ authenticatedPage: page }) => {
     // 选择暗色主题
     await page.click('button[data-theme="dark"]');
-    
+
     // 验证主题立即应用
     const html = page.locator('html');
     await expect(html).toHaveAttribute('data-theme', 'dark');
-    
+
     // 刷新页面验证持久化
     await page.reload();
     await expect(html).toHaveAttribute('data-theme', 'dark');
@@ -345,10 +348,10 @@ test.describe('Appearance Settings', () => {
   test('should change language to English', async ({ authenticatedPage: page }) => {
     // 选择英语
     await page.selectOption('select[name="language"]', 'en-US');
-    
+
     // 验证语言切换
     await expect(page.locator('h1')).toContainText('Appearance Settings');
-    
+
     // 刷新页面验证持久化
     await page.reload();
     await expect(page.locator('h1')).toContainText('Appearance Settings');
@@ -358,14 +361,14 @@ test.describe('Appearance Settings', () => {
     // 拖动滑块到 18px
     const slider = page.locator('input[type="range"][name="fontSize"]');
     await slider.fill('18');
-    
+
     // 等待 debounce
     await page.waitForTimeout(600);
-    
+
     // 验证预览文本字体大小
     const preview = page.locator('.preview-text');
     await expect(preview).toHaveCSS('font-size', '18px');
-    
+
     // 刷新验证持久化
     await page.reload();
     await expect(slider).toHaveValue('18');
@@ -374,11 +377,11 @@ test.describe('Appearance Settings', () => {
   test('should move sidebar to right', async ({ authenticatedPage: page }) => {
     // 选择右侧侧边栏
     await page.click('input[value="right"]');
-    
+
     // 验证侧边栏位置
     const sidebar = page.locator('.sidebar');
     await expect(sidebar).toHaveClass(/sidebar-right/);
-    
+
     // 刷新验证持久化
     await page.reload();
     await expect(sidebar).toHaveClass(/sidebar-right/);
@@ -389,6 +392,7 @@ test.describe('Appearance Settings', () => {
 ### 通知设置测试
 
 **e2e/settings/notifications.spec.ts**:
+
 ```typescript
 import { test, expect } from '../fixtures/auth.fixture';
 
@@ -400,11 +404,11 @@ test.describe('Notification Settings', () => {
   test('should disable all notifications', async ({ authenticatedPage: page }) => {
     // 关闭通知总开关
     await page.click('input[name="notificationEnabled"]');
-    
+
     // 验证渠道选项被禁用
     const channelCheckboxes = page.locator('input[name="channel"]');
     await expect(channelCheckboxes.first()).toBeDisabled();
-    
+
     // 刷新验证持久化
     await page.reload();
     const toggle = page.locator('input[name="notificationEnabled"]');
@@ -415,7 +419,7 @@ test.describe('Notification Settings', () => {
     // 选择多个渠道
     await page.check('input[value="push"]');
     await page.check('input[value="email"]');
-    
+
     // 刷新验证持久化
     await page.reload();
     await expect(page.locator('input[value="push"]')).toBeChecked();
@@ -426,10 +430,10 @@ test.describe('Notification Settings', () => {
     // 设置免打扰时间
     await page.fill('input[name="doNotDisturbStart"]', '22:00');
     await page.fill('input[name="doNotDisturbEnd"]', '08:00');
-    
+
     // 验证时长显示
     await expect(page.locator('.duration-info')).toContainText('10');
-    
+
     // 刷新验证持久化
     await page.reload();
     await expect(page.locator('input[name="doNotDisturbStart"]')).toHaveValue('22:00');
@@ -439,10 +443,10 @@ test.describe('Notification Settings', () => {
   test('should send test notification', async ({ authenticatedPage: page, context }) => {
     // 授权通知权限
     await context.grantPermissions(['notifications']);
-    
+
     // 点击发送测试通知
     await page.click('button:has-text("发送测试通知")');
-    
+
     // 验证通知显示 (需要等待异步操作)
     await page.waitForTimeout(1000);
     // 注：实际通知验证需要特殊处理
@@ -453,6 +457,7 @@ test.describe('Notification Settings', () => {
 ### 快捷键设置测试
 
 **e2e/settings/shortcuts.spec.ts**:
+
 ```typescript
 import { test, expect } from '../fixtures/auth.fixture';
 
@@ -464,17 +469,17 @@ test.describe('Shortcut Settings', () => {
   test('should modify shortcut', async ({ authenticatedPage: page }) => {
     // 点击编辑按钮
     await page.click('button[data-action="edit-task.create"]');
-    
+
     // 等待进入编辑模式
     await expect(page.locator('.capture-mode')).toBeVisible();
-    
+
     // 按下新快捷键
     await page.keyboard.press('Control+Shift+N');
-    
+
     // 验证快捷键更新
     const shortcut = page.locator('[data-shortcut="task.create"]');
     await expect(shortcut).toContainText('Ctrl+Shift+N');
-    
+
     // 刷新验证持久化
     await page.reload();
     await expect(shortcut).toContainText('Ctrl+Shift+N');
@@ -484,18 +489,18 @@ test.describe('Shortcut Settings', () => {
     // 尝试设置冲突的快捷键
     await page.click('button[data-action="edit-task.complete"]');
     await page.keyboard.press('Control+N'); // 已被 task.create 使用
-    
+
     // 验证冲突警告显示
     await expect(page.locator('.conflict-dialog')).toBeVisible();
     await expect(page.locator('.conflict-dialog')).toContainText('创建任务');
-    
+
     // 点击覆盖
     await page.click('button:has-text("覆盖")');
-    
+
     // 验证快捷键更新
     const createShortcut = page.locator('[data-shortcut="task.create"]');
     await expect(createShortcut).toBeEmpty();
-    
+
     const completeShortcut = page.locator('[data-shortcut="task.complete"]');
     await expect(completeShortcut).toContainText('Ctrl+N');
   });
@@ -504,13 +509,13 @@ test.describe('Shortcut Settings', () => {
     // 修改几个快捷键
     await page.click('button[data-action="edit-task.create"]');
     await page.keyboard.press('Control+Shift+T');
-    
+
     // 点击全部恢复默认
     await page.click('button:has-text("全部恢复默认")');
-    
+
     // 确认对话框
-    page.on('dialog', dialog => dialog.accept());
-    
+    page.on('dialog', (dialog) => dialog.accept());
+
     // 验证恢复为默认值
     const shortcut = page.locator('[data-shortcut="task.create"]');
     await expect(shortcut).toContainText('Ctrl+N');
@@ -519,7 +524,7 @@ test.describe('Shortcut Settings', () => {
   test('should search shortcuts', async ({ authenticatedPage: page }) => {
     // 输入搜索关键词
     await page.fill('input[name="search"]', '任务');
-    
+
     // 验证只显示相关快捷键
     const visibleShortcuts = page.locator('.shortcut-item:visible');
     await expect(visibleShortcuts).toHaveCount(3); // create, complete, delete
@@ -530,6 +535,7 @@ test.describe('Shortcut Settings', () => {
 ### 持久化测试
 
 **e2e/settings/persistence.spec.ts**:
+
 ```typescript
 import { test, expect } from '../fixtures/auth.fixture';
 
@@ -540,19 +546,19 @@ test.describe('Settings Persistence', () => {
     await page.fill('input[name="username"]', 'testuser@example.com');
     await page.fill('input[name="password"]', 'TestPassword123');
     await page.click('button[type="submit"]');
-    
+
     await page.goto('/settings/appearance');
     await page.click('button[data-theme="dark"]');
-    
+
     // 登出
     await page.click('button[data-action="logout"]');
-    
+
     // 重新登录
     await page.goto('/login');
     await page.fill('input[name="username"]', 'testuser@example.com');
     await page.fill('input[name="password"]', 'TestPassword123');
     await page.click('button[type="submit"]');
-    
+
     // 验证设置保持
     const html = page.locator('html');
     await expect(html).toHaveAttribute('data-theme', 'dark');
@@ -580,16 +586,16 @@ test.describe('Settings Persistence', () => {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| 测试环境配置 | 1 小时 |
-| 外观设置测试 | 1.5 小时 |
-| 通知设置测试 | 1.5 小时 |
-| 快捷键设置测试 | 1.5 小时 |
-| 持久化测试 | 1 小时 |
-| 错误处理测试 | 1 小时 |
-| CI 集成 | 0.5 小时 |
-| **总计** | **8 小时** |
+| 任务           | 预估时间   |
+| -------------- | ---------- |
+| 测试环境配置   | 1 小时     |
+| 外观设置测试   | 1.5 小时   |
+| 通知设置测试   | 1.5 小时   |
+| 快捷键设置测试 | 1.5 小时   |
+| 持久化测试     | 1 小时     |
+| 错误处理测试   | 1 小时     |
+| CI 集成        | 0.5 小时   |
+| **总计**       | **8 小时** |
 
 **Story Points**: 2 SP
 
@@ -598,6 +604,7 @@ test.describe('Settings Persistence', () => {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-006 (UI - 外观设置)
 - ✅ STORY-SETTING-001-007 (UI - 通知设置)
 - ✅ STORY-SETTING-001-008 (UI - 快捷键设置)
@@ -607,16 +614,19 @@ test.describe('Settings Persistence', () => {
 ## 📝 测试策略
 
 ### 测试优先级
+
 1. **P0 - 关键路径**: 首次设置、保存、持久化
 2. **P1 - 核心功能**: 主题切换、语言切换、快捷键修改
 3. **P2 - 边界情况**: 冲突检测、验证错误、网络错误
 
 ### 测试数据管理
+
 - 使用测试专用数据库
 - 每个测试前重置用户偏好为默认值
 - 使用 Fixture 自动登录
 
 ### CI/CD 集成
+
 - PR 时自动运行所有 E2E 测试
 - 每日定时运行完整测试套件
 - 测试失败时发送通知到 Slack

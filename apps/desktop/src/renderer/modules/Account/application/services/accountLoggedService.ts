@@ -1,7 +1,7 @@
-import { AccountDTO } from "../../domain/types/account";
-import { Account } from "../../../../modules/Account";
-import { accountIpcClient } from "../../infrastructure/ipcs/accountIpcClient";
-import { useAccountStore } from "../../presentation/stores/accountStore";
+import { AccountDTO } from '../../domain/types/account';
+import { Account } from '../../../../modules/Account';
+import { accountIpcClient } from '../../infrastructure/ipcs/accountIpcClient';
+import { useAccountStore } from '../../presentation/stores/accountStore';
 
 export class AccountLoggedService {
   private _accountStore: ReturnType<typeof useAccountStore> | null = null;
@@ -20,14 +20,14 @@ export class AccountLoggedService {
       if (response.success && response.data) {
         const account = Account.fromDTO(response.data);
         this.accountStore.setAccount(account);
-       
-        console.log('success to get account info', account)
-         console.log('是否认证状态', this.accountStore.isAuthenticated);
+
+        console.log('success to get account info', account);
+        console.log('是否认证状态', this.accountStore.isAuthenticated);
       }
       return response;
     } catch (error) {
       console.error(error);
-      return { success: false, message: "Failed to fetch account information" };
+      return { success: false, message: 'Failed to fetch account information' };
     }
   }
 }

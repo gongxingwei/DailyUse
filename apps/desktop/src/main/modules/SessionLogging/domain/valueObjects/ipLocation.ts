@@ -1,5 +1,5 @@
-import { ValueObject } from "@dailyuse/utils/valueObject";
-import { IIPLocation } from "@common/modules/sessionLog/types/sessionLog";
+import { ValueObject } from '@dailyuse/utils/valueObject';
+import { IIPLocation } from '@common/modules/sessionLog/types/sessionLog';
 
 /**
  * IP地理位置值对象
@@ -46,7 +46,7 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
         country: 'Local',
         region: 'Local',
         city: 'Local',
-        isp: 'Local Network'
+        isp: 'Local Network',
       });
     }
     return new IPLocation({
@@ -54,7 +54,7 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
       country: 'Unknown',
       region: 'Unknown',
       city: 'Unknown',
-      isp: 'Unknown ISP'
+      isp: 'Unknown ISP',
     });
   }
 
@@ -70,17 +70,16 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
       /^::1$/,
       /^fe80:/,
       /^fc00:/,
-      /^fd00:/
+      /^fd00:/,
     ];
-    return localPatterns.some(pattern => pattern.test(ipAddress));
+    return localPatterns.some((pattern) => pattern.test(ipAddress));
   }
 
   /**
    * 检查是否与另一个位置在同一地区
    */
   isSameRegion(other: IPLocation): boolean {
-    return this._country === other._country &&
-           this._region === other._region;
+    return this._country === other._country && this._region === other._region;
   }
 
   /**
@@ -94,17 +93,18 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
    * 计算与另一个位置的距离（如果有经纬度信息）
    */
   distanceTo(other: IPLocation): number | null {
-    if (!this._latitude || !this._longitude ||
-        !other._latitude || !other._longitude) {
+    if (!this._latitude || !this._longitude || !other._latitude || !other._longitude) {
       return null;
     }
     const R = 6371;
     const dLat = this.toRadians(other._latitude - this._latitude);
     const dLon = this.toRadians(other._longitude - this._longitude);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(this.toRadians(this._latitude)) *
-              Math.cos(this.toRadians(other._latitude)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(this._latitude)) *
+        Math.cos(this.toRadians(other._latitude)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -115,9 +115,11 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
   isSuspiciousLocation(): boolean {
     const suspiciousCountries = ['Unknown'];
     const suspiciousISPs = ['Tor', 'VPN', 'Proxy'];
-    return suspiciousCountries.includes(this._country) ||
-      (!!this._isp && suspiciousISPs.some(isp =>
-        this._isp!.toLowerCase().includes(isp.toLowerCase())));
+    return (
+      suspiciousCountries.includes(this._country) ||
+      (!!this._isp &&
+        suspiciousISPs.some((isp) => this._isp!.toLowerCase().includes(isp.toLowerCase())))
+    );
   }
 
   /**
@@ -125,7 +127,7 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
    */
   getLocationDescription(): string {
     const parts = [this._city, this._region, this._country]
-      .filter(part => part && part !== 'Unknown')
+      .filter((part) => part && part !== 'Unknown')
       .filter((value, index, self) => self.indexOf(value) === index);
     return parts.length > 0 ? parts.join(', ') : 'Unknown Location';
   }
@@ -153,7 +155,7 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
       latitude: this._latitude,
       longitude: this._longitude,
       timezone: this._timezone,
-      isp: this._isp
+      isp: this._isp,
     });
   }
 
@@ -170,7 +172,7 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
       latitude: parsed.latitude,
       longitude: parsed.longitude,
       timezone: parsed.timezone,
-      isp: parsed.isp
+      isp: parsed.isp,
     });
   }
 
@@ -241,7 +243,7 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
       isp: this._isp,
       locationDescription: this.getLocationDescription(),
       fullDescription: this.getFullDescription(),
-      isSuspicious: this.isSuspiciousLocation()
+      isSuspicious: this.isSuspiciousLocation(),
     };
   }
 
@@ -263,7 +265,7 @@ export class IPLocation extends ValueObject<any> implements IIPLocation {
       latitude: dto.latitude,
       longitude: dto.longitude,
       timezone: dto.timezone,
-      isp: dto.isp
+      isp: dto.isp,
     });
   }
 

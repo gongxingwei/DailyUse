@@ -8,49 +8,49 @@
     <v-card-text>
       <v-row>
         <v-col cols="12" md="6">
-          <v-switch 
-            v-model="localData.schedulingPolicy.allowReschedule" 
+          <v-switch
+            v-model="localData.schedulingPolicy.allowReschedule"
             label="允许重新调度"
-            color="primary" 
+            color="primary"
           />
         </v-col>
-        
+
         <v-col cols="12" md="6">
-          <v-switch 
-            v-model="localData.schedulingPolicy.skipWeekends" 
-            label="跳过周末" 
-            color="primary" 
+          <v-switch
+            v-model="localData.schedulingPolicy.skipWeekends"
+            label="跳过周末"
+            color="primary"
           />
         </v-col>
-        
+
         <v-col cols="12" md="6">
-          <v-switch 
-            v-model="localData.schedulingPolicy.skipHolidays" 
-            label="跳过节假日" 
-            color="primary" 
+          <v-switch
+            v-model="localData.schedulingPolicy.skipHolidays"
+            label="跳过节假日"
+            color="primary"
           />
         </v-col>
-        
+
         <v-col cols="12" md="6">
-          <v-switch 
-            v-model="localData.schedulingPolicy.workingHoursOnly" 
+          <v-switch
+            v-model="localData.schedulingPolicy.workingHoursOnly"
             label="仅工作时间"
-            color="primary" 
+            color="primary"
           />
         </v-col>
-        
+
         <v-col cols="12" md="6" v-if="localData.schedulingPolicy.allowReschedule">
-          <v-text-field 
-            v-model.number="localData.schedulingPolicy.maxDelayDays" 
+          <v-text-field
+            v-model.number="localData.schedulingPolicy.maxDelayDays"
             label="最大延迟天数"
-            type="number" 
-            variant="outlined" 
-            min="1" 
-            max="30" 
+            type="number"
+            variant="outlined"
+            min="1"
+            max="30"
           />
         </v-col>
       </v-row>
-      
+
       <!-- 策略说明 -->
       <v-row>
         <v-col cols="12">
@@ -84,7 +84,7 @@ const localData = computed({
     const updatedTemplate = props.modelValue.clone();
     updatedTemplate.updateSchedulingPolicy(value.schedulingPolicy);
     emit('update:modelValue', updatedTemplate);
-  }
+  },
 });
 </script>
 

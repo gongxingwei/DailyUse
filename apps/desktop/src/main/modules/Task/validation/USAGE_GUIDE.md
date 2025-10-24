@@ -19,6 +19,7 @@
 ## 1. validation/ - 后端完整验证系统
 
 ### 位置与文件
+
 ```
 src/modules/Task/services/validation/
 ├── types.ts                    # 验证相关类型定义
@@ -39,6 +40,7 @@ src/modules/Task/services/validation/
 ```
 
 ### 主要特点
+
 - **完整性验证**: 对数据进行深度验证
 - **多种验证模式**: create/update/strict/quick
 - **详细报告**: 包含错误、警告、统计信息
@@ -46,6 +48,7 @@ src/modules/Task/services/validation/
 - **可扩展**: 支持自定义验证器和规则
 
 ### 使用场景
+
 1. **数据保存前验证**: 在taskTemplateService中使用
 2. **API接口验证**: 确保数据完整性
 3. **批量数据处理**: 验证导入的数据
@@ -60,7 +63,7 @@ import { TaskTemplateValidator } from './validation';
 async addTaskTemplate(template: TaskTemplate): Promise<TResponse<void>> {
   // 创建模式验证
   const validation = TaskTemplateValidator.validateForCreate(template);
-  
+
   if (!validation.isValid) {
     return {
       success: false,
@@ -68,7 +71,7 @@ async addTaskTemplate(template: TaskTemplate): Promise<TResponse<void>> {
       data: undefined,
     };
   }
-  
+
   // 保存数据...
 }
 ```
@@ -76,6 +79,7 @@ async addTaskTemplate(template: TaskTemplate): Promise<TResponse<void>> {
 ## 2. composables/useXXXValidation.ts - 前端表单验证
 
 ### 位置与文件
+
 ```
 src/modules/Task/composables/
 ├── useTaskTemplateFormValidation.ts  # 整体表单验证
@@ -85,12 +89,14 @@ src/modules/Task/composables/
 ```
 
 ### 主要特点
+
 - **实时反馈**: 用户输入时立即验证
 - **Vue集成**: 与Vue组件紧密集成
 - **轻量级**: 快速响应，不阻塞UI
 - **渐进式**: 可以单独使用某个验证功能
 
 ### 使用场景
+
 1. **表单实时验证**: 用户输入时的即时反馈
 2. **UI状态控制**: 控制按钮启用/禁用状态
 3. **用户提示**: 显示错误信息和警告
@@ -107,20 +113,12 @@ src/modules/Task/composables/
         <li v-for="error in timeValidation.errors" :key="error">{{ error }}</li>
       </ul>
     </v-alert>
-    
+
     <!-- 时间配置表单 -->
-    <v-text-field 
-      v-model="timeInput"
-      @update:model-value="validateTimeRealtime"
-    />
-    
+    <v-text-field v-model="timeInput" @update:model-value="validateTimeRealtime" />
+
     <!-- 提交按钮 -->
-    <v-btn 
-      :disabled="!canSubmit"
-      @click="handleSubmit"
-    >
-      提交
-    </v-btn>
+    <v-btn :disabled="!canSubmit" @click="handleSubmit"> 提交 </v-btn>
   </v-form>
 </template>
 
@@ -140,14 +138,14 @@ const canSubmit = computed(() => {
 const handleSubmit = async () => {
   // 1. 前端快速验证
   if (!timeValidation.isValid.value) return;
-  
+
   // 2. 调用后端完整验证
   const backendValidation = TaskTemplateValidator.validate(template);
   if (!backendValidation.isValid) {
     // 处理验证失败
     return;
   }
-  
+
   // 3. 提交数据
   await submitData();
 };
@@ -157,6 +155,7 @@ const handleSubmit = async () => {
 ## 3. 两套系统的协作
 
 ### 验证流程
+
 ```
 用户输入 → 前端验证 → UI反馈
     ↓
@@ -164,6 +163,7 @@ const handleSubmit = async () => {
 ```
 
 ### 集成示例
+
 参考文件: `src/modules/Task/components/examples/TaskTemplateFormValidationExample.vue`
 
 ```typescript
@@ -186,7 +186,6 @@ const handleSubmit = async () => {
 
     // 4. 提交数据
     await submitTemplate(template);
-    
   } catch (error) {
     // 处理错误
   }
@@ -196,6 +195,7 @@ const handleSubmit = async () => {
 ## 4. 当前使用状况
 
 ### 已集成的地方
+
 1. **taskTemplateService.ts**: 使用后端验证系统
    - `addTaskTemplate()`: 创建验证
    - `updateTaskTemplate()`: 更新验证
@@ -205,6 +205,7 @@ const handleSubmit = async () => {
    - 基础的表单验证
 
 ### 需要完善的地方
+
 1. **composables验证**: 大部分文件为空，需要实现
 2. **组件集成**: TaskTemplateForm需要集成两套验证系统
 3. **错误处理**: 统一的错误显示和处理机制
@@ -213,6 +214,7 @@ const handleSubmit = async () => {
 ## 5. 推荐使用模式
 
 ### 模式1: 简单表单
+
 ```typescript
 // 只使用前端验证，适合简单场景
 const validation = useTimeConfigValidation();
@@ -220,6 +222,7 @@ const isValid = computed(() => validation.isValid.value);
 ```
 
 ### 模式2: 完整验证
+
 ```typescript
 // 前端+后端验证，适合重要数据
 const frontendValidation = useTimeConfigValidation();
@@ -227,24 +230,29 @@ const frontendValidation = useTimeConfigValidation();
 const handleSubmit = async () => {
   // 前端快速检查
   if (!frontendValidation.isValid.value) return;
-  
+
   // 后端完整验证
   const result = TaskTemplateValidator.validateForCreate(template);
   if (!result.isValid) {
     showError(result.errors);
     return;
   }
-  
+
   await saveData();
 };
 ```
 
 ### 模式3: 实时验证
+
 ```typescript
 // 结合watch实现实时验证
-watch(() => template.timeConfig, () => {
-  timeValidation.validateTimeConfig(template.timeConfig);
-}, { deep: true });
+watch(
+  () => template.timeConfig,
+  () => {
+    timeValidation.validateTimeConfig(template.timeConfig);
+  },
+  { deep: true },
+);
 ```
 
 ## 6. 最佳实践
@@ -258,6 +266,7 @@ watch(() => template.timeConfig, () => {
 ## 7. 扩展和自定义
 
 ### 自定义验证器
+
 ```typescript
 // 创建自定义验证器
 const customValidator = ValidatorFactory.createCustomValidator({
@@ -265,15 +274,15 @@ const customValidator = ValidatorFactory.createCustomValidator({
   validate: (template) => {
     // 自定义验证逻辑
     return ValidationUtils.success();
-  }
+  },
 });
 ```
 
 ### 自定义验证规则
+
 ```typescript
 // 使用规则构建器
-const customRule = ValidationRuleBuilder
-  .create()
+const customRule = ValidationRuleBuilder.create()
   .addRule('title', (value) => value.length > 5, '标题至少5个字符')
   .addRule('priority', (value) => value >= 1 && value <= 4, '优先级范围1-4')
   .build();

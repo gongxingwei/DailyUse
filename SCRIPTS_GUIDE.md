@@ -155,6 +155,7 @@ pnpm install
 ## 🎯 常用工作流
 
 ### 启动开发环境
+
 ```bash
 # 1. 安装依赖
 pnpm install
@@ -170,6 +171,7 @@ pnpm dev:all
 ```
 
 ### 创建新的数据库迁移
+
 ```bash
 # 1. 修改 apps/api/prisma/schema.prisma
 
@@ -184,6 +186,7 @@ pnpm build:api
 ```
 
 ### 添加新功能前
+
 ```bash
 # 1. 确保所有包最新
 pnpm packages:build
@@ -201,9 +204,11 @@ pnpm test:run
 ## 💡 技巧
 
 ### 使用 Nx 缓存加速
+
 Nx 会自动缓存构建和测试结果，相同的输入会直接使用缓存。
 
 ### 仅运行受影响的任务
+
 ```bash
 # Git commit 后，仅测试变更影响的项目
 pnpm affected:test
@@ -213,6 +218,7 @@ pnpm affected:build
 ```
 
 ### 查看依赖关系
+
 ```bash
 # 可视化项目依赖图
 pnpm graph
@@ -222,6 +228,7 @@ pnpm nx graph --focus=api
 ```
 
 ### 并行执行
+
 ```bash
 # 并行构建多个项目
 pnpm nx run-many --target=build --projects=api,web --parallel=2
@@ -232,18 +239,21 @@ pnpm nx run-many --target=build --projects=api,web --parallel=2
 ## 🆘 常见问题
 
 ### Prisma Client 类型不对
+
 ```bash
 # 解决方案：重新生成
 pnpm prisma:generate
 ```
 
 ### 数据库连接失败
+
 ```bash
 # 检查 apps/api/.env 文件
 # 确保 DATABASE_URL 正确
 ```
 
 ### 依赖安装失败
+
 ```bash
 # 清理并重装
 pnpm clean
@@ -252,6 +262,7 @@ pnpm install
 ```
 
 ### TypeScript 编译错误
+
 ```bash
 # 重新构建共享包
 pnpm packages:build

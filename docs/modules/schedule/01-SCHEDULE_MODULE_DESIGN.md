@@ -17,6 +17,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
 ### 聚合根 (Aggregate Roots)
 
 #### 1. **ScheduleTask** - 调度任务聚合根
+
 - **职责**: 管理单个调度任务的完整生命周期
 - **核心属性**:
   - `uuid`: 任务唯一标识
@@ -42,6 +43,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
   - `updateMetadata()`: 更新元数据
 
 #### 2. **ScheduleStatistics** - 调度统计聚合根
+
 - **职责**: 管理整个调度系统的统计数据
 - **核心属性**:
   - `accountUuid`: 账户UUID
@@ -64,6 +66,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
 ### 实体 (Entities)
 
 #### 1. **ScheduleExecution** - 执行记录实体
+
 - **职责**: 记录单次任务执行的详细信息
 - **核心属性**:
   - `uuid`: 执行记录ID
@@ -83,6 +86,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
 ### 值对象 (Value Objects)
 
 #### 1. **ScheduleConfig** - 调度配置
+
 - **属性**:
   - `cronExpression`: Cron 表达式
   - `timezone`: 时区（默认 UTC）
@@ -96,6 +100,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
   - `isExpired()`: 是否已过期
 
 #### 2. **ExecutionInfo** - 执行信息
+
 - **属性**:
   - `nextRunAt`: 下次执行时间
   - `lastRunAt`: 上次执行时间
@@ -109,6 +114,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
   - `resetFailures()`: 重置失败计数
 
 #### 3. **RetryPolicy** - 重试策略
+
 - **属性**:
   - `enabled`: 是否启用重试
   - `maxRetries`: 最大重试次数
@@ -121,6 +127,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
   - `calculateNextRetryDelay()`: 计算下次重试延迟
 
 #### 4. **TaskMetadata** - 任务元数据
+
 - **属性**:
   - `payload`: 业务数据（JSON）
   - `tags`: 标签列表
@@ -131,6 +138,7 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
   - `validate()`: 验证有效性
 
 #### 5. **ModuleStatistics** - 模块统计
+
 - **属性**:
   - `moduleName`: 模块名称
   - `totalTasks`: 总任务数
@@ -145,34 +153,37 @@ Schedule 模块是一个高性能、高可用性的任务调度基础模块，�
 ## 📊 枚举类型
 
 ### ScheduleTaskStatus
+
 ```typescript
 enum ScheduleTaskStatus {
-  ACTIVE = 'ACTIVE',         // 活跃
-  PAUSED = 'PAUSED',         // 暂停
-  COMPLETED = 'COMPLETED',   // 完成
-  CANCELLED = 'CANCELLED',   // 取消
-  FAILED = 'FAILED',         // 失败
+  ACTIVE = 'ACTIVE', // 活跃
+  PAUSED = 'PAUSED', // 暂停
+  COMPLETED = 'COMPLETED', // 完成
+  CANCELLED = 'CANCELLED', // 取消
+  FAILED = 'FAILED', // 失败
 }
 ```
 
 ### ExecutionStatus
+
 ```typescript
 enum ExecutionStatus {
-  SUCCESS = 'SUCCESS',       // 成功
-  FAILED = 'FAILED',         // 失败
-  SKIPPED = 'SKIPPED',       // 跳过
-  TIMEOUT = 'TIMEOUT',       // 超时
-  RETRYING = 'RETRYING',     // 重试中
+  SUCCESS = 'SUCCESS', // 成功
+  FAILED = 'FAILED', // 失败
+  SKIPPED = 'SKIPPED', // 跳过
+  TIMEOUT = 'TIMEOUT', // 超时
+  RETRYING = 'RETRYING', // 重试中
 }
 ```
 
 ### TaskPriority
+
 ```typescript
 enum TaskPriority {
-  LOW = 'LOW',               // 低
-  NORMAL = 'NORMAL',         // 普通
-  HIGH = 'HIGH',             // 高
-  URGENT = 'URGENT',         // 紧急
+  LOW = 'LOW', // 低
+  NORMAL = 'NORMAL', // 普通
+  HIGH = 'HIGH', // 高
+  URGENT = 'URGENT', // 紧急
 }
 ```
 
@@ -181,6 +192,7 @@ enum TaskPriority {
 ### 领域事件
 
 #### 1. **ScheduleTaskCreated** - 任务创建事件
+
 ```typescript
 {
   taskUuid: string;
@@ -192,6 +204,7 @@ enum TaskPriority {
 ```
 
 #### 2. **ScheduleTaskPaused** - 任务暂停事件
+
 ```typescript
 {
   taskUuid: string;
@@ -202,6 +215,7 @@ enum TaskPriority {
 ```
 
 #### 3. **ScheduleTaskResumed** - 任务恢复事件
+
 ```typescript
 {
   taskUuid: string;
@@ -212,6 +226,7 @@ enum TaskPriority {
 ```
 
 #### 4. **ScheduleTaskCompleted** - 任务完成事件
+
 ```typescript
 {
   taskUuid: string;
@@ -223,6 +238,7 @@ enum TaskPriority {
 ```
 
 #### 5. **ScheduleTaskCancelled** - 任务取消事件
+
 ```typescript
 {
   taskUuid: string;
@@ -234,6 +250,7 @@ enum TaskPriority {
 ```
 
 #### 6. **ScheduleTaskExecuted** - 任务执行事件
+
 ```typescript
 {
   taskUuid: string;
@@ -248,6 +265,7 @@ enum TaskPriority {
 ```
 
 #### 7. **ScheduleTaskFailed** - 任务失败事件
+
 ```typescript
 {
   taskUuid: string;
@@ -299,6 +317,7 @@ enum TaskPriority {
 ## 📐 数据库 Schema 设计
 
 ### schedule_tasks 表
+
 ```prisma
 model ScheduleTask {
   uuid             String    @id @default(cuid())
@@ -309,26 +328,26 @@ model ScheduleTask {
   cronExpression   String    @map("cron_expression")
   status           String    @default("ACTIVE")
   enabled          Boolean   @default(true)
-  
+
   // 调度配置（JSON）
   scheduleConfig   Json      @map("schedule_config")
-  
+
   // 执行信息（JSON）
   executionInfo    Json      @map("execution_info")
-  
+
   // 重试策略（JSON）
   retryPolicy      Json      @map("retry_policy")
-  
+
   // 任务元数据（JSON）
   metadata         Json
-  
+
   // 时间戳
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
-  
+
   // 关联
   executions       ScheduleExecution[]
-  
+
   @@index([sourceModule, sourceEntityId])
   @@index([status])
   @@index([enabled])
@@ -337,6 +356,7 @@ model ScheduleTask {
 ```
 
 ### schedule_executions 表
+
 ```prisma
 model ScheduleExecution {
   uuid           String    @id @default(cuid())
@@ -348,10 +368,10 @@ model ScheduleExecution {
   error          String?
   retryCount     Int       @default(0) @map("retry_count")
   createdAt      DateTime  @default(now()) @map("created_at")
-  
+
   // 关联
   task           ScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
-  
+
   @@index([taskUuid])
   @@index([status])
   @@index([executionTime])
@@ -360,31 +380,32 @@ model ScheduleExecution {
 ```
 
 ### schedule_statistics 表
+
 ```prisma
 model ScheduleStatistics {
   id                     Int      @id @default(autoincrement())
   accountUuid            String   @unique @map("account_uuid")
-  
+
   // 任务统计
   totalTasks             Int      @default(0) @map("total_tasks")
   activeTasks            Int      @default(0) @map("active_tasks")
   pausedTasks            Int      @default(0) @map("paused_tasks")
   completedTasks         Int      @default(0) @map("completed_tasks")
   failedTasks            Int      @default(0) @map("failed_tasks")
-  
+
   // 执行统计
   totalExecutions        Int      @default(0) @map("total_executions")
   successfulExecutions   Int      @default(0) @map("successful_executions")
   failedExecutions       Int      @default(0) @map("failed_executions")
   avgExecutionDuration   Float    @default(0) @map("avg_execution_duration")
-  
+
   // 模块统计（JSON）
   moduleStatistics       Json     @map("module_statistics")
-  
+
   // 时间戳
   lastUpdatedAt          DateTime @default(now()) @map("last_updated_at")
   createdAt              DateTime @default(now()) @map("created_at")
-  
+
   @@index([accountUuid])
   @@map("schedule_statistics")
 }
@@ -427,13 +448,15 @@ model ScheduleStatistics {
 ## 📝 关键设计决策
 
 ### 1. Cron vs 精确时间
+
 - **决策**: 使用 Cron 表达式统一处理
-- **原因**: 
+- **原因**:
   - 单次任务可表示为特殊的 cron（如 `0 15 10 25 12 2025`）
   - 重复任务天然支持
   - 工具库成熟（node-cron, cron-parser）
 
 ### 2. Payload 存储
+
 - **决策**: 使用 JSON 字段存储在 metadata 中
 - **原因**:
   - 灵活性：支持任意业务数据结构
@@ -441,6 +464,7 @@ model ScheduleStatistics {
   - 可扩展：各模块可定义自己的 schema
 
 ### 3. 执行历史
+
 - **决策**: 使用独立的 ScheduleExecution 实体
 - **原因**:
   - 分离关注点：任务配置与执行记录分离
@@ -448,6 +472,7 @@ model ScheduleStatistics {
   - 数据量管理：可定期归档历史记录
 
 ### 4. 统计信息
+
 - **决策**: 使用独立的 ScheduleStatistics 聚合根
 - **原因**:
   - 性能优化：避免实时统计
@@ -455,6 +480,7 @@ model ScheduleStatistics {
   - 多维度分析：支持按模块、时间等维度统计
 
 ### 5. 事件驱动
+
 - **决策**: 通过事件总线与其他模块通信
 - **原因**:
   - 解耦：模块间无直接依赖
@@ -466,6 +492,7 @@ model ScheduleStatistics {
 现在开始实现第一步：**创建 Contracts 层的类型定义**
 
 按照顺序：
+
 1. enums.ts
 2. value-objects/
 3. entities/

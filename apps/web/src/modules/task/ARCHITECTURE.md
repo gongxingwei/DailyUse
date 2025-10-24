@@ -7,14 +7,16 @@ Task模块已成功实现了 **Composable + ApplicationService + Store** 分层�
 ## 架构层次
 
 ### 1. Composable层 (`useTaskAggregate.ts`)
+
 - **职责**: 提供响应式接口，管理UI状态
-- **特点**: 
+- **特点**:
   - 暴露响应式数据和操作方法给Vue组件
   - 管理操作状态（loading、error等）
   - 缓存聚合根实例在内存中
   - 协调ApplicationService和Store之间的数据流
 
 ### 2. ApplicationService层 (`TaskApplicationService` from domain-client)
+
 - **职责**: 协调聚合根操作和业务流程
 - **特点**:
   - 管理TaskTemplate聚合根的生命周期
@@ -23,6 +25,7 @@ Task模块已成功实现了 **Composable + ApplicationService + Store** 分层�
   - 发布和处理领域事件
 
 ### 3. Store层 (`taskStore.ts`)
+
 - **职责**: 纯数据存储和缓存管理
 - **特点**:
   - 不包含业务逻辑
@@ -33,6 +36,7 @@ Task模块已成功实现了 **Composable + ApplicationService + Store** 分层�
 ## 聚合根控制模式
 
 ### TaskTemplate聚合根
+
 - 作为聚合根管理TaskInstance实体的完整生命周期
 - 确保业务规则和数据一致性
 - 提供变更跟踪和领域事件发布
@@ -62,17 +66,17 @@ const {
   createTaskTemplateAggregate,
   createTaskInstanceViaAggregate,
   completeTaskInstanceViaAggregate,
-  
+
   // 数据访问
   taskTemplateAggregates,
   taskTemplates,
   activeTaskTemplates,
   taskInstances,
-  
+
   // 状态管理
   isLoading,
   error,
-  currentOperation
+  currentOperation,
 } = useTaskAggregate();
 
 // 创建任务模板聚合根
@@ -88,7 +92,11 @@ const handleCreateTemplate = async () => {
 // 通过聚合根创建实例
 const handleCreateInstance = async () => {
   try {
-    const instanceUuid = await createTaskInstanceViaAggregate(templateUuid, accountUuid, instanceData);
+    const instanceUuid = await createTaskInstanceViaAggregate(
+      templateUuid,
+      accountUuid,
+      instanceData,
+    );
     console.log('实例创建成功:', instanceUuid);
   } catch (error) {
     console.error('实例创建失败:', error);
@@ -100,6 +108,7 @@ const handleCreateInstance = async () => {
 ## 向后兼容性
 
 新的`useTaskAggregate`composable与现有的`useTask`composable并行存在，确保:
+
 - 现有功能不受影响
 - 渐进式迁移到新架构
 - 新功能优先使用聚合根模式

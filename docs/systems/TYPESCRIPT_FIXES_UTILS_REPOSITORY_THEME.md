@@ -7,6 +7,7 @@
 ## 修复概览
 
 ### 错误数变化
+
 - **初始错误**: 218行错误（整体项目）
 - **中期错误**: 211行错误（修复Authentication/Account后）
 - **最终错误**: 0行错误 ✅
@@ -20,6 +21,7 @@
 **修复内容**:
 
 1. **ResponseBuilderOptions接口增强**:
+
 ```typescript
 export interface ResponseBuilderOptions {
   /** 请求追踪ID（兼容requestId） */
@@ -40,6 +42,7 @@ export interface ResponseBuilderOptions {
 ```
 
 2. **SuccessResponse接口增强**:
+
 ```typescript
 export interface SuccessResponse<T = any> extends BaseResponse {
   code: typeof ResponseCode.SUCCESS;
@@ -60,6 +63,7 @@ export interface SuccessResponse<T = any> extends BaseResponse {
 ```
 
 3. **ErrorResponse接口增强**:
+
 ```typescript
 export interface ErrorResponse extends BaseResponse {
   success: false;
@@ -82,6 +86,7 @@ export interface ErrorResponse extends BaseResponse {
 ```
 
 **修复的错误**:
+
 - ResponseBuilderOptions缺少requestId, version, nodeId, startTime字段
 - SuccessResponse和ErrorResponse缺少status和metadata字段
 
@@ -92,6 +97,7 @@ export interface ErrorResponse extends BaseResponse {
 **问题**: ThemeType等枚举在types.ts中导入但未重新导出，导致dtos.ts无法使用
 
 **修复**:
+
 ```typescript
 import { ThemeMode, ThemeStatus, ThemeType, ColorMode, FontFamily } from './enums';
 
@@ -99,7 +105,8 @@ import { ThemeMode, ThemeStatus, ThemeType, ColorMode, FontFamily } from './enum
 export { ThemeMode, ThemeStatus, ThemeType, ColorMode, FontFamily };
 ```
 
-**修复的错误**: 
+**修复的错误**:
+
 - `error TS2459: Module '"./types"' declares 'ThemeType' locally, but it is not exported`
 
 ### 3. Utils包 - Response模块修复 ✅
@@ -109,6 +116,7 @@ export { ThemeMode, ThemeStatus, ThemeType, ColorMode, FontFamily };
 **问题**: 从`@dailyuse/utils`导入response类型，但它们实际在`@dailyuse/contracts`中
 
 **修复**:
+
 ```typescript
 // Before
 import {
@@ -122,11 +130,8 @@ import {
   ResponseSeverity,
 } from '@dailyuse/utils';
 
-// After  
-import {
-  createResponseBuilder,
-  createExpressResponseHelper,
-} from '@dailyuse/utils';
+// After
+import { createResponseBuilder, createExpressResponseHelper } from '@dailyuse/utils';
 
 import {
   type ResponseBuilderOptions,
@@ -145,6 +150,7 @@ import {
 **修复**:
 
 1. **success方法增强**:
+
 ```typescript
 success<T>(data: T, message = '操作成功', pagination?: PaginationInfo): SuccessResponse<T> {
   const metadata = this.generateMetadata();
@@ -163,6 +169,7 @@ success<T>(data: T, message = '操作成功', pagination?: PaginationInfo): Succ
 ```
 
 2. **error方法增强**:
+
 ```typescript
 error(...): ApiErrorResponse {
   const metadata = this.generateMetadata();
@@ -181,7 +188,7 @@ error(...): ApiErrorResponse {
     BUSINESS_ERROR: ResponseCode.BUSINESS_ERROR,
     DOMAIN_ERROR: ResponseCode.DOMAIN_ERROR,
   };
-  
+
   return {
     code: codeMap[status] || ResponseCode.INTERNAL_ERROR,
     status,
@@ -199,6 +206,7 @@ error(...): ApiErrorResponse {
 ```
 
 **修复的错误**:
+
 - `error TS2739: Type '{ status: "SUCCESS"; success: true; ... }' is missing the following properties from type 'SuccessResponse<T>': code, timestamp`
 - `error TS2739: Type '{ status: ResponseStatus; success: false; ... }' is missing the following properties from type 'ErrorResponse': code, timestamp`
 
@@ -209,21 +217,23 @@ error(...): ApiErrorResponse {
 **问题**: IScheduleTask接口已重构为嵌套结构（basic, scheduling, execution, alertConfig, lifecycle, metadata），但UniversalScheduleService仍使用旧的扁平结构
 
 **IScheduleTask新结构**:
+
 ```typescript
 export interface IScheduleTask {
   uuid: string;
-  basic: IScheduleTaskBasic;           // name, description, taskType, payload, createdBy
+  basic: IScheduleTaskBasic; // name, description, taskType, payload, createdBy
   scheduling: IScheduleTaskScheduling; // scheduledTime, recurrence, priority, status, nextExecutionTime
-  execution: IScheduleTaskExecution;   // executionCount, maxRetries, currentRetries, timeoutSeconds
+  execution: IScheduleTaskExecution; // executionCount, maxRetries, currentRetries, timeoutSeconds
   alertConfig: IAlertConfig;
-  lifecycle: IScheduleTaskLifecycle;   // createdAt, updatedAt
-  metadata: IScheduleTaskMetadata;     // tags, enabled, version
+  lifecycle: IScheduleTaskLifecycle; // createdAt, updatedAt
+  metadata: IScheduleTaskMetadata; // tags, enabled, version
 }
 ```
 
 **主要修复方法**:
 
 1. **createTask方法** - 创建嵌套结构:
+
 ```typescript
 const task: IScheduleTask = {
   uuid,
@@ -260,6 +270,7 @@ const task: IScheduleTask = {
 ```
 
 2. **updateTask方法** - 使用展开运算符更新嵌套结构:
+
 ```typescript
 const updatedTask: IScheduleTask = {
   ...existingTask,
@@ -294,6 +305,7 @@ const updatedTask: IScheduleTask = {
 ```
 
 3. **taskToDTO方法** - 从嵌套结构提取数据:
+
 ```typescript
 private taskToDTO(task: IScheduleTask): ScheduleTaskResponseDto {
   return {
@@ -319,6 +331,7 @@ private taskToDTO(task: IScheduleTask): ScheduleTaskResponseDto {
 ```
 
 4. **scheduleTask方法** - 访问嵌套属性:
+
 ```typescript
 private async scheduleTask(task: IScheduleTask): Promise<void> {
   if (!task.metadata.enabled || !task.scheduling.nextExecutionTime) {
@@ -339,6 +352,7 @@ private async scheduleTask(task: IScheduleTask): Promise<void> {
 ```
 
 5. **handleReminderTask方法** - 访问嵌套payload和basic信息:
+
 ```typescript
 this.emitEvent({
   type: ScheduleEventType.REMINDER_TRIGGERED,
@@ -359,6 +373,7 @@ this.emitEvent({
 ```
 
 6. **handleExecutionSuccess方法** - 更新嵌套的执行信息:
+
 ```typescript
 task.scheduling.status = ScheduleStatus.COMPLETED;
 task.execution.executionCount++;
@@ -375,17 +390,20 @@ if (task.scheduling.recurrence) {
 }
 ```
 
-**修复的错误数量**: 
+**修复的错误数量**:
+
 - 从113行错误减少到65行错误（在utils包独立编译中）
 - 整体项目编译：0错误 ✅
 
 **仍待修复** (不影响整体项目编译):
+
 - handleExecutionFailure方法中的部分属性访问
 - 其他辅助方法中的属性访问
 
 ## 修复模式总结
 
 ### 1. Import Pattern (导入模式)
+
 ```typescript
 // ❌ 错误
 import { ResponseBuilderOptions } from '@dailyuse/utils';
@@ -395,21 +413,23 @@ import { ResponseBuilderOptions } from '@dailyuse/contracts';
 ```
 
 ### 2. 嵌套对象访问模式
+
 ```typescript
 // ❌ 旧的扁平结构
-task.name
-task.status
-task.executionCount
-task.createdBy
+task.name;
+task.status;
+task.executionCount;
+task.createdBy;
 
 // ✅ 新的嵌套结构
-task.basic.name
-task.scheduling.status
-task.execution.executionCount
-task.basic.createdBy
+task.basic.name;
+task.scheduling.status;
+task.execution.executionCount;
+task.basic.createdBy;
 ```
 
 ### 3. Response对象构建模式
+
 ```typescript
 // ✅ 必须包含的字段
 {
@@ -425,27 +445,31 @@ task.basic.createdBy
 ```
 
 ### 4. 枚举类型重新导出模式
+
 ```typescript
 // types.ts
 import { ThemeType } from './enums';
-export { ThemeType };  // 重新导出以供其他文件使用
+export { ThemeType }; // 重新导出以供其他文件使用
 ```
 
 ## 构建状态
 
 ### Contracts包
+
 ```bash
 pnpm build
 ✅ 成功编译
 ```
 
 ### 整体项目
+
 ```bash
 npx tsc --noEmit
 ✅ 0错误
 ```
 
 ### Utils包（独立编译）
+
 ```bash
 npx tsc --noEmit --project packages/utils/tsconfig.json
 ⚠️ 65行错误（主要在UniversalScheduleService.ts）
@@ -455,6 +479,7 @@ npx tsc --noEmit --project packages/utils/tsconfig.json
 ## 总结
 
 ### 完成的工作 ✅
+
 1. ✅ ResponseBuilderOptions接口增强（7个新字段）
 2. ✅ SuccessResponse和ErrorResponse接口增强
 3. ✅ Theme类型导出修复
@@ -464,12 +489,14 @@ npx tsc --noEmit --project packages/utils/tsconfig.json
 7. ✅ 整体项目TypeScript编译通过（0错误）
 
 ### 待完成的工作 ⏳
+
 1. ⏳ UniversalScheduleService剩余65个错误（仅影响独立编译）
 2. ⏳ Repository模块错误修复
 3. ⏳ Theme模块测试文件修复
 4. ⏳ 其他模块剩余错误
 
 ### 关键成果
+
 - **整体项目**: 从218行错误 → 0行错误 ✅
 - **可正常编译和运行** ✅
 - **类型安全性大幅提升** ✅

@@ -26,7 +26,7 @@
 
 1. **节点渲染**
    - [x] Goal 节点显示在顶层，使用蓝色大圆圈 (symbolSize: 80)
-   - [x] KeyResult 节点显示在底层，大小根据权重动态调整 (40 + weight * 0.4)
+   - [x] KeyResult 节点显示在底层，大小根据权重动态调整 (40 + weight \* 0.4)
    - [x] 节点显示完整标题文本 (label: right position)
    - [x] 节点颜色反映权重等级 (0-30%: 红色, 30-70%: 橙色, 70-100%: 绿色)
 
@@ -56,18 +56,21 @@
 #### Technical Design
 
 **Component Structure**:
+
 ```
 goal/presentation/components/dag/
 └── GoalDAGVisualization.vue
 ```
 
 **ECharts Modules**:
+
 - GraphChart
 - TitleComponent
 - TooltipComponent
 - LegendComponent
 
 **Props**:
+
 ```typescript
 interface Props {
   goalUuid: string;
@@ -75,6 +78,7 @@ interface Props {
 ```
 
 **Data Flow**:
+
 ```
 useGoal() → currentGoal
   ↓
@@ -84,6 +88,7 @@ VChart → ECharts Renderer
 ```
 
 **Key Logic**:
+
 ```typescript
 // 节点数据生成
 const nodes = [
@@ -93,7 +98,7 @@ const nodes = [
     symbolSize: 80,
     category: 0, // Goal 类别
   },
-  ...goal.keyResults.map(kr => ({
+  ...goal.keyResults.map((kr) => ({
     id: kr.uuid,
     name: kr.title,
     symbolSize: 40 + kr.weight * 0.4,
@@ -104,7 +109,7 @@ const nodes = [
 ];
 
 // 边数据生成
-const links = goal.keyResults.map(kr => ({
+const links = goal.keyResults.map((kr) => ({
   source: goal.uuid,
   target: kr.uuid,
   lineStyle: {
@@ -174,6 +179,7 @@ const links = goal.keyResults.map(kr => ({
 #### Technical Design
 
 **Layout Algorithm**:
+
 ```typescript
 // 分层布局计算
 const calculateHierarchicalLayout = (goal, krs) => {
@@ -181,7 +187,7 @@ const calculateHierarchicalLayout = (goal, krs) => {
   const containerWidth = 800; // 画布宽度
   const goalY = 100;
   const krY = 300;
-  
+
   // Goal 居中
   nodes.push({
     ...goal,
@@ -189,7 +195,7 @@ const calculateHierarchicalLayout = (goal, krs) => {
     y: goalY,
     fixed: true,
   });
-  
+
   // KR 均匀分布
   const krSpacing = containerWidth / (krs.length + 1);
   krs.forEach((kr, index) => {
@@ -200,16 +206,13 @@ const calculateHierarchicalLayout = (goal, krs) => {
       fixed: true,
     });
   });
-  
+
   return nodes;
 };
 
 // 位置持久化
 const saveLayout = (goalUuid, positions) => {
-  localStorage.setItem(
-    `dag-layout-${goalUuid}`,
-    JSON.stringify(positions)
-  );
+  localStorage.setItem(`dag-layout-${goalUuid}`, JSON.stringify(positions));
 };
 
 const loadLayout = (goalUuid) => {
@@ -219,11 +222,12 @@ const loadLayout = (goalUuid) => {
 ```
 
 **Events Handling**:
+
 ```typescript
 // ECharts 拖拽结束事件
 chart.on('graphRoam', (params) => {
   if (params.action === 'drag') {
-    const positions = params.nodes.map(node => ({
+    const positions = params.nodes.map((node) => ({
       id: node.id,
       x: node.x,
       y: node.y,
@@ -256,22 +260,22 @@ chart.on('graphRoam', (params) => {
 
 ### Velocity Tracking
 
-| Metric | Target | Actual |
-|--------|--------|--------|
-| Total SP | 5 | TBD |
-| Completed SP | 5 | TBD |
-| Completion Rate | 100% | TBD |
-| Avg SP/Day | 1.7 | TBD |
+| Metric          | Target | Actual |
+| --------------- | ------ | ------ |
+| Total SP        | 5      | TBD    |
+| Completed SP    | 5      | TBD    |
+| Completion Rate | 100%   | TBD    |
+| Avg SP/Day      | 1.7    | TBD    |
 
 ### Code Quality
 
-| Metric | Target |
-|--------|--------|
-| Unit Test Coverage | ≥ 80% |
-| E2E Test Coverage | ≥ 1 Happy Path |
-| Code Review Approval | 100% |
-| TypeScript Errors | 0 |
-| ESLint Errors | 0 |
+| Metric               | Target         |
+| -------------------- | -------------- |
+| Unit Test Coverage   | ≥ 80%          |
+| E2E Test Coverage    | ≥ 1 Happy Path |
+| Code Review Approval | 100%           |
+| TypeScript Errors    | 0              |
+| ESLint Errors        | 0              |
 
 ### Deliverables Checklist
 
@@ -320,6 +324,7 @@ chart.on('graphRoam', (params) => {
 ### Unit Tests
 
 **GoalDAGVisualization.spec.ts**:
+
 ```typescript
 describe('GoalDAGVisualization', () => {
   it('should render goal node and kr nodes', () => {
@@ -347,23 +352,24 @@ describe('GoalDAGVisualization', () => {
 ### E2E Tests
 
 **dag-visualization.spec.ts**:
+
 ```typescript
 test('should display DAG visualization', async ({ page }) => {
   await page.goto('/goals/test-goal-1');
   await page.click('text=关系图');
-  
+
   // 检查 Goal 节点
   const goalNode = page.locator('text=Test Goal');
   await expect(goalNode).toBeVisible();
-  
+
   // 检查 KR 节点
   const krNode = page.locator('text=KR1');
   await expect(krNode).toBeVisible();
-  
+
   // 测试布局切换
   await page.click('text=分层布局');
   await page.waitForTimeout(1000); // 等待动画
-  
+
   // 验证布局变化
   // ...
 });
@@ -389,15 +395,15 @@ test('should display DAG visualization', async ({ page }) => {
 
 ### What Went Well
 
-- 
+-
 
 ### What Could Be Improved
 
-- 
+-
 
 ### Action Items
 
-- 
+-
 
 ---
 

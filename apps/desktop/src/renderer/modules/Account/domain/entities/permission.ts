@@ -33,7 +33,7 @@ export class Permission {
     this._uuid = params.uuid;
     this._code = params.code;
     this._name = params.name;
-    this._description = params.description ?? "";
+    this._description = params.description ?? '';
     this._module = params.module;
   }
 
@@ -114,11 +114,11 @@ export class Permission {
    */
   static forCreate(): Permission {
     return new Permission({
-      uuid: "",
-      code: "",
-      name: "",
-      description: "",
-      module: "",
+      uuid: '',
+      code: '',
+      name: '',
+      description: '',
+      module: '',
     });
   }
 
@@ -129,11 +129,11 @@ export class Permission {
     return (
       obj instanceof Permission ||
       (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "code" in obj &&
-        "name" in obj &&
-        "module" in obj)
+        typeof obj === 'object' &&
+        'uuid' in obj &&
+        'code' in obj &&
+        'name' in obj &&
+        'module' in obj)
     );
   }
 

@@ -15,6 +15,7 @@
 ### 背景与痛点
 
 在目标管理实践中，定期复盘是保障目标达成的关键环节，但现状存在以下问题：
+
 - ❌ 复盘时间不固定，依赖人工记忆，容易遗忘
 - ❌ 没有结构化的复盘记录，历史复盘内容无法追溯
 - ❌ 缺少专注周期概念，目标执行缺乏节奏感
@@ -31,6 +32,7 @@
 **一句话价值**: 提供结构化的专注周期与复盘机制，通过定期回顾提升目标达成率
 
 **核心收益**:
+
 - ✅ 自动复盘提醒，避免遗忘，养成定期回顾习惯
 - ✅ 结构化复盘模板（4D回顾：Data, Discover, Dream, Design）
 - ✅ 复盘历史可追溯，便于分析目标执行趋势
@@ -46,6 +48,7 @@
 用户为目标配置专注周期（如每周复盘），系统自动生成复盘提醒。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 为目标配置专注周期（如"每周一 10:00 复盘"）
@@ -53,6 +56,7 @@ So that 系统可以自动提醒我定期回顾目标进展
 ```
 
 **操作流程**:
+
 1. 用户打开目标详情页
 2. 点击"专注周期"配置入口
 3. 选择周期类型：每周 / 每两周 / 每月 / 自定义
@@ -62,6 +66,7 @@ So that 系统可以自动提醒我定期回顾目标进展
 7. 系统创建定时任务，到期时发送复盘提醒
 
 **预期结果**:
+
 - Goal 表新增 `focusCycle` 字段：
   ```typescript
   focusCycle: {
@@ -82,6 +87,7 @@ So that 系统可以自动提醒我定期回顾目标进展
 用户收到复盘提醒后，进入结构化复盘流程，记录回顾内容。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 使用 4D 复盘模板（Data, Discover, Dream, Design）记录回顾
@@ -89,6 +95,7 @@ So that 复盘内容结构化，便于后续追溯和分析
 ```
 
 **操作流程**:
+
 1. 用户点击复盘提醒通知
 2. 系统打开复盘界面，展示：
    - **Data（数据回顾）**: 自动填充本周期 KR 进展数据
@@ -100,6 +107,7 @@ So that 复盘内容结构化，便于后续追溯和分析
 5. 显示"复盘已保存，下次复盘时间：2025-10-28 10:00"
 
 **预期结果**:
+
 - 新增 `GoalReview` 实体：
   ```typescript
   {
@@ -108,7 +116,7 @@ So that 复盘内容结构化，便于后续追溯和分析
     reviewTime: number,        // 复盘时间
     cycleStartTime: number,    // 周期开始时间
     cycleEndTime: number,      // 周期结束时间
-    
+
     // 4D 复盘内容
     data: {                    // 数据回顾
       krProgress: KeyResultProgressSnapshot[],
@@ -125,7 +133,7 @@ So that 复盘内容结构化，便于后续追溯和分析
     design: {                  // 行动计划
       actionItems: ActionItem[]
     },
-    
+
     reviewerUuid: string,
     createdAt: number
   }
@@ -139,6 +147,7 @@ So that 复盘内容结构化，便于后续追溯和分析
 用户查看目标的历史复盘记录，分析目标执行趋势。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 查看目标的历史复盘记录（按时间轴展示）
@@ -146,6 +155,7 @@ So that 我可以分析目标执行的改进趋势
 ```
 
 **操作流程**:
+
 1. 用户打开目标详情页
 2. 点击"复盘历史"标签
 3. 系统展示时间轴式复盘列表：
@@ -164,6 +174,7 @@ So that 我可以分析目标执行的改进趋势
 5. 可导出复盘报告（PDF/Markdown）
 
 **预期结果**:
+
 - 复盘历史按时间倒序展示
 - 每次复盘显示关键摘要（KR 进展、洞察数量、行动项数量）
 - 支持筛选（按时间范围、复盘类型）
@@ -176,6 +187,7 @@ So that 我可以分析目标执行的改进趋势
 用户因特殊情况无法按时复盘，选择跳过或延迟。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 跳过或延迟某次复盘
@@ -183,6 +195,7 @@ So that 复盘安排更灵活，不会因一次遗漏而中断节奏
 ```
 
 **操作流程**:
+
 1. 用户收到复盘提醒
 2. 点击"延迟复盘"或"跳过本次"
 3. 如选择延迟：
@@ -194,6 +207,7 @@ So that 复盘安排更灵活，不会因一次遗漏而中断节奏
    - 不影响下次复盘时间
 
 **预期结果**:
+
 - `GoalReview` 新增状态字段：`pending`, `completed`, `skipped`, `delayed`
 - 跳过/延迟操作被记录，便于分析复盘完成率
 
@@ -210,20 +224,20 @@ So that 复盘安排更灵活，不会因一次遗漏而中断节奏
 ```typescript
 export interface GoalServerDTO {
   // ...existing fields...
-  
+
   // 新增字段
-  readonly focusCycle?: FocusCycle;         // 专注周期配置
+  readonly focusCycle?: FocusCycle; // 专注周期配置
   readonly reviews?: GoalReviewServerDTO[]; // 复盘历史
-  readonly nextReviewTime?: number;         // 下次复盘时间
+  readonly nextReviewTime?: number; // 下次复盘时间
 }
 
 export interface FocusCycle {
   readonly type: 'weekly' | 'biweekly' | 'monthly' | 'custom';
-  readonly dayOfWeek?: number;        // 1-7 (周一到周日)
-  readonly dayOfMonth?: number;       // 1-31
-  readonly time: string;              // HH:mm
+  readonly dayOfWeek?: number; // 1-7 (周一到周日)
+  readonly dayOfMonth?: number; // 1-31
+  readonly time: string; // HH:mm
   readonly advanceNoticeHours: number; // 提前通知时间
-  readonly enabled: boolean;          // 是否启用
+  readonly enabled: boolean; // 是否启用
 }
 ```
 
@@ -239,13 +253,13 @@ export interface GoalReviewServerDTO {
   readonly cycleStartTime: number;
   readonly cycleEndTime: number;
   readonly status: 'pending' | 'completed' | 'skipped' | 'delayed';
-  
+
   // 4D 复盘内容
   readonly data: ReviewDataSection;
   readonly discover: ReviewDiscoverSection;
   readonly dream: ReviewDreamSection;
   readonly design: ReviewDesignSection;
-  
+
   readonly reviewerUuid: string;
   readonly createdAt: number;
   readonly updatedAt: number;
@@ -310,12 +324,14 @@ export interface ReviewDesignSection {
 ### MVP: 基础复盘功能（0.5-1 周）
 
 **范围**:
+
 - ✅ 配置专注周期（每周/每月）
 - ✅ 定时复盘提醒（基于 Reminder 模块）
 - ✅ 简化版复盘记录（只包含文本回顾，暂无 4D 结构）
 - ✅ 复盘历史列表查看
 
 **技术要点**:
+
 - Contracts: 定义 `FocusCycle` 和 `GoalReviewServerDTO`
 - Domain: Goal 聚合根添加 `configureFocusCycle()`, `createReview()` 方法
 - Application: `CreateGoalReviewService` 应用服务
@@ -324,6 +340,7 @@ export interface ReviewDesignSection {
 - UI: 专注周期配置面板 + 简单复盘表单
 
 **验收标准**:
+
 ```gherkin
 Given 用户为目标配置"每周一 10:00 复盘"
 When 到达 2025-10-27 10:00
@@ -338,6 +355,7 @@ And 复盘记录出现在"复盘历史"列表中
 ### MMP: 4D 复盘模板（+1-2 周）
 
 **在 MVP 基础上新增**:
+
 - ✅ 结构化 4D 复盘模板（Data, Discover, Dream, Design）
 - ✅ 自动填充 Data 部分（KR 进展数据）
 - ✅ 行动项管理（Design 部分）
@@ -345,11 +363,13 @@ And 复盘记录出现在"复盘历史"列表中
 - ✅ 复盘完成率统计
 
 **技术要点**:
+
 - 复盘表单组件化（4 个独立步骤）
 - 数据自动填充逻辑（查询周期内 KR 变化）
 - 行动项与 Task 模块集成（可选）
 
 **验收标准**:
+
 ```gherkin
 Given 用户进入复盘界面
 When 系统展示 4D 复盘模板
@@ -364,6 +384,7 @@ And 保存后复盘记录包含完整 4D 内容
 ### Full Release: 智能复盘分析（+2-4 周）
 
 **在 MMP 基础上新增**:
+
 - ✅ 复盘趋势分析（识别持续出现的问题）
 - ✅ 复盘质量评分（基于内容丰富度）
 - ✅ 复盘报告导出（PDF/Markdown）
@@ -371,11 +392,13 @@ And 保存后复盘记录包含完整 4D 内容
 - ✅ 复盘模板自定义（除 4D 外支持自定义问题）
 
 **技术要点**:
+
 - NLP 分析"需改进的"内容，识别重复问题
 - 复盘质量算法（如：有行动项 +10 分，有具体数据 +10 分）
 - PDF 生成服务（使用 Puppeteer）
 
 **验收标准**:
+
 ```gherkin
 Given 用户完成了 5 次复盘
 When 系统分析复盘内容
@@ -555,6 +578,7 @@ Feature: 专注周期追踪
 | 行动项创建率 | >60% | 包含行动项的复盘数 / 总复盘数 |
 
 **定性指标**:
+
 - 用户反馈"复盘习惯养成"
 - 目标达成率提升（有定期复盘 vs 无复盘对比）
 - 复盘内容质量（是否有具体数据和行动计划）
@@ -568,7 +592,7 @@ Feature: 专注周期追踪
 ```prisma
 model Goal {
   // ...existing fields...
-  
+
   focusCycleType           String?  @map("focus_cycle_type")
   focusCycleDayOfWeek      Int?     @map("focus_cycle_day_of_week")
   focusCycleDayOfMonth     Int?     @map("focus_cycle_day_of_month")
@@ -576,7 +600,7 @@ model Goal {
   focusCycleAdvanceNotice  Int?     @map("focus_cycle_advance_notice")
   focusCycleEnabled        Boolean  @default(false) @map("focus_cycle_enabled")
   nextReviewTime           BigInt?  @map("next_review_time")
-  
+
   reviews  GoalReview[]
 }
 
@@ -587,20 +611,20 @@ model GoalReview {
   cycleStartTime     BigInt   @map("cycle_start_time")
   cycleEndTime       BigInt   @map("cycle_end_time")
   status             String   // pending, completed, skipped, delayed
-  
+
   // 4D 复盘内容（JSON 存储）
   data               Json     // ReviewDataSection
   discover           Json     // ReviewDiscoverSection
   dream              Json     // ReviewDreamSection
   design             Json     // ReviewDesignSection
-  
+
   reviewerUuid       String   @map("reviewer_uuid")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
-  
+
   goal      Goal    @relation(fields: [goalUuid], references: [uuid])
   reviewer  Account @relation(fields: [reviewerUuid], references: [uuid])
-  
+
   @@index([goalUuid, reviewTime(sort: Desc)])
   @@map("goal_reviews")
 }
@@ -634,12 +658,12 @@ Response: GoalReviewClientDTO
 
 ## 8. 风险与缓解
 
-| 风险 | 可能性 | 影响 | 缓解措施 |
-|------|-------|------|---------|
-| 用户觉得复盘太麻烦 | 高 | 高 | 简化 MVP 版本 + 快速复盘模式（1 分钟） |
-| 提醒疲劳（太多通知） | 中 | 中 | 支持关闭提醒 + 合并通知 |
-| 复盘内容太空洞 | 中 | 中 | 提供复盘模板示例 + 智能建议 |
-| 时区问题 | 低 | 中 | 存储 UTC 时间 + 前端本地化 |
+| 风险                 | 可能性 | 影响 | 缓解措施                               |
+| -------------------- | ------ | ---- | -------------------------------------- |
+| 用户觉得复盘太麻烦   | 高     | 高   | 简化 MVP 版本 + 快速复盘模式（1 分钟） |
+| 提醒疲劳（太多通知） | 中     | 中   | 支持关闭提醒 + 合并通知                |
+| 复盘内容太空洞       | 中     | 中   | 提供复盘模板示例 + 智能建议            |
+| 时区问题             | 低     | 中   | 存储 UTC 时间 + 前端本地化             |
 
 ---
 

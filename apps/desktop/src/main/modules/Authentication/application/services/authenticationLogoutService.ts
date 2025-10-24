@@ -1,10 +1,12 @@
-import { IAuthCredentialRepository, ISessionRepository } from "../../domain/repositories/authenticationRepository";
-import { eventBus } from "@dailyuse/utils";
-import { Session } from "../../domain/entities/session";
-import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
-import { LogoutRequest, LogoutResult } from "../../domain/types";
-import { authSession } from "../../application/services/authSessionStore";
-
+import {
+  IAuthCredentialRepository,
+  ISessionRepository,
+} from '../../domain/repositories/authenticationRepository';
+import { eventBus } from '@dailyuse/utils';
+import { Session } from '../../domain/entities/session';
+import { AuthenticationContainer } from '../../infrastructure/di/authenticationContainer';
+import { LogoutRequest, LogoutResult } from '../../domain/types';
+import { authSession } from '../../application/services/authSessionStore';
 
 /**
  * Authentication 模块的注销服务
@@ -14,13 +16,20 @@ export class AuthenticationLogoutService {
   private authCredentialRepository: IAuthCredentialRepository;
   private sessionRepository: ISessionRepository;
 
-  constructor(authCredentialRepository: IAuthCredentialRepository, sessionRepository: ISessionRepository) {
+  constructor(
+    authCredentialRepository: IAuthCredentialRepository,
+    sessionRepository: ISessionRepository,
+  ) {
     this.authCredentialRepository = authCredentialRepository;
     this.sessionRepository = sessionRepository;
   }
-  static async createInstance(authCredentialRepository?: IAuthCredentialRepository, sessionRepository?: ISessionRepository): Promise<AuthenticationLogoutService> {
+  static async createInstance(
+    authCredentialRepository?: IAuthCredentialRepository,
+    sessionRepository?: ISessionRepository,
+  ): Promise<AuthenticationLogoutService> {
     const authenticationContainer = await AuthenticationContainer.getInstance();
-    const authCredentialRepo = authCredentialRepository || authenticationContainer.getAuthCredentialRepository();
+    const authCredentialRepo =
+      authCredentialRepository || authenticationContainer.getAuthCredentialRepository();
     const sessionRepo = sessionRepository || authenticationContainer.getSessionRepository();
     return new AuthenticationLogoutService(authCredentialRepo, sessionRepo);
   }
@@ -49,7 +58,7 @@ export class AuthenticationLogoutService {
           return {
             success: false,
             message: '会话不存在',
-            errorCode: 'SESSION_NOT_FOUND'
+            errorCode: 'SESSION_NOT_FOUND',
           };
         }
         targetAccountUuid = session.accountUuid;
@@ -60,13 +69,13 @@ export class AuthenticationLogoutService {
           username: targetUsername || '',
           logoutType,
           reason,
-          clientInfo
+          clientInfo,
         });
       } else {
         return {
           success: false,
           message: '必须提供 sessionUuid 或 accountUuid',
-          errorCode: 'INVALID_REQUEST'
+          errorCode: 'INVALID_REQUEST',
         };
       }
 
@@ -75,7 +84,7 @@ export class AuthenticationLogoutService {
         return {
           success: false,
           message: '会话已经失效',
-          errorCode: 'ALREADY_LOGGED_OUT'
+          errorCode: 'ALREADY_LOGGED_OUT',
         };
       }
 
@@ -97,8 +106,10 @@ export class AuthenticationLogoutService {
 
       // 5. 发布会话终止事件
       if (session) {
-        const remainingActiveSessions = await this.getRemainingActiveSessionsCount(targetAccountUuid!);
-        
+        const remainingActiveSessions = await this.getRemainingActiveSessionsCount(
+          targetAccountUuid!,
+        );
+
         await eventBus.publish({
           aggregateId: targetAccountUuid!,
           eventType: 'SessionTerminated',
@@ -108,8 +119,8 @@ export class AuthenticationLogoutService {
             accountUuid: targetAccountUuid!,
             terminationType: this.mapLogoutTypeToTerminationType(logoutType),
             terminatedAt: new Date(),
-            remainingActiveSessions
-          }
+            remainingActiveSessions,
+          },
         });
       }
 
@@ -125,8 +136,8 @@ export class AuthenticationLogoutService {
           logoutType,
           logoutReason: reason,
           loggedOutAt: new Date(),
-          clientInfo
-        }
+          clientInfo,
+        },
       });
 
       return {
@@ -135,15 +146,14 @@ export class AuthenticationLogoutService {
         accountUuid: targetAccountUuid,
         username: targetUsername,
         message: '注销成功',
-        terminatedSessionsCount: 1
+        terminatedSessionsCount: 1,
       };
-
     } catch (error) {
       console.error('注销处理失败:', error);
       return {
         success: false,
         message: '注销处理失败',
-        errorCode: 'INVALID_REQUEST'
+        errorCode: 'INVALID_REQUEST',
       };
     }
   }
@@ -167,7 +177,7 @@ export class AuthenticationLogoutService {
     try {
       // 1. 获取用户的所有活跃会话
       const activeSessions = await this.sessionRepository.findByAccountUuid(accountUuid);
-      const activeSessionsCount = activeSessions.filter(s => this.isSessionActive(s)).length;
+      const activeSessionsCount = activeSessions.filter((s) => this.isSessionActive(s)).length;
 
       // 2. 删除所有会话
       await this.sessionRepository.deleteByAccountUuid(accountUuid);
@@ -182,8 +192,8 @@ export class AuthenticationLogoutService {
           username,
           terminationType: this.mapLogoutTypeToTerminationType(logoutType) as any,
           terminatedSessionCount: activeSessionsCount,
-          terminatedAt: new Date()
-        }
+          terminatedAt: new Date(),
+        },
       });
 
       // 4. 为每个会话发布注销事件
@@ -200,8 +210,8 @@ export class AuthenticationLogoutService {
               logoutType,
               logoutReason: reason,
               loggedOutAt: new Date(),
-              clientInfo
-            }
+              clientInfo,
+            },
           });
         }
       }
@@ -211,9 +221,8 @@ export class AuthenticationLogoutService {
         accountUuid,
         username,
         message: `成功注销 ${activeSessionsCount} 个活跃会话`,
-        terminatedSessionsCount: activeSessionsCount
+        terminatedSessionsCount: activeSessionsCount,
       };
-
     } catch (error) {
       console.error('批量注销处理失败:', error);
       return {
@@ -221,7 +230,7 @@ export class AuthenticationLogoutService {
         accountUuid,
         username,
         message: '批量注销处理失败',
-        errorCode: 'INVALID_REQUEST'
+        errorCode: 'INVALID_REQUEST',
       };
     }
   }
@@ -229,10 +238,14 @@ export class AuthenticationLogoutService {
   /**
    * 强制注销指定用户（管理员操作）
    */
-  async forceLogout(accountUuid: string, reason: string, adminInfo?: {
-    adminId: string;
-    adminUsername: string;
-  }): Promise<LogoutResult> {
+  async forceLogout(
+    accountUuid: string,
+    reason: string,
+    adminInfo?: {
+      adminId: string;
+      adminUsername: string;
+    },
+  ): Promise<LogoutResult> {
     // 获取用户名
     let username = '';
     try {
@@ -249,10 +262,12 @@ export class AuthenticationLogoutService {
       username,
       logoutType: 'forced',
       reason: `管理员强制注销: ${reason}${adminInfo ? ` (操作员: ${adminInfo.adminUsername})` : ''}`,
-      clientInfo: adminInfo ? {
-        userAgent: `Admin: ${adminInfo.adminUsername}`,
-        deviceId: `admin-${adminInfo.adminId}`
-      } : undefined
+      clientInfo: adminInfo
+        ? {
+            userAgent: `Admin: ${adminInfo.adminUsername}`,
+            deviceId: `admin-${adminInfo.adminId}`,
+          }
+        : undefined,
     });
   }
 
@@ -302,7 +317,7 @@ export class AuthenticationLogoutService {
   private async getRemainingActiveSessionsCount(accountUuid: string): Promise<number> {
     try {
       const sessions = await this.sessionRepository.findByAccountUuid(accountUuid);
-      return sessions.filter(s => this.isSessionActive(s)).length;
+      return sessions.filter((s) => this.isSessionActive(s)).length;
     } catch (error) {
       console.error('获取活跃会话数量失败:', error);
       return 0;
@@ -313,7 +328,7 @@ export class AuthenticationLogoutService {
    * 映射注销类型到终止类型
    */
   private mapLogoutTypeToTerminationType(
-    logoutType: 'manual' | 'forced' | 'expired' | 'system'
+    logoutType: 'manual' | 'forced' | 'expired' | 'system',
   ): 'logout' | 'timeout' | 'forced' | 'concurrent_login' {
     switch (logoutType) {
       case 'manual':

@@ -94,7 +94,7 @@ Scenario: 验证时间格式
   Given 我在输入免打扰时间
   When 我输入无效时间 "25:00"
   Then 应该显示错误 "时间格式无效，请使用 HH:mm 格式"
-  
+
 Scenario: 验证时间顺序
   Given 我设置开始时间为 08:00
   When 我尝试设置结束时间也为 08:00
@@ -220,10 +220,7 @@ Scenario: 发送测试通知
       <section class="setting-section">
         <div class="section-header">
           <h2>{{ t('settings.notification.masterToggle') }}</h2>
-          <Toggle
-            v-model="notificationSettings.enabled"
-            @update:modelValue="handleEnabledChange"
-          />
+          <Toggle v-model="notificationSettings.enabled" @update:modelValue="handleEnabledChange" />
         </div>
         <p class="section-description">
           {{ t('settings.notification.masterToggleDesc') }}
@@ -231,10 +228,7 @@ Scenario: 发送测试通知
       </section>
 
       <!-- 通知渠道 (仅当启用时显示) -->
-      <section 
-        v-if="notificationSettings.enabled"
-        class="setting-section"
-      >
+      <section v-if="notificationSettings.enabled" class="setting-section">
         <h2>{{ t('settings.notification.channels') }}</h2>
         <NotificationChannels
           v-model="notificationSettings.channels"
@@ -244,10 +238,7 @@ Scenario: 发送测试通知
       </section>
 
       <!-- 免打扰时间 -->
-      <section 
-        v-if="notificationSettings.enabled"
-        class="setting-section"
-      >
+      <section v-if="notificationSettings.enabled" class="setting-section">
         <h2>{{ t('settings.notification.doNotDisturb') }}</h2>
         <DoNotDisturbPicker
           v-model:start="notificationSettings.doNotDisturbStart"
@@ -258,10 +249,7 @@ Scenario: 发送测试通知
       </section>
 
       <!-- 通知声音 -->
-      <section 
-        v-if="notificationSettings.enabled"
-        class="setting-section"
-      >
+      <section v-if="notificationSettings.enabled" class="setting-section">
         <div class="section-header">
           <h2>{{ t('settings.notification.sound') }}</h2>
           <Toggle
@@ -357,7 +345,7 @@ async function sendTestNotification() {
       icon: '/logo.png',
     });
   }
-  
+
   if (notificationSettings.soundEnabled) {
     testSound();
   }
@@ -409,11 +397,7 @@ async function sendTestNotification() {
 ```vue
 <template>
   <div class="notification-channels">
-    <div
-      v-for="channel in availableChannels"
-      :key="channel.value"
-      class="channel-option"
-    >
+    <div v-for="channel in availableChannels" :key="channel.value" class="channel-option">
       <label class="channel-label">
         <input
           type="checkbox"
@@ -475,7 +459,7 @@ function handleChange(channel: NotificationChannel, event: Event) {
   if (checked) {
     newChannels = [...props.modelValue, channel];
   } else {
-    newChannels = props.modelValue.filter(c => c !== channel);
+    newChannels = props.modelValue.filter((c) => c !== channel);
   }
 
   emit('update:modelValue', newChannels);
@@ -534,24 +518,14 @@ function isLastChannel(channel: NotificationChannel): boolean {
     <div class="time-inputs">
       <div class="time-input-group">
         <label>{{ t('settings.notification.dndStart') }}</label>
-        <input
-          type="time"
-          :value="start"
-          @input="handleStartChange"
-          class="time-input"
-        />
+        <input type="time" :value="start" @input="handleStartChange" class="time-input" />
       </div>
 
       <span class="time-separator">→</span>
 
       <div class="time-input-group">
         <label>{{ t('settings.notification.dndEnd') }}</label>
-        <input
-          type="time"
-          :value="end"
-          @input="handleEndChange"
-          class="time-input"
-        />
+        <input type="time" :value="end" @input="handleEndChange" class="time-input" />
       </div>
     </div>
 
@@ -584,15 +558,15 @@ const error = ref('');
 const duration = computed(() => {
   const [startH, startM] = props.start.split(':').map(Number);
   const [endH, endM] = props.end.split(':').map(Number);
-  
+
   let startMinutes = startH * 60 + startM;
   let endMinutes = endH * 60 + endM;
-  
+
   // Handle cross-day duration
   if (endMinutes <= startMinutes) {
     endMinutes += 24 * 60; // Add 24 hours
   }
-  
+
   const durationMinutes = endMinutes - startMinutes;
   return Math.floor(durationMinutes / 60);
 });
@@ -681,15 +655,15 @@ function validateTime(time: string): boolean {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| 页面布局和总开关 | 1.5 小时 |
-| 渠道选择器 | 2 小时 |
-| 免打扰时间选择器 | 2 小时 |
-| 声音开关和测试 | 1.5 小时 |
-| 设置预览 | 1 小时 |
-| 组件测试 | 2 小时 |
-| **总计** | **10 小时** |
+| 任务             | 预估时间    |
+| ---------------- | ----------- |
+| 页面布局和总开关 | 1.5 小时    |
+| 渠道选择器       | 2 小时      |
+| 免打扰时间选择器 | 2 小时      |
+| 声音开关和测试   | 1.5 小时    |
+| 设置预览         | 1 小时      |
+| 组件测试         | 2 小时      |
+| **总计**         | **10 小时** |
 
 **Story Points**: 3 SP
 
@@ -698,6 +672,7 @@ function validateTime(time: string): boolean {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-005 (Client Services)
 
 ---

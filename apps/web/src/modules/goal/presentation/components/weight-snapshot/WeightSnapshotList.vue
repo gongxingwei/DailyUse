@@ -48,9 +48,7 @@
         <v-progress-linear v-if="isLoading" indeterminate color="primary" />
 
         <!-- 空状态 -->
-        <v-alert v-else-if="!hasSnapshots" type="info" variant="tonal">
-          暂无权重变更记录
-        </v-alert>
+        <v-alert v-else-if="!hasSnapshots" type="info" variant="tonal"> 暂无权重变更记录 </v-alert>
 
         <!-- 快照列表 -->
         <v-list v-else>
@@ -78,7 +76,7 @@
                 <span>{{ formatTime(snapshot.snapshotTime) }}</span>
                 <v-divider vertical />
                 <span class="weight-change">
-                  {{ snapshot.oldWeight }}% 
+                  {{ snapshot.oldWeight }}%
                   <v-icon size="x-small">mdi-arrow-right</v-icon>
                   {{ snapshot.newWeight }}%
                 </span>
@@ -184,7 +182,7 @@ const triggerOptions = [
 const krOptions = computed(() => {
   const goal = goals.value.find((g: any) => g.uuid === props.goalUuid);
   if (!goal || !goal.keyResults) return [{ text: '全部', value: null }];
-  
+
   return [
     { text: '全部', value: null },
     ...goal.keyResults.map((kr: any) => ({

@@ -4,7 +4,7 @@
 **Sprint**: Sprint 3  
 **Story Points**: 2 SP  
 **Priority**: P1  
-**Status**: 📋 Ready  
+**Status**: 📋 Ready
 
 ---
 

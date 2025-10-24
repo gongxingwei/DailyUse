@@ -1,11 +1,11 @@
-import type { AccountRegistrationRequest } from "../../index";
-import type { ApiResponse } from "../../../../../common/shared/types/response";
-import { accountIpcClient } from "../../infrastructure/ipcs/accountIpcClient";
+import type { AccountRegistrationRequest } from '../../index';
+import type { ApiResponse } from '../../../../../common/shared/types/response';
+import { accountIpcClient } from '../../infrastructure/ipcs/accountIpcClient';
 
 /**
  * 本地用户服务 - 渲染进程轻量级客户端
  * 负责与主进程通信，所有业务逻辑都在主进程处理
- * 
+ *
  * 架构说明：
  * - 渲染进程：只负责 UI 和 API 调用
  * - 主进程：处理所有业务逻辑、数据持久化、安全验证
@@ -41,7 +41,7 @@ class LocalAccountService {
 
       // 调用 API 客户端
       const response = await accountIpcClient.accountRegistration(form);
-      
+
       if (response.success) {
         console.log('✅ [渲染进程-用户服务] 注册成功');
       } else {
@@ -53,7 +53,7 @@ class LocalAccountService {
       console.error('❌ [渲染进程-用户服务] 注册异常:', error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "注册失败",
+        message: error instanceof Error ? error.message : '注册失败',
         data: null,
       };
     }
@@ -70,10 +70,10 @@ class LocalAccountService {
 
   //     // 调用 API 客户端
   //     const response = await accountIpcClient.login(credentials);
-      
+
   //     if (response.success && response.data) {
   //       console.log('✅ [渲染进程-用户服务] 登录成功');
-        
+
   //       // 登录成功后，初始化用户数据
   //       try {
   //         await UserDataInitService.initUserData(response.data.username);
@@ -111,7 +111,7 @@ class LocalAccountService {
   //         return response;
   //       }
   //     }
-      
+
   //     return {
   //       success: false,
   //       message: '用户不存在',
@@ -133,7 +133,7 @@ class LocalAccountService {
 
   //     // 调用 API 客户端
   //     const response = await accountIpcClient.getAllUsers();
-      
+
   //     console.log(response.success ? '✅ [渲染进程-用户服务] 获取用户列表成功' : '❌ [渲染进程-用户服务] 获取用户列表失败:', response.message);
   //     return response;
   //   } catch (error) {
@@ -172,7 +172,7 @@ class LocalAccountService {
   //         return response;
   //       }
   //     }
-      
+
   //     return {
   //       success: false,
   //       message: '用户不存在',
@@ -193,7 +193,7 @@ class LocalAccountService {
   //  */
   // async logout(_username: string, _accountType: string): Promise<ApiResponse> {
   //   console.warn('logout(username, accountType) 方法已弃用，请使用 logoutWithToken(token) 方法');
-    
+
   //   return {
   //     success: false,
   //     message: '新架构下需要使用会话令牌登出，请调用 logoutWithToken(token) 方法',
@@ -212,7 +212,7 @@ class LocalAccountService {
 
   //     // 调用 API 客户端
   //     const response = await accountIpcClient.logout(token);
-      
+
   //     console.log(response.success ? '✅ [渲染进程-用户服务] 登出成功' : '❌ [渲染进程-用户服务] 登出失败:', response.message);
   //     return response;
   //   } catch (error) {
@@ -232,7 +232,7 @@ class LocalAccountService {
 
   //     // 调用 API 客户端
   //     const response = await accountIpcClient.validateSession(token);
-      
+
   //     console.log(response.success ? '✅ [渲染进程-用户服务] 会话验证成功' : '❌ [渲染进程-用户服务] 会话验证失败:', response.message);
   //     return response;
   //   } catch (error) {
@@ -254,7 +254,7 @@ class LocalAccountService {
 
   //     // 调用 API 客户端
   //     const response = await accountIpcClient.changePassword(accountUuid, oldPassword, newPassword);
-      
+
   //     console.log(response.success ? '✅ [渲染进程-用户服务] 修改密码成功' : '❌ [渲染进程-用户服务] 修改密码失败:', response.message);
   //     return response;
   //   } catch (error) {

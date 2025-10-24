@@ -3,14 +3,14 @@ import type {
   IGoalRecord,
   IGoalDir,
   IGoalReview,
-} from "../../../../../common/modules/goal/types/goal";
-import { Goal } from "../../domain/aggregates/goal";
-import { GoalReview } from "../../domain/entities/goalReview";
-import { GoalDir } from "../../domain/aggregates/goalDir";
-import { GoalRecord } from "../../domain/entities/record";
-import { GoalContainer } from "../../infrastructure/di/goalContainer";
-import type { IGoalRepository } from "../../domain/repositories/iGoalRepository";
-import { SYSTEM_GOAL_DIRS } from "../../../../../common/modules/goal/types/goal";
+} from '../../../../../common/modules/goal/types/goal';
+import { Goal } from '../../domain/aggregates/goal';
+import { GoalReview } from '../../domain/entities/goalReview';
+import { GoalDir } from '../../domain/aggregates/goalDir';
+import { GoalRecord } from '../../domain/entities/record';
+import { GoalContainer } from '../../infrastructure/di/goalContainer';
+import type { IGoalRepository } from '../../domain/repositories/iGoalRepository';
+import { SYSTEM_GOAL_DIRS } from '../../../../../common/modules/goal/types/goal';
 /**
  * 主进程目标应用服务
  * 处理目标相关的业务逻辑和数据库操作
@@ -31,19 +31,17 @@ export class MainGoalApplicationService {
   }
 
   static async createInstance(
-    goalRepository?: IGoalRepository
+    goalRepository?: IGoalRepository,
   ): Promise<MainGoalApplicationService> {
     const goalContainer = GoalContainer.getInstance();
-    goalRepository =
-      goalRepository || (await goalContainer.getGoalRepository());
+    goalRepository = goalRepository || (await goalContainer.getGoalRepository());
     this.instance = new MainGoalApplicationService(goalRepository);
     return this.instance;
   }
 
   static async getInstance(): Promise<MainGoalApplicationService> {
     if (!this.instance) {
-      MainGoalApplicationService.instance =
-        await MainGoalApplicationService.createInstance();
+      MainGoalApplicationService.instance = await MainGoalApplicationService.createInstance();
     }
     return this.instance;
   }
@@ -54,28 +52,27 @@ export class MainGoalApplicationService {
    * @param accountUuid 用户账号ID
    */
   async initializeSystemGoalDirs(accountUuid: string): Promise<void> {
-  for (const config of Object.values(SYSTEM_GOAL_DIRS)) {
-    // 检查是否已存在
-    const exists = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, config.uuid);
-    if (!exists) {
-      const dir: IGoalDir = {
-        uuid: config.uuid,
-        name: config.name,
-        icon: config.icon,
-        color: config.color,
-        description: "",
-        sortConfig: { sortKey: "createdAt", sortOrder: 0 },
-        lifecycle: {
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          status: "active"
-        }
-      };
-      await this.goalRepository.createGoalDirectory(accountUuid, GoalDir.fromDTO(dir));
+    for (const config of Object.values(SYSTEM_GOAL_DIRS)) {
+      // 检查是否已存在
+      const exists = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, config.uuid);
+      if (!exists) {
+        const dir: IGoalDir = {
+          uuid: config.uuid,
+          name: config.name,
+          icon: config.icon,
+          color: config.color,
+          description: '',
+          sortConfig: { sortKey: 'createdAt', sortOrder: 0 },
+          lifecycle: {
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            status: 'active',
+          },
+        };
+        await this.goalRepository.createGoalDirectory(accountUuid, GoalDir.fromDTO(dir));
+      }
     }
   }
-}
-
 
   // ========== 目标管理 ==========
 
@@ -84,7 +81,7 @@ export class MainGoalApplicationService {
    */
   async createGoal(accountUuid: string, goalDTO: IGoal): Promise<Goal> {
     const goal = Goal.fromDTO(goalDTO);
-    console.log("🔄 [MainGoalApplicationService.createGoal] 创建目标:", goal);
+    console.log('🔄 [MainGoalApplicationService.createGoal] 创建目标:', goal);
     const createdGoal = await this.goalRepository.createGoal(accountUuid, goal);
     return createdGoal;
   }
@@ -100,10 +97,7 @@ export class MainGoalApplicationService {
   /**
    * 根据ID获取目标
    */
-  async getGoalById(
-    accountUuid: string,
-    goalUuid: string
-  ): Promise<Goal | null> {
+  async getGoalById(accountUuid: string, goalUuid: string): Promise<Goal | null> {
     const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     return goal || null;
   }
@@ -112,20 +106,14 @@ export class MainGoalApplicationService {
    * 更新目标
    */
   async updateGoal(accountUuid: string, goalData: IGoal): Promise<Goal> {
-    const existingGoal = await this.goalRepository.getGoalByUuid(
-      accountUuid,
-      goalData.uuid
-    );
+    const existingGoal = await this.goalRepository.getGoalByUuid(accountUuid, goalData.uuid);
     if (!existingGoal) {
       throw new Error(`目标不存在: ${goalData.uuid}`);
     }
 
     // Convert DTO to Goal object
     const updatedGoal = Goal.fromDTO(goalData);
-    const result = await this.goalRepository.updateGoal(
-      accountUuid,
-      updatedGoal
-    );
+    const result = await this.goalRepository.updateGoal(accountUuid, updatedGoal);
     return result;
   }
 
@@ -156,32 +144,26 @@ export class MainGoalApplicationService {
    */
   async addGoalRecordToGoal(
     accountUuid: string,
-    recordDTO: IGoalRecord
+    recordDTO: IGoalRecord,
   ): Promise<{ goal: Goal; record: GoalRecord }> {
     if (recordDTO.value <= 0) {
-      throw new Error("记录值必须大于0");
+      throw new Error('记录值必须大于0');
     }
-    const goal = await this.goalRepository.getGoalByUuid(
-      accountUuid,
-      recordDTO.goalUuid
-    );
+    const goal = await this.goalRepository.getGoalByUuid(accountUuid, recordDTO.goalUuid);
     if (!goal) {
       throw new Error(`目标不存在: ${recordDTO.goalUuid}`);
     }
-    
+
     // 将 record 进行持久化存储
     const record = GoalRecord.fromDTO(recordDTO);
-    const createdGoalRecord = await this.goalRepository.createGoalRecord(
-      accountUuid,
-      record
-    );
+    const createdGoalRecord = await this.goalRepository.createGoalRecord(accountUuid, record);
 
     // 调用聚合根的方法将记录添加到目标中，这会更新关键结果的值
     goal.addGoalRecord(createdGoalRecord);
 
     // 更新目标的关键结果和进度
     const updatedGoal = await this.goalRepository.updateGoal(accountUuid, goal);
-    
+
     return { goal: updatedGoal, record: createdGoalRecord };
   }
 
@@ -192,10 +174,7 @@ export class MainGoalApplicationService {
     const goals = await this.goalRepository.getAllGoals(accountUuid);
     const allGoalRecords: GoalRecord[] = [];
     for (const goal of goals) {
-      const records = await this.goalRepository.getGoalRecordsByGoal(
-        accountUuid,
-        goal.uuid
-      );
+      const records = await this.goalRepository.getGoalRecordsByGoal(accountUuid, goal.uuid);
       allGoalRecords.push(...records);
     }
     return allGoalRecords;
@@ -204,14 +183,8 @@ export class MainGoalApplicationService {
   /**
    * 根据目标ID获取记录
    */
-  async getGoalRecordsByGoalUuid(
-    accountUuid: string,
-    goalUuid: string
-  ): Promise<GoalRecord[]> {
-    const records = await this.goalRepository.getGoalRecordsByGoal(
-      accountUuid,
-      goalUuid
-    );
+  async getGoalRecordsByGoalUuid(accountUuid: string, goalUuid: string): Promise<GoalRecord[]> {
+    const records = await this.goalRepository.getGoalRecordsByGoal(accountUuid, goalUuid);
     return records;
   }
 
@@ -229,22 +202,17 @@ export class MainGoalApplicationService {
    */
   async addReviewToGoal(
     accountUuid: string,
-    goalReviewDTO: IGoalReview
+    goalReviewDTO: IGoalReview,
   ): Promise<{ goal: Goal; review: GoalReview }> {
     try {
-      console.log(
-        "🔄 [MainGoalApplicationService.addReviewToGoal] 添加复盘:", goalReviewDTO
-      );
-      
+      console.log('🔄 [MainGoalApplicationService.addReviewToGoal] 添加复盘:', goalReviewDTO);
+
       // Create review entity and add to goal
       const goalReview = GoalReview.fromDTO(goalReviewDTO);
 
       // Update goal with new review
       await this.goalRepository.createGoalReview(accountUuid, goalReview);
-      const goal = await this.goalRepository.getGoalByUuid(
-        accountUuid,
-        goalReviewDTO.goalUuid
-      );
+      const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalReviewDTO.goalUuid);
       if (!goal) {
         throw new Error(`目标不存在: ${goalReviewDTO.goalUuid}`);
       }
@@ -263,7 +231,7 @@ export class MainGoalApplicationService {
    */
   async updateReviewInGoal(
     accountUuid: string,
-    goalReviewDTO: IGoalReview
+    goalReviewDTO: IGoalReview,
   ): Promise<{ goal: Goal; review: GoalReview }> {
     const review = GoalReview.fromDTO(goalReviewDTO);
     await this.goalRepository.updateGoalReview(accountUuid, review);
@@ -277,10 +245,7 @@ export class MainGoalApplicationService {
   /**
    * 从目标中移除复盘
    */
-  async removeReviewFromGoal(
-    accountUuid: string,
-    goalReviewDTO: IGoalReview      
-  ): Promise<Goal> {
+  async removeReviewFromGoal(accountUuid: string, goalReviewDTO: IGoalReview): Promise<Goal> {
     await this.goalRepository.removeGoalReview(accountUuid, goalReviewDTO.uuid);
     const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalReviewDTO.goalUuid);
     if (!goal) {
@@ -294,25 +259,16 @@ export class MainGoalApplicationService {
   /**
    * 创建目标目录
    */
-  async createGoalDir(
-    accountUuid: string,
-    goalDirDTO: IGoalDir
-  ): Promise<GoalDir> {
+  async createGoalDir(accountUuid: string, goalDirDTO: IGoalDir): Promise<GoalDir> {
     const validation = GoalDir.validate(goalDirDTO);
     if (!validation.isValid) {
-      throw new Error(`目录数据验证失败: ${validation.errors.join(", ")}`);
+      throw new Error(`目录数据验证失败: ${validation.errors.join(', ')}`);
     }
 
     // Convert DTO to domain object
     const goalDir = GoalDir.fromDTO(goalDirDTO);
-    const createdGoalDir = await this.goalRepository.createGoalDirectory(
-      accountUuid,
-      goalDir
-    );
-    console.log(
-      "✅ [MainGoalApplicationService.createGoalDir]:创建目标目录成功",
-      createdGoalDir
-    );
+    const createdGoalDir = await this.goalRepository.createGoalDirectory(accountUuid, goalDir);
+    console.log('✅ [MainGoalApplicationService.createGoalDir]:创建目标目录成功', createdGoalDir);
     return createdGoalDir;
   }
 
@@ -320,9 +276,7 @@ export class MainGoalApplicationService {
    * 获取所有目标目录
    */
   async getAllGoalDirs(accountUuid: string): Promise<GoalDir[]> {
-    const goalDirs = await this.goalRepository.getAllGoalDirectories(
-      accountUuid
-    );
+    const goalDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
     return goalDirs;
   }
 
@@ -330,22 +284,14 @@ export class MainGoalApplicationService {
    * 删除目标目录
    */
   async deleteGoalDir(accountUuid: string, goalDirId: string): Promise<void> {
-    const goalDir = await this.goalRepository.getGoalDirectoryByUuid(
-      accountUuid,
-      goalDirId
-    );
+    const goalDir = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, goalDirId);
     if (!goalDir) {
       throw new Error(`目标目录不存在: ${goalDirId}`);
     }
 
-    const goalsInDir = await this.goalRepository.getGoalsByDirectory(
-      accountUuid,
-      goalDirId
-    );
+    const goalsInDir = await this.goalRepository.getGoalsByDirectory(accountUuid, goalDirId);
     if (goalsInDir.length > 0) {
-      throw new Error(
-        `无法删除目录，还有 ${goalsInDir.length} 个目标在使用此目录`
-      );
+      throw new Error(`无法删除目录，还有 ${goalsInDir.length} 个目标在使用此目录`);
     }
 
     await this.goalRepository.deleteGoalDirectory(accountUuid, goalDirId);
@@ -354,13 +300,10 @@ export class MainGoalApplicationService {
   /**
    * 更新目标目录
    */
-  async updateGoalDir(
-    accountUuid: string,
-    goalDirData: IGoalDir
-  ): Promise<GoalDir> {
+  async updateGoalDir(accountUuid: string, goalDirData: IGoalDir): Promise<GoalDir> {
     const existingGoalDir = await this.goalRepository.getGoalDirectoryByUuid(
       accountUuid,
-      goalDirData.uuid
+      goalDirData.uuid,
     );
     if (!existingGoalDir) {
       throw new Error(`目标目录不存在: ${goalDirData.uuid}`);
@@ -368,10 +311,7 @@ export class MainGoalApplicationService {
 
     // Convert DTO to domain object
     const updatedGoalDir = GoalDir.fromDTO(goalDirData);
-    const result = await this.goalRepository.updateGoalDirectory(
-      accountUuid,
-      updatedGoalDir
-    );
+    const result = await this.goalRepository.updateGoalDirectory(accountUuid, updatedGoalDir);
     return result;
   }
 
@@ -381,11 +321,11 @@ export class MainGoalApplicationService {
   async removeKeyResultFromGoal(
     accountUuid: string,
     goalUuid: string,
-    keyResultId: string
+    keyResultId: string,
   ): Promise<Goal> {
     const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goal) {
-      throw new Error("目标不存在");
+      throw new Error('目标不存在');
     }
 
     goal.removeKeyResult(keyResultId);
@@ -400,11 +340,11 @@ export class MainGoalApplicationService {
   async removeGoalRecordFromGoal(
     accountUuid: string,
     goalUuid: string,
-    recordId: string
+    recordId: string,
   ): Promise<Goal> {
     const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goal) {
-      throw new Error("目标不存在");
+      throw new Error('目标不存在');
     }
 
     goal.removeGoalRecord(recordId);

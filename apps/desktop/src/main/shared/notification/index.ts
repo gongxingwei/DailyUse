@@ -1,4 +1,4 @@
-export type { NotificationWindow } from "./types/index";
+export type { NotificationWindow } from './types/index';
 
 //services
-export { notificationService } from "./services/notificationService";
+export { notificationService } from './services/notificationService';

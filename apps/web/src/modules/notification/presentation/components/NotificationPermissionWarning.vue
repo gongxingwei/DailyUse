@@ -63,7 +63,7 @@ async function handleRequestPermission() {
  */
 function dismissWarning() {
   showWarning.value = false;
-  
+
   // 存储到 localStorage，避免重复提示
   localStorage.setItem('notification-permission-warning-dismissed', 'true');
 }

@@ -58,56 +58,56 @@ POST /api/task-templates
 ```typescript
 interface CreateTaskTemplateRequest {
   accountUuid: string;
-  
+
   // 基本信息
-  title: string;                       // 标题（必填，最大100字符）
-  description?: string | null;         // 描述
-  taskType: TaskType;                  // ONE_TIME | DAILY | WEEKLY | MONTHLY | CUSTOM
-  
+  title: string; // 标题（必填，最大100字符）
+  description?: string | null; // 描述
+  taskType: TaskType; // ONE_TIME | DAILY | WEEKLY | MONTHLY | CUSTOM
+
   // 时间配置
   timeConfig: {
-    timeType: TimeType;                // SCHEDULED | DEADLINE | FLOATING
-    scheduledTime?: number | null;     // 计划开始时间（timestamp）
-    deadline?: number | null;          // 截止时间（timestamp）
+    timeType: TimeType; // SCHEDULED | DEADLINE | FLOATING
+    scheduledTime?: number | null; // 计划开始时间（timestamp）
+    deadline?: number | null; // 截止时间（timestamp）
     estimatedDuration?: number | null; // 预计时长（分钟）
     reminderLeadMinutes?: number | null; // 提前提醒时间（分钟）
   };
-  
+
   // 重复规则（可选）
   recurrenceRule?: {
-    frequency: RecurrenceFrequency;    // DAILY | WEEKLY | MONTHLY | YEARLY | CUSTOM
-    interval: number;                  // 间隔（如每2天 = 2）
-    byWeekday?: number[] | null;       // 周几重复（0=周日, 1=周一...）
-    byMonthDay?: number[] | null;      // 每月几号重复
-    count?: number | null;             // 重复次数（null 表示无限）
-    until?: number | null;             // 重复截止日期（timestamp）
+    frequency: RecurrenceFrequency; // DAILY | WEEKLY | MONTHLY | YEARLY | CUSTOM
+    interval: number; // 间隔（如每2天 = 2）
+    byWeekday?: number[] | null; // 周几重复（0=周日, 1=周一...）
+    byMonthDay?: number[] | null; // 每月几号重复
+    count?: number | null; // 重复次数（null 表示无限）
+    until?: number | null; // 重复截止日期（timestamp）
   } | null;
-  
+
   // 提醒配置（可选）
   reminderConfig?: {
     enabled: boolean;
     reminders: Array<{
-      minutesBefore: number;           // 提前多少分钟提醒
+      minutesBefore: number; // 提前多少分钟提醒
       notificationTitle?: string | null;
       notificationBody?: string | null;
     }>;
   } | null;
-  
+
   // 重要性与紧急性
-  importance: ImportanceLevel;         // LOW | MEDIUM | HIGH | CRITICAL
-  urgency: UrgencyLevel;               // LOW | MEDIUM | HIGH | URGENT
-  
+  importance: ImportanceLevel; // LOW | MEDIUM | HIGH | CRITICAL
+  urgency: UrgencyLevel; // LOW | MEDIUM | HIGH | URGENT
+
   // 目标绑定（可选）
   goalBinding?: {
     goalUuid?: string | null;
     keyResultUuid?: string | null;
   } | null;
-  
+
   // 组织
-  folderUuid?: string | null;          // 所属文件夹
-  tags?: string[];                     // 标签
-  color?: string | null;               // 主题色（hex）
-  
+  folderUuid?: string | null; // 所属文件夹
+  tags?: string[]; // 标签
+  color?: string | null; // 主题色（hex）
+
   // 任务步骤（可选）
   steps?: Array<{
     title: string;
@@ -115,10 +115,10 @@ interface CreateTaskTemplateRequest {
     orderIndex: number;
     estimatedMinutes?: number | null;
   }>;
-  
+
   // 生成配置
-  generateAheadDays?: number;          // 提前生成天数（默认7天）
-  activateImmediately?: boolean;       // 是否立即激活（默认false）
+  generateAheadDays?: number; // 提前生成天数（默认7天）
+  activateImmediately?: boolean; // 是否立即激活（默认false）
 }
 ```
 
@@ -127,7 +127,7 @@ interface CreateTaskTemplateRequest {
 ```typescript
 interface CreateTaskTemplateResponse {
   template: TaskTemplateClientDTO;
-  instances: TaskInstanceClientDTO[];  // 如果立即激活，返回生成的实例
+  instances: TaskInstanceClientDTO[]; // 如果立即激活，返回生成的实例
   message: string;
 }
 
@@ -146,23 +146,23 @@ interface TaskTemplateClientDTO {
   folderUuid: string | null;
   tags: string[];
   color: string | null;
-  status: TaskTemplateStatus;          // DRAFT | ACTIVE | PAUSED | ARCHIVED | DELETED
-  
+  status: TaskTemplateStatus; // DRAFT | ACTIVE | PAUSED | ARCHIVED | DELETED
+
   // 子实体
   steps: TaskStepClientDTO[];
   history: TaskTemplateHistoryClientDTO[];
-  
+
   // 元数据
-  lastGeneratedDate: number | null;    // 最后一次生成实例的日期
+  lastGeneratedDate: number | null; // 最后一次生成实例的日期
   generateAheadDays: number;
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
-  
+
   // 前端计算字段
-  priorityScore: number;               // 优先级分数
-  instanceCount: number;               // 生成的实例数量
-  completionRate: number;              // 完成率（%）
+  priorityScore: number; // 优先级分数
+  instanceCount: number; // 生成的实例数量
+  completionRate: number; // 完成率（%）
 }
 ```
 
@@ -179,21 +179,21 @@ export class TaskTemplate extends AggregateRoot {
   private _title: string;
   private _description: string | null;
   private _taskType: TaskType;
-  private _timeConfig: TaskTimeConfig;           // 值对象
+  private _timeConfig: TaskTimeConfig; // 值对象
   private _recurrenceRule: RecurrenceRule | null; // 值对象
   private _reminderConfig: TaskReminderConfig | null; // 值对象
   private _importance: ImportanceLevel;
   private _urgency: UrgencyLevel;
-  private _goalBinding: TaskGoalBinding | null;   // 值对象
+  private _goalBinding: TaskGoalBinding | null; // 值对象
   private _folderUuid: string | null;
   private _tags: string[];
   private _color: string | null;
   private _status: TaskTemplateStatus;
-  
+
   // 子实体集合
-  private _steps: TaskStep[];                     // 实体集合
-  private _history: TaskTemplateHistory[];        // 实体集合
-  
+  private _steps: TaskStep[]; // 实体集合
+  private _history: TaskTemplateHistory[]; // 实体集合
+
   // 元数据
   private _lastGeneratedDate: number | null;
   private _generateAheadDays: number;
@@ -225,26 +225,24 @@ export class TaskTemplate extends AggregateRoot {
     template._title = params.title.trim();
     template._description = params.description?.trim() || null;
     template._taskType = params.taskType;
-    
+
     // 5. 创建值对象
     template._timeConfig = TaskTimeConfig.create(params.timeConfig);
-    template._recurrenceRule = params.recurrenceRule 
-      ? RecurrenceRule.create(params.recurrenceRule) 
+    template._recurrenceRule = params.recurrenceRule
+      ? RecurrenceRule.create(params.recurrenceRule)
       : null;
     template._reminderConfig = params.reminderConfig
       ? TaskReminderConfig.create(params.reminderConfig)
       : null;
-    template._goalBinding = params.goalBinding
-      ? TaskGoalBinding.create(params.goalBinding)
-      : null;
-    
+    template._goalBinding = params.goalBinding ? TaskGoalBinding.create(params.goalBinding) : null;
+
     template._importance = params.importance || ImportanceLevel.MEDIUM;
     template._urgency = params.urgency || UrgencyLevel.MEDIUM;
     template._folderUuid = params.folderUuid || null;
     template._tags = params.tags || [];
     template._color = params.color || null;
     template._status = TaskTemplateStatus.DRAFT;
-    
+
     // 6. 创建步骤实体
     template._steps = [];
     if (params.steps && params.steps.length > 0) {
@@ -257,7 +255,7 @@ export class TaskTemplate extends AggregateRoot {
         template._steps.push(step);
       });
     }
-    
+
     template._history = [];
     template._lastGeneratedDate = null;
     template._generateAheadDays = params.generateAheadDays || 7;
@@ -276,10 +274,7 @@ export class TaskTemplate extends AggregateRoot {
     return template;
   }
 
-  private static validateTimeConfig(
-    timeConfig: TaskTimeConfigParams,
-    taskType: TaskType
-  ): void {
+  private static validateTimeConfig(timeConfig: TaskTimeConfigParams, taskType: TaskType): void {
     // SCHEDULED 类型必须有 scheduledTime
     if (timeConfig.timeType === TimeType.SCHEDULED && !timeConfig.scheduledTime) {
       throw new Error('SCHEDULED 类型任务必须指定计划时间');
@@ -356,7 +351,7 @@ export class TaskTemplate extends AggregateRoot {
     } else if (this._recurrenceRule) {
       // 重复任务根据规则生成多个实例
       const dates = this._recurrenceRule.getOccurrencesUntil(now, generateUntil);
-      dates.forEach(date => {
+      dates.forEach((date) => {
         const instance = TaskInstance.createFromTemplate(this, date);
         instances.push(instance);
       });
@@ -373,7 +368,7 @@ export class TaskTemplate extends AggregateRoot {
       templateUuid: this._uuid,
       orderIndex: this._steps.length,
     });
-    
+
     this._steps.push(step);
     this._updatedAt = Date.now();
 
@@ -393,17 +388,17 @@ export class TaskTemplate extends AggregateRoot {
 
   // 移除步骤
   public removeStep(stepUuid: string): void {
-    const index = this._steps.findIndex(s => s.uuid === stepUuid);
+    const index = this._steps.findIndex((s) => s.uuid === stepUuid);
     if (index === -1) {
       throw new Error('步骤不存在');
     }
 
     const step = this._steps[index];
     this._steps.splice(index, 1);
-    
+
     // 重新排序
     this._steps.forEach((s, idx) => s.updateOrderIndex(idx));
-    
+
     this._updatedAt = Date.now();
 
     this.addDomainEvent({
@@ -536,11 +531,11 @@ export class TaskTemplateApplicationService {
   constructor(
     private taskTemplateRepository: ITaskTemplateRepository,
     private taskInstanceRepository: ITaskInstanceRepository,
-    private eventBus: IEventBus
+    private eventBus: IEventBus,
   ) {}
 
   async createTaskTemplate(
-    request: CreateTaskTemplateRequest
+    request: CreateTaskTemplateRequest,
   ): Promise<CreateTaskTemplateResponse> {
     // 1. 验证目标绑定（如果指定）
     if (request.goalBinding?.goalUuid) {
@@ -574,7 +569,7 @@ export class TaskTemplateApplicationService {
 
     // 4. 持久化
     await this.taskTemplateRepository.save(template);
-    
+
     if (instances.length > 0) {
       await this.taskInstanceRepository.saveAll(instances);
     }
@@ -585,7 +580,7 @@ export class TaskTemplateApplicationService {
     // 6. 返回响应
     return {
       template: template.toClientDTO(),
-      instances: instances.map(i => i.toClientDTO()),
+      instances: instances.map((i) => i.toClientDTO()),
       message: request.activateImmediately
         ? `任务模板已创建并激活，生成了 ${instances.length} 个实例`
         : '任务模板已创建',
@@ -603,7 +598,7 @@ export class TaskTemplateApplicationService {
 
   private publishDomainEvents(template: TaskTemplate): void {
     const events = template.getDomainEvents();
-    events.forEach(event => {
+    events.forEach((event) => {
       this.eventBus.publish(event);
     });
     template.clearDomainEvents();
@@ -620,30 +615,15 @@ export class TaskTemplateApplicationService {
 ```vue
 <!-- TaskTemplateCreateForm.vue -->
 <template>
-  <el-dialog
-    v-model="visible"
-    title="创建任务模板"
-    width="700px"
-    @close="handleClose"
-  >
-    <el-form 
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="120px"
-    >
+  <el-dialog v-model="visible" title="创建任务模板" width="700px" @close="handleClose">
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
       <!-- 基本信息 -->
       <el-form-item label="任务标题" prop="title">
-        <el-input 
-          v-model="form.title"
-          placeholder="输入任务标题"
-          maxlength="100"
-          show-word-limit
-        />
+        <el-input v-model="form.title" placeholder="输入任务标题" maxlength="100" show-word-limit />
       </el-form-item>
 
       <el-form-item label="任务描述">
-        <el-input 
+        <el-input
           v-model="form.description"
           type="textarea"
           :rows="3"
@@ -671,10 +651,7 @@ export class TaskTemplateApplicationService {
         </el-select>
       </el-form-item>
 
-      <el-form-item 
-        v-if="form.timeConfig.timeType === 'SCHEDULED'"
-        label="计划时间"
-      >
+      <el-form-item v-if="form.timeConfig.timeType === 'SCHEDULED'" label="计划时间">
         <el-date-picker
           v-model="scheduledTimeDate"
           type="datetime"
@@ -683,10 +660,7 @@ export class TaskTemplateApplicationService {
         />
       </el-form-item>
 
-      <el-form-item 
-        v-if="form.timeConfig.timeType === 'DEADLINE'"
-        label="截止时间"
-      >
+      <el-form-item v-if="form.timeConfig.timeType === 'DEADLINE'" label="截止时间">
         <el-date-picker
           v-model="deadlineDate"
           type="datetime"
@@ -719,20 +693,13 @@ export class TaskTemplateApplicationService {
         </el-form-item>
 
         <el-form-item label="重复间隔">
-          <el-input-number
-            v-model="form.recurrenceRule.interval"
-            :min="1"
-            :max="365"
-          />
+          <el-input-number v-model="form.recurrenceRule.interval" :min="1" :max="365" />
           <span class="ml-2 text-gray-500">
             {{ getIntervalLabel() }}
           </span>
         </el-form-item>
 
-        <el-form-item 
-          v-if="form.recurrenceRule.frequency === 'WEEKLY'"
-          label="重复星期"
-        >
+        <el-form-item v-if="form.recurrenceRule.frequency === 'WEEKLY'" label="重复星期">
           <el-checkbox-group v-model="form.recurrenceRule.byWeekday">
             <el-checkbox :label="0">日</el-checkbox>
             <el-checkbox :label="1">一</el-checkbox>
@@ -753,20 +720,12 @@ export class TaskTemplateApplicationService {
         </el-form-item>
 
         <el-form-item v-if="recurrenceEndType === 'count'">
-          <el-input-number
-            v-model="form.recurrenceRule.count"
-            :min="1"
-            :max="1000"
-          />
+          <el-input-number v-model="form.recurrenceRule.count" :min="1" :max="1000" />
           <span class="ml-2 text-gray-500">次</span>
         </el-form-item>
 
         <el-form-item v-if="recurrenceEndType === 'until'">
-          <el-date-picker
-            v-model="recurrenceUntilDate"
-            type="date"
-            placeholder="选择结束日期"
-          />
+          <el-date-picker v-model="recurrenceUntilDate" type="date" placeholder="选择结束日期" />
         </el-form-item>
       </template>
 
@@ -795,31 +754,17 @@ export class TaskTemplateApplicationService {
       <el-divider>任务步骤（可选）</el-divider>
 
       <el-form-item>
-        <el-button 
-          type="primary" 
-          text
-          @click="handleAddStep"
-        >
+        <el-button type="primary" text @click="handleAddStep">
           <el-icon><Plus /></el-icon>
           添加步骤
         </el-button>
       </el-form-item>
 
-      <div 
-        v-for="(step, index) in form.steps" 
-        :key="index"
-        class="step-item"
-      >
-        <el-input 
-          v-model="step.title"
-          placeholder="步骤标题"
-        >
+      <div v-for="(step, index) in form.steps" :key="index" class="step-item">
+        <el-input v-model="step.title" placeholder="步骤标题">
           <template #prepend>{{ index + 1 }}</template>
           <template #append>
-            <el-button 
-              text
-              @click="handleRemoveStep(index)"
-            >
+            <el-button text @click="handleRemoveStep(index)">
               <el-icon><Delete /></el-icon>
             </el-button>
           </template>
@@ -830,11 +775,7 @@ export class TaskTemplateApplicationService {
       <el-divider>关联目标（可选）</el-divider>
 
       <el-form-item label="关联目标">
-        <el-select 
-          v-model="form.goalBinding.goalUuid"
-          placeholder="选择目标"
-          clearable
-        >
+        <el-select v-model="form.goalBinding.goalUuid" placeholder="选择目标" clearable>
           <el-option
             v-for="goal in activeGoals"
             :key="goal.uuid"
@@ -847,18 +788,10 @@ export class TaskTemplateApplicationService {
 
     <template #footer>
       <el-button @click="handleClose">取消</el-button>
-      <el-button 
-        type="primary"
-        @click="handleSubmit(false)"
-        :loading="isSubmitting"
-      >
+      <el-button type="primary" @click="handleSubmit(false)" :loading="isSubmitting">
         保存草稿
       </el-button>
-      <el-button 
-        type="success"
-        @click="handleSubmit(true)"
-        :loading="isSubmitting"
-      >
+      <el-button type="success" @click="handleSubmit(true)" :loading="isSubmitting">
         创建并激活
       </el-button>
     </template>
@@ -909,7 +842,7 @@ const recurrenceUntilDate = ref<Date | null>(null);
 const recurrenceEndType = ref('forever');
 
 const activeGoals = computed(() => {
-  return goalStore.goals.filter(g => g.status === 'ACTIVE');
+  return goalStore.goals.filter((g) => g.status === 'ACTIVE');
 });
 
 const rules = {
@@ -917,12 +850,8 @@ const rules = {
     { required: true, message: '请输入任务标题', trigger: 'blur' },
     { max: 100, message: '标题不能超过100个字符', trigger: 'blur' },
   ],
-  taskType: [
-    { required: true, message: '请选择任务类型', trigger: 'change' },
-  ],
-  'timeConfig.timeType': [
-    { required: true, message: '请选择时间类型', trigger: 'change' },
-  ],
+  taskType: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
+  'timeConfig.timeType': [{ required: true, message: '请选择时间类型', trigger: 'change' }],
 };
 
 function handleAddStep() {
@@ -957,28 +886,22 @@ async function handleSubmit(activateImmediately: boolean) {
         scheduledTime: scheduledTimeDate.value?.getTime() || null,
         deadline: deadlineDate.value?.getTime() || null,
       },
-      recurrenceRule: form.value.taskType !== 'ONE_TIME'
-        ? {
-            ...form.value.recurrenceRule,
-            until: recurrenceEndType.value === 'until' 
-              ? recurrenceUntilDate.value?.getTime() 
-              : null,
-            count: recurrenceEndType.value === 'count' 
-              ? form.value.recurrenceRule.count 
-              : null,
-          }
-        : null,
+      recurrenceRule:
+        form.value.taskType !== 'ONE_TIME'
+          ? {
+              ...form.value.recurrenceRule,
+              until:
+                recurrenceEndType.value === 'until' ? recurrenceUntilDate.value?.getTime() : null,
+              count: recurrenceEndType.value === 'count' ? form.value.recurrenceRule.count : null,
+            }
+          : null,
       activateImmediately,
     };
 
     await taskStore.createTaskTemplate(request);
-    
-    ElMessage.success(
-      activateImmediately 
-        ? '任务模板已创建并激活'
-        : '任务模板已保存为草稿'
-    );
-    
+
+    ElMessage.success(activateImmediately ? '任务模板已创建并激活' : '任务模板已保存为草稿');
+
     handleClose();
   } catch (error: any) {
     ElMessage.error(error.message || '创建失败');
@@ -1011,30 +934,30 @@ model TaskTemplate {
   title               String
   description         String?   @db.Text
   taskType            String    // ONE_TIME | DAILY | WEEKLY | MONTHLY | CUSTOM
-  
+
   // 时间配置（JSON）
   timeConfig          Json
-  
+
   // 重复规则（JSON，可选）
   recurrenceRule      Json?
-  
+
   // 提醒配置（JSON，可选）
   reminderConfig      Json?
-  
+
   importance          String    @default("MEDIUM")
   urgency             String    @default("MEDIUM")
-  
+
   // 目标绑定（JSON，可选）
   goalBinding         Json?
-  
+
   folderUuid          String?
   tags                String[]  @default([])
   color               String?
   status              String    @default("DRAFT")
-  
+
   lastGeneratedDate   DateTime?
   generateAheadDays   Int       @default(7)
-  
+
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   deletedAt           DateTime?
@@ -1060,7 +983,7 @@ model TaskStep {
   orderIndex          Int
   estimatedMinutes    Int?
   isOptional          Boolean   @default(false)
-  
+
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 

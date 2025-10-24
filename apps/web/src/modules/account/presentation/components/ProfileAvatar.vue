@@ -1,9 +1,16 @@
 <template>
   <div class="profile-avatar-wrapper">
-    <v-menu v-model="showInfo" :close-on-content-click="false" offset-x location="end" min-width="260" max-width="320"
-      transition="slide-x-transition">
+    <v-menu
+      v-model="showInfo"
+      :close-on-content-click="false"
+      offset-x
+      location="end"
+      min-width="260"
+      max-width="320"
+      transition="slide-x-transition"
+    >
       <template #activator="{ props }">
-        <v-avatar v-bind="props" :size="size" class="mb-4" color="primary" style="cursor:pointer;">
+        <v-avatar v-bind="props" :size="size" class="mb-4" color="primary" style="cursor: pointer">
           <template v-if="avatarUrl">
             <img :src="avatarUrl" alt="用户头像" />
           </template>
@@ -23,12 +30,14 @@
             </template>
           </v-avatar>
           <div class="user-info-basic">
-            <div class="user-name ml-3">{{ localAccount?.username || '未设置昵称' }}<v-icon>{{ localAccount?.user.sex.value ===
-              0 ?
-                'mdi-gender-male' : 'mdi-gender-female' }}</v-icon></div>
+            <div class="user-name ml-3">
+              {{ localAccount?.username || '未设置昵称'
+              }}<v-icon>{{
+                localAccount?.user.sex.value === 0 ? 'mdi-gender-male' : 'mdi-gender-female'
+              }}</v-icon>
+            </div>
             <div class="user-uuid ml-3">{{ localAccount?.uuid || '未设置UUID' }}</div>
           </div>
-
         </div>
         <div class="user-detail mb-2">
           <div>邮箱：{{ localAccount?.email || '未绑定' }}</div>
@@ -40,8 +49,12 @@
       </div>
     </v-menu>
     <!-- 用户信息编辑框 -->
-    <profile-dialog :model-value="profileDialog.show" :user="(user as User)"
-      @update:model-value="profileDialog.show = $event" @handle-update-profile="handleUpdateUserProfile" />
+    <profile-dialog
+      :model-value="profileDialog.show"
+      :user="user as User"
+      @update:model-value="profileDialog.show = $event"
+      @handle-update-profile="handleUpdateUserProfile"
+    />
   </div>
 </template>
 
@@ -58,8 +71,7 @@ import { useAccountService } from '@/modules/account/presentation/composables/us
 const accountStore = useAccountStore();
 const { handleUpdateUserProfile } = useAccountService();
 
-defineProps<{ avatarUrl?: string, size: string }>();
-
+defineProps<{ avatarUrl?: string; size: string }>();
 
 const localAccount = computed(() => accountStore.currentAccount);
 
@@ -75,7 +87,7 @@ const profileDialog = ref<{
   account: Account | null;
 }>({
   show: false,
-  account: null
+  account: null,
 });
 
 const startEditProfile = () => {
@@ -84,7 +96,6 @@ const startEditProfile = () => {
 };
 
 const showInfo = ref(false);
-
 </script>
 
 <style scoped>

@@ -102,7 +102,7 @@ const validator = new FormValidator(config);
 // 校验表单
 async function validateForm(formData) {
   const result = await validator.validateForm(formData);
-  
+
   if (result.valid) {
     console.log('表单校验通过');
   } else {
@@ -116,14 +116,9 @@ async function validateForm(formData) {
 ```vue
 <template>
   <form @submit.prevent="handleSubmit">
-    <input
-      v-model="email.value"
-      @blur="email.touched = true"
-      type="email"
-      placeholder="邮箱"
-    />
+    <input v-model="email.value" @blur="email.touched = true" type="email" placeholder="邮箱" />
     <span v-if="email.error" class="error">{{ email.error }}</span>
-    
+
     <input
       v-model="password.value"
       @blur="password.touched = true"
@@ -131,7 +126,7 @@ async function validateForm(formData) {
       placeholder="密码"
     />
     <span v-if="password.error" class="error">{{ password.error }}</span>
-    
+
     <button type="submit" :disabled="!isValid">登录</button>
   </form>
 </template>
@@ -164,19 +159,25 @@ const validator = new FormValidator({
 
 const isValid = computed(() => !email.value.error && !password.value.error);
 
-watch(() => email.value.value, async (newValue) => {
-  if (email.value.touched) {
-    const result = await validator.validateField('email', newValue, getFormData());
-    email.value.error = result.firstError || '';
-  }
-});
+watch(
+  () => email.value.value,
+  async (newValue) => {
+    if (email.value.touched) {
+      const result = await validator.validateField('email', newValue, getFormData());
+      email.value.error = result.firstError || '';
+    }
+  },
+);
 
-watch(() => password.value.value, async (newValue) => {
-  if (password.value.touched) {
-    const result = await validator.validateField('password', newValue, getFormData());
-    password.value.error = result.firstError || '';
-  }
-});
+watch(
+  () => password.value.value,
+  async (newValue) => {
+    if (password.value.touched) {
+      const result = await validator.validateField('password', newValue, getFormData());
+      password.value.error = result.firstError || '';
+    }
+  },
+);
 
 function getFormData() {
   return {
@@ -187,7 +188,7 @@ function getFormData() {
 
 async function handleSubmit() {
   const result = await validator.validateForm(getFormData());
-  
+
   if (result.valid) {
     console.log('提交数据:', getFormData());
   }
@@ -226,7 +227,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await methods.validateForm('submit');
-    
+
     if (result.valid) {
       console.log('提交数据:', state.values);
     }
@@ -243,7 +244,7 @@ function LoginForm() {
       {state.fields.email?.error && (
         <span className="error">{state.fields.email.error}</span>
       )}
-      
+
       <input
         type="password"
         value={state.fields.password?.value || ''}
@@ -253,7 +254,7 @@ function LoginForm() {
       {state.fields.password?.error && (
         <span className="error">{state.fields.password.error}</span>
       )}
-      
+
       <button type="submit" disabled={!state.valid}>
         登录
       </button>
@@ -349,12 +350,12 @@ BuiltinValidators.json(message?)
 type ValidationTrigger = 'change' | 'blur' | 'submit' | 'mount';
 ```
 
-| 触发器 | 说明 | 使用场景 |
-|--------|------|---------|
-| `change` | 值改变时 | 实时校验 |
-| `blur` | 失去焦点时 | 用户完成输入后校验 |
-| `submit` | 表单提交时 | 最终校验 |
-| `mount` | 组件挂载时 | 初始化校验 |
+| 触发器   | 说明       | 使用场景           |
+| -------- | ---------- | ------------------ |
+| `change` | 值改变时   | 实时校验           |
+| `blur`   | 失去焦点时 | 用户完成输入后校验 |
+| `submit` | 表单提交时 | 最终校验           |
+| `mount`  | 组件挂载时 | 初始化校验         |
 
 ### 配置示例
 
@@ -363,7 +364,7 @@ const config = {
   fields: [
     {
       name: 'email',
-      trigger: ['blur', 'submit'],  // 失焦和提交时校验
+      trigger: ['blur', 'submit'], // 失焦和提交时校验
       rules: [
         BuiltinValidators.required('邮箱不能为空'),
         BuiltinValidators.email('邮箱格式不正确'),
@@ -371,10 +372,8 @@ const config = {
     },
     {
       name: 'password',
-      trigger: ['change'],  // 实时校验
-      rules: [
-        BuiltinValidators.minLength(8, '密码至少8个字符'),
-      ],
+      trigger: ['change'], // 实时校验
+      rules: [BuiltinValidators.minLength(8, '密码至少8个字符')],
     },
   ],
 };
@@ -457,10 +456,7 @@ const config = {
 ```typescript
 // 使用中文
 const zhValidators = new BuiltinValidators('zh-CN');
-const rules = [
-  zhValidators.required('此字段不能为空'),
-  zhValidators.email('请输入有效的邮箱地址'),
-];
+const rules = [zhValidators.required('此字段不能为空'), zhValidators.email('请输入有效的邮箱地址')];
 
 // 使用英文
 const enValidators = new BuiltinValidators('en');
@@ -496,11 +492,11 @@ const rules = [
 
 ```typescript
 // ❌ 不推荐
-BuiltinValidators.required()
+BuiltinValidators.required();
 
 // ✅ 推荐
-BuiltinValidators.required('邮箱不能为空')
-BuiltinValidators.email('请输入有效的邮箱地址，例如: user@example.com')
+BuiltinValidators.required('邮箱不能为空');
+BuiltinValidators.email('请输入有效的邮箱地址，例如: user@example.com');
 ```
 
 ### 3. 异步校验使用防抖
@@ -661,45 +657,46 @@ const registrationValidator = new FormValidator({
 ### FormValidator
 
 #### 构造函数
+
 ```typescript
 constructor(config: FormConfig)
 ```
 
 #### 方法
 
-| 方法 | 签名 | 说明 |
-|------|------|------|
-| `validateField()` | `validateField(fieldName: string, value: any, formData: any, trigger?: ValidationTrigger): Promise<FieldValidationResult>` | 校验单个字段 |
-| `validateFields()` | `validateFields(fieldNames: string[], formData: any, trigger?: ValidationTrigger): Promise<FormValidationResult>` | 校验多个字段 |
-| `validateForm()` | `validateForm(formData: any, trigger?: ValidationTrigger): Promise<FormValidationResult>` | 校验整个表单 |
-| `addRule()` | `addRule(fieldName: string, rule: ValidationRule): void` | 添加规则 |
-| `removeRule()` | `removeRule(fieldName: string, ruleType: string): void` | 移除规则 |
-| `clearRules()` | `clearRules(fieldName?: string): void` | 清空规则 |
-| `addEventListener()` | `addEventListener(type: ValidationEventType, listener: ValidationEventListener): void` | 添加事件监听 |
-| `removeEventListener()` | `removeEventListener(type: ValidationEventType, listener: ValidationEventListener): void` | 移除事件监听 |
-| `getConfig()` | `getConfig(): FormConfig` | 获取配置 |
-| `updateConfig()` | `updateConfig(config: Partial<FormConfig>): void` | 更新配置 |
-| `destroy()` | `destroy(): void` | 销毁实例 |
+| 方法                    | 签名                                                                                                                       | 说明         |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `validateField()`       | `validateField(fieldName: string, value: any, formData: any, trigger?: ValidationTrigger): Promise<FieldValidationResult>` | 校验单个字段 |
+| `validateFields()`      | `validateFields(fieldNames: string[], formData: any, trigger?: ValidationTrigger): Promise<FormValidationResult>`          | 校验多个字段 |
+| `validateForm()`        | `validateForm(formData: any, trigger?: ValidationTrigger): Promise<FormValidationResult>`                                  | 校验整个表单 |
+| `addRule()`             | `addRule(fieldName: string, rule: ValidationRule): void`                                                                   | 添加规则     |
+| `removeRule()`          | `removeRule(fieldName: string, ruleType: string): void`                                                                    | 移除规则     |
+| `clearRules()`          | `clearRules(fieldName?: string): void`                                                                                     | 清空规则     |
+| `addEventListener()`    | `addEventListener(type: ValidationEventType, listener: ValidationEventListener): void`                                     | 添加事件监听 |
+| `removeEventListener()` | `removeEventListener(type: ValidationEventType, listener: ValidationEventListener): void`                                  | 移除事件监听 |
+| `getConfig()`           | `getConfig(): FormConfig`                                                                                                  | 获取配置     |
+| `updateConfig()`        | `updateConfig(config: Partial<FormConfig>): void`                                                                          | 更新配置     |
+| `destroy()`             | `destroy(): void`                                                                                                          | 销毁实例     |
 
 ### BuiltinValidators
 
 #### 静态方法
 
-| 方法 | 签名 | 说明 |
-|------|------|------|
-| `required()` | `required(message?: string): RequiredRule` | 必填 |
-| `minLength()` | `minLength(min: number, message?: string): LengthRule` | 最小长度 |
-| `maxLength()` | `maxLength(max: number, message?: string): LengthRule` | 最大长度 |
-| `min()` | `min(min: number, message?: string): RangeRule` | 最小值 |
-| `max()` | `max(max: number, message?: string): RangeRule` | 最大值 |
-| `range()` | `range(min: number, max: number, message?: string): RangeRule` | 范围 |
-| `pattern()` | `pattern(regex: RegExp, message?: string): PatternRule` | 正则 |
-| `number()` | `number(): NumberRule` | 数字 |
-| `email()` | `email(message?: string): PatternRule` | 邮箱 |
-| `phone()` | `phone(message?: string): PatternRule` | 手机号 |
-| `url()` | `url(message?: string): PatternRule` | URL |
-| `date()` | `date(message?: string): PatternRule` | 日期 |
-| `json()` | `json(message?: string): ValidationRule` | JSON |
+| 方法          | 签名                                                           | 说明     |
+| ------------- | -------------------------------------------------------------- | -------- |
+| `required()`  | `required(message?: string): RequiredRule`                     | 必填     |
+| `minLength()` | `minLength(min: number, message?: string): LengthRule`         | 最小长度 |
+| `maxLength()` | `maxLength(max: number, message?: string): LengthRule`         | 最大长度 |
+| `min()`       | `min(min: number, message?: string): RangeRule`                | 最小值   |
+| `max()`       | `max(max: number, message?: string): RangeRule`                | 最大值   |
+| `range()`     | `range(min: number, max: number, message?: string): RangeRule` | 范围     |
+| `pattern()`   | `pattern(regex: RegExp, message?: string): PatternRule`        | 正则     |
+| `number()`    | `number(): NumberRule`                                         | 数字     |
+| `email()`     | `email(message?: string): PatternRule`                         | 邮箱     |
+| `phone()`     | `phone(message?: string): PatternRule`                         | 手机号   |
+| `url()`       | `url(message?: string): PatternRule`                           | URL      |
+| `date()`      | `date(message?: string): PatternRule`                          | 日期     |
+| `json()`      | `json(message?: string): ValidationRule`                       | JSON     |
 
 ---
 
@@ -713,8 +710,8 @@ constructor(config: FormConfig)
 
 ## 📝 变更历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
+| 版本  | 日期       | 变更     |
+| ----- | ---------- | -------- |
 | 1.0.0 | 2025-01-01 | 初始版本 |
 
 ---

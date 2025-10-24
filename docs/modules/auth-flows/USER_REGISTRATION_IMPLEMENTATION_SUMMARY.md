@@ -11,6 +11,7 @@
 **文件**: `apps/api/src/modules/account/application/services/RegistrationApplicationService.ts`
 
 **主要功能**:
+
 - ✅ 用户注册主流程编排
 - ✅ 输入验证（用户名、邮箱、密码强度）
 - ✅ 唯一性检查（用户名、邮箱）
@@ -20,15 +21,16 @@
 - ✅ 完整的日志记录
 
 **关键设计模式**:
+
 ```typescript
 export class RegistrationApplicationService {
   // 单例模式
   static async getInstance(): Promise<RegistrationApplicationService>
   static async createInstance(...): Promise<RegistrationApplicationService>
-  
+
   // 主业务流程
   async registerUser(request: RegisterUserRequest): Promise<RegisterUserResponse>
-  
+
   // 私有辅助方法
   private validateRegistrationInput(request: RegisterUserRequest): void
   private async checkUniqueness(username: string, email: string): Promise<void>
@@ -43,6 +45,7 @@ export class RegistrationApplicationService {
 **文件**: `apps/api/src/modules/account/interface/http/RegistrationController.ts`
 
 **主要功能**:
+
 - ✅ HTTP 请求处理
 - ✅ 输入参数验证
 - ✅ 错误分类和响应码处理
@@ -50,6 +53,7 @@ export class RegistrationApplicationService {
 - ✅ 统一的响应格式
 
 **错误处理映射**:
+
 - 缺少必填字段 → 400 BAD_REQUEST
 - 用户名/邮箱已存在 → 409 CONFLICT
 - 格式/强度验证失败 → 422 VALIDATION_ERROR
@@ -60,11 +64,13 @@ export class RegistrationApplicationService {
 **文件**: `apps/api/src/modules/authentication/interface/http/authenticationRoutes.ts`
 
 **新增路由**:
+
 ```typescript
-POST /api/v1/register
+POST / api / v1 / register;
 ```
 
 **Swagger 文档**:
+
 - ✅ 完整的 API 文档注释
 - ✅ 请求参数说明
 - ✅ 响应格式定义
@@ -75,6 +81,7 @@ POST /api/v1/register
 **文件**: `apps/api/test-registration.ts`
 
 **测试用例覆盖**:
+
 1. ✅ 正常注册 - 完整信息
 2. ✅ 正常注册 - 最小信息
 3. ✅ 失败 - 用户名太短
@@ -121,14 +128,11 @@ POST /api/v1/register
 
 ```typescript
 // 使用容器模式管理依赖
-AccountContainer.getInstance().getAccountRepository()
-AuthenticationContainer.getInstance().getAuthCredentialRepository()
+AccountContainer.getInstance().getAccountRepository();
+AuthenticationContainer.getInstance().getAuthCredentialRepository();
 
 // 支持测试注入
-RegistrationApplicationService.createInstance(
-  customAccountRepository,
-  customCredentialRepository
-)
+RegistrationApplicationService.createInstance(customAccountRepository, customCredentialRepository);
 ```
 
 ### 事件驱动
@@ -147,11 +151,13 @@ eventBus.publish({
 ## 🔐 安全设计
 
 ### 1. 密码安全
+
 - ✅ 使用 bcryptjs（12 salt rounds）
 - ✅ 密码强度验证：至少 8 字符，包含大小写字母和数字
 - ✅ 密码从不在日志中输出
 
 ### 2. 输入验证
+
 ```typescript
 // 用户名：3-20 字符，字母数字下划线
 const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
@@ -164,11 +170,13 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 ```
 
 ### 3. 唯一性保证
+
 - ✅ 用户名唯一性检查
 - ✅ 邮箱唯一性检查
 - ✅ 数据库级别的唯一约束
 
 ### 4. 事务完整性
+
 - ✅ Account 和 AuthCredential 必须同时创建成功
 - ✅ 任何失败都会回滚整个事务
 - ✅ 使用 Prisma $transaction
@@ -217,20 +225,23 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 **Endpoint**: `POST /api/v1/register`
 
 **Request Body**:
+
 ```json
 {
-  "username": "testuser",        // 必填，3-20 字符，字母数字下划线
-  "email": "test@example.com",   // 必填，标准邮箱格式
-  "password": "Test1234",         // 必填，8+ 字符，大小写字母数字
-  "profile": {                    // 可选
-    "nickname": "Test User",      // 昵称
-    "avatarUrl": "https://...",   // 头像 URL
-    "bio": "Personal bio"          // 个人简介
+  "username": "testuser", // 必填，3-20 字符，字母数字下划线
+  "email": "test@example.com", // 必填，标准邮箱格式
+  "password": "Test1234", // 必填，8+ 字符，大小写字母数字
+  "profile": {
+    // 可选
+    "nickname": "Test User", // 昵称
+    "avatarUrl": "https://...", // 头像 URL
+    "bio": "Personal bio" // 个人简介
   }
 }
 ```
 
 **Success Response (201)**:
+
 ```json
 {
   "code": 200,
@@ -250,15 +261,15 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 **Error Responses**:
 
-| 状态码 | 场景 | 示例消息 |
-|--------|------|----------|
-| 400 | 缺少必填字段 | "Username, email, and password are required" |
-| 409 | 用户名已存在 | "Username already exists: testuser" |
-| 409 | 邮箱已存在 | "Email already exists: test@example.com" |
-| 422 | 用户名格式错误 | "Username must be 3-20 characters..." |
-| 422 | 邮箱格式错误 | "Invalid email format" |
-| 422 | 密码太弱 | "Password must be at least 8 characters..." |
-| 500 | 服务器错误 | "Internal server error" |
+| 状态码 | 场景           | 示例消息                                     |
+| ------ | -------------- | -------------------------------------------- |
+| 400    | 缺少必填字段   | "Username, email, and password are required" |
+| 409    | 用户名已存在   | "Username already exists: testuser"          |
+| 409    | 邮箱已存在     | "Email already exists: test@example.com"     |
+| 422    | 用户名格式错误 | "Username must be 3-20 characters..."        |
+| 422    | 邮箱格式错误   | "Invalid email format"                       |
+| 422    | 密码太弱       | "Password must be at least 8 characters..."  |
+| 500    | 服务器错误     | "Internal server error"                      |
 
 ## 🧪 测试
 

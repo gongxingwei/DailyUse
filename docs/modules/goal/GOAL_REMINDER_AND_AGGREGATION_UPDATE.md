@@ -1,6 +1,7 @@
 # Goal Module Contracts - 提醒配置与 KeyResult 计算方式优化
 
 ## 更新日期
+
 2025-10-14
 
 ## 概述
@@ -18,11 +19,11 @@
 
 ```typescript
 export enum AggregationMethod {
-  SUM = 'SUM',           // 求和（默认，适合累计型）
-  AVERAGE = 'AVERAGE',   // 求平均（适合平均值型）
-  MAX = 'MAX',           // 求最大值（适合峰值型）
-  MIN = 'MIN',           // 求最小值（适合低值型）
-  LAST = 'LAST',         // 取最后一次（适合绝对值型）
+  SUM = 'SUM', // 求和（默认，适合累计型）
+  AVERAGE = 'AVERAGE', // 求平均（适合平均值型）
+  MAX = 'MAX', // 求最大值（适合峰值型）
+  MIN = 'MIN', // 求最小值（适合低值型）
+  LAST = 'LAST', // 取最后一次（适合绝对值型）
 }
 ```
 
@@ -31,19 +32,15 @@ export enum AggregationMethod {
 - **SUM（求和）**：适合累计型指标
   - 示例：阅读书籍数量、跑步里程数
   - 计算：所有记录值相加
-  
 - **AVERAGE（求平均）**：适合平均值型指标
   - 示例：每日睡眠时长、学习效率评分
   - 计算：所有记录值的平均数
-  
 - **MAX（求最大值）**：适合峰值型指标
   - 示例：单次举重最大重量、最佳考试成绩
   - 计算：所有记录值中的最大值
-  
 - **MIN（求最小值）**：适合低值型指标
   - 示例：最短完成时间、最低体脂率
   - 计算：所有记录值中的最小值
-  
 - **LAST（取最后一次）**：适合绝对值型指标
   - 示例：当前体重、账户余额
   - 计算：取最新的记录值
@@ -53,7 +50,7 @@ export enum AggregationMethod {
 ```typescript
 export enum ReminderTriggerType {
   TIME_PROGRESS_PERCENTAGE = 'TIME_PROGRESS_PERCENTAGE', // 时间进度百分比
-  REMAINING_DAYS = 'REMAINING_DAYS',                     // 剩余天数
+  REMAINING_DAYS = 'REMAINING_DAYS', // 剩余天数
 }
 ```
 
@@ -67,8 +64,8 @@ export enum ReminderTriggerType {
 // 单个提醒触发器
 export interface ReminderTrigger {
   type: ReminderTriggerType;
-  value: number;      // 百分比（50 = 50%）或天数（100 = 100天）
-  enabled: boolean;   // 是否启用
+  value: number; // 百分比（50 = 50%）或天数（100 = 100天）
+  enabled: boolean; // 是否启用
 }
 ```
 
@@ -76,7 +73,7 @@ export interface ReminderTrigger {
 
 ```typescript
 export interface IGoalReminderConfigServer {
-  enabled: boolean;           // 总开关
+  enabled: boolean; // 总开关
   triggers: ReminderTrigger[]; // 触发器列表
 
   // 业务方法
@@ -99,11 +96,11 @@ export interface IGoalReminderConfigClient {
   triggers: ReminderTrigger[];
 
   // UI 辅助属性
-  statusText: string;              // "已启用 3 个提醒" / "未启用"
-  progressTriggerCount: number;     // 时间进度触发器数量
+  statusText: string; // "已启用 3 个提醒" / "未启用"
+  progressTriggerCount: number; // 时间进度触发器数量
   remainingDaysTriggerCount: number; // 剩余天数触发器数量
-  activeTriggerCount: number;       // 启用的触发器数量
-  triggerSummary: string;          // "进度 50%, 20%; 剩余 100天, 50天"
+  activeTriggerCount: number; // 启用的触发器数量
+  triggerSummary: string; // "进度 50%, 20%; 剩余 100天, 50天"
 
   // UI 辅助方法
   getProgressTriggers(): ReminderTrigger[];
@@ -119,12 +116,12 @@ export interface IGoalReminderConfigClient {
 const reminderConfig: GoalReminderConfigServerDTO = {
   enabled: true,
   triggers: [
-    { type: 'TIME_PROGRESS_PERCENTAGE', value: 50, enabled: true },  // 时间进度 50%
-    { type: 'TIME_PROGRESS_PERCENTAGE', value: 20, enabled: true },  // 时间进度 20%
-    { type: 'REMAINING_DAYS', value: 100, enabled: true },          // 剩余 100 天
-    { type: 'REMAINING_DAYS', value: 50, enabled: true },           // 剩余 50 天
-    { type: 'REMAINING_DAYS', value: 7, enabled: false },           // 剩余 7 天（禁用）
-  ]
+    { type: 'TIME_PROGRESS_PERCENTAGE', value: 50, enabled: true }, // 时间进度 50%
+    { type: 'TIME_PROGRESS_PERCENTAGE', value: 20, enabled: true }, // 时间进度 20%
+    { type: 'REMAINING_DAYS', value: 100, enabled: true }, // 剩余 100 天
+    { type: 'REMAINING_DAYS', value: 50, enabled: true }, // 剩余 50 天
+    { type: 'REMAINING_DAYS', value: 7, enabled: false }, // 剩余 7 天（禁用）
+  ],
 };
 
 // 添加到目标
@@ -140,7 +137,7 @@ goal.updateReminderConfig(reminderConfig);
 ```typescript
 export interface KeyResultProgressServerDTO {
   valueType: KeyResultValueType;
-  aggregationMethod: AggregationMethod;  // 新增：聚合计算方式
+  aggregationMethod: AggregationMethod; // 新增：聚合计算方式
   targetValue: number;
   currentValue: number;
   unit?: string | null;
@@ -157,8 +154,8 @@ export interface IKeyResultProgressServer {
 
 export interface KeyResultServer {
   // 新增方法
-  recalculateProgress(): void;        // 根据聚合方式重新计算进度
-  getRecordValues(): number[];        // 获取所有记录的值
+  recalculateProgress(): void; // 根据聚合方式重新计算进度
+  getRecordValues(): number[]; // 获取所有记录的值
 }
 ```
 
@@ -167,8 +164,8 @@ export interface KeyResultServer {
 ```typescript
 export interface KeyResultClientDTO {
   // 新增 UI 字段
-  aggregationMethodText: string;      // "求和" / "求平均" / "求最大值" / "求最小值" / "取最后一次"
-  calculationExplanation: string;     // "当前进度由 5 条记录求和计算得出"
+  aggregationMethodText: string; // "求和" / "求平均" / "求最大值" / "求最小值" / "取最后一次"
+  calculationExplanation: string; // "当前进度由 5 条记录求和计算得出"
 }
 
 export interface KeyResultClient {
@@ -187,10 +184,10 @@ const runningKR: KeyResultServerDTO = {
   title: '跑步 500 公里',
   progress: {
     valueType: 'INCREMENTAL',
-    aggregationMethod: 'SUM',      // 求和
+    aggregationMethod: 'SUM', // 求和
     targetValue: 500,
     currentValue: 150,
-    unit: '公里'
+    unit: '公里',
   },
   // ... 其他字段
 };
@@ -203,10 +200,10 @@ const studyKR: KeyResultServerDTO = {
   title: '每日平均学习 2 小时',
   progress: {
     valueType: 'ABSOLUTE',
-    aggregationMethod: 'AVERAGE',  // 求平均
+    aggregationMethod: 'AVERAGE', // 求平均
     targetValue: 2,
     currentValue: 1.8,
-    unit: '小时'
+    unit: '小时',
   },
 };
 
@@ -218,10 +215,10 @@ const liftingKR: KeyResultServerDTO = {
   title: '卧推最大重量 100 公斤',
   progress: {
     valueType: 'ABSOLUTE',
-    aggregationMethod: 'MAX',      // 求最大值
+    aggregationMethod: 'MAX', // 求最大值
     targetValue: 100,
     currentValue: 85,
-    unit: '公斤'
+    unit: '公斤',
   },
 };
 
@@ -233,10 +230,10 @@ const weightKR: KeyResultServerDTO = {
   title: '体重降至 70 公斤',
   progress: {
     valueType: 'ABSOLUTE',
-    aggregationMethod: 'LAST',     // 取最后一次
+    aggregationMethod: 'LAST', // 取最后一次
     targetValue: 70,
     currentValue: 75,
-    unit: '公斤'
+    unit: '公斤',
   },
 };
 
@@ -253,12 +250,12 @@ const weightKR: KeyResultServerDTO = {
 ```typescript
 export interface GoalServerDTO {
   // ... 其他字段
-  reminderConfig?: GoalReminderConfigServerDTO | null;  // 新增
+  reminderConfig?: GoalReminderConfigServerDTO | null; // 新增
 }
 
 export interface GoalPersistenceDTO {
   // ... 其他字段
-  reminder_config?: string | null;  // JSON string
+  reminder_config?: string | null; // JSON string
 }
 ```
 
@@ -280,15 +277,15 @@ export interface GoalServer {
 ```typescript
 export interface GoalClientDTO {
   // 新增 UI 字段
-  hasActiveReminders: boolean;    // 是否有启用的提醒
+  hasActiveReminders: boolean; // 是否有启用的提醒
   reminderSummary?: string | null; // 提醒摘要
 }
 
 export interface GoalClient {
   // 新增 UI 方法
-  getReminderStatusText(): string;      // "已启用 3 个提醒"
-  getReminderIcon(): string;            // 提醒图标
-  shouldShowReminderBadge(): boolean;   // 是否显示提醒徽章
+  getReminderStatusText(): string; // "已启用 3 个提醒"
+  getReminderIcon(): string; // 提醒图标
+  shouldShowReminderBadge(): boolean; // 是否显示提醒徽章
 }
 ```
 
@@ -335,25 +332,25 @@ goal.updateReminderConfig({
   triggers: [
     { type: 'TIME_PROGRESS_PERCENTAGE', value: 50, enabled: true },
     { type: 'REMAINING_DAYS', value: 100, enabled: true },
-  ]
+  ],
 });
 
 // 2. Schedule 模块监听 Goal 事件，创建/更新定时任务
 scheduleService.onGoalReminderConfigUpdated((goalUuid, config) => {
   // 删除旧的定时任务
   scheduleService.cancelGoalReminders(goalUuid);
-  
+
   // 根据新配置创建定时任务
   if (config.enabled) {
     config.triggers
-      .filter(t => t.enabled)
-      .forEach(trigger => {
+      .filter((t) => t.enabled)
+      .forEach((trigger) => {
         const cronExpression = calculateCronExpression(goal, trigger);
         scheduleService.createTask({
           type: 'GOAL_REMINDER',
           targetId: goalUuid,
           cronExpression,
-          metadata: { trigger }
+          metadata: { trigger },
         });
       });
   }
@@ -365,7 +362,7 @@ scheduleService.onTaskTriggered((task) => {
     notificationService.send({
       type: 'GOAL_REMINDER',
       targetId: task.targetId,
-      message: generateReminderMessage(task.metadata.trigger)
+      message: generateReminderMessage(task.metadata.trigger),
     });
   }
 });
@@ -393,25 +390,25 @@ scheduleService.onTaskTriggered((task) => {
 ```tsx
 <ReminderConfigPanel goal={goal}>
   <Switch checked={reminderConfig.enabled} onChange={handleToggle} />
-  
+
   <div className="triggers">
     <h4>时间进度提醒</h4>
-    {reminderConfig.getProgressTriggers().map(trigger => (
+    {reminderConfig.getProgressTriggers().map((trigger) => (
       <TriggerItem key={`${trigger.type}-${trigger.value}`}>
         时间进度达到 {trigger.value}% 时提醒
         <Switch checked={trigger.enabled} />
       </TriggerItem>
     ))}
-    
+
     <h4>剩余天数提醒</h4>
-    {reminderConfig.getRemainingDaysTriggers().map(trigger => (
+    {reminderConfig.getRemainingDaysTriggers().map((trigger) => (
       <TriggerItem key={`${trigger.type}-${trigger.value}`}>
         还剩 {trigger.value} 天时提醒
         <Switch checked={trigger.enabled} />
       </TriggerItem>
     ))}
   </div>
-  
+
   <div className="summary">
     {reminderConfig.triggerSummary} {/* "进度 50%, 20%; 剩余 100天, 50天" */}
   </div>

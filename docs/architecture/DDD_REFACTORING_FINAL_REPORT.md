@@ -14,6 +14,7 @@
 ### 阶段 1: DomainService 重构（✅ 100%）
 
 #### 1.1 AccountDomainService
+
 - ✅ 移除 Repository 依赖
 - ✅ 删除所有持久化操作
 - ✅ 保留创建聚合根方法
@@ -21,6 +22,7 @@
 - ✅ 代码行数: 145 行
 
 #### 1.2 AuthenticationDomainService
+
 - ✅ 移除 Repository 依赖
 - ✅ 删除所有持久化操作
 - ✅ 保留创建聚合根方法
@@ -34,6 +36,7 @@
 ### 阶段 2: Account 模块 ApplicationService 创建（✅ 100%）
 
 #### 2.1 RegistrationApplicationService
+
 - ✅ 更新使用重构后的 DomainService
 - ✅ 实现完整注册流程编排
 - ✅ 支持事务管理（标记 TODO）
@@ -41,6 +44,7 @@
 - ✅ 代码行数: ~180 行
 
 #### 2.2 AccountProfileApplicationService
+
 - ✅ 从零创建
 - ✅ 实现资料更新功能
 - ✅ 调用 DomainService 验证
@@ -48,6 +52,7 @@
 - ✅ 代码行数: ~180 行
 
 #### 2.3 AccountEmailApplicationService
+
 - ✅ 从零创建
 - ✅ 实现邮箱更新和验证功能
 - ✅ 唯一性检查
@@ -55,6 +60,7 @@
 - ✅ 代码行数: ~250 行
 
 #### 2.4 AccountStatusApplicationService
+
 - ✅ 从零创建
 - ✅ 实现登录记录、停用、删除功能
 - ✅ 状态管理
@@ -68,6 +74,7 @@
 ### 阶段 3: Authentication 模块 ApplicationService 创建（✅ 100%）
 
 #### 3.1 AuthenticationApplicationService
+
 - ✅ 从零创建
 - ✅ 实现登录验证流程
 - ✅ 会话创建
@@ -77,6 +84,7 @@
 - ✅ 零编译错误
 
 #### 3.2 PasswordManagementApplicationService
+
 - ✅ 从零创建
 - ✅ 实现密码修改功能
 - ✅ 实现密码重置功能
@@ -86,6 +94,7 @@
 - ✅ 零编译错误
 
 #### 3.3 SessionManagementApplicationService
+
 - ✅ 从零创建
 - ✅ 实现会话刷新
 - ✅ 实现会话验证
@@ -97,6 +106,7 @@
 - ✅ 零编译错误
 
 #### 3.4 TwoFactorApplicationService
+
 - ✅ 从零创建
 - ✅ 实现启用/禁用双因素认证
 - ✅ 实现代码验证
@@ -106,6 +116,7 @@
 - ✅ 零编译错误
 
 #### 3.5 RememberMeApplicationService
+
 - ✅ 从零创建
 - ✅ 实现创建记住我令牌
 - ✅ 实现验证令牌（待完善）
@@ -116,6 +127,7 @@
 - ✅ 零编译错误
 
 #### 3.6 ApiKeyApplicationService
+
 - ✅ 从零创建
 - ✅ 实现创建 API Key
 - ✅ 实现验证 API Key（待完善）
@@ -132,6 +144,7 @@
 ### 阶段 4: 文档和示例（✅ 100%）
 
 #### 4.1 架构文档
+
 - ✅ `DOMAIN_SERVICE_BEST_PRACTICES.md` - DomainService 最佳实践指南
 - ✅ `DOMAIN_SERVICE_REFACTORING_SUMMARY.md` - DomainService 重构总结
 - ✅ `APPLICATION_SERVICE_CREATION_SUMMARY.md` - ApplicationService 创建总结
@@ -140,10 +153,12 @@
 - ✅ `REPOSITORY_TRANSACTION_SUPPORT_GUIDE.md` - Repository 事务支持指南
 
 #### 4.2 示例代码
+
 - ✅ `AuthenticationController.example.ts` - Controller 使用示例
 - ✅ `AuthenticationApplicationService.integration.test.example.ts` - 集成测试示例
 
 #### 4.3 索引文件
+
 - ✅ `authentication/application/services/index.ts` - 导出所有 ApplicationService
 
 **小计**: 9 个文档和示例文件
@@ -154,31 +169,31 @@
 
 ### 代码统计
 
-| 类型 | 数量 | 代码行数 | 状态 |
-|------|------|----------|------|
-| DomainService | 2 | ~412 | ✅ 100% |
-| Account ApplicationService | 4 | ~920 | ✅ 100% |
-| Authentication ApplicationService | 6 | ~2,105 | ✅ 100% |
-| 文档和示例 | 9 | ~3,000+ | ✅ 100% |
-| **总计** | **21** | **~6,437** | **✅ 100%** |
+| 类型                              | 数量   | 代码行数   | 状态        |
+| --------------------------------- | ------ | ---------- | ----------- |
+| DomainService                     | 2      | ~412       | ✅ 100%     |
+| Account ApplicationService        | 4      | ~920       | ✅ 100%     |
+| Authentication ApplicationService | 6      | ~2,105     | ✅ 100%     |
+| 文档和示例                        | 9      | ~3,000+    | ✅ 100%     |
+| **总计**                          | **21** | **~6,437** | **✅ 100%** |
 
 ### 功能统计
 
-| 功能类别 | 方法数 | 事件数 | 状态 |
-|----------|--------|--------|------|
-| 账户管理 | 10 | 7 | ✅ |
-| 用户认证 | 22 | 15 | ✅ |
+| 功能类别 | 方法数 | 事件数 | 状态   |
+| -------- | ------ | ------ | ------ |
+| 账户管理 | 10     | 7      | ✅     |
+| 用户认证 | 22     | 15     | ✅     |
 | **总计** | **32** | **22** | **✅** |
 
 ### 质量指标
 
-| 指标 | 结果 | 状态 |
-|------|------|------|
-| 编译错误 | 0 | ✅ |
-| TypeScript 类型覆盖 | 100% | ✅ |
-| DDD 最佳实践遵循 | 100% | ✅ |
-| 文档完整性 | 100% | ✅ |
-| 代码注释 | 详细 | ✅ |
+| 指标                | 结果 | 状态 |
+| ------------------- | ---- | ---- |
+| 编译错误            | 0    | ✅   |
+| TypeScript 类型覆盖 | 100% | ✅   |
+| DDD 最佳实践遵循    | 100% | ✅   |
+| 文档完整性          | 100% | ✅   |
+| 代码注释            | 详细 | ✅   |
 
 ---
 
@@ -395,12 +410,14 @@ await this.repository.save(aggregate, tx);
 ### 1. DomainService 原则
 
 ✅ **应该做**:
+
 - 创建聚合根（无副作用）
 - 验证复杂业务规则
 - 返回聚合根对象
 - 保持纯函数特性
 
 ❌ **不应该做**:
+
 - 调用 Repository
 - 发布事件
 - 管理事务
@@ -409,6 +426,7 @@ await this.repository.save(aggregate, tx);
 ### 2. ApplicationService 原则
 
 ✅ **应该做**:
+
 - 编排业务流程
 - 调用 DomainService 创建聚合根
 - 调用 Repository 持久化
@@ -417,6 +435,7 @@ await this.repository.save(aggregate, tx);
 - 返回 DTO
 
 ❌ **不应该做**:
+
 - 包含复杂业务规则（委托给 DomainService）
 - 直接操作聚合根内部状态
 
@@ -427,10 +446,10 @@ await this.repository.save(aggregate, tx);
 await prisma.$transaction(async (tx) => {
   // 1. DomainService 创建聚合根（无副作用）
   const account = this.domainService.createAccount(params);
-  
+
   // 2. ApplicationService 持久化（使用事务上下文）
   await this.repository.save(account, tx);
-  
+
   // 3. 其他操作也在同一事务中
   const credential = this.authDomainService.createPasswordCredential(...);
   await this.credentialRepository.save(credential, tx);
@@ -445,10 +464,10 @@ await eventBus.publish({...});
 ```typescript
 async operation(request: Request): Promise<Response> {
   logger.info('[Service] Starting operation');
-  
+
   try {
     // 业务逻辑
-    
+
     logger.info('[Service] Operation completed');
     return response;
   } catch (error) {
@@ -466,14 +485,14 @@ async operation(request: Request): Promise<Response> {
 
 ### 成功指标
 
-| 指标 | 目标 | 实际 | 达成 |
-|------|------|------|------|
-| DomainService 重构 | 2 个 | 2 个 | ✅ 100% |
+| 指标                    | 目标  | 实际  | 达成    |
+| ----------------------- | ----- | ----- | ------- |
+| DomainService 重构      | 2 个  | 2 个  | ✅ 100% |
 | ApplicationService 创建 | 10 个 | 10 个 | ✅ 100% |
-| 代码质量（零错误） | 是 | 是 | ✅ 100% |
-| 文档完整性 | 完整 | 完整 | ✅ 100% |
-| 示例代码 | 有 | 有 | ✅ 100% |
-| 整体完成度 | 100% | 100% | ✅ 100% |
+| 代码质量（零错误）      | 是    | 是    | ✅ 100% |
+| 文档完整性              | 完整  | 完整  | ✅ 100% |
+| 示例代码                | 有    | 有    | ✅ 100% |
+| 整体完成度              | 100%  | 100%  | ✅ 100% |
 
 ### 项目亮点
 

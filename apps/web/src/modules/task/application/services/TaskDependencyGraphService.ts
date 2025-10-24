@@ -1,6 +1,6 @@
 /**
  * Task Dependency Graph Service
- * 
+ *
  * 负责将任务依赖数据转换为 ECharts Graph 可视化格式
  * 并提供关键路径计算、拓扑排序等图算法功能
  */
@@ -125,19 +125,16 @@ export class TaskDependencyGraphService {
   /**
    * 将任务和依赖数据转换为 ECharts Graph 格式
    */
-  transformToGraphData(
-    tasks: TaskClientDTO[],
-    dependencies: TaskDependencyClientDTO[]
-  ): GraphData {
+  transformToGraphData(tasks: TaskClientDTO[], dependencies: TaskDependencyClientDTO[]): GraphData {
     // 创建任务 UUID 到任务对象的映射
     const taskMap = new Map<string, TaskClientDTO>();
-    tasks.forEach(task => taskMap.set(task.uuid, task));
+    tasks.forEach((task) => taskMap.set(task.uuid, task));
 
     // 计算每个任务的依赖状态
     const taskDependencyStatus = this.calculateDependencyStatus(tasks, dependencies);
 
     // 转换节点
-    const nodes: GraphNode[] = tasks.map(task => {
+    const nodes: GraphNode[] = tasks.map((task) => {
       const status = taskDependencyStatus.get(task.uuid) || 'PENDING';
       const color = this.getTaskColor(task, status);
       const symbolSize = this.calculateNodeSize(task);
@@ -146,7 +143,14 @@ export class TaskDependencyGraphService {
       return {
         id: task.uuid,
         name: task.title,
-        value: priority === 'CRITICAL' ? 100 : priority === 'HIGH' ? 75 : priority === 'MEDIUM' ? 50 : 25,
+        value:
+          priority === 'CRITICAL'
+            ? 100
+            : priority === 'HIGH'
+              ? 75
+              : priority === 'MEDIUM'
+                ? 50
+                : 25,
         category: this.getTaskCategory(task),
         symbolSize,
         label: {
@@ -178,7 +182,7 @@ export class TaskDependencyGraphService {
     });
 
     // 转换边
-    const edges: GraphEdge[] = dependencies.map(dep => ({
+    const edges: GraphEdge[] = dependencies.map((dep) => ({
       source: dep.predecessorTaskUuid,
       target: dep.successorTaskUuid,
       value: dep.dependencyType,
@@ -216,25 +220,25 @@ export class TaskDependencyGraphService {
    */
   private calculateDependencyStatus(
     tasks: TaskClientDTO[],
-    dependencies: TaskDependencyClientDTO[]
+    dependencies: TaskDependencyClientDTO[],
   ): Map<string, string> {
     const statusMap = new Map<string, string>();
     const taskMap = new Map<string, TaskClientDTO>();
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       taskMap.set(task.uuid, task);
       statusMap.set(task.uuid, task.status);
     });
 
     // 构建前置任务映射
     const predecessorMap = new Map<string, string[]>();
-    dependencies.forEach(dep => {
+    dependencies.forEach((dep) => {
       const predecessors = predecessorMap.get(dep.successorTaskUuid) || [];
       predecessors.push(dep.predecessorTaskUuid);
       predecessorMap.set(dep.successorTaskUuid, predecessors);
     });
 
     // 计算每个任务的状态
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       if (task.status === 'COMPLETED') {
         statusMap.set(task.uuid, 'COMPLETED');
         return;
@@ -253,7 +257,7 @@ export class TaskDependencyGraphService {
       }
 
       // 检查前置任务是否全部完成
-      const allPredecessorsCompleted = predecessors.every(predUuid => {
+      const allPredecessorsCompleted = predecessors.every((predUuid) => {
         const predTask = taskMap.get(predUuid);
         return predTask?.status === 'COMPLETED';
       });
@@ -320,31 +324,31 @@ export class TaskDependencyGraphService {
    */
   calculateCriticalPath(
     tasks: TaskClientDTO[],
-    dependencies: TaskDependencyClientDTO[]
+    dependencies: TaskDependencyClientDTO[],
   ): CriticalPathResult {
     // 构建任务映射
     const taskMap = new Map<string, TaskClientDTO>();
-    tasks.forEach(task => taskMap.set(task.uuid, task));
+    tasks.forEach((task) => taskMap.set(task.uuid, task));
 
     // 构建邻接表（前驱 -> 后继）
     const adjacencyList = new Map<string, string[]>();
     const inDegree = new Map<string, number>();
-    
-    tasks.forEach(task => {
+
+    tasks.forEach((task) => {
       adjacencyList.set(task.uuid, []);
       inDegree.set(task.uuid, 0);
     });
 
-    dependencies.forEach(dep => {
+    dependencies.forEach((dep) => {
       const successors = adjacencyList.get(dep.predecessorTaskUuid) || [];
       successors.push(dep.successorTaskUuid);
       adjacencyList.set(dep.predecessorTaskUuid, successors);
-      
+
       inDegree.set(dep.successorTaskUuid, (inDegree.get(dep.successorTaskUuid) || 0) + 1);
     });
 
     // 找到起始节点（入度为 0）
-    const startNodes = tasks.filter(task => inDegree.get(task.uuid) === 0);
+    const startNodes = tasks.filter((task) => inDegree.get(task.uuid) === 0);
     if (startNodes.length === 0) {
       // 可能存在循环依赖
       return { path: [], duration: 0, edges: [] };
@@ -353,8 +357,8 @@ export class TaskDependencyGraphService {
     // 使用拓扑排序 + 动态规划计算最长路径
     const longestDistance = new Map<string, number>();
     const parent = new Map<string, string | null>();
-    
-    tasks.forEach(task => {
+
+    tasks.forEach((task) => {
       longestDistance.set(task.uuid, 0);
       parent.set(task.uuid, null);
     });
@@ -362,8 +366,8 @@ export class TaskDependencyGraphService {
     // 拓扑排序
     const queue: string[] = [];
     const currentInDegree = new Map(inDegree);
-    
-    startNodes.forEach(node => {
+
+    startNodes.forEach((node) => {
       queue.push(node.uuid);
       longestDistance.set(node.uuid, taskMap.get(node.uuid)?.estimatedMinutes || 0);
     });
@@ -375,7 +379,7 @@ export class TaskDependencyGraphService {
       topologicalOrder.push(current);
 
       const successors = adjacencyList.get(current) || [];
-      successors.forEach(successor => {
+      successors.forEach((successor) => {
         // 更新最长距离
         const currentTask = taskMap.get(current);
         const successorTask = taskMap.get(successor);
@@ -402,7 +406,7 @@ export class TaskDependencyGraphService {
     let maxDistance = 0;
     let endNode: string | null = null;
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       const successors = adjacencyList.get(task.uuid) || [];
       if (successors.length === 0) {
         const distance = longestDistance.get(task.uuid) || 0;
@@ -445,17 +449,14 @@ export class TaskDependencyGraphService {
   /**
    * 高亮关键路径
    */
-  highlightCriticalPath(
-    graphData: GraphData,
-    criticalPath: CriticalPathResult
-  ): GraphData {
+  highlightCriticalPath(graphData: GraphData, criticalPath: CriticalPathResult): GraphData {
     const criticalNodeIds = new Set(criticalPath.path);
     const criticalEdgeMap = new Map(
-      criticalPath.edges.map(edge => [`${edge.source}-${edge.target}`, true])
+      criticalPath.edges.map((edge) => [`${edge.source}-${edge.target}`, true]),
     );
 
     // 高亮节点
-    graphData.nodes.forEach(node => {
+    graphData.nodes.forEach((node) => {
       if (criticalNodeIds.has(node.id)) {
         node.isCritical = true;
         node.itemStyle.borderColor = '#F5222D'; // 红色边框
@@ -464,7 +465,7 @@ export class TaskDependencyGraphService {
     });
 
     // 高亮边
-    graphData.edges.forEach(edge => {
+    graphData.edges.forEach((edge) => {
       const edgeKey = `${edge.source}-${edge.target}`;
       if (criticalEdgeMap.has(edgeKey)) {
         edge.isCritical = true;
@@ -482,26 +483,26 @@ export class TaskDependencyGraphService {
    */
   topologicalSort(
     tasks: TaskClientDTO[],
-    dependencies: TaskDependencyClientDTO[]
+    dependencies: TaskDependencyClientDTO[],
   ): { sorted: string[]; hasCycle: boolean } {
     const adjacencyList = new Map<string, string[]>();
     const inDegree = new Map<string, number>();
-    
-    tasks.forEach(task => {
+
+    tasks.forEach((task) => {
       adjacencyList.set(task.uuid, []);
       inDegree.set(task.uuid, 0);
     });
 
-    dependencies.forEach(dep => {
+    dependencies.forEach((dep) => {
       const successors = adjacencyList.get(dep.predecessorTaskUuid) || [];
       successors.push(dep.successorTaskUuid);
       adjacencyList.set(dep.predecessorTaskUuid, successors);
-      
+
       inDegree.set(dep.successorTaskUuid, (inDegree.get(dep.successorTaskUuid) || 0) + 1);
     });
 
     const queue: string[] = [];
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       if (inDegree.get(task.uuid) === 0) {
         queue.push(task.uuid);
       }
@@ -514,7 +515,7 @@ export class TaskDependencyGraphService {
       sorted.push(current);
 
       const successors = adjacencyList.get(current) || [];
-      successors.forEach(successor => {
+      successors.forEach((successor) => {
         const newInDegree = (inDegree.get(successor) || 0) - 1;
         inDegree.set(successor, newInDegree);
 

@@ -5,7 +5,11 @@
         <v-icon :color="statusColor" class="mr-2">{{ statusIcon }}</v-icon>
         <span>调度状态</span>
       </div>
-      <v-chip v-if="scheduleStatus" :color="scheduleStatus.enabled ? 'success' : 'warning'" size="small">
+      <v-chip
+        v-if="scheduleStatus"
+        :color="scheduleStatus.enabled ? 'success' : 'warning'"
+        size="small"
+      >
         {{ scheduleStatus.enabled ? '已启用' : '已禁用' }}
       </v-chip>
     </v-card-title>
@@ -60,7 +64,9 @@
             <v-icon>mdi-calendar</v-icon>
           </template>
           <v-list-item-title>调度时间</v-list-item-title>
-          <v-list-item-subtitle>{{ formatDateTime(scheduleStatus.scheduledTime) }}</v-list-item-subtitle>
+          <v-list-item-subtitle>{{
+            formatDateTime(scheduleStatus.scheduledTime)
+          }}</v-list-item-subtitle>
         </v-list-item>
 
         <!-- 下次执行时间 -->
@@ -103,7 +109,11 @@
           </template>
           <v-list-item-title>状态</v-list-item-title>
           <v-list-item-subtitle>
-            <v-chip :color="getStatusColor(scheduleStatus.status)" size="x-small" variant="outlined">
+            <v-chip
+              :color="getStatusColor(scheduleStatus.status)"
+              size="x-small"
+              variant="outlined"
+            >
               {{ getStatusText(scheduleStatus.status) }}
             </v-chip>
           </v-list-item-subtitle>
@@ -111,7 +121,10 @@
       </v-list>
 
       <!-- 最近执行历史 -->
-      <v-expansion-panels v-if="scheduleStatus.recentExecutions && scheduleStatus.recentExecutions.length > 0" class="mt-4">
+      <v-expansion-panels
+        v-if="scheduleStatus.recentExecutions && scheduleStatus.recentExecutions.length > 0"
+        class="mt-4"
+      >
         <v-expansion-panel>
           <v-expansion-panel-title>
             <div class="d-flex align-center">
@@ -130,7 +143,9 @@
                 <div class="d-flex justify-space-between align-center">
                   <div>
                     <div class="text-caption">{{ formatDateTime(execution.executedAt) }}</div>
-                    <div v-if="execution.error" class="text-caption text-error">{{ execution.error }}</div>
+                    <div v-if="execution.error" class="text-caption text-error">
+                      {{ execution.error }}
+                    </div>
                   </div>
                   <v-chip :color="execution.success ? 'success' : 'error'" size="x-small">
                     {{ execution.success ? '成功' : '失败' }}

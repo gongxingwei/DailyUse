@@ -9,7 +9,7 @@ const messages = {
         new: 'New Category',
         rename: 'Rename Category',
         delete: 'Delete Category',
-        defaultName: 'General'
+        defaultName: 'General',
       },
       shortcut: {
         new: 'New Shortcut',
@@ -17,22 +17,22 @@ const messages = {
         delete: 'Delete Shortcut',
         openShortcutLocation: 'Reveal in Explorer',
         newTitle: 'New Title',
-        emptyState: 'Drag files here or click Add Shortcut'
+        emptyState: 'Drag files here or click Add Shortcut',
       },
       dialog: {
         rename: {
           title: 'Rename Category',
-          label: 'Category Name'
+          label: 'Category Name',
         },
         edit: {
-          title: 'Edit Shortcut'
-        }
+          title: 'Edit Shortcut',
+        },
       },
       button: {
         cancel: 'Cancel',
-        rename: 'Rename'
-      }
-    }
+        rename: 'Rename',
+      },
+    },
   },
   zh: {
     quickLauncher: {
@@ -42,7 +42,7 @@ const messages = {
         new: '新建分类',
         rename: '重命名分类',
         delete: '删除分类',
-        defaultName: '常规'
+        defaultName: '常规',
       },
       shortcut: {
         new: '新建快捷方式',
@@ -50,23 +50,23 @@ const messages = {
         delete: '删除快捷方式',
         openShortcutLocation: '资源管理器中打开',
         newTitle: '新建标题',
-        emptyState: '拖拽文件到此处或点击添加快捷方式'
+        emptyState: '拖拽文件到此处或点击添加快捷方式',
       },
       dialog: {
         rename: {
           title: '重命名分类',
-          label: '分类名称'
+          label: '分类名称',
         },
         edit: {
-          title: '编辑快捷方式'
-        }
+          title: '编辑快捷方式',
+        },
       },
       button: {
         cancel: '取消',
-        rename: '重命名'
-      }
-    }
-  }
+        rename: '重命名',
+      },
+    },
+  },
 };
 
 export function createQuickLauncherI18n() {
@@ -74,6 +74,6 @@ export function createQuickLauncherI18n() {
     legacy: false,
     locale: 'zh',
     fallbackLocale: 'en',
-    messages
+    messages,
   });
 }

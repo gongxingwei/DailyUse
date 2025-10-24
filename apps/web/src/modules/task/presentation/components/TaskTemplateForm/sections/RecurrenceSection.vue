@@ -20,12 +20,24 @@
 
       <v-row>
         <v-col cols="12" md="6">
-          <v-select v-model="scheduleMode" label="调度模式" :items="scheduleModes" variant="outlined" />
+          <v-select
+            v-model="scheduleMode"
+            label="调度模式"
+            :items="scheduleModes"
+            variant="outlined"
+          />
         </v-col>
 
         <!-- 间隔天数（当模式为intervalDays时） -->
         <v-col cols="12" md="6" v-if="scheduleMode === 'intervalDays'">
-          <v-text-field v-model.number="intervalDays" label="间隔天数" type="number" variant="outlined" min="1" max="365" />
+          <v-text-field
+            v-model.number="intervalDays"
+            label="间隔天数"
+            type="number"
+            variant="outlined"
+            min="1"
+            max="365"
+          />
         </v-col>
 
         <!-- 每周重复的星期选择 -->
@@ -80,11 +92,11 @@ const scheduleMode = computed({
           // 根据模式清理其他字段
           ...(value === 'intervalDays' ? { intervalDays: 1 } : {}),
           ...(value === 'weekly' ? { weekdays: [] } : {}),
-          ...(value === 'monthly' ? { monthDays: [] } : {})
-        }
+          ...(value === 'monthly' ? { monthDays: [] } : {}),
+        },
       };
     });
-  }
+  },
 });
 
 // 间隔天数
@@ -96,11 +108,11 @@ const intervalDays = computed({
         ...template.timeConfig,
         schedule: {
           ...template.timeConfig.schedule,
-          intervalDays: value
-        }
+          intervalDays: value,
+        },
       };
     });
-  }
+  },
 });
 
 // 选中的星期几
@@ -115,7 +127,7 @@ const scheduleModes = [
   { title: '每日', value: 'daily' },
   { title: '每周', value: 'weekly' },
   { title: '每月', value: 'monthly' },
-  { title: '间隔天数', value: 'intervalDays' }
+  { title: '间隔天数', value: 'intervalDays' },
 ];
 
 // 验证相关 - 暂时简化
@@ -124,12 +136,18 @@ const validationErrors = ref<string[]>([]);
 const getScheduleDescription = computed(() => {
   const schedule = props.modelValue.timeConfig.schedule;
   switch (schedule.mode) {
-    case 'once': return '单次任务';
-    case 'daily': return '每日重复';
-    case 'weekly': return `每周重复${schedule.weekdays?.length ? ` (${schedule.weekdays.join(',')})` : ''}`;
-    case 'monthly': return `每月重复${schedule.monthDays?.length ? ` (${schedule.monthDays.join(',')})` : ''}`;
-    case 'intervalDays': return `每${schedule.intervalDays || 1}天重复`;
-    default: return '未配置';
+    case 'once':
+      return '单次任务';
+    case 'daily':
+      return '每日重复';
+    case 'weekly':
+      return `每周重复${schedule.weekdays?.length ? ` (${schedule.weekdays.join(',')})` : ''}`;
+    case 'monthly':
+      return `每月重复${schedule.monthDays?.length ? ` (${schedule.monthDays.join(',')})` : ''}`;
+    case 'intervalDays':
+      return `每${schedule.intervalDays || 1}天重复`;
+    default:
+      return '未配置';
   }
 });
 
@@ -141,8 +159,8 @@ const updateWeekdays = (weekdays: number[]) => {
       ...template.timeConfig,
       schedule: {
         ...template.timeConfig.schedule,
-        weekdays: [...weekdays]
-      }
+        weekdays: [...weekdays],
+      },
     };
   });
 };
@@ -155,8 +173,8 @@ const updateMonthDays = (monthDays: number[]) => {
       ...template.timeConfig,
       schedule: {
         ...template.timeConfig.schedule,
-        monthDays: [...monthDays]
-      }
+        monthDays: [...monthDays],
+      },
     };
   });
 };
@@ -171,16 +189,24 @@ const initializeData = () => {
   }
 };
 
-watch(isValid, (newValue) => {
-  emit('update:validation', newValue);
-}, { immediate: true });
+watch(
+  isValid,
+  (newValue) => {
+    emit('update:validation', newValue);
+  },
+  { immediate: true },
+);
 
-watch(() => props.modelValue.timeConfig.schedule, () => {
-  // 简单验证
-  isValid.value = true;
-  validationErrors.value = [];
-  initializeData();
-}, { deep: true, immediate: true });
+watch(
+  () => props.modelValue.timeConfig.schedule,
+  () => {
+    // 简单验证
+    isValid.value = true;
+    validationErrors.value = [];
+    initializeData();
+  },
+  { deep: true, immediate: true },
+);
 </script>
 
 <style scoped>

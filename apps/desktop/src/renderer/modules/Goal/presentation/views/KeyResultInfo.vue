@@ -119,7 +119,7 @@ const goal = computed(() => {
 
 // 关键结果
 const keyResult = computed(() => {
-  const keyResult = goal.value.keyResults.find(kr => kr.uuid === keyResultUuid);
+  const keyResult = goal.value.keyResults.find((kr) => kr.uuid === keyResultUuid);
   if (!keyResult) {
     throw new Error('Key result not found');
   }
@@ -134,8 +134,7 @@ const tabs = [
 
 onMounted(async () => {
   taskTemplates.value = await taskStore.getTaskTemplatesByKeyResultUuid(keyResultUuid);
-
-})
+});
 
 // 计算所有记录
 const records = computed(() => {

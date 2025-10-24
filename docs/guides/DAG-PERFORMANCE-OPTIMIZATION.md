@@ -6,23 +6,23 @@ This document describes the performance optimization strategies for rendering la
 
 ## 🎯 Performance Targets
 
-| Metric | Target | Description |
-|--------|--------|-------------|
-| Render Time | < 500ms | Initial render for 100+ nodes |
-| Frame Rate | ≥ 60 FPS | Smooth zoom/pan operations |
-| Memory Usage | < 100MB | Total memory for 200 nodes |
-| Interaction Delay | < 50ms | Response time for clicks/hover |
+| Metric            | Target   | Description                    |
+| ----------------- | -------- | ------------------------------ |
+| Render Time       | < 500ms  | Initial render for 100+ nodes  |
+| Frame Rate        | ≥ 60 FPS | Smooth zoom/pan operations     |
+| Memory Usage      | < 100MB  | Total memory for 200 nodes     |
+| Interaction Delay | < 50ms   | Response time for clicks/hover |
 
 ## 📈 Optimization Levels
 
 The system automatically adjusts optimization strategies based on node count:
 
-| Level | Node Count | Strategy | Features |
-|-------|-----------|----------|----------|
-| **Small** | < 20 | Full rendering | All animations, adjacency focus, full labels |
-| **Medium** | 20-50 | Optimized | Progressive rendering, selective emphasis |
-| **Large** | 50-100 | Aggressive | No animation, simple emphasis, LOD |
-| **Huge** | > 100 | Extreme | Silent mode, minimal interaction, max LOD |
+| Level      | Node Count | Strategy       | Features                                     |
+| ---------- | ---------- | -------------- | -------------------------------------------- |
+| **Small**  | < 20       | Full rendering | All animations, adjacency focus, full labels |
+| **Medium** | 20-50      | Optimized      | Progressive rendering, selective emphasis    |
+| **Large**  | 50-100     | Aggressive     | No animation, simple emphasis, LOD           |
+| **Huge**   | > 100      | Extreme        | Silent mode, minimal interaction, max LOD    |
 
 ## 🔧 Optimization Techniques
 
@@ -43,6 +43,7 @@ const lodConfig = getLODNodeConfig(currentZoom, nodeCount);
 ```
 
 **Benefits**:
+
 - Reduces rendering complexity at low zoom levels
 - Improves pan/zoom performance
 - Better visual clarity at each zoom level
@@ -71,6 +72,7 @@ chartInstance.setOption({
 ```
 
 **Benefits**:
+
 - Dramatically reduces rendered node count
 - Constant performance regardless of total nodes
 - Minimal visual impact (padding ensures smooth scrolling)
@@ -93,6 +95,7 @@ const config = getOptimizedEChartsConfig(nodeCount);
 ```
 
 **Benefits**:
+
 - UI remains responsive during rendering
 - Perceived performance improvement
 - Better for very large graphs (200+ nodes)
@@ -104,15 +107,14 @@ Disable expensive animations for large graphs:
 ```typescript
 const { ANIMATION } = DAG_PERFORMANCE_CONFIG.STRATEGIES;
 
-const shouldAnimate = 
-  ANIMATION.enabled && 
-  nodeCount < ANIMATION.disableThreshold; // 100
+const shouldAnimate = ANIMATION.enabled && nodeCount < ANIMATION.disableThreshold; // 100
 
 chartOption.animation = shouldAnimate;
 chartOption.animationDuration = shouldAnimate ? 300 : 0;
 ```
 
 **Benefits**:
+
 - Prevents frame drops during zoom/pan
 - Reduces CPU usage
 - Smoother user experience
@@ -128,26 +130,27 @@ let emphasisConfig;
 switch (optimizationLevel) {
   case 'small':
     emphasisConfig = {
-      focus: 'adjacency',  // Highlight connected nodes
+      focus: 'adjacency', // Highlight connected nodes
       label: { show: true },
     };
     break;
-  
+
   case 'large':
     emphasisConfig = {
-      focus: 'none',  // No adjacency highlighting
+      focus: 'none', // No adjacency highlighting
     };
     break;
-  
+
   case 'huge':
     emphasisConfig = {
-      disabled: true,  // Disable all emphasis
+      disabled: true, // Disable all emphasis
     };
     break;
 }
 ```
 
 **Benefits**:
+
 - Faster hover/click responses
 - Prevents cascade rendering updates
 - Maintains 60 FPS during interaction
@@ -186,11 +189,13 @@ console.log('Performance Report:', report);
 ### Interpreting Metrics
 
 #### Render Time
+
 - ✅ **< 200ms**: Excellent
 - ⚠️ **200-500ms**: Acceptable
 - ❌ **> 500ms**: Needs optimization
 
 #### FPS
+
 - ✅ **> 55 FPS**: Smooth
 - ⚠️ **45-55 FPS**: Acceptable
 - ❌ **< 45 FPS**: Noticeable lag
@@ -207,13 +212,13 @@ export const DAG_PERFORMANCE_CONFIG = {
     LARGE: 100,
     HUGE: 200,
   },
-  
+
   TARGETS: {
-    RENDER_TIME: 500,  // ms
+    RENDER_TIME: 500, // ms
     FPS: 60,
-    FRAME_BUDGET: 16.67,  // ms
+    FRAME_BUDGET: 16.67, // ms
   },
-  
+
   STRATEGIES: {
     LOD: {
       enabled: true,
@@ -221,19 +226,19 @@ export const DAG_PERFORMANCE_CONFIG = {
       mediumZoom: 0.6,
       fullZoom: 1.0,
     },
-    
+
     VIEWPORT_CULLING: {
       enabled: true,
       padding: 100,
       debounceTime: 100,
     },
-    
+
     RENDERING: {
       useSVG: false,
       progressive: true,
       progressiveChunkSize: 50,
     },
-    
+
     ANIMATION: {
       enabled: true,
       duration: 300,
@@ -259,21 +264,25 @@ DAG_PERFORMANCE_CONFIG.STRATEGIES.VIEWPORT_CULLING.padding = 200;
 ## 📈 Benchmark Results
 
 ### Small Graphs (< 20 nodes)
+
 - Render Time: ~15ms
 - FPS: 60
 - Features: Full animations, adjacency focus
 
 ### Medium Graphs (20-50 nodes)
+
 - Render Time: ~45ms
 - FPS: 60
 - Features: Progressive rendering, selective animations
 
 ### Large Graphs (50-100 nodes)
+
 - Render Time: ~120ms
 - FPS: 58-60
 - Features: No animation, LOD enabled
 
 ### Huge Graphs (100-200 nodes)
+
 - Render Time: ~250ms
 - FPS: 55-58
 - Features: Extreme optimizations, viewport culling
@@ -283,6 +292,7 @@ DAG_PERFORMANCE_CONFIG.STRATEGIES.VIEWPORT_CULLING.padding = 200;
 ## 💡 Best Practices
 
 ### 1. Lazy Loading
+
 ```typescript
 // Load nodes in batches as user scrolls
 async function loadMoreNodes(offset: number, limit: number) {
@@ -293,6 +303,7 @@ async function loadMoreNodes(offset: number, limit: number) {
 ```
 
 ### 2. Debounce Expensive Operations
+
 ```typescript
 import { debounce } from '@vueuse/core';
 
@@ -303,12 +314,14 @@ const handleZoom = debounce((zoom) => {
 ```
 
 ### 3. Virtual Scrolling
+
 ```typescript
 // Only render nodes in current viewport
 const visibleNodes = cullNodesOutsideViewport(allNodes, viewport);
 ```
 
 ### 4. Use Web Workers (Future)
+
 ```typescript
 // Offload layout calculations to worker
 const worker = new Worker('./dagLayoutWorker.js');
@@ -322,7 +335,9 @@ worker.onmessage = (event) => {
 ## 🔍 Troubleshooting
 
 ### Issue: Slow rendering with < 50 nodes
+
 **Solution**: Check if progressive rendering is enabled unnecessarily
+
 ```typescript
 const config = getOptimizedEChartsConfig(nodeCount);
 if (nodeCount < 50 && config.progressive) {
@@ -331,15 +346,19 @@ if (nodeCount < 50 && config.progressive) {
 ```
 
 ### Issue: Low FPS during zoom/pan
+
 **Solution**: Enable viewport culling
+
 ```typescript
 DAG_PERFORMANCE_CONFIG.STRATEGIES.VIEWPORT_CULLING.enabled = true;
 ```
 
 ### Issue: Labels disappear at low zoom
+
 **Solution**: Adjust LOD thresholds
+
 ```typescript
-DAG_PERFORMANCE_CONFIG.STRATEGIES.LOD.minZoom = 0.2;  // Show labels earlier
+DAG_PERFORMANCE_CONFIG.STRATEGIES.LOD.minZoom = 0.2; // Show labels earlier
 ```
 
 ## 📊 Future Improvements

@@ -1,16 +1,16 @@
-import { useAccountStore } from "@renderer/modules/Account";
-import { useAuthenticationStore } from "@renderer/modules/Authentication/presentation/stores/authenticationStore";
+import { useAccountStore } from '@renderer/modules/Account';
+import { useAuthenticationStore } from '@renderer/modules/Authentication/presentation/stores/authenticationStore';
 import {
   InitializationManager,
   InitializationPhase,
   InitializationTask,
-} from "@main/shared/initialization/initializationManager";
+} from '@main/shared/initialization/initializationManager';
 export function patchIpcRendererInvokeWithAuth() {
   const accountStore = useAccountStore();
   const authenticationStore = useAuthenticationStore();
 
   const originalInvoke = window.shared.ipcRenderer.invoke;
-  window.shared.ipcRenderer.invoke = function(channel: string, ...args: any[]) {
+  window.shared.ipcRenderer.invoke = function (channel: string, ...args: any[]) {
     const token = authenticationStore?.getToken ? authenticationStore.getToken : undefined;
     const account_uuid = accountStore?.getAccountUuid ? accountStore.getAccountUuid : undefined;
     // 检查最后一个参数是否已经有 auth，避免重复添加
@@ -24,16 +24,16 @@ export function patchIpcRendererInvokeWithAuth() {
 }
 
 const patchIpcRendererInvokeWithAuthTask: InitializationTask = {
-  name: "PatchIpcRendererInvokeWithAuth",
+  name: 'PatchIpcRendererInvokeWithAuth',
   phase: InitializationPhase.APP_STARTUP,
   priority: 100,
   initialize: async () => {
-    console.log("【PatchIpcRendererInvokeWithAuth 开始初始化】");
+    console.log('【PatchIpcRendererInvokeWithAuth 开始初始化】');
     patchIpcRendererInvokeWithAuth();
-    console.log("ipcRenderer.invoke patched successfully.");
+    console.log('ipcRenderer.invoke patched successfully.');
   },
   cleanup: async () => {
-    console.log("Cleaning up ipcRenderer.invoke patch...");
+    console.log('Cleaning up ipcRenderer.invoke patch...');
     // 如果需要，可以在这里添加清理逻辑
   },
 };

@@ -29,12 +29,14 @@
 **Goal 模块** 负责目标管理的完整生命周期，采用 **OKR (Objectives and Key Results)** 模式进行目标管理。
 
 **核心概念**:
+
 - **Objective (目标)**: 明确的、可衡量的目标陈述
 - **Key Result (关键结果)**: 用于衡量目标达成度的具体指标
 - **Goal Folder (目标文件夹)**: 层级化的目标组织结构
 - **Goal Statistics (目标统计)**: 目标数据的聚合统计
 
 **领域边界**:
+
 - ✅ 目标的创建、更新、归档、删除
 - ✅ 关键结果的定义、进度追踪、完成判定
 - ✅ 目标文件夹的层级管理
@@ -59,11 +61,13 @@
 ### 2.2 文件夹层级管理
 
 **系统文件夹**（不可删除）:
+
 - 📂 全部目标
 - 📁 已归档
 - 🗑️ 已删除
 
 **用户文件夹**:
+
 - 支持多层级嵌套（建议 3 层以内）
 - 支持拖拽排序
 - 支持重命名、删除（会移动目标到"全部目标"）
@@ -84,6 +88,7 @@ draft → active → completed → archived
 ```
 
 **状态转换规则**:
+
 - `draft` → `active`: 开始执行目标
 - `active` → `completed`: 所有关键结果达成
 - `active` → `archived`: 手动归档（未完成但不再追踪）
@@ -99,12 +104,14 @@ draft → active → completed → archived
 ### 2.6 数据统计
 
 **个人统计**:
+
 - 进行中的目标数量
 - 已完成目标数量
 - 总体完成率
 - 各重要性等级的目标分布
 
 **目标维度统计**:
+
 - 关键结果完成进度
 - 预计剩余时间
 - 相关任务数量（跨模块查询）
@@ -116,6 +123,7 @@ draft → active → completed → archived
 ### 3.1 Goal 聚合根
 
 **职责**:
+
 - 管理目标的基本信息
 - 管理关键结果的集合
 - 执行目标的业务逻辑
@@ -127,29 +135,29 @@ draft → active → completed → archived
 ```typescript
 export class Goal extends AggregateRoot implements IGoalServer {
   // ===== 基本信息 =====
-  private _accountUuid: string;           // 所属账户
-  private _title: string;                 // 目标标题（Objective）
-  private _description: string | null;    // 详细描述
-  
+  private _accountUuid: string; // 所属账户
+  private _title: string; // 目标标题（Objective）
+  private _description: string | null; // 详细描述
+
   // ===== 时间管理 =====
-  private _startDate: Date | null;        // 开始日期
-  private _endDate: Date | null;          // 结束日期（可选）
-  private _reminderDays: number[];        // 提醒天数（例如 [7, 3, 1]）
-  
+  private _startDate: Date | null; // 开始日期
+  private _endDate: Date | null; // 结束日期（可选）
+  private _reminderDays: number[]; // 提醒天数（例如 [7, 3, 1]）
+
   // ===== 关键结果 =====
-  private _keyResults: KeyResult[];       // 关键结果集合（实体）
-  
+  private _keyResults: KeyResult[]; // 关键结果集合（实体）
+
   // ===== 元数据 =====
-  private _importance: ImportanceLevel;   // 重要性等级
-  private _urgency: UrgencyLevel;         // 紧急性等级
-  private _tags: string[];                // 标签
+  private _importance: ImportanceLevel; // 重要性等级
+  private _urgency: UrgencyLevel; // 紧急性等级
+  private _tags: string[]; // 标签
   private _customFields: Map<string, any>; // 自定义字段
-  
+
   // ===== 组织结构 =====
-  private _folderUuid: string | null;     // 所属文件夹
-  
+  private _folderUuid: string | null; // 所属文件夹
+
   // ===== 生命周期 =====
-  private _status: GoalStatus;            // 状态
+  private _status: GoalStatus; // 状态
   private _createdAt: Date;
   private _updatedAt: Date;
   private _completedAt: Date | null;
@@ -164,20 +172,20 @@ export class Goal extends AggregateRoot implements IGoalServer {
 export class Goal extends AggregateRoot {
   // ===== 工厂方法 =====
   public static create(params: CreateGoalParams): Goal;
-  
+
   // ===== 关键结果管理 =====
   public addKeyResult(params: CreateKeyResultParams): KeyResult;
   public updateKeyResult(keyResultId: string, params: UpdateKeyResultParams): void;
   public removeKeyResult(keyResultId: string): void;
   public updateKeyResultProgress(keyResultId: string, currentValue: number): void;
-  
+
   // ===== 状态转换 =====
-  public activate(): void;                   // 开始执行
-  public complete(): void;                   // 完成目标
-  public archive(): void;                    // 归档
-  public softDelete(): void;                 // 软删除
-  public restore(): void;                    // 从已删除恢复
-  
+  public activate(): void; // 开始执行
+  public complete(): void; // 完成目标
+  public archive(): void; // 归档
+  public softDelete(): void; // 软删除
+  public restore(): void; // 从已删除恢复
+
   // ===== 元数据更新 =====
   public updateTitle(title: string): void;
   public updateDescription(description: string | null): void;
@@ -185,17 +193,17 @@ export class Goal extends AggregateRoot {
   public updateUrgency(urgency: UrgencyLevel): void;
   public updateTags(tags: string[]): void;
   public moveToFolder(folderUuid: string | null): void;
-  
+
   // ===== 时间管理 =====
   public updateDates(startDate: Date | null, endDate: Date | null): void;
   public updateReminderDays(reminderDays: number[]): void;
-  
+
   // ===== 计算属性 =====
-  public getOverallProgress(): number;       // 基于关键结果计算总进度
-  public isOverdue(): boolean;               // 是否已过期
-  public getRemainingDays(): number | null;  // 剩余天数
-  public isCompleted(): boolean;             // 是否所有关键结果都完成
-  
+  public getOverallProgress(): number; // 基于关键结果计算总进度
+  public isOverdue(): boolean; // 是否已过期
+  public getRemainingDays(): number | null; // 剩余天数
+  public isCompleted(): boolean; // 是否所有关键结果都完成
+
   // ===== DTO 转换方法（Domain-Server 层）=====
   public toServerDTO(includeChildren = false): GoalServerDTO;
   public toPersistenceDTO(): GoalPersistenceDTO;
@@ -209,7 +217,7 @@ export class Goal extends AggregateRoot {
 ```typescript
 export class GoalClient extends AggregateRoot {
   // ... 同 Domain-Server 层的业务方法
-  
+
   // ===== DTO 转换方法（Domain-Client 层）=====
   public toServerDTO(includeChildren = false): GoalServerDTO;
   public toClientDTO(includeChildren = false): GoalClientDTO;
@@ -223,6 +231,7 @@ export class GoalClient extends AggregateRoot {
 ### 3.2 GoalFolder 聚合根
 
 **职责**:
+
 - 管理文件夹的层级结构
 - 控制文件夹的排序
 - 管理文件夹内的目标集合
@@ -233,11 +242,11 @@ export class GoalClient extends AggregateRoot {
 export class GoalFolder extends AggregateRoot implements IGoalFolderServer {
   private _accountUuid: string;
   private _name: string;
-  private _parentUuid: string | null;       // 父文件夹UUID
-  private _sortOrder: number;               // 排序顺序
-  private _isSystem: boolean;               // 是否系统文件夹
-  private _icon: string | null;             // 图标
-  private _color: string | null;            // 颜色
+  private _parentUuid: string | null; // 父文件夹UUID
+  private _sortOrder: number; // 排序顺序
+  private _isSystem: boolean; // 是否系统文件夹
+  private _icon: string | null; // 图标
+  private _color: string | null; // 颜色
   private _createdAt: Date;
   private _updatedAt: Date;
 }
@@ -250,16 +259,16 @@ export class GoalFolder extends AggregateRoot {
   // ===== 工厂方法 =====
   public static create(params: CreateFolderParams): GoalFolder;
   public static createSystemFolder(name: string, accountUuid: string): GoalFolder;
-  
+
   // ===== 业务方法 =====
   public updateName(name: string): void;
   public updateIcon(icon: string | null): void;
   public updateColor(color: string | null): void;
   public moveTo(parentUuid: string | null): void;
   public updateSortOrder(sortOrder: number): void;
-  
-  public canDelete(): boolean;              // 系统文件夹不可删除
-  
+
+  public canDelete(): boolean; // 系统文件夹不可删除
+
   // ===== DTO 转换方法（Domain-Server 层）=====
   public toServerDTO(): GoalFolderServerDTO;
   public toPersistenceDTO(): GoalFolderPersistenceDTO;
@@ -273,7 +282,7 @@ export class GoalFolder extends AggregateRoot {
 ```typescript
 export class GoalFolderClient extends AggregateRoot {
   // ... 同 Domain-Server 层的业务方法
-  
+
   // ===== DTO 转换方法（Domain-Client 层）=====
   public toServerDTO(): GoalFolderServerDTO;
   public toClientDTO(): GoalFolderClientDTO;
@@ -287,6 +296,7 @@ export class GoalFolderClient extends AggregateRoot {
 ### 3.3 GoalStatistics 聚合根
 
 **职责**:
+
 - 聚合用户的目标统计数据
 - 提供统计查询接口
 
@@ -300,18 +310,18 @@ export class GoalStatistics extends AggregateRoot implements IGoalStatisticsServ
   private _completedGoals: number;
   private _archivedGoals: number;
   private _overallCompletionRate: number;
-  
+
   // 按重要性统计
   private _goalsByImportance: Map<ImportanceLevel, number>;
-  
+
   // 按紧急性统计
   private _goalsByUrgency: Map<UrgencyLevel, number>;
-  
+
   // 时间维度
   private _completedThisWeek: number;
   private _completedThisMonth: number;
   private _completedThisYear: number;
-  
+
   private _lastCalculatedAt: Date;
 }
 ```
@@ -322,15 +332,15 @@ export class GoalStatistics extends AggregateRoot implements IGoalStatisticsServ
 export class GoalStatistics extends AggregateRoot {
   // ===== 工厂方法 =====
   public static create(accountUuid: string): GoalStatistics;
-  
+
   // ===== 业务方法 =====
   public recalculate(goals: Goal[]): void;
-  
+
   // 查询方法
   public getActiveGoalsCount(): number;
   public getCompletionRate(): number;
   public getGoalsByImportance(importance: ImportanceLevel): number;
-  
+
   // ===== DTO 转换方法（Domain-Server 层）=====
   public toServerDTO(): GoalStatisticsServerDTO;
   public toPersistenceDTO(): GoalStatisticsPersistenceDTO;
@@ -344,7 +354,7 @@ export class GoalStatistics extends AggregateRoot {
 ```typescript
 export class GoalStatisticsClient extends AggregateRoot {
   // ... 同 Domain-Server 层的业务方法
-  
+
   // ===== DTO 转换方法（Domain-Client 层）=====
   public toServerDTO(): GoalStatisticsServerDTO;
   public toClientDTO(): GoalStatisticsClientDTO;
@@ -360,6 +370,7 @@ export class GoalStatisticsClient extends AggregateRoot {
 ### 4.1 KeyResult 实体
 
 **职责**:
+
 - 表示目标的一个关键结果
 - 跟踪关键结果的进度
 - 判断关键结果是否完成
@@ -368,26 +379,26 @@ export class GoalStatisticsClient extends AggregateRoot {
 
 ```typescript
 export class KeyResult extends Entity implements IKeyResultServer {
-  private _id: string;                      // 关键结果ID（非UUID）
-  private _goalUuid: string;                // 所属目标UUID
-  
-  private _title: string;                   // 关键结果标题
-  private _description: string | null;      // 描述
-  
+  private _id: string; // 关键结果ID（非UUID）
+  private _goalUuid: string; // 所属目标UUID
+
+  private _title: string; // 关键结果标题
+  private _description: string | null; // 描述
+
   // 进度跟踪
-  private _targetValue: number;             // 目标值
-  private _currentValue: number;            // 当前值
-  private _unit: string;                    // 单位（例如：次、个、%）
+  private _targetValue: number; // 目标值
+  private _currentValue: number; // 当前值
+  private _unit: string; // 单位（例如：次、个、%）
   private _valueType: 'incremental' | 'absolute'; // 累积值 or 绝对值
-  
+
   // 时间
   private _startDate: Date | null;
   private _targetDate: Date | null;
-  
+
   // 状态
   private _isCompleted: boolean;
   private _completedAt: Date | null;
-  
+
   private _createdAt: Date;
   private _updatedAt: Date;
 }
@@ -399,23 +410,23 @@ export class KeyResult extends Entity implements IKeyResultServer {
 export class KeyResult extends Entity {
   // ===== 工厂方法 =====
   public static create(params: CreateKeyResultParams): KeyResult;
-  
+
   // ===== 业务方法 =====
   public updateProgress(currentValue: number): void;
   public incrementProgress(incrementValue: number): void;
   public complete(): void;
-  
+
   // 计算属性
-  public getProgressPercentage(): number;   // 计算完成百分比
+  public getProgressPercentage(): number; // 计算完成百分比
   public isOverdue(): boolean;
   public getRemainingDays(): number | null;
-  
+
   // 更新方法
   public updateTitle(title: string): void;
   public updateDescription(description: string | null): void;
   public updateTargetValue(targetValue: number): void;
   public updateTargetDate(targetDate: Date | null): void;
-  
+
   // ===== DTO 转换方法（Domain-Server 层）=====
   public toServerDTO(): KeyResultServerDTO;
   public toPersistenceDTO(): KeyResultPersistenceDTO;
@@ -429,7 +440,7 @@ export class KeyResult extends Entity {
 ```typescript
 export class KeyResultClient extends Entity {
   // ... 同 Domain-Server 层的业务方法
-  
+
   // ===== DTO 转换方法（Domain-Client 层）=====
   public toServerDTO(): KeyResultServerDTO;
   public toClientDTO(): KeyResultClientDTO;
@@ -446,11 +457,11 @@ export class KeyResultClient extends Entity {
 
 ```typescript
 export enum GoalStatus {
-  Draft = 'draft',           // 草稿
-  Active = 'active',         // 进行中
-  Completed = 'completed',   // 已完成
-  Archived = 'archived',     // 已归档
-  Deleted = 'deleted',       // 已删除（逻辑删除）
+  Draft = 'draft', // 草稿
+  Active = 'active', // 进行中
+  Completed = 'completed', // 已完成
+  Archived = 'archived', // 已归档
+  Deleted = 'deleted', // 已删除（逻辑删除）
 }
 ```
 
@@ -469,7 +480,7 @@ export class GoalMetadata extends ValueObject {
     super();
     this.validate();
   }
-  
+
   protected validate(): void {
     if (!Object.values(ImportanceLevel).includes(this.importance)) {
       throw new Error('Invalid importance level');
@@ -478,7 +489,7 @@ export class GoalMetadata extends ValueObject {
       throw new Error('Invalid urgency level');
     }
   }
-  
+
   public equals(other: GoalMetadata): boolean {
     return (
       this.importance === other.importance &&
@@ -503,25 +514,25 @@ export class GoalTimeRange extends ValueObject {
     super();
     this.validate();
   }
-  
+
   protected validate(): void {
     if (this.startDate && this.endDate && this.startDate > this.endDate) {
       throw new Error('Start date must be before end date');
     }
   }
-  
+
   public isOverdue(): boolean {
     if (!this.endDate) return false;
     return new Date() > this.endDate;
   }
-  
+
   public getRemainingDays(): number | null {
     if (!this.endDate) return null;
     const now = new Date();
     const diff = this.endDate.getTime() - now.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
-  
+
   public equals(other: GoalTimeRange): boolean {
     return (
       this.startDate?.getTime() === other.startDate?.getTime() &&
@@ -546,7 +557,7 @@ export class KeyResultProgress extends ValueObject {
     super();
     this.validate();
   }
-  
+
   protected validate(): void {
     if (this.targetValue <= 0) {
       throw new Error('Target value must be positive');
@@ -555,15 +566,15 @@ export class KeyResultProgress extends ValueObject {
       throw new Error('Current value cannot be negative');
     }
   }
-  
+
   public getPercentage(): number {
     return Math.min(100, (this.currentValue / this.targetValue) * 100);
   }
-  
+
   public isCompleted(): boolean {
     return this.currentValue >= this.targetValue;
   }
-  
+
   public increment(value: number): KeyResultProgress {
     if (this.valueType !== 'incremental') {
       throw new Error('Can only increment for incremental value type');
@@ -575,7 +586,7 @@ export class KeyResultProgress extends ValueObject {
       this.valueType,
     );
   }
-  
+
   public equals(other: KeyResultProgress): boolean {
     return (
       this.currentValue === other.currentValue &&
@@ -600,18 +611,18 @@ export interface IGoalRepository {
   findByUuid(uuid: string): Promise<Goal | null>;
   findByAccountUuid(accountUuid: string, includeDeleted?: boolean): Promise<Goal[]>;
   delete(uuid: string): Promise<void>;
-  
+
   // ===== 查询方法 =====
   findByStatus(accountUuid: string, status: GoalStatus): Promise<Goal[]>;
   findByFolder(folderUuid: string): Promise<Goal[]>;
   findByTag(accountUuid: string, tag: string): Promise<Goal[]>;
   findOverdue(accountUuid: string): Promise<Goal[]>;
-  
+
   // ===== 软删除 =====
   softDelete(uuid: string): Promise<void>;
   restore(uuid: string): Promise<void>;
-  hardDelete(uuid: string): Promise<void>;  // 物理删除（谨慎使用）
-  
+  hardDelete(uuid: string): Promise<void>; // 物理删除（谨慎使用）
+
   // ===== 批量操作 =====
   moveToFolder(goalUuids: string[], folderUuid: string | null): Promise<void>;
   batchUpdateStatus(goalUuids: string[], status: GoalStatus): Promise<void>;
@@ -630,7 +641,7 @@ export interface IGoalFolderRepository {
   findByParentUuid(parentUuid: string | null): Promise<GoalFolder[]>;
   findSystemFolders(accountUuid: string): Promise<GoalFolder[]>;
   delete(uuid: string): Promise<void>;
-  
+
   // 检查是否存在子文件夹
   hasChildren(uuid: string): Promise<boolean>;
 }
@@ -654,6 +665,7 @@ export interface IGoalStatisticsRepository {
 ### 7.1 GoalDomainService
 
 **职责**:
+
 - 跨聚合根的业务逻辑
 - 复杂的目标管理操作
 - 统计数据的计算
@@ -665,25 +677,25 @@ export class GoalDomainService {
     private readonly folderRepository: IGoalFolderRepository,
     private readonly statisticsRepository: IGoalStatisticsRepository,
   ) {}
-  
+
   // ===== 目标管理 =====
   async createGoal(params: CreateGoalParams): Promise<Goal>;
   async updateGoal(uuid: string, params: UpdateGoalParams): Promise<Goal>;
   async deleteGoal(uuid: string): Promise<void>;
   async restoreGoal(uuid: string): Promise<void>;
-  
+
   // ===== 批量操作 =====
   async moveGoalsToFolder(goalUuids: string[], folderUuid: string | null): Promise<void>;
   async batchArchiveGoals(goalUuids: string[]): Promise<void>;
-  
+
   // ===== 统计计算 =====
   async recalculateStatistics(accountUuid: string): Promise<GoalStatistics>;
-  
+
   // ===== 查询服务 =====
   async getGoalsByStatus(accountUuid: string, status: GoalStatus): Promise<Goal[]>;
   async getOverdueGoals(accountUuid: string): Promise<Goal[]>;
   async getGoalsByFolder(folderUuid: string): Promise<Goal[]>;
-  
+
   // ===== 文件夹管理 =====
   async createFolder(params: CreateFolderParams): Promise<GoalFolder>;
   async deleteFolder(uuid: string): Promise<void>; // 会将目标移到"全部目标"
@@ -700,7 +712,7 @@ export class GoalDomainService {
 ```typescript
 export class GoalApplicationService {
   constructor(private readonly domainService: GoalDomainService) {}
-  
+
   // ===== CRUD =====
   async createGoal(request: CreateGoalRequestDTO): Promise<GoalServerDTO>;
   async updateGoal(uuid: string, request: UpdateGoalRequestDTO): Promise<GoalServerDTO>;
@@ -708,22 +720,30 @@ export class GoalApplicationService {
   async getGoalsByAccountUuid(accountUuid: string): Promise<GoalServerDTO[]>;
   async deleteGoal(uuid: string): Promise<void>;
   async restoreGoal(uuid: string): Promise<void>;
-  
+
   // ===== 关键结果管理 =====
   async addKeyResult(goalUuid: string, request: CreateKeyResultRequestDTO): Promise<GoalServerDTO>;
-  async updateKeyResult(goalUuid: string, keyResultId: string, request: UpdateKeyResultRequestDTO): Promise<GoalServerDTO>;
-  async updateKeyResultProgress(goalUuid: string, keyResultId: string, currentValue: number): Promise<GoalServerDTO>;
+  async updateKeyResult(
+    goalUuid: string,
+    keyResultId: string,
+    request: UpdateKeyResultRequestDTO,
+  ): Promise<GoalServerDTO>;
+  async updateKeyResultProgress(
+    goalUuid: string,
+    keyResultId: string,
+    currentValue: number,
+  ): Promise<GoalServerDTO>;
   async removeKeyResult(goalUuid: string, keyResultId: string): Promise<GoalServerDTO>;
-  
+
   // ===== 状态转换 =====
   async activateGoal(uuid: string): Promise<GoalServerDTO>;
   async completeGoal(uuid: string): Promise<GoalServerDTO>;
   async archiveGoal(uuid: string): Promise<GoalServerDTO>;
-  
+
   // ===== 批量操作 =====
   async moveGoalsToFolder(goalUuids: string[], folderUuid: string | null): Promise<void>;
   async batchArchiveGoals(goalUuids: string[]): Promise<void>;
-  
+
   // ===== 查询 =====
   async getGoalsByStatus(accountUuid: string, status: GoalStatus): Promise<GoalServerDTO[]>;
   async getOverdueGoals(accountUuid: string): Promise<GoalServerDTO[]>;
@@ -739,7 +759,7 @@ export class GoalApplicationService {
 ```typescript
 export class GoalFolderApplicationService {
   constructor(private readonly domainService: GoalDomainService) {}
-  
+
   async createFolder(request: CreateFolderRequestDTO): Promise<GoalFolderServerDTO>;
   async updateFolder(uuid: string, request: UpdateFolderRequestDTO): Promise<GoalFolderServerDTO>;
   async deleteFolder(uuid: string): Promise<void>;
@@ -794,27 +814,27 @@ export interface GoalServerDTO {
   accountUuid: string;
   title: string;
   description: string | null;
-  
-  startDate: string | null;  // ISO 8601
-  endDate: string | null;    // ISO 8601
+
+  startDate: string | null; // ISO 8601
+  endDate: string | null; // ISO 8601
   reminderDays: number[];
-  
+
   keyResults: KeyResultServerDTO[];
-  
+
   importance: ImportanceLevel;
   urgency: UrgencyLevel;
   tags: string[];
   customFields: Record<string, any>;
-  
+
   folderUuid: string | null;
-  
+
   status: GoalStatus;
-  createdAt: string;         // ISO 8601
+  createdAt: string; // ISO 8601
   updatedAt: string;
   completedAt: string | null;
   archivedAt: string | null;
   deletedAt: string | null;
-  
+
   // 计算属性
   overallProgress: number;
   isOverdue: boolean;
@@ -827,21 +847,21 @@ export interface KeyResultServerDTO {
   goalUuid: string;
   title: string;
   description: string | null;
-  
+
   targetValue: number;
   currentValue: number;
   unit: string;
   valueType: 'incremental' | 'absolute';
-  
+
   startDate: string | null;
   targetDate: string | null;
-  
+
   isCompleted: boolean;
   completedAt: string | null;
-  
+
   createdAt: string;
   updatedAt: string;
-  
+
   // 计算属性
   progressPercentage: number;
 }
@@ -869,14 +889,14 @@ export interface GoalStatisticsServerDTO {
   completedGoals: number;
   archivedGoals: number;
   overallCompletionRate: number;
-  
+
   goalsByImportance: Record<ImportanceLevel, number>;
   goalsByUrgency: Record<UrgencyLevel, number>;
-  
+
   completedThisWeek: number;
   completedThisMonth: number;
   completedThisYear: number;
-  
+
   lastCalculatedAt: string;
 }
 ```
@@ -892,31 +912,31 @@ export interface GoalClientDTO {
   accountUuid: string;
   title: string;
   description: string | null;
-  
+
   startDate: Date | null;
   endDate: Date | null;
   reminderDays: number[];
-  
+
   keyResults: KeyResultClientDTO[];
-  
+
   importance: ImportanceLevel;
   urgency: UrgencyLevel;
   tags: string[];
   customFields: Record<string, any>;
-  
+
   folderUuid: string | null;
-  
+
   status: GoalStatus;
   createdAt: Date;
   updatedAt: Date;
   completedAt: Date | null;
   archivedAt: Date | null;
   deletedAt: Date | null;
-  
+
   overallProgress: number;
   isOverdue: boolean;
   remainingDays: number | null;
-  
+
   // UI 辅助字段
   formattedCreatedAt: string;
   formattedEndDate: string;
@@ -929,23 +949,23 @@ export interface KeyResultClientDTO {
   goalUuid: string;
   title: string;
   description: string | null;
-  
+
   targetValue: number;
   currentValue: number;
   unit: string;
   valueType: 'incremental' | 'absolute';
-  
+
   startDate: Date | null;
   targetDate: Date | null;
-  
+
   isCompleted: boolean;
   completedAt: Date | null;
-  
+
   createdAt: Date;
   updatedAt: Date;
-  
+
   progressPercentage: number;
-  
+
   // UI 辅助字段
   progressLabel: string;
   formattedTargetDate: string;
@@ -963,7 +983,7 @@ export interface GoalFolderClientDTO {
   color: string | null;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // UI 辅助字段
   displayName: string;
   displayIcon: string;
@@ -978,16 +998,16 @@ export interface GoalStatisticsClientDTO {
   completedGoals: number;
   archivedGoals: number;
   overallCompletionRate: number;
-  
+
   goalsByImportance: Record<ImportanceLevel, number>;
   goalsByUrgency: Record<UrgencyLevel, number>;
-  
+
   completedThisWeek: number;
   completedThisMonth: number;
   completedThisYear: number;
-  
+
   lastCalculatedAt: Date;
-  
+
   // UI 辅助字段
   completionRateLabel: string;
   formattedLastCalculatedAt: string;
@@ -1005,21 +1025,21 @@ export interface GoalPersistenceDTO {
   account_uuid: string;
   title: string;
   description: string | null;
-  
-  start_date: number | null;  // timestamp
-  end_date: number | null;    // timestamp
-  reminder_days: string;      // JSON.stringify(number[])
-  
+
+  start_date: number | null; // timestamp
+  end_date: number | null; // timestamp
+  reminder_days: string; // JSON.stringify(number[])
+
   importance: string;
   urgency: string;
-  tags: string;               // JSON.stringify(string[])
-  custom_fields: string;      // JSON.stringify(Record<string, any>)
-  
+  tags: string; // JSON.stringify(string[])
+  custom_fields: string; // JSON.stringify(Record<string, any>)
+
   folder_uuid: string | null;
-  
+
   status: string;
-  created_at: number;         // timestamp
-  updated_at: number;         // timestamp
+  created_at: number; // timestamp
+  updated_at: number; // timestamp
   completed_at: number | null;
   archived_at: number | null;
   deleted_at: number | null;
@@ -1031,18 +1051,18 @@ export interface KeyResultPersistenceDTO {
   goal_uuid: string;
   title: string;
   description: string | null;
-  
+
   target_value: number;
   current_value: number;
   unit: string;
   value_type: string;
-  
+
   start_date: number | null;
   target_date: number | null;
-  
+
   is_completed: boolean;
   completed_at: number | null;
-  
+
   created_at: number;
   updated_at: number;
 }
@@ -1070,14 +1090,14 @@ export interface GoalStatisticsPersistenceDTO {
   completed_goals: number;
   archived_goals: number;
   overall_completion_rate: number;
-  
-  goals_by_importance: string;  // JSON.stringify
-  goals_by_urgency: string;     // JSON.stringify
-  
+
+  goals_by_importance: string; // JSON.stringify
+  goals_by_urgency: string; // JSON.stringify
+
   completed_this_week: number;
   completed_this_month: number;
   completed_this_year: number;
-  
+
   last_calculated_at: number;
 }
 ```
@@ -1091,17 +1111,17 @@ export interface GoalStatisticsPersistenceDTO {
 export interface CreateGoalRequestDTO {
   title: string;
   description?: string;
-  startDate?: string;  // ISO 8601
+  startDate?: string; // ISO 8601
   endDate?: string;
   reminderDays?: number[];
-  
+
   keyResults: CreateKeyResultRequestDTO[];
-  
+
   importance?: ImportanceLevel;
   urgency?: UrgencyLevel;
   tags?: string[];
   customFields?: Record<string, any>;
-  
+
   folderUuid?: string;
 }
 
@@ -1213,6 +1233,7 @@ Goal Module
 ## ✅ 实现检查清单
 
 ### Contracts 层
+
 - [ ] 定义 GoalStatus 枚举
 - [ ] 定义 ImportanceLevel、UrgencyLevel 枚举
 - [ ] 定义 GoalServerDTO
@@ -1224,6 +1245,7 @@ Goal Module
 - [ ] 定义 API Request/Response DTO
 
 ### Domain-Server 层
+
 - [ ] 实现 Goal 聚合根（包含 4 个 DTO 转换方法）
 - [ ] 实现 GoalFolder 聚合根（包含 4 个 DTO 转换方法）
 - [ ] 实现 GoalStatistics 聚合根（包含 4 个 DTO 转换方法）
@@ -1237,6 +1259,7 @@ Goal Module
 - [ ] 实现 GoalDomainService
 
 ### Domain-Client 层
+
 - [ ] 实现 GoalClient 聚合根（包含 4 个 DTO 转换方法）
 - [ ] 实现 KeyResultClient 实体（包含 4 个 DTO 转换方法）
 - [ ] 实现 GoalFolderClient（包含 4 个 DTO 转换方法）
@@ -1244,6 +1267,7 @@ Goal Module
 - [ ] 实现 DTO 转换工具
 
 ### API 层
+
 - [ ] 创建 TypeORM Goal Entity
 - [ ] 创建 TypeORM KeyResult Entity
 - [ ] 创建 TypeORM GoalFolder Entity
@@ -1255,6 +1279,7 @@ Goal Module
 - [ ] 注册 GoalModule
 
 ### Web 层
+
 - [ ] 创建 GoalStore (Pinia)
 - [ ] 创建 GoalApplicationService (前端)
 - [ ] 创建 GoalApiClient
@@ -1269,8 +1294,8 @@ Goal Module
 - [MODULE_PLAN_CORRECTIONS.md](../MODULE_PLAN_CORRECTIONS.md) - 模块规划修正说明
 - [Repository 模块实现总结]
 - [Schedule 模块设计]
-- [Task 模块规划] *(待修正)*
-- [Reminder 模块规划] *(待修正)*
+- [Task 模块规划] _(待修正)_
+- [Reminder 模块规划] _(待修正)_
 
 ---
 

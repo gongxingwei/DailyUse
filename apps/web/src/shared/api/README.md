@@ -15,7 +15,7 @@
 ✅ **文件上传** - 支持进度回调和类型验证  
 ✅ **Vue集成** - 提供Composition API风格的hooks  
 ✅ **环境配置** - 多环境配置管理  
-✅ **日志记录** - 可配置的请求日志  
+✅ **日志记录** - 可配置的请求日志
 
 ## 快速开始
 
@@ -30,14 +30,14 @@ const user = await api.get('/users/123');
 // POST请求
 const result = await api.post('/users', {
   name: 'John',
-  email: 'john@example.com'
+  email: 'john@example.com',
 });
 
 // 上传文件
 const uploadResult = await api.upload('/upload', file, {
   onUploadProgress: ({ progress }) => {
     console.log(`上传进度: ${progress}%`);
-  }
+  },
 });
 ```
 
@@ -49,7 +49,7 @@ import { AuthService, AccountService } from '@/shared/api';
 // 用户登录
 const loginResult = await AuthService.login({
   username: 'admin',
-  password: 'password123'
+  password: 'password123',
 });
 
 // 获取账户信息
@@ -82,7 +82,7 @@ const { user, loading, error, logout } = useAuth();
 ### 主要实例
 
 - `api` - 默认API客户端，需要认证
-- `publicApiClient` - 公共API客户端，无需认证  
+- `publicApiClient` - 公共API客户端，无需认证
 - `uploadClient` - 文件上传专用客户端
 - `adminApiClient` - 管理员API客户端
 
@@ -108,19 +108,19 @@ import { useAuth } from '@/shared/api';
 
 const {
   isAuthenticated, // 是否已认证
-  user,            // 当前用户信息
-  loading,         // 加载状态
-  error,           // 错误信息
-  login,           // 登录方法
-  logout,          // 登出方法
-  hasPermission,   // 权限检查
-  hasRole,         // 角色检查
+  user, // 当前用户信息
+  loading, // 加载状态
+  error, // 错误信息
+  login, // 登录方法
+  logout, // 登出方法
+  hasPermission, // 权限检查
+  hasRole, // 角色检查
 } = useAuth();
 
 // 登录
 await login({
   username: 'admin',
-  password: 'password123'
+  password: 'password123',
 });
 
 // 权限检查
@@ -136,11 +136,11 @@ import { useRequest } from '@/shared/api';
 import { AccountService } from '@/shared/api';
 
 const {
-  data,        // 响应数据
-  loading,     // 加载状态
-  error,       // 错误信息
-  execute,     // 执行请求
-  reset,       // 重置状态
+  data, // 响应数据
+  loading, // 加载状态
+  error, // 错误信息
+  execute, // 执行请求
+  reset, // 重置状态
 } = useRequest(AccountService.getAccountById);
 
 // 执行请求
@@ -154,17 +154,17 @@ import { usePagination } from '@/shared/api';
 import { AccountService } from '@/shared/api';
 
 const {
-  items,           // 当前页数据
-  loading,         // 加载状态
-  page,            // 当前页码
-  total,           // 总记录数
-  totalPages,      // 总页数
-  hasNext,         // 是否有下一页
-  hasPrev,         // 是否有上一页
-  goToPage,        // 跳转页面
-  nextPage,        // 下一页
-  prevPage,        // 上一页
-  changePageSize,  // 改变页面大小
+  items, // 当前页数据
+  loading, // 加载状态
+  page, // 当前页码
+  total, // 总记录数
+  totalPages, // 总页数
+  hasNext, // 是否有下一页
+  hasPrev, // 是否有上一页
+  goToPage, // 跳转页面
+  nextPage, // 下一页
+  prevPage, // 上一页
+  changePageSize, // 改变页面大小
 } = usePagination(AccountService.getAccounts);
 
 // 跳转到第2页
@@ -221,11 +221,11 @@ const apiClient = createApiClient({
   errorHandler: (error) => {
     // 全局错误处理
     console.error('API Error:', error);
-    
+
     // 显示错误通知
     showErrorNotification(error.message);
   },
-  
+
   authFailHandler: () => {
     // 认证失败处理
     router.push('/login');
@@ -241,10 +241,10 @@ try {
 } catch (error) {
   if (error.status === 'error') {
     console.error('业务错误:', error.message);
-    
+
     // 处理验证错误
     if (error.errors) {
-      error.errors.forEach(err => {
+      error.errors.forEach((err) => {
         console.error(`字段 ${err.field}: ${err.message}`);
       });
     }
@@ -331,7 +331,7 @@ export class UserService {
   static async getProfile(): Promise<UserProfile> {
     return api.get('/profile');
   }
-  
+
   static async updateProfile(data: UpdateProfileRequest): Promise<void> {
     return api.put('/profile', data);
   }
@@ -344,12 +344,12 @@ export class UserService {
 // composables/useUsers.ts
 export function useUsers() {
   const { items, loading, refresh } = usePagination(UserService.getUsers);
-  
+
   const deleteUser = async (id: string) => {
     await UserService.deleteUser(id);
     await refresh(); // 刷新列表
   };
-  
+
   return {
     users: items,
     loading,
@@ -372,10 +372,12 @@ export function useUsers() {
 <script setup lang="ts">
 import { useRequest } from '@/shared/api';
 
-const { data: users, loading, error, execute: retry } = useRequest(
-  UserService.getUsers,
-  { immediate: true }
-);
+const {
+  data: users,
+  loading,
+  error,
+  execute: retry,
+} = useRequest(UserService.getUsers, { immediate: true });
 </script>
 ```
 
@@ -384,6 +386,7 @@ const { data: users, loading, error, execute: retry } = useRequest(
 ### 从旧的axios配置迁移
 
 #### 旧方式
+
 ```typescript
 // 旧的配置方式
 import axios from 'axios';
@@ -391,7 +394,7 @@ import axios from 'axios';
 const oldClient = axios.create({
   baseURL: 'http://localhost:3000/api',
   headers: {
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
   },
 });
 
@@ -400,6 +403,7 @@ const data = response.data;
 ```
 
 #### 新方式
+
 ```typescript
 // 新的API客户端
 import { api } from '@/shared/api';
@@ -411,6 +415,7 @@ const data = await api.get('/users');
 ### 组件重构示例
 
 #### 旧组件
+
 ```vue
 <script setup lang="ts">
 import axios from 'axios';
@@ -436,14 +441,12 @@ onMounted(fetchUsers);
 ```
 
 #### 新组件
+
 ```vue
 <script setup lang="ts">
 import { UserService, useRequest } from '@/shared/api';
 
-const { data: users, loading, error } = useRequest(
-  UserService.getUsers,
-  { immediate: true }
-);
+const { data: users, loading, error } = useRequest(UserService.getUsers, { immediate: true });
 </script>
 ```
 

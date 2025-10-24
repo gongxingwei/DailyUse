@@ -1,5 +1,3 @@
 <template>
-  <div class="status-bar">
-    StatusBar
-  </div>
+  <div class="status-bar">StatusBar</div>
 </template>

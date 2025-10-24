@@ -1,6 +1,1 @@
-
-export * from "@common/modules/account/types/account";
-
-
-
-
+export * from '@common/modules/account/types/account';

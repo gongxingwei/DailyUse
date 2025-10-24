@@ -257,12 +257,12 @@ export class ReminderTemplateControlService {
   async getEffectivelyEnabledTemplatesInGroup(groupUuid: string): Promise<ReminderTemplate[]> {
     const templates = await this.templateRepository.findByGroupUuid(groupUuid);
     const statusResults = await this.calculateEffectiveStatusBatch(templates);
-    
+
     const enabledTemplateUuids = statusResults
-      .filter(r => r.isEffectivelyEnabled)
-      .map(r => r.templateUuid);
-    
-    return templates.filter(t => enabledTemplateUuids.includes(t.uuid));
+      .filter((r) => r.isEffectivelyEnabled)
+      .map((r) => r.templateUuid);
+
+    return templates.filter((t) => enabledTemplateUuids.includes(t.uuid));
   }
 
   /**
@@ -271,11 +271,11 @@ export class ReminderTemplateControlService {
   async getEffectivelyEnabledTemplatesByAccount(accountUuid: string): Promise<ReminderTemplate[]> {
     const templates = await this.templateRepository.findByAccountUuid(accountUuid);
     const statusResults = await this.calculateEffectiveStatusBatch(templates);
-    
+
     const enabledTemplateUuids = statusResults
-      .filter(r => r.isEffectivelyEnabled)
-      .map(r => r.templateUuid);
-    
-    return templates.filter(t => enabledTemplateUuids.includes(t.uuid));
+      .filter((r) => r.isEffectivelyEnabled)
+      .map((r) => r.templateUuid);
+
+    return templates.filter((t) => enabledTemplateUuids.includes(t.uuid));
   }
 }

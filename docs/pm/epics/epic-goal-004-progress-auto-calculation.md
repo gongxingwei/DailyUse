@@ -18,11 +18,13 @@
 根据 KR（关键结果）的完成情况和权重自动计算目标进度，确保数据实时准确，消除手动更新的繁琐和错误。
 
 **核心问题**:
+
 - ❌ 用户需要手动更新目标进度，费时费力且容易遗忘
 - ❌ 目标进度与 KR 进度不一致，导致数据混乱
 - ❌ KR 权重变化后，目标进度未自动重新计算
 
 **解决方案**:
+
 - ✅ 基于加权平均算法自动计算目标进度
 - ✅ KR 进度或权重变化时触发自动重算
 - ✅ 提供进度分解详情，透明化计算过程
@@ -91,26 +93,27 @@ Scenario: 实现 Domain 层计算逻辑
  * 进度计算模式
  */
 export enum ProgressCalculationMode {
-  WEIGHTED_AVERAGE = 'weighted_average',  // 加权平均（MVP 默认）
-  MIN_VALUE = 'min_value',                // 最小值（MMP）
-  THRESHOLD = 'threshold',                // 阈值模式（MMP）
-  CUSTOM = 'custom'                       // 自定义（Full）
+  WEIGHTED_AVERAGE = 'weighted_average', // 加权平均（MVP 默认）
+  MIN_VALUE = 'min_value', // 最小值（MMP）
+  THRESHOLD = 'threshold', // 阈值模式（MMP）
+  CUSTOM = 'custom', // 自定义（Full）
 }
 
 /**
  * 进度分解详情
  */
 export interface ProgressBreakdown {
-  readonly totalProgress: number;                    // 总进度
+  readonly totalProgress: number; // 总进度
   readonly calculationMode: ProgressCalculationMode; // 计算模式
-  readonly krContributions: Array<{                  // KR 贡献度
+  readonly krContributions: Array<{
+    // KR 贡献度
     keyResultUuid: string;
     keyResultName: string;
-    progress: number;                                // KR 进度
-    weight: number;                                  // KR 权重
-    contribution: number;                            // 贡献值 = progress × weight
+    progress: number; // KR 进度
+    weight: number; // KR 权重
+    contribution: number; // 贡献值 = progress × weight
   }>;
-  readonly calculationFormula: string;               // 计算公式（可读）
+  readonly calculationFormula: string; // 计算公式（可读）
   readonly updatedAt: number;
 }
 
@@ -121,7 +124,7 @@ export interface ProgressOverride {
   readonly isOverridden: boolean;
   readonly manualProgress: number;
   readonly overrideReason: string;
-  readonly autoRestore: boolean;                     // 数据同步后自动恢复
+  readonly autoRestore: boolean; // 数据同步后自动恢复
   readonly overrideTime: number;
   readonly operatorUuid: string;
 }
@@ -142,9 +145,10 @@ export interface GoalServerDTO {
 ```typescript
 export class Goal extends AggregateRoot {
   private _progress: number = 0;
-  private _progressCalculationMode: ProgressCalculationMode = ProgressCalculationMode.WEIGHTED_AVERAGE;
+  private _progressCalculationMode: ProgressCalculationMode =
+    ProgressCalculationMode.WEIGHTED_AVERAGE;
   private _progressOverride?: ProgressOverride;
-  
+
   /**
    * 自动计算目标进度
    */
@@ -160,12 +164,14 @@ export class Goal extends AggregateRoot {
     if (newProgress !== oldProgress) {
       this._progress = newProgress;
       this.recordProgressChange(oldProgress, newProgress);
-      this.addDomainEvent(new GoalProgressUpdatedEvent({
-        goalUuid: this.uuid,
-        oldProgress,
-        newProgress,
-        trigger: this.progressUpdateTrigger
-      }));
+      this.addDomainEvent(
+        new GoalProgressUpdatedEvent({
+          goalUuid: this.uuid,
+          oldProgress,
+          newProgress,
+          trigger: this.progressUpdateTrigger,
+        }),
+      );
     }
   }
 
@@ -174,13 +180,13 @@ export class Goal extends AggregateRoot {
    */
   private calculateWeightedAverage(): number {
     if (this.keyResults.length === 0) return 0;
-    
+
     const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0);
     if (totalWeight === 0) return 0;
 
     const weightedSum = this.keyResults.reduce(
-      (sum, kr) => sum + (kr.progress * kr.weight / 100),
-      0
+      (sum, kr) => sum + (kr.progress * kr.weight) / 100,
+      0,
     );
 
     return Math.round((weightedSum / totalWeight) * 100);
@@ -190,12 +196,12 @@ export class Goal extends AggregateRoot {
    * 获取进度分解详情
    */
   getProgressBreakdown(): ProgressBreakdown {
-    const krContributions = this.keyResults.map(kr => ({
+    const krContributions = this.keyResults.map((kr) => ({
       keyResultUuid: kr.uuid,
       keyResultName: kr.name,
       progress: kr.progress,
       weight: kr.weight,
-      contribution: Math.round((kr.progress * kr.weight) / 100)
+      contribution: Math.round((kr.progress * kr.weight) / 100),
     }));
 
     return {
@@ -203,21 +209,23 @@ export class Goal extends AggregateRoot {
       calculationMode: this._progressCalculationMode,
       krContributions,
       calculationFormula: this.buildFormula(krContributions),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
   }
 
   private buildFormula(contributions: Array<any>): string {
-    const terms = contributions.map(c => `${c.progress}% × ${c.weight}%`).join(' + ');
+    const terms = contributions.map((c) => `${c.progress}% × ${c.weight}%`).join(' + ');
     return `(${terms}) / 100% = ${this._progress}%`;
   }
 }
 ```
 
 #### Dependencies
+
 - None (基础功能)
 
 #### Testing Strategy
+
 - **Unit Tests**: 加权平均算法测试（各种权重组合）
 - **Edge Cases**: 无 KR、权重为 0、权重不等于 100%
 
@@ -279,7 +287,7 @@ export class UpdateGoalProgressService {
 
   async execute(command: UpdateGoalProgressCommand): Promise<void> {
     const { goalUuid, trigger } = command;
-    
+
     // 加载聚合根
     const goal = await this.goalRepository.findByUuid(goalUuid);
     if (!goal) {
@@ -314,19 +322,19 @@ export class UpdateGoalProgressService {
    */
   async executeBatch(goalUuids: string[], trigger: string): Promise<void> {
     const goals = await this.goalRepository.findByUuids(goalUuids);
-    
+
     for (const goal of goals) {
       goal.calculateProgress();
       goal.progressUpdateTrigger = trigger;
     }
 
     await this.goalRepository.saveAll(goals);
-    
+
     // 批量发布事件
     const events = goals
       .filter(g => g.hasProgressChanged())
       .map(g => new GoalProgressUpdatedEvent({...}));
-    
+
     await this.eventBus.publishBatch(events);
   }
 }
@@ -337,14 +345,12 @@ export class UpdateGoalProgressService {
 ```typescript
 @EventHandler(KeyResultProgressUpdatedEvent)
 export class KeyResultProgressUpdatedHandler {
-  constructor(
-    private readonly updateProgressService: UpdateGoalProgressService
-  ) {}
+  constructor(private readonly updateProgressService: UpdateGoalProgressService) {}
 
   async handle(event: KeyResultProgressUpdatedEvent): Promise<void> {
     await this.updateProgressService.execute({
       goalUuid: event.goalUuid,
-      trigger: 'kr_progress_update'
+      trigger: 'kr_progress_update',
     });
   }
 }
@@ -354,16 +360,18 @@ export class KeyResultWeightChangedHandler {
   async handle(event: KeyResultWeightChangedEvent): Promise<void> {
     await this.updateProgressService.execute({
       goalUuid: event.goalUuid,
-      trigger: 'kr_weight_change'
+      trigger: 'kr_weight_change',
     });
   }
 }
 ```
 
 #### Dependencies
+
 - Story 001 (Contracts & Domain)
 
 #### Testing Strategy
+
 - **Integration Tests**: 监听 KR 事件触发进度更新
 - **Performance Tests**: 批量更新性能测试
 
@@ -410,13 +418,13 @@ Scenario: 扩展 Goal 表字段
 ```prisma
 model Goal {
   // ...existing fields...
-  
+
   // 进度计算
   progress                    Int      @default(0) @map("progress")
   progressCalculationMode     String   @default("weighted_average") @map("progress_calculation_mode")
   lastProgressUpdateTime      BigInt?  @map("last_progress_update_time")
   progressUpdateTrigger       String?  @map("progress_update_trigger")
-  
+
   // 手动覆盖
   progressIsOverridden        Boolean  @default(false) @map("progress_is_overridden")
   progressManualValue         Int?     @map("progress_manual_value")
@@ -449,9 +457,11 @@ CREATE INDEX "Goal_last_progress_update_time_idx" ON "Goal"("last_progress_updat
 ```
 
 #### Dependencies
+
 - Story 001 (Contracts)
 
 #### Testing Strategy
+
 - **Migration Tests**: 验证迁移不破坏现有数据
 - **Repository Tests**: CRUD 操作包含新字段
 
@@ -509,17 +519,15 @@ Scenario: 手动覆盖进度
 
 ```typescript
 // 获取进度分解详情
-router.get('/:id/progress-breakdown', 
-  authenticate,
-  async (req, res) => {
-    const goalUuid = req.params.id;
-    const breakdown = await goalApplicationService.getProgressBreakdown(goalUuid);
-    res.json(breakdown);
-  }
-);
+router.get('/:id/progress-breakdown', authenticate, async (req, res) => {
+  const goalUuid = req.params.id;
+  const breakdown = await goalApplicationService.getProgressBreakdown(goalUuid);
+  res.json(breakdown);
+});
 
 // 手动覆盖进度
-router.post('/:id/progress-override',
+router.post(
+  '/:id/progress-override',
   authenticate,
   validateBody(ProgressOverrideSchema),
   async (req, res) => {
@@ -529,20 +537,17 @@ router.post('/:id/progress-override',
       manualProgress,
       reason,
       autoRestore,
-      operatorUuid: req.user.uuid
+      operatorUuid: req.user.uuid,
     });
     res.json(toClientDTO(goal));
-  }
+  },
 );
 
 // 恢复自动计算
-router.delete('/:id/progress-override',
-  authenticate,
-  async (req, res) => {
-    const goal = await goalApplicationService.restoreAutoProgress(req.params.id);
-    res.json(toClientDTO(goal));
-  }
-);
+router.delete('/:id/progress-override', authenticate, async (req, res) => {
+  const goal = await goalApplicationService.restoreAutoProgress(req.params.id);
+  res.json(toClientDTO(goal));
+});
 ```
 
 **Validation Schema**:
@@ -551,15 +556,17 @@ router.delete('/:id/progress-override',
 const ProgressOverrideSchema = z.object({
   manualProgress: z.number().min(0).max(100),
   reason: z.string().min(1).max(200),
-  autoRestore: z.boolean().default(false)
+  autoRestore: z.boolean().default(false),
 });
 ```
 
 #### Dependencies
+
 - Story 002 (Application Service)
 - Story 003 (Infrastructure)
 
 #### Testing Strategy
+
 - **API Tests**: 测试所有端点的请求/响应
 - **Auth Tests**: 验证权限控制
 
@@ -610,7 +617,7 @@ export class GoalProgressService {
    */
   async getProgressBreakdown(goalUuid: string): Promise<ProgressBreakdown> {
     const response = await apiClient.get<ProgressBreakdown>(
-      `/api/v1/goals/${goalUuid}/progress-breakdown`
+      `/api/v1/goals/${goalUuid}/progress-breakdown`,
     );
     return response.data;
   }
@@ -629,8 +636,8 @@ export class GoalProgressService {
       {
         manualProgress: params.manualProgress,
         reason: params.reason,
-        autoRestore: params.autoRestore
-      }
+        autoRestore: params.autoRestore,
+      },
     );
     return response.data;
   }
@@ -640,7 +647,7 @@ export class GoalProgressService {
    */
   async restoreAutoProgress(goalUuid: string): Promise<GoalClientDTO> {
     const response = await apiClient.delete<GoalClientDTO>(
-      `/api/v1/goals/${goalUuid}/progress-override`
+      `/api/v1/goals/${goalUuid}/progress-override`,
     );
     return response.data;
   }
@@ -652,12 +659,12 @@ export class GoalProgressService {
 ```typescript
 export function useProgressBreakdown(goalUuid: string) {
   const service = new GoalProgressService();
-  
+
   return useQuery({
     queryKey: ['goal-progress-breakdown', goalUuid],
     queryFn: () => service.getProgressBreakdown(goalUuid),
     staleTime: 5 * 60 * 1000, // 5 分钟
-    enabled: !!goalUuid
+    enabled: !!goalUuid,
   });
 }
 
@@ -666,22 +673,21 @@ export function useOverrideProgress() {
   const service = new GoalProgressService();
 
   return useMutation({
-    mutationFn: (params: OverrideProgressParams) => 
-      service.overrideProgress(params),
+    mutationFn: (params: OverrideProgressParams) => service.overrideProgress(params),
     onMutate: async (params) => {
       // Optimistic Update
       await queryClient.cancelQueries(['goal', params.goalUuid]);
-      
+
       const previousGoal = queryClient.getQueryData(['goal', params.goalUuid]);
-      
+
       queryClient.setQueryData(['goal', params.goalUuid], (old: any) => ({
         ...old,
         progress: params.manualProgress,
         progressOverride: {
           isOverridden: true,
           manualProgress: params.manualProgress,
-          overrideReason: params.reason
-        }
+          overrideReason: params.reason,
+        },
       }));
 
       return { previousGoal };
@@ -694,15 +700,17 @@ export function useOverrideProgress() {
       // 更新缓存
       queryClient.invalidateQueries(['goal', params.goalUuid]);
       queryClient.invalidateQueries(['goal-progress-breakdown', params.goalUuid]);
-    }
+    },
   });
 }
 ```
 
 #### Dependencies
+
 - Story 004 (API Endpoints)
 
 #### Testing Strategy
+
 - **Unit Tests**: Mock API 响应测试 Hooks
 - **Integration Tests**: 真实 API 调用测试
 
@@ -753,18 +761,12 @@ Scenario: KR 贡献度可视化
 
 ```vue
 <template>
-  <el-dialog
-    v-model="visible"
-    title="进度计算详情"
-    width="600px"
-  >
+  <el-dialog v-model="visible" title="进度计算详情" width="600px">
     <div v-if="breakdown" class="progress-breakdown">
       <!-- 总进度 -->
       <div class="total-progress">
         <div class="progress-value">{{ breakdown.totalProgress }}%</div>
-        <div class="progress-mode">
-          计算模式: {{ getModeLabel(breakdown.calculationMode) }}
-        </div>
+        <div class="progress-mode">计算模式: {{ getModeLabel(breakdown.calculationMode) }}</div>
       </div>
 
       <!-- KR 贡献列表 -->
@@ -780,7 +782,7 @@ Scenario: KR 贡献度可视化
             <span class="kr-name">{{ kr.keyResultName }}</span>
             <span class="kr-weight">权重 {{ kr.weight }}%</span>
           </div>
-          
+
           <div class="kr-progress">
             <el-progress
               :percentage="kr.progress"
@@ -816,16 +818,13 @@ import { useProgressBreakdown } from '@domain-client/goal';
 const props = defineProps<{ goalUuid: string }>();
 const visible = defineModel<boolean>('visible', { default: false });
 
-const { data: breakdown, isLoading } = useProgressBreakdown(
-  () => props.goalUuid,
-  { enabled: visible }
-);
+const { data: breakdown, isLoading } = useProgressBreakdown(() => props.goalUuid, {
+  enabled: visible,
+});
 
 const isHighestContribution = (kr: any) => {
   if (!breakdown.value) return false;
-  const maxContribution = Math.max(
-    ...breakdown.value.krContributions.map(k => k.contribution)
-  );
+  const maxContribution = Math.max(...breakdown.value.krContributions.map((k) => k.contribution));
   return kr.contribution === maxContribution;
 };
 
@@ -833,7 +832,7 @@ const getModeLabel = (mode: string) => {
   const labels = {
     weighted_average: '加权平均',
     min_value: '最小值',
-    threshold: '阈值模式'
+    threshold: '阈值模式',
   };
   return labels[mode] || mode;
 };
@@ -845,7 +844,7 @@ const getModeLabel = (mode: string) => {
     text-align: center;
     padding: 20px 0;
     border-bottom: 1px solid #eee;
-    
+
     .progress-value {
       font-size: 48px;
       font-weight: bold;
@@ -855,13 +854,13 @@ const getModeLabel = (mode: string) => {
 
   .kr-contributions {
     margin-top: 20px;
-    
+
     .kr-item {
       padding: 12px;
       margin-bottom: 12px;
       border-radius: 4px;
       background: #f5f7fa;
-      
+
       &.is-highest {
         background: #e6f7ff;
         border: 1px solid #91d5ff;
@@ -873,7 +872,7 @@ const getModeLabel = (mode: string) => {
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid #eee;
-    
+
     code {
       display: block;
       padding: 12px;
@@ -887,9 +886,11 @@ const getModeLabel = (mode: string) => {
 ```
 
 #### Dependencies
+
 - Story 005 (Client Services)
 
 #### Testing Strategy
+
 - **Component Tests**: 渲染各种进度数据
 - **E2E Tests**: 用户交互流程测试
 
@@ -947,28 +948,28 @@ test.describe('目标进度自动计算', () => {
     await page.click('[data-testid="create-goal"]');
     await page.fill('[data-testid="goal-name"]', '测试目标');
     await page.click('[data-testid="save-goal"]');
-    
+
     // 添加 3 个 KR
     await page.click('[data-testid="add-kr"]');
     await page.fill('[data-testid="kr-name"]', 'KR1');
     await page.fill('[data-testid="kr-weight"]', '50');
     await page.fill('[data-testid="kr-progress"]', '60');
     await page.click('[data-testid="save-kr"]');
-    
+
     // 验证初始进度
     const initialProgress = await page.textContent('[data-testid="goal-progress"]');
     expect(initialProgress).toContain('66%');
-    
+
     // 更新 KR1 进度
     await page.click('[data-testid="edit-kr-1"]');
     await page.fill('[data-testid="kr-progress"]', '80');
     await page.click('[data-testid="save-kr"]');
-    
+
     // 验证进度自动更新
     await page.waitForSelector('[data-testid="goal-progress"]');
     const newProgress = await page.textContent('[data-testid="goal-progress"]');
     expect(newProgress).toContain('76%');
-    
+
     // 验证进度分解
     await page.click('[data-testid="view-progress-breakdown"]');
     await expect(page.locator('[data-testid="kr-1-contribution"]')).toContainText('40%');
@@ -976,16 +977,16 @@ test.describe('目标进度自动计算', () => {
 
   test('手动覆盖进度流程', async ({ page }) => {
     await page.goto('/goals/test-goal-uuid');
-    
+
     // 点击手动设置进度
     await page.click('[data-testid="override-progress"]');
     await page.fill('[data-testid="manual-progress"]', '80');
     await page.fill('[data-testid="override-reason"]', '测试覆盖');
     await page.click('[data-testid="confirm-override"]');
-    
+
     // 验证覆盖标记
     await expect(page.locator('[data-testid="progress-override-badge"]')).toBeVisible();
-    
+
     // 恢复自动计算
     await page.click('[data-testid="restore-auto-progress"]');
     await expect(page.locator('[data-testid="progress-override-badge"]')).not.toBeVisible();
@@ -994,9 +995,11 @@ test.describe('目标进度自动计算', () => {
 ```
 
 #### Dependencies
+
 - Story 006 (UI Components)
 
 #### Testing Strategy
+
 - **Playwright Tests**: 覆盖所有用户场景
 - **Visual Tests**: 截图对比验证 UI
 
@@ -1005,12 +1008,14 @@ test.describe('目标进度自动计算', () => {
 ## 3. 技术依赖
 
 ### 外部依赖
+
 - Prisma (数据库操作)
 - TypeScript (类型系统)
 - Vue 3 / Element Plus (UI 组件)
 - React Query (状态管理)
 
 ### 内部依赖
+
 - Goal Contracts (数据结构定义)
 - KeyResult Entity (KR 数据)
 - Event Bus (事件驱动)
@@ -1036,11 +1041,13 @@ test.describe('目标进度自动计算', () => {
 ### Sprint 3 (Week 5-6)
 
 **Week 1**:
+
 - Day 1-2: Story 001 (Contracts & Domain)
 - Day 3-4: Story 002 (Application Service)
 - Day 5: Story 003 (Infrastructure)
 
 **Week 2**:
+
 - Day 1-2: Story 004 (API) + Story 005 (Client)
 - Day 3-4: Story 006 (UI Components)
 - Day 5: Story 007 (E2E Tests) + Bug Fixes
@@ -1076,5 +1083,5 @@ Feature: 目标进度自动计算
 
 ---
 
-*文档创建: 2025-10-21*  
-*Epic Owner: PM Agent*
+_文档创建: 2025-10-21_  
+_Epic Owner: PM Agent_

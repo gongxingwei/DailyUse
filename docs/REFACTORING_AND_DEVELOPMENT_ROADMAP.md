@@ -59,7 +59,7 @@ export abstract class DomainError extends Error {
     code: string,
     message: string,
     context?: Record<string, any>,
-    httpStatus: number = 400
+    httpStatus: number = 400,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -101,12 +101,7 @@ export class BusinessRuleViolationError extends DomainError {
  */
 export class NotFoundError extends DomainError {
   constructor(resource: string, identifier: string) {
-    super(
-      'NOT_FOUND',
-      `${resource} not found: ${identifier}`,
-      { resource, identifier },
-      404
-    );
+    super('NOT_FOUND', `${resource} not found: ${identifier}`, { resource, identifier }, 404);
   }
 }
 
@@ -189,10 +184,7 @@ export class TaskInstanceNotFoundError extends NotFoundError {
 
 export class InvalidTaskInstanceStateError extends BusinessRuleViolationError {
   constructor(currentState: string, action: string) {
-    super(
-      `Cannot ${action} task in state ${currentState}`,
-      { currentState, action }
-    );
+    super(`Cannot ${action} task in state ${currentState}`, { currentState, action });
   }
 }
 
@@ -299,16 +291,20 @@ export class TaskTemplateController {
         res,
         null,
         'Tag added successfully',
-        200
+        200,
       );
     } catch (error) {
       // ✅ 统一错误处理
       if (error instanceof DomainError) {
-        return TaskTemplateController.responseBuilder.sendError(res, {
-          code: error.code as any,
-          message: error.message,
-          details: error.context,
-        }, error.httpStatus);
+        return TaskTemplateController.responseBuilder.sendError(
+          res,
+          {
+            code: error.code as any,
+            message: error.message,
+            details: error.context,
+          },
+          error.httpStatus,
+        );
       }
 
       logger.error('Error adding tag', { error });
@@ -322,6 +318,7 @@ export class TaskTemplateController {
 ```
 
 **✅ Day 1 交付物**:
+
 - [x] DomainError 基类及常用错误类
 - [x] Task 模块专用错误类
 - [x] TaskTemplate 重构使用新错误
@@ -350,12 +347,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: [
-        'src/**/*.spec.ts',
-        'src/**/*.test.ts',
-        'src/**/index.ts',
-        'src/**/__tests__/**',
-      ],
+      exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/index.ts', 'src/**/__tests__/**'],
       thresholds: {
         lines: 80,
         functions: 80,
@@ -382,11 +374,7 @@ export default defineConfig({
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TaskTemplate } from '../TaskTemplate';
 import { TaskTimeConfig, RecurrenceRule, TaskReminderConfig } from '../../value-objects';
-import {
-  InvalidTagError,
-  TooManyTagsError,
-  TagNotFoundError,
-} from '../../errors/TaskErrors';
+import { InvalidTagError, TooManyTagsError, TagNotFoundError } from '../../errors/TaskErrors';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 
 describe('TaskTemplate Aggregate Root', () => {
@@ -588,7 +576,7 @@ describe('TaskTemplate Aggregate Root', () => {
 
       const instances = template.generateInstances(
         Date.parse('2025-11-01'),
-        Date.parse('2025-12-31')
+        Date.parse('2025-12-31'),
       );
 
       expect(instances).toHaveLength(1);
@@ -613,7 +601,7 @@ describe('TaskTemplate Aggregate Root', () => {
 
       const instances = template.generateInstances(
         Date.parse('2025-12-01'),
-        Date.parse('2025-12-07') // 7 days
+        Date.parse('2025-12-07'), // 7 days
       );
 
       expect(instances).toHaveLength(7);
@@ -627,7 +615,7 @@ describe('TaskTemplate Aggregate Root', () => {
 
       const instances = template.generateInstances(
         Date.parse('2025-11-01'),
-        Date.parse('2025-12-31')
+        Date.parse('2025-12-31'),
       );
 
       expect(instances).toHaveLength(0);
@@ -769,12 +757,14 @@ describe('TaskTemplate Aggregate Root', () => {
 ```
 
 **运行测试**:
+
 ```bash
 cd packages/domain-server
 pnpm test TaskTemplate.spec.ts --coverage
 ```
 
 **✅ Day 2-3 交付物**:
+
 - [x] 测试环境配置
 - [x] TaskTemplate 单元测试 (80%+ 覆盖率)
 - [x] 测试报告生成
@@ -816,7 +806,7 @@ describe('RecurrenceRule Value Object', () => {
         RecurrenceRule.create({
           frequency: 'DAILY',
           interval: 0,
-        })
+        }),
       ).toThrow(InvalidRecurrenceRuleError);
     });
 
@@ -825,7 +815,7 @@ describe('RecurrenceRule Value Object', () => {
         RecurrenceRule.create({
           frequency: 'DAILY',
           interval: 366,
-        })
+        }),
       ).toThrow(InvalidRecurrenceRuleError);
     });
   });
@@ -847,7 +837,7 @@ describe('RecurrenceRule Value Object', () => {
           frequency: 'WEEKLY',
           interval: 1,
           daysOfWeek: [],
-        })
+        }),
       ).toThrow(InvalidRecurrenceRuleError);
     });
 
@@ -857,7 +847,7 @@ describe('RecurrenceRule Value Object', () => {
           frequency: 'WEEKLY',
           interval: 1,
           daysOfWeek: [7],
-        })
+        }),
       ).toThrow(InvalidRecurrenceRuleError);
     });
   });
@@ -879,7 +869,7 @@ describe('RecurrenceRule Value Object', () => {
           frequency: 'MONTHLY',
           interval: 1,
           dayOfMonth: 32,
-        })
+        }),
       ).toThrow(InvalidRecurrenceRuleError);
     });
   });
@@ -912,7 +902,7 @@ describe('RecurrenceRule Value Object', () => {
           frequency: 'DAILY',
           interval: 1,
           count: 0,
-        })
+        }),
       ).toThrow(InvalidRecurrenceRuleError);
     });
   });
@@ -951,6 +941,7 @@ describe('RecurrenceRule Value Object', () => {
 ```
 
 **✅ Day 4 交付物**:
+
 - [x] RecurrenceRule 单元测试
 - [x] 覆盖率 ≥ 80%
 
@@ -1014,7 +1005,7 @@ describe('TaskTimeConfig Value Object', () => {
         TaskTimeConfig.create({
           startDate: Date.now(),
           duration: 4,
-        })
+        }),
       ).toThrow('Duration must be at least 5 minutes');
     });
 
@@ -1023,7 +1014,7 @@ describe('TaskTimeConfig Value Object', () => {
         TaskTimeConfig.create({
           startDate: Date.now(),
           duration: 1441,
-        })
+        }),
       ).toThrow('Duration cannot exceed 1440 minutes');
     });
   });
@@ -1031,6 +1022,7 @@ describe('TaskTimeConfig Value Object', () => {
 ```
 
 **✅ Week 1 总结**:
+
 - [x] 统一错误处理完成
 - [x] Domain 层单元测试完成 (TaskTemplate, RecurrenceRule, TaskTimeConfig)
 - [x] 测试覆盖率达到 80%+
@@ -1093,7 +1085,7 @@ describe('TaskTemplateApplicationService', () => {
           accountUuid: 'acc-123',
           title: '', // Empty title
           taskType: 'ONE_TIME' as const,
-        })
+        }),
       ).rejects.toThrow('Title is required');
     });
   });
@@ -1120,7 +1112,7 @@ describe('TaskTemplateApplicationService', () => {
       mockRepository.findByUuid.mockResolvedValue(null);
 
       await expect(service.addTagToTemplate('tpl-999', 'urgent')).rejects.toThrow(
-        'TaskTemplate not found'
+        'TaskTemplate not found',
       );
     });
   });
@@ -1148,6 +1140,7 @@ describe('TaskTemplateApplicationService', () => {
 ```
 
 **运行测试**:
+
 ```bash
 cd apps/api
 pnpm test TaskTemplateApplicationService.spec.ts --coverage
@@ -1214,10 +1207,10 @@ export class TaskTemplateController {
   static async createTaskTemplate(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = TaskTemplateController.extractAccountUuid(req);
-      
+
       // ✅ Zod 验证
       const validated = createTaskTemplateSchema.parse(req.body);
-      
+
       const service = await TaskTemplateController.getTaskTemplateService();
       const template = await service.createTaskTemplate({
         accountUuid,
@@ -1228,15 +1221,19 @@ export class TaskTemplateController {
         res,
         template,
         'Task template created successfully',
-        201
+        201,
       );
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return TaskTemplateController.responseBuilder.sendError(res, {
-          code: ResponseCode.VALIDATION_ERROR,
-          message: 'Validation failed',
-          details: error.errors,
-        }, 400);
+        return TaskTemplateController.responseBuilder.sendError(
+          res,
+          {
+            code: ResponseCode.VALIDATION_ERROR,
+            message: 'Validation failed',
+            details: error.errors,
+          },
+          400,
+        );
       }
 
       // ... 其他错误处理
@@ -1246,10 +1243,10 @@ export class TaskTemplateController {
   static async addTag(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      
+
       // ✅ Zod 验证
       const { tag } = addTagSchema.parse(req.body);
-      
+
       const service = await TaskTemplateController.getTaskTemplateService();
       await service.addTagToTemplate(id, tag);
 
@@ -1257,7 +1254,7 @@ export class TaskTemplateController {
         res,
         null,
         'Tag added successfully',
-        200
+        200,
       );
     } catch (error) {
       // 统一错误处理
@@ -1267,6 +1264,7 @@ export class TaskTemplateController {
 ```
 
 **✅ Day 8 交付物**:
+
 - [x] Zod 验证 Schema 定义
 - [x] Controller 集成 Zod 验证
 - [x] 验证错误统一响应格式
@@ -1291,12 +1289,10 @@ describe('Task Template Tags E2E', () => {
 
   beforeAll(async () => {
     // Login and get token
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({
-        username: 'testuser',
-        password: 'testpass',
-      });
+    const loginRes = await request(app).post('/api/auth/login').send({
+      username: 'testuser',
+      password: 'testpass',
+    });
 
     accessToken = loginRes.body.data.accessToken;
 
@@ -1382,6 +1378,7 @@ describe('Task Template Tags E2E', () => {
 ```
 
 **✅ Week 2 总结**:
+
 - [x] Application Service 单元测试完成
 - [x] API 输入验证 (Zod) 完成
 - [x] E2E 测试完成
@@ -1391,19 +1388,20 @@ describe('Task Template Tags E2E', () => {
 
 ## 📊 Week 1-2 重构成果
 
-| 指标 | 重构前 | 重构后 | 提升 |
-|------|--------|--------|------|
-| **Domain 层测试覆盖率** | < 5% | **85%** | +80% ⬆️ |
-| **Application 层测试覆盖率** | < 10% | **75%** | +65% ⬆️ |
-| **API 输入验证** | ❌ | ✅ | 100% ⬆️ |
-| **错误处理统一性** | 60% | **95%** | +35% ⬆️ |
-| **代码质量评分** | 3.8/5 | **4.5/5** | +18% ⬆️ |
+| 指标                         | 重构前 | 重构后    | 提升    |
+| ---------------------------- | ------ | --------- | ------- |
+| **Domain 层测试覆盖率**      | < 5%   | **85%**   | +80% ⬆️ |
+| **Application 层测试覆盖率** | < 10%  | **75%**   | +65% ⬆️ |
+| **API 输入验证**             | ❌     | ✅        | 100% ⬆️ |
+| **错误处理统一性**           | 60%    | **95%**   | +35% ⬆️ |
+| **代码质量评分**             | 3.8/5  | **4.5/5** | +18% ⬆️ |
 
 ---
 
 ## 🚀 Week 3-6: Sprint 2a/2b 功能开发
 
 详见:
+
 - [Sprint 2a 详细计划](./sprints/sprint-02a-plan.md)
 - [Sprint 2b 详细计划](./sprints/sprint-02b-plan.md)
 
@@ -1412,22 +1410,26 @@ describe('Task Template Tags E2E', () => {
 ## ✅ 行动检查清单
 
 ### **Phase 1: 准备阶段** (今天)
+
 - [ ] Review 代码质量评估报告
 - [ ] 创建 `dev` 分支
 - [ ] 创建 `feature/refactor-error-handling` 分支
 
 ### **Phase 2: Week 1 执行**
+
 - [ ] Day 1: 统一错误处理
 - [ ] Day 2-3: Domain 层单元测试
 - [ ] Day 4: RecurrenceRule 测试
 - [ ] Day 5: TaskTimeConfig 测试
 
 ### **Phase 3: Week 2 执行**
+
 - [ ] Day 6-7: Application Service 测试
 - [ ] Day 8: API 输入验证 (Zod)
 - [ ] Day 9-10: E2E 测试 + Code Review
 
 ### **Phase 4: Sprint 2a-2b**
+
 - [ ] Week 3-4: 任务标签 + 目标关联
 - [ ] Week 5-6: 周期性任务 + 时间块
 
@@ -1436,6 +1438,7 @@ describe('Task Template Tags E2E', () => {
 ## 📞 支持与协作
 
 **遇到问题？**
+
 1. 查看 [代码质量评估报告](./CODE_QUALITY_ASSESSMENT_REPORT.md)
 2. 参考 [Sprint 计划](./pm/sprints/)
 3. 提问 AI Assistant

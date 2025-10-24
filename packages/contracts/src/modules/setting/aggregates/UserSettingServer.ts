@@ -64,14 +64,14 @@ export interface UserSettingServerDTO {
 export interface UserSettingPersistenceDTO {
   uuid: string;
   accountUuid: string;
-  
+
   // Appearance - 扁平化
   appearanceTheme: string; // 'LIGHT' | 'DARK' | 'AUTO'
   appearanceAccentColor: string;
   appearanceFontSize: string; // 'SMALL' | 'MEDIUM' | 'LARGE'
   appearanceFontFamily: string | null;
   appearanceCompactMode: boolean;
-  
+
   // Locale - 扁平化
   localeLanguage: string;
   localeTimezone: string;
@@ -79,7 +79,7 @@ export interface UserSettingPersistenceDTO {
   localeTimeFormat: string; // '12H' | '24H'
   localeWeekStartsOn: number; // 0-6
   localeCurrency: string;
-  
+
   // Workflow - 扁平化
   workflowDefaultTaskView: string; // 'LIST' | 'KANBAN' | 'CALENDAR'
   workflowDefaultGoalView: string; // 'LIST' | 'TREE' | 'GANTT'
@@ -87,22 +87,22 @@ export interface UserSettingPersistenceDTO {
   workflowAutoSave: boolean;
   workflowAutoSaveInterval: number; // milliseconds
   workflowConfirmBeforeDelete: boolean;
-  
+
   // Shortcuts - 扁平化为 JSON（因为是动态键值对）
   shortcutsEnabled: boolean;
   shortcutsCustom: string; // JSON: Record<string, string>
-  
+
   // Privacy - 扁平化
   privacyProfileVisibility: string; // 'PUBLIC' | 'FRIENDS_ONLY' | 'PRIVATE'
   privacyShowOnlineStatus: boolean;
   privacyAllowSearchByEmail: boolean;
   privacyAllowSearchByPhone: boolean;
   privacyShareUsageData: boolean;
-  
+
   // Experimental - 扁平化
   experimentalEnabled: boolean;
   experimentalFeatures: string; // JSON: string[]
-  
+
   // Timestamps
   createdAt: number;
   updatedAt: number;

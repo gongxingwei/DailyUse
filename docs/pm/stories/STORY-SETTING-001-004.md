@@ -232,8 +232,20 @@ Scenario: 删除失败 - 用户不存在
 ### Controller Implementation
 
 **UserPreferenceController.ts**:
+
 ```typescript
-import { Controller, Post, Get, Patch, Put, Delete, Body, Param, Query, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  HttpCode,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserPreferenceService } from '../../../application/services/UserPreferenceService';
 import type { UserPreferenceServerDTO } from '@dailyuse/contracts';
@@ -247,9 +259,7 @@ import {
 @ApiTags('User Preferences')
 @Controller('api/v1/user-preferences')
 export class UserPreferenceController {
-  constructor(
-    private readonly userPreferenceService: UserPreferenceService
-  ) {}
+  constructor(private readonly userPreferenceService: UserPreferenceService) {}
 
   @Post()
   @ApiOperation({ summary: '创建用户偏好设置' })
@@ -265,7 +275,9 @@ export class UserPreferenceController {
 
   @Get()
   @ApiOperation({ summary: '根据 accountUuid 获取用户偏好' })
-  async getByAccountUuid(@Query('accountUuid') accountUuid: string): Promise<UserPreferenceServerDTO> {
+  async getByAccountUuid(
+    @Query('accountUuid') accountUuid: string,
+  ): Promise<UserPreferenceServerDTO> {
     try {
       return await this.userPreferenceService.getByAccountUuid(accountUuid);
     } catch (error) {
@@ -287,7 +299,7 @@ export class UserPreferenceController {
   @ApiOperation({ summary: '更新主题设置' })
   async updateTheme(
     @Param('accountUuid') accountUuid: string,
-    @Body() dto: UpdateThemeRequestDTO
+    @Body() dto: UpdateThemeRequestDTO,
   ): Promise<UserPreferenceServerDTO> {
     try {
       return await this.userPreferenceService.updateTheme({
@@ -303,7 +315,7 @@ export class UserPreferenceController {
   @ApiOperation({ summary: '更新通知设置' })
   async updateNotifications(
     @Param('accountUuid') accountUuid: string,
-    @Body() dto: UpdateNotificationSettingsRequestDTO
+    @Body() dto: UpdateNotificationSettingsRequestDTO,
   ): Promise<UserPreferenceServerDTO> {
     try {
       return await this.userPreferenceService.updateNotificationSettings({
@@ -319,7 +331,7 @@ export class UserPreferenceController {
   @ApiOperation({ summary: '批量更新用户偏好' })
   async update(
     @Param('accountUuid') accountUuid: string,
-    @Body() dto: UpdateUserPreferenceRequestDTO
+    @Body() dto: UpdateUserPreferenceRequestDTO,
   ): Promise<UserPreferenceServerDTO> {
     try {
       return await this.userPreferenceService.update({
@@ -360,6 +372,7 @@ export class UserPreferenceController {
 ### Request DTOs with Validation
 
 **CreateUserPreferenceRequestDTO.ts**:
+
 ```typescript
 import { IsString, IsOptional, IsEnum, IsInt, Min, Max, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -392,7 +405,8 @@ export class CreateUserPreferenceRequestDTO {
 
 ### E2E Tests
 
-**__tests__/UserPreferenceController.e2e.test.ts**:
+****tests**/UserPreferenceController.e2e.test.ts**:
+
 ```typescript
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import supertest from 'supertest';
@@ -425,10 +439,7 @@ describe('UserPreferenceController (E2E)', () => {
       await request.post('/api/v1/user-preferences').send({ accountUuid: 'user-456' });
 
       // 再次创建应该失败
-      await request
-        .post('/api/v1/user-preferences')
-        .send({ accountUuid: 'user-456' })
-        .expect(409);
+      await request.post('/api/v1/user-preferences').send({ accountUuid: 'user-456' }).expect(409);
     });
   });
 
@@ -445,10 +456,7 @@ describe('UserPreferenceController (E2E)', () => {
     });
 
     it('应该在用户不存在时返回 404', async () => {
-      await request
-        .get('/api/v1/user-preferences')
-        .query({ accountUuid: 'user-999' })
-        .expect(404);
+      await request.get('/api/v1/user-preferences').query({ accountUuid: 'user-999' }).expect(404);
     });
   });
 
@@ -495,14 +503,14 @@ describe('UserPreferenceController (E2E)', () => {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| Controller 实现 | 2.5 小时 |
-| 路由 & DTOs | 1.5 小时 |
-| API 文档 (Swagger) | 1 小时 |
-| E2E 测试编写 | 2.5 小时 |
-| Code Review & 修复 | 1.5 小时 |
-| **总计** | **9 小时** |
+| 任务               | 预估时间   |
+| ------------------ | ---------- |
+| Controller 实现    | 2.5 小时   |
+| 路由 & DTOs        | 1.5 小时   |
+| API 文档 (Swagger) | 1 小时     |
+| E2E 测试编写       | 2.5 小时   |
+| Code Review & 修复 | 1.5 小时   |
+| **总计**           | **9 小时** |
 
 **Story Points**: 3 SP
 
@@ -511,10 +519,12 @@ describe('UserPreferenceController (E2E)', () => {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-002 (Application Service)
 - ✅ STORY-SETTING-001-003 (Infrastructure)
 
 ### 下游依赖
+
 - STORY-SETTING-001-005 (Client Services) 依赖此 Story
 
 ---

@@ -1,4 +1,4 @@
-import { DomainEvent } from "@dailyuse/utils";
+import { DomainEvent } from '@dailyuse/utils';
 
 export interface UserLoggedInEventPayload {
   accountUuid: string;
@@ -7,7 +7,7 @@ export interface UserLoggedInEventPayload {
 }
 
 export interface UserLoggedInEvent extends DomainEvent<UserLoggedInEventPayload> {
-  eventType: "UserLoggedIn";
+  eventType: 'UserLoggedIn';
   payload: UserLoggedInEventPayload;
 }
 
@@ -16,7 +16,7 @@ export interface UserLoggedOutEventPayload {
   token: string;
   username: string;
   sessionId: string;
-  logoutType: "manual" | "forced" | "expired" | "system";
+  logoutType: 'manual' | 'forced' | 'expired' | 'system';
   logoutReason?: string;
   loggedOutAt: Date;
   clientInfo?: {
@@ -29,7 +29,7 @@ export interface UserLoggedOutEventPayload {
 export interface SessionTerminatedEventPayload {
   sessionId: string;
   accountUuid: string;
-  terminationType: "logout" | "timeout" | "forced" | "concurrent_login";
+  terminationType: 'logout' | 'timeout' | 'forced' | 'concurrent_login';
   terminatedAt: Date;
   remainingActiveSessions: number;
 }
@@ -38,13 +38,12 @@ export interface LoginCredentialVerificationEventPayload {
   accountUuid: string;
   username: string;
   credentialId: string;
-  verificationResult: "success" | "failed" | "account_locked" | "credential_expired";
+  verificationResult: 'success' | 'failed' | 'account_locked' | 'credential_expired';
   failureReason?: string;
   verifiedAt: Date;
   clientInfo?: {
     ipAddress?: string;
     userAgent?: string;
     deviceId?: string;
-  }
+  };
 }
-

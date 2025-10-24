@@ -27,7 +27,7 @@ export class TaskMetaTemplateService {
   mergeWithCustomConfig(
     metaTemplate: TaskMetaTemplate,
     customTimeConfig?: Partial<TaskTimeConfig>,
-    customReminderConfig?: Partial<TaskReminderConfig>
+    customReminderConfig?: Partial<TaskReminderConfig>,
   ): {
     timeConfig: TaskTimeConfig;
     reminderConfig: TaskReminderConfig;
@@ -35,19 +35,17 @@ export class TaskMetaTemplateService {
     const mergedTimeConfig = {
       ...metaTemplate.defaultTimeConfig,
       ...customTimeConfig,
-      timezone: customTimeConfig?.timezone ||
-        metaTemplate.defaultTimeConfig.timezone ||
-        'UTC', // 如果没有自定义时区，则使用元模板默认时区
+      timezone: customTimeConfig?.timezone || metaTemplate.defaultTimeConfig.timezone || 'UTC', // 如果没有自定义时区，则使用元模板默认时区
     } as TaskTimeConfig;
 
     const mergedReminderConfig = {
       ...metaTemplate.defaultReminderConfig,
-      ...customReminderConfig
+      ...customReminderConfig,
     } as TaskReminderConfig;
 
     return {
       timeConfig: mergedTimeConfig,
-      reminderConfig: mergedReminderConfig
+      reminderConfig: mergedReminderConfig,
     };
   }
 
@@ -72,13 +70,13 @@ export class TaskMetaTemplateService {
   getUsageStats(
     metaTemplate: TaskMetaTemplate,
     taskTemplateCount: number,
-    taskInstanceCount: number
+    taskInstanceCount: number,
   ) {
     return {
       templatesCreated: taskTemplateCount,
       instancesGenerated: taskInstanceCount,
       lastUsed: metaTemplate.lifecycle.updatedAt || metaTemplate.lifecycle.createdAt,
-      category: metaTemplate.category
+      category: metaTemplate.category,
     };
   }
 
@@ -112,7 +110,7 @@ export class TaskMetaTemplateService {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -131,7 +129,7 @@ export class TaskMetaTemplateService {
    */
   async initializeSystemTemplates(
     metaTemplateRepository: ITaskMetaTemplateRepository,
-    accountUuid: string
+    accountUuid: string,
   ): Promise<ApiResponse<void>> {
     try {
       // 检查是否已经初始化过
@@ -139,7 +137,7 @@ export class TaskMetaTemplateService {
       if (existingTemplates && existingTemplates.length > 0) {
         return {
           success: true,
-          message: '系统模板已存在，跳过初始化'
+          message: '系统模板已存在，跳过初始化',
         };
       }
 
@@ -149,7 +147,7 @@ export class TaskMetaTemplateService {
         TaskMetaTemplateFactory.createHabit(),
         TaskMetaTemplateFactory.createEvent(),
         TaskMetaTemplateFactory.createDeadline(),
-        TaskMetaTemplateFactory.createMeeting()
+        TaskMetaTemplateFactory.createMeeting(),
       ];
 
       // 批量保存
@@ -162,12 +160,12 @@ export class TaskMetaTemplateService {
 
       return {
         success: true,
-        message: `成功初始化 ${systemTemplates.length} 个系统模板`
+        message: `成功初始化 ${systemTemplates.length} 个系统模板`,
       };
     } catch (error) {
       return {
         success: false,
-        message: `初始化系统模板失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message: `初始化系统模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }

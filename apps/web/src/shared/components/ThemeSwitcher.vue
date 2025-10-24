@@ -12,7 +12,7 @@
 
     <v-list density="compact" min-width="200">
       <v-list-subheader>主题模式</v-list-subheader>
-      
+
       <v-list-item
         v-for="mode in themeModes"
         :key="mode.value"
@@ -30,9 +30,7 @@
 
       <v-divider class="my-2" />
 
-      <v-list-subheader v-if="themeMode !== 'auto'">
-        主题样式
-      </v-list-subheader>
+      <v-list-subheader v-if="themeMode !== 'auto'"> 主题样式 </v-list-subheader>
 
       <v-list-item
         v-if="themeMode !== 'auto'"
@@ -57,14 +55,8 @@
 import { computed } from 'vue';
 import { useTheme, type ThemeMode, type ThemeName } from '../composables/useTheme';
 
-const {
-  themeMode,
-  isDark,
-  currentTheme,
-  setThemeMode,
-  setSpecificTheme,
-  getAvailableThemes,
-} = useTheme();
+const { themeMode, isDark, currentTheme, setThemeMode, setSpecificTheme, getAvailableThemes } =
+  useTheme();
 
 interface ThemeModeOption {
   value: ThemeMode;

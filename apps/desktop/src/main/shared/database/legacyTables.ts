@@ -1,4 +1,4 @@
-import type { Database } from "better-sqlite3";
+import type { Database } from 'better-sqlite3';
 
 /**
  * 兼容性模块数据表管理
@@ -62,10 +62,9 @@ export class LegacyTables {
   static migrateData(_db: Database): void {
     try {
       console.log('🔄 [兼容性模块] 开始处理兼容性数据...');
-      
+
       // 这里处理兼容性数据迁移
       // 主要是维护 username 到 uuid 的映射关系
-      
     } catch (error) {
       console.warn('⚠️ [兼容性模块] 数据迁移警告:', error);
     }
@@ -77,9 +76,13 @@ export class LegacyTables {
   static needsCompatibilitySupport(db: Database): boolean {
     try {
       // 检查是否存在旧版本的数据
-      const oldAccountCount = db.prepare("SELECT COUNT(*) as count FROM accounts WHERE username IS NOT NULL").get() as { count: number };
-      const oldSessionCount = db.prepare("SELECT COUNT(*) as count FROM login_sessions").get() as { count: number };
-      
+      const oldAccountCount = db
+        .prepare('SELECT COUNT(*) as count FROM accounts WHERE username IS NOT NULL')
+        .get() as { count: number };
+      const oldSessionCount = db.prepare('SELECT COUNT(*) as count FROM login_sessions').get() as {
+        count: number;
+      };
+
       return oldAccountCount.count > 0 || oldSessionCount.count > 0;
     } catch (error) {
       console.warn('⚠️ [兼容性模块] 检查兼容性支持失败:', error);

@@ -1,8 +1,8 @@
-import { onMounted, onUnmounted, watch } from "vue";
-import { scheduleService } from "@renderer/shared/services/scheduleService";
-import { notificationService } from "@renderer/modules/notification/services/notificationService";
-import { useTaskStore } from "@renderer/modules/Task/presentation/stores/taskStore";
-import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
+import { onMounted, onUnmounted, watch } from 'vue';
+import { scheduleService } from '@renderer/shared/services/scheduleService';
+import { notificationService } from '@renderer/modules/notification/services/notificationService';
+import { useTaskStore } from '@renderer/modules/Task/presentation/stores/taskStore';
+import { getTaskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
 
 /**
  * 任务提醒初始化 Composable
@@ -13,24 +13,18 @@ export function useTaskReminderInit(autoInit: boolean = true) {
   let cleanup: (() => void) | null = null;
   let isInitialized = false;
 
-  const handleTaskReminderNotification = async (task: {
-    title: string;
-    body: string;
-  }) => {
+  const handleTaskReminderNotification = async (task: { title: string; body: string }) => {
     try {
       await notificationService.showWarning(task.title, task.body);
     } catch (error) {
-      console.error("任务提醒通知失败:", error);
+      console.error('任务提醒通知失败:', error);
     }
   };
 
   const initializeTaskReminders = async () => {
     try {
-      if (
-        taskStore.taskTemplates.length === 0 &&
-        taskStore.taskInstances.length === 0
-      ) {
-        console.warn("任务数据尚未加载，等待数据加载完成...");
+      if (taskStore.taskTemplates.length === 0 && taskStore.taskInstances.length === 0) {
+        console.warn('任务数据尚未加载，等待数据加载完成...');
         return;
       }
 
@@ -39,13 +33,13 @@ export function useTaskReminderInit(autoInit: boolean = true) {
       await getTaskDomainApplicationService().initializeTaskReminders();
 
       cleanup = scheduleService.onScheduleTriggered(async ({ task }) => {
-        if (task.type === "taskReminder") {
+        if (task.type === 'taskReminder') {
           await handleTaskReminderNotification(task.payload);
         }
       });
       isInitialized = true;
     } catch (error) {
-      console.error("任务提醒初始化失败:", error);
+      console.error('任务提醒初始化失败:', error);
     }
   };
 
@@ -56,7 +50,7 @@ export function useTaskReminderInit(autoInit: boolean = true) {
         await initializeTaskReminders();
       }
     },
-    { immediate: true, deep: true }
+    { immediate: true, deep: true },
   );
 
   if (autoInit) {
@@ -75,5 +69,5 @@ export function useTaskReminderInit(autoInit: boolean = true) {
   return {
     initializeTaskReminders,
     isInitialized,
-  }
+  };
 }

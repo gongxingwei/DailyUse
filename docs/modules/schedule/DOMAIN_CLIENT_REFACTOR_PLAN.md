@@ -33,6 +33,7 @@ packages/domain-client/src/schedule/
 ### 1. Repository.ts vs ScheduleTask.ts
 
 **Repository.ts 的完整结构**：
+
 - ✅ 私有字段（14 个基础字段 + 2 个子实体集合）
 - ✅ 构造函数（私有，通过工厂方法创建）
 - ✅ Getter 属性（基础属性 + UI 辅助属性）
@@ -43,6 +44,7 @@ packages/domain-client/src/schedule/
 - ✅ UI 辅助方法（formatDate, formatRelativeTime）
 
 **ScheduleTask.ts 必须包含**：
+
 - ✅ 私有字段（18 个基础字段 + 子实体集合）
 - ✅ 构造函数（私有）
 - ✅ Getter 属性（所有基础属性）
@@ -58,6 +60,7 @@ packages/domain-client/src/schedule/
 ## 📝 ScheduleTask 聚合根完整实现清单
 
 ### 私有字段（参考 Repository）
+
 ```typescript
 // 基础标识
 private _uuid: string;
@@ -91,6 +94,7 @@ private _history: TaskHistory[];
 ```
 
 ### Getter 属性（18+ 个基础 + 10+ UI 辅助）
+
 ```typescript
 // 基础属性
 get uuid(): string
@@ -129,6 +133,7 @@ get successRate(): number
 ```
 
 ### 工厂方法（3 个）
+
 ```typescript
 // 1. 创建空实例（新建表单用）
 public static forCreate(accountUuid: string, sourceModule: SourceModule): ScheduleTask
@@ -148,6 +153,7 @@ public static create(params: {
 ```
 
 ### 创建子实体方法（2 个）
+
 ```typescript
 public createExecution(params: {
   status: ExecutionStatus;
@@ -165,6 +171,7 @@ public createHistory(params: {
 ```
 
 ### 子实体管理方法（6+ 个）
+
 ```typescript
 // TaskExecution 管理
 public addExecution(execution: TaskExecution): void
@@ -179,6 +186,7 @@ public getAllHistory(): TaskHistory[]
 ```
 
 ### DTO 转换方法（4 个）
+
 ```typescript
 // To 方法
 public toServerDTO(includeChildren: boolean = false): ScheduleTaskServerDTO
@@ -190,6 +198,7 @@ public static fromClientDTO(dto: ScheduleTaskClientDTO): ScheduleTask
 ```
 
 ### 业务方法（4 个核心 + 其他）
+
 ```typescript
 // 核心状态转换
 public pause(): void        // 暂停任务
@@ -210,11 +219,13 @@ public resetFailureCount(): void
 ## 📋 剩余待创建文件清单
 
 ### 1. TaskMetadata.ts（值对象）⏳
+
 **参考**: RepositoryConfig.ts  
 **字段**: payload, tags, priority, timeout  
 **UI 属性**: priorityDisplay, priorityColor, tagsDisplay, timeoutFormatted, payloadSummary
 
 ### 2. value-objects/index.ts ⏳
+
 ```typescript
 export * from './ScheduleConfig';
 export * from './RetryPolicy';
@@ -223,29 +234,35 @@ export * from './TaskMetadata';
 ```
 
 ### 3. TaskExecution.ts（实体）⏳
+
 **参考**: Resource.ts  
 **字段**: taskUuid, status, startTime, endTime, duration, error, createdAt
 
 ### 4. TaskHistory.ts（实体）⏳
+
 **参考**: LinkedContent.ts  
 **字段**: taskUuid, action, changes, performedBy, createdAt
 
 ### 5. entities/index.ts ⏳
+
 ```typescript
 export * from './TaskExecution';
 export * from './TaskHistory';
 ```
 
 ### 6. ScheduleTask.ts（聚合根）⏳ **最核心**
+
 **参考**: Repository.ts（完整复制结构）  
 **代码行数**: 约 500-600 行（与 Repository.ts 相当）
 
 ### 7. aggregates/index.ts ⏳
+
 ```typescript
 export * from './ScheduleTask';
 ```
 
 ### 8. schedule/index.ts（重构）⏳
+
 ```typescript
 // 导出聚合根
 export * from './aggregates';
@@ -292,6 +309,7 @@ export * from './value-objects';
 ##人际 标准代码模板（参考 Repository.ts）
 
 ### 构造函数模板
+
 ```typescript
 private constructor(params: {
   uuid?: string;
@@ -309,6 +327,7 @@ private constructor(params: {
 ```
 
 ### Getter 模板
+
 ```typescript
 public override get uuid(): string {
   return this._uuid;
@@ -320,6 +339,7 @@ public get config(): ScheduleConfigClientDTO {
 ```
 
 ### 工厂方法模板
+
 ```typescript
 public static forCreate(accountUuid: string, sourceModule: SourceModule): ScheduleTask {
   const now = Date.now();
@@ -345,6 +365,7 @@ public clone(): ScheduleTask {
 ```
 
 ### 子实体管理模板
+
 ```typescript
 public addExecution(execution: TaskExecution): void {
   if (!(execution instanceof TaskExecution)) {
@@ -364,6 +385,7 @@ public removeExecution(executionUuid: string): TaskExecution | null {
 ```
 
 ### DTO 转换模板
+
 ```typescript
 public toClientDTO(includeChildren: boolean = false): ScheduleTaskClientDTO {
   return {
@@ -380,11 +402,11 @@ public toClientDTO(includeChildren: boolean = false): ScheduleTaskClientDTO {
     formattedCreatedAt: this.formattedCreatedAt,
     // ... 其他 UI 属性
     // 子实体（可选）
-    executions: includeChildren 
-      ? this._executions.map((e) => e.toClientDTO()) 
+    executions: includeChildren
+      ? this._executions.map((e) => e.toClientDTO())
       : undefined,
-    history: includeChildren 
-      ? this._history.map((h) => h.toClientDTO()) 
+    history: includeChildren
+      ? this._history.map((h) => h.toClientDTO())
       : undefined,
   };
 }
@@ -418,12 +440,14 @@ public static fromServerDTO(dto: ScheduleTaskServerDTO): ScheduleTask {
 ## ✅ 验收标准
 
 ### 1. 目录结构完全一致
+
 - ✅ aggregates/ 目录存在
-- ✅ entities/ 目录存在  
+- ✅ entities/ 目录存在
 - ✅ value-objects/ 目录存在
 - ✅ 每个目录都有 index.ts
 
 ### 2. ScheduleTask 聚合根完整性
+
 - ✅ 继承 AggregateRoot
 - ✅ 18+ 个私有字段
 - ✅ 构造函数私有
@@ -436,6 +460,7 @@ public static fromServerDTO(dto: ScheduleTaskServerDTO): ScheduleTask {
 - ✅ 4+ 个业务方法
 
 ### 3. 值对象完整性
+
 - ✅ 继承 ValueObject
 - ✅ 所有字段 readonly
 - ✅ 构造函数中 Object.freeze(this)
@@ -445,6 +470,7 @@ public static fromServerDTO(dto: ScheduleTaskServerDTO): ScheduleTask {
 - ✅ UI 辅助属性
 
 ### 4. 实体完整性
+
 - ✅ 继承 Entity
 - ✅ 私有字段 + getter
 - ✅ 构造函数私有
@@ -452,6 +478,7 @@ public static fromServerDTO(dto: ScheduleTaskServerDTO): ScheduleTask {
 - ✅ forCreate, clone, create 工厂方法
 
 ### 5. 代码质量
+
 - ✅ TypeScript 类型完全正确
 - ✅ 所有方法都有注释
 - ✅ 遵循 DDD 原则
@@ -465,7 +492,7 @@ public static fromServerDTO(dto: ScheduleTaskServerDTO): ScheduleTask {
 1. ⏳ 完成 TaskMetadata 值对象
 2. ⏳ 创建 value-objects/index.ts
 3. ⏳ 完成 TaskExecution 实体
-4. ⏳ 完成 TaskHistory 实体  
+4. ⏳ 完成 TaskHistory 实体
 5. ⏳ 创建 entities/index.ts
 6. ⏳ **完成 ScheduleTask 聚合根**（最核心，500+ 行）
 7. ⏳ 创建 aggregates/index.ts
@@ -475,7 +502,8 @@ public static fromServerDTO(dto: ScheduleTaskServerDTO): ScheduleTask {
 
 ---
 
-**关键原则**: 
+**关键原则**:
+
 - ✅ **严格参考 Repository 模块**
 - ✅ **不简化，不省略**
 - ✅ **完全遵循 DDD 原则**

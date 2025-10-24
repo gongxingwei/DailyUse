@@ -31,8 +31,9 @@ packages/domain-client/src/goal/
 ### 1. 值对象 (Value Objects) - 5个
 
 #### GoalMetadataClient (155行)
+
 - **功能**: 管理目标的元数据（重要性、紧急性、分类、标签）
-- **UI属性**: 
+- **UI属性**:
   - `importanceText`: "不重要" / "一般" / "重要" / "非常重要"
   - `urgencyText`: 类似的文本映射
   - `priorityLevel`: HIGH / MEDIUM / LOW (根据重要性+紧急性计算)
@@ -42,6 +43,7 @@ packages/domain-client/src/goal/
 - **方法**: `hasTag()`, `equals()`, `toServerDTO()`, `toClientDTO()`
 
 #### GoalTimeRangeClient (188行)
+
 - **功能**: 管理目标的时间范围和进度
 - **UI属性**:
   - `dateRangeText`: "2025-01-01 至 2025-12-31" 或 "未设置时间"
@@ -52,6 +54,7 @@ packages/domain-client/src/goal/
 - **辅助方法**: `getDurationDays()`, `getRemainingDays()`, `formatDate()`
 
 #### KeyResultProgressClient (178行)
+
 - **功能**: 跟踪关键结果的进度，支持多种聚合方法
 - **新特性**: 支持 5 种聚合方法
   - `SUM`: 求和（累计型，默认）
@@ -66,6 +69,7 @@ packages/domain-client/src/goal/
   - `aggregationMethodText`: "求和" / "求平均" / "求最大值" / "求最小值" / "取最后一次"
 
 #### KeyResultSnapshotClient (143行)
+
 - **功能**: 关键结果快照（用于复盘记录）
 - **UI属性**:
   - `progressText`: "50/100 (50%)"
@@ -73,6 +77,7 @@ packages/domain-client/src/goal/
   - `displayTitle`: 截断的标题（最多30字符）
 
 #### GoalReminderConfigClient (144行)
+
 - **功能**: 管理目标提醒配置
 - **特性**: 支持两种触发器类型
   - `TIME_PROGRESS_PERCENTAGE`: 时间进度百分比（如 50%、20%）
@@ -88,6 +93,7 @@ packages/domain-client/src/goal/
 ### 2. 实体 (Entities) - 3个
 
 #### KeyResultClient (258行)
+
 - **功能**: 关键结果实体，包含进度追踪
 - **关联**: 包含 `KeyResultProgressClient` 值对象
 - **UI属性**:
@@ -104,6 +110,7 @@ packages/domain-client/src/goal/
 - **工厂方法**: `fromClientDTO()`, `fromServerDTO()`, `forCreate()`, `clone()`
 
 #### GoalRecordClient (209行)
+
 - **功能**: 目标记录实体，追踪数值变化
 - **UI属性**:
   - `changePercentage`: 变化百分比
@@ -118,6 +125,7 @@ packages/domain-client/src/goal/
   - `hasNote()`: 是否有备注
 
 #### GoalReviewClient (262行)
+
 - **功能**: 目标复盘实体
 - **关联**: 包含 `KeyResultSnapshotClient[]` 快照列表
 - **UI属性**:
@@ -134,6 +142,7 @@ packages/domain-client/src/goal/
 ### 3. 聚合根 (Aggregates) - 1个
 
 #### GoalClient (632行)
+
 - **功能**: 目标聚合根，统一管理目标及其子实体
 - **值对象**: 使用 `GoalMetadataClient`, `GoalTimeRangeClient`, `GoalReminderConfigClient`
 - **子实体集合**:
@@ -141,6 +150,7 @@ packages/domain-client/src/goal/
   - `reviews: GoalReviewClient[]`
 
 ##### UI计算属性
+
 - `overallProgress`: 所有关键结果的平均进度
 - `isDeleted`, `isCompleted`, `isArchived`, `isOverdue`
 - `daysRemaining`: 剩余天数（null 如果已完成或无截止日期）
@@ -153,10 +163,12 @@ packages/domain-client/src/goal/
 - `reminderSummary`: 提醒摘要文本
 
 ##### 子实体工厂方法
+
 - `createKeyResult()`: 创建关键结果
 - `createReview()`: 创建复盘记录
 
 ##### 子实体管理方法
+
 - `addKeyResult()`, `removeKeyResult()`, `updateKeyResult()`
 - `reorderKeyResults()`: 重新排序
 - `getKeyResult()`, `getAllKeyResults()`
@@ -164,6 +176,7 @@ packages/domain-client/src/goal/
 - `getReviews()`, `getLatestReview()`
 
 ##### UI业务方法
+
 - `getDisplayTitle()`: 显示标题
 - `getStatusBadge()`: { text, color }
 - `getPriorityBadge()`: { text, color }
@@ -174,6 +187,7 @@ packages/domain-client/src/goal/
 - `shouldShowReminderBadge()`: 是否显示提醒徽章
 
 ##### 操作判断方法
+
 - `canActivate()`: 是否可以激活（从草稿状态）
 - `canComplete()`: 是否可以完成（进行中状态）
 - `canArchive()`: 是否可以归档（已完成状态）
@@ -182,6 +196,7 @@ packages/domain-client/src/goal/
 - `canAddReview()`: 是否可以添加复盘
 
 ##### 静态工厂方法
+
 - `create()`: 创建新目标
 - `forCreate()`: 创建用于表单的空目标
 - `fromServerDTO()`: 从服务端 DTO 创建
@@ -191,11 +206,13 @@ packages/domain-client/src/goal/
 ## 架构特点
 
 ### 1. DDD 分层架构
+
 - **值对象 (Value Objects)**: 不可变的业务概念，通过值相等性判断
 - **实体 (Entities)**: 有唯一标识的业务对象
 - **聚合根 (Aggregate Root)**: 管理子实体的根实体
 
 ### 2. 实现模式
+
 - 所有类都继承自 `@dailyuse/utils` 的基类 (`ValueObject`, `Entity`, `AggregateRoot`)
 - 私有字段 + 公共 getter 实现封装
 - 私有构造函数 + 静态工厂方法的创建模式
@@ -203,6 +220,7 @@ packages/domain-client/src/goal/
 - 双向工厂方法 (`fromServerDTO()`, `fromClientDTO()`)
 
 ### 3. UI 导向设计
+
 - 每个类都提供丰富的 UI 辅助属性
 - 格式化的日期、时间、进度文本
 - 颜色代码和图标建议
@@ -210,6 +228,7 @@ packages/domain-client/src/goal/
 - 计算属性（进度、统计、判断）
 
 ### 4. 类型安全
+
 - 使用 `@dailyuse/contracts` 的接口定义确保类型一致性
 - 导入 contracts 的枚举类型 (通过 `GoalContracts as GC`)
 - 完整的 TypeScript 类型支持
@@ -217,7 +236,9 @@ packages/domain-client/src/goal/
 ## 新特性亮点
 
 ### 1. 聚合方法支持
+
 关键结果支持 5 种不同的聚合计算方式，适应不同的业务场景：
+
 - **累计型**（求和）: 如跑步里程数累加
 - **平均型**（求平均）: 如每日锻炼时长平均
 - **峰值型**（求最大）: 如最高销售额记录
@@ -225,13 +246,16 @@ packages/domain-client/src/goal/
 - **绝对值型**（取最后）: 如当前体重、账户余额
 
 ### 2. 智能提醒系统
+
 支持两种提醒触发器，可以组合使用：
+
 - **时间进度提醒**: 在时间过去 50%、20% 时提醒
 - **剩余天数提醒**: 在剩余 100天、50天 时提醒
 - 每个触发器可以单独启用/禁用
 - 生成友好的提醒摘要文本
 
 ### 3. 完整的复盘功能
+
 - 支持多种复盘类型（周/月/季/年/临时）
 - 10分制评分系统（带星星显示）
 - 记录成就、挑战、改进点
@@ -290,6 +314,7 @@ const dto = goal.toClientDTO(true); // 包含子实体
 ## 总结
 
 Goal 模块的 domain-client 实现完全遵循了 DDD 设计模式和项目架构规范，提供了：
+
 - ✅ 5个值对象（元数据、时间范围、进度、快照、提醒配置）
 - ✅ 3个实体（关键结果、目标记录、复盘）
 - ✅ 1个聚合根（目标）

@@ -14,8 +14,13 @@
             </div>
           </div>
 
-          <v-btn color="primary" size="large" prepend-icon="mdi-plus" variant="elevated"
-            @click="repoDialogRef?.openDialog()">
+          <v-btn
+            color="primary"
+            size="large"
+            prepend-icon="mdi-plus"
+            variant="elevated"
+            @click="repoDialogRef?.openDialog()"
+          >
             新建仓库
           </v-btn>
         </div>
@@ -35,13 +40,27 @@
                   <h2 class="text-h6 font-weight-medium">仓库列表</h2>
 
                   <!-- 状态标签 -->
-                  <v-chip-group v-model="selectedStatusIndex" selected-class="text-primary" mandatory
-                    class="status-tabs">
-                    <v-chip v-for="(tab, index) in statusTabs" :key="tab.value" :value="index" variant="outlined" filter
-                      class="status-chip">
+                  <v-chip-group
+                    v-model="selectedStatusIndex"
+                    selected-class="text-primary"
+                    mandatory
+                    class="status-tabs"
+                  >
+                    <v-chip
+                      v-for="(tab, index) in statusTabs"
+                      :key="tab.value"
+                      :value="index"
+                      variant="outlined"
+                      filter
+                      class="status-chip"
+                    >
                       {{ tab.label }}
-                      <v-badge :content="getRepoCountByStatus(tab.value)"
-                        :color="selectedStatusIndex === index ? 'primary' : 'surface-bright'" inline class="ml-2" />
+                      <v-badge
+                        :content="getRepoCountByStatus(tab.value)"
+                        :color="selectedStatusIndex === index ? 'primary' : 'surface-bright'"
+                        inline
+                        class="ml-2"
+                      />
                     </v-chip>
                   </v-chip-group>
                 </div>
@@ -61,9 +80,7 @@
                   <v-alert type="error" variant="tonal" class="ma-4">
                     {{ error }}
                     <template v-slot:append>
-                      <v-btn variant="text" color="error" @click="refresh">
-                        重试
-                      </v-btn>
+                      <v-btn variant="text" color="error" @click="refresh"> 重试 </v-btn>
                     </template>
                   </v-alert>
                 </div>
@@ -71,18 +88,32 @@
                 <!-- 有仓库时显示 -->
                 <div v-else-if="filteredRepositories?.length">
                   <v-row>
-                    <v-col v-for="repo in filteredRepositories" :key="repo.uuid" cols="12" lg="6" xl="4">
-                      <RepoCard :repository="(repo as Repository)" />
+                    <v-col
+                      v-for="repo in filteredRepositories"
+                      :key="repo.uuid"
+                      cols="12"
+                      lg="6"
+                      xl="4"
+                    >
+                      <RepoCard :repository="repo as Repository" />
                     </v-col>
                   </v-row>
                 </div>
 
                 <!-- 空状态 -->
                 <div v-else class="d-flex align-center justify-center h-100">
-                  <v-empty-state icon="mdi-folder-multiple-outline" title="暂无仓库" text="创建您的第一个仓库，开始知识管理之旅">
+                  <v-empty-state
+                    icon="mdi-folder-multiple-outline"
+                    title="暂无仓库"
+                    text="创建您的第一个仓库，开始知识管理之旅"
+                  >
                     <template v-slot:actions>
-                      <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus"
-                        @click="repoDialogRef?.openDialog()">
+                      <v-btn
+                        color="primary"
+                        variant="elevated"
+                        prepend-icon="mdi-plus"
+                        @click="repoDialogRef?.openDialog()"
+                      >
                         创建第一个仓库
                       </v-btn>
                     </template>
@@ -115,14 +146,8 @@ import { RepositoryContracts } from '@dailyuse/contracts';
 const repoDialogRef = ref<InstanceType<typeof RepoDialog> | null>(null);
 
 // ===== Repository 服务 =====
-const {
-  repositories,
-  isLoading,
-  error,
-  fetchRepositories,
-  initialize,
-  clearError
-} = useRepository();
+const { repositories, isLoading, error, fetchRepositories, initialize, clearError } =
+  useRepository();
 
 // ===== 本地状态 =====
 
@@ -149,7 +174,7 @@ const filteredRepositories = computed(() => {
   // 按状态过滤
   const currentStatus = statusTabs[selectedStatusIndex.value]?.value;
   if (currentStatus && currentStatus !== 'all') {
-    result = result.filter(repo => repo.status === currentStatus);
+    result = result.filter((repo) => repo.status === currentStatus);
   }
 
   return result;
@@ -162,10 +187,14 @@ const repoCountByStatus = computed(() => {
   const repos = repositories.value || [];
   return {
     all: repos.length,
-    active: repos.filter(repo => repo.status === RepositoryContracts.RepositoryStatus.ACTIVE).length,
-    archived: repos.filter(repo => repo.status === RepositoryContracts.RepositoryStatus.ARCHIVED).length,
-    inactive: repos.filter(repo => repo.status === RepositoryContracts.RepositoryStatus.INACTIVE).length,
-    syncing: repos.filter(repo => repo.status === RepositoryContracts.RepositoryStatus.SYNCING).length,
+    active: repos.filter((repo) => repo.status === RepositoryContracts.RepositoryStatus.ACTIVE)
+      .length,
+    archived: repos.filter((repo) => repo.status === RepositoryContracts.RepositoryStatus.ARCHIVED)
+      .length,
+    inactive: repos.filter((repo) => repo.status === RepositoryContracts.RepositoryStatus.INACTIVE)
+      .length,
+    syncing: repos.filter((repo) => repo.status === RepositoryContracts.RepositoryStatus.SYNCING)
+      .length,
   };
 });
 
@@ -231,7 +260,11 @@ onMounted(() => {
 }
 
 .repo-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05), rgba(var(--v-theme-surface), 1));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05),
+    rgba(var(--v-theme-surface), 1)
+  );
 }
 
 .repo-main {

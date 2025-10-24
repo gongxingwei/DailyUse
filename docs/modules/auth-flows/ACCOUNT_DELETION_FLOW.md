@@ -15,6 +15,7 @@
 ### 1.1 业务目标
 
 用户主动发起账户注销，彻底删除或逻辑删除账户及相关数据，系统需要：
+
 - 验证用户身份（密码/二次认证/验证码）
 - 提供数据导出选项（GDPR 合规）
 - 注销所有认证凭证和会话
@@ -55,6 +56,7 @@
 #### Account 模块 (packages/domain-server/account/)
 
 **聚合根**: `Account`
+
 - 属性:
   - `uuid`: 账户唯一标识
   - `username`: 用户名
@@ -66,10 +68,12 @@
   - `anonymizeData()`: 匿名化数据
 
 **实体**: `AccountHistory`
+
 - 记录账户的重要操作历史
 - 包含注销原因、操作时间、操作类型
 
 **领域服务**: `AccountDomainService`
+
 - 职责:
   - 软删除账户（markAccountDeleted）
   - 硬删除账户（permanentlyDeleteAccount）
@@ -77,6 +81,7 @@
   - 数据导出（exportAccountData）
 
 **仓储接口**: `IAccountRepository`
+
 ```typescript
 interface IAccountRepository {
   findById(uuid: string): Promise<Account | null>;
@@ -90,6 +95,7 @@ interface IAccountRepository {
 **聚合根**: `AuthCredential`, `AuthSession`
 
 **领域服务**: `AuthenticationDomainService`
+
 - 职责:
   - 注销凭证（revokeCredential）
   - 注销所有会话（revokeAllSessions）
@@ -106,37 +112,40 @@ interface IAccountRepository {
 **核心用例**: `deleteAccount()`, `scheduleAccountDeletion()`
 
 **输入 DTO**:
+
 ```typescript
 interface DeleteAccountRequest {
   accountUuid: string;
-  password: string;              // 二次验证密码
-  twoFactorCode?: string;        // 二次认证码（如启用）
-  reason?: string;               // 注销原因
-  feedback?: string;             // 用户反馈
-  confirmationText?: string;     // 确认文本（如"DELETE"）
-  exportData?: boolean;          // 是否导出数据
+  password: string; // 二次验证密码
+  twoFactorCode?: string; // 二次认证码（如启用）
+  reason?: string; // 注销原因
+  feedback?: string; // 用户反馈
+  confirmationText?: string; // 确认文本（如"DELETE"）
+  exportData?: boolean; // 是否导出数据
 }
 
 interface ScheduleAccountDeletionRequest {
   accountUuid: string;
   password: string;
-  scheduledAt: number;           // 计划删除时间（冷静期后）
+  scheduledAt: number; // 计划删除时间（冷静期后）
   reason?: string;
 }
 ```
 
 **输出 DTO**:
+
 ```typescript
 interface DeleteAccountResponse {
   success: boolean;
   message: string;
   deletedAt: number;
-  dataExportUrl?: string;        // 数据导出链接（如请求）
-  recoveryDeadline?: number;     // 恢复截止时间（冷静期）
+  dataExportUrl?: string; // 数据导出链接（如请求）
+  recoveryDeadline?: number; // 恢复截止时间（冷静期）
 }
 ```
 
 **职责**:
+
 1. 参数验证（password、confirmationText）
 2. 身份验证（密码、二次认证）
 3. 查询账户、凭证、会话
@@ -159,15 +168,18 @@ interface DeleteAccountResponse {
 #### 仓储实现 (apps/api/modules/account/infrastructure/repositories/)
 
 **PrismaAccountRepository**:
+
 - 软删除：更新 status 和 deletedAt
 - 硬删除：从数据库彻底删除记录（或保留匿名化数据）
 
 **PrismaAuthCredentialRepository**, **PrismaAuthSessionRepository**:
+
 - 注销凭证和会话
 
 #### 数据清理服务 (apps/api/modules/account/infrastructure/services/)
 
 **DataCleanupService**:
+
 - 职责: 删除或匿名化用户关联数据
 - 方法:
   - `cleanupUserGoals(accountUuid)`: 删除目标
@@ -179,6 +191,7 @@ interface DeleteAccountResponse {
 #### 数据导出服务
 
 **DataExportService**:
+
 - 职责: 导出用户数据为 JSON/CSV 格式
 - 方法:
   - `exportAccountData(accountUuid)`: 导出账户信息
@@ -490,11 +503,7 @@ export default router;
 
 ```typescript
 // AccountDeletionApplicationService.ts
-import {
-  Account,
-  AccountDomainService,
-  type IAccountRepository,
-} from '@dailyuse/domain-server';
+import { Account, AccountDomainService, type IAccountRepository } from '@dailyuse/domain-server';
 import {
   AuthenticationDomainService,
   type IAuthCredentialRepository,
@@ -664,7 +673,7 @@ export class AccountDeletionApplicationService {
     // 10. 返回结果
     return {
       success: true,
-      message: 'Account deleted successfully. We\'re sorry to see you go.',
+      message: "Account deleted successfully. We're sorry to see you go.",
       deletedAt: Date.now(),
       dataExportUrl,
     };
@@ -833,14 +842,14 @@ export class Account extends AggregateRoot implements IAccountServer {
 
 ### 5.1 业务异常
 
-| 错误代码 | HTTP 状态 | 描述 | 处理方式 |
-|---------|---------|------|---------|
-| `ACCOUNT_NOT_FOUND` | 404 | 账户不存在 | 提示账户不存在 |
-| `INVALID_CREDENTIALS` | 401 | 密码错误 | 提示密码错误 |
-| `INVALID_2FA` | 401 | 二次认证码错误 | 提示重新输入 |
-| `ALREADY_DELETED` | 409 | 账户已删除 | 提示账户已删除 |
-| `CONFIRMATION_REQUIRED` | 400 | 未确认删除 | 要求输入确认文本 |
-| `INTERNAL_SERVER_ERROR` | 500 | 服务器错误 | 提示稍后重试 |
+| 错误代码                | HTTP 状态 | 描述           | 处理方式         |
+| ----------------------- | --------- | -------------- | ---------------- |
+| `ACCOUNT_NOT_FOUND`     | 404       | 账户不存在     | 提示账户不存在   |
+| `INVALID_CREDENTIALS`   | 401       | 密码错误       | 提示密码错误     |
+| `INVALID_2FA`           | 401       | 二次认证码错误 | 提示重新输入     |
+| `ALREADY_DELETED`       | 409       | 账户已删除     | 提示账户已删除   |
+| `CONFIRMATION_REQUIRED` | 400       | 未确认删除     | 要求输入确认文本 |
+| `INTERNAL_SERVER_ERROR` | 500       | 服务器错误     | 提示稍后重试     |
 
 ---
 
@@ -908,6 +917,6 @@ describe('AccountDeletionApplicationService', () => {
 
 ## 11. 变更历史
 
-| 版本 | 日期 | 作者 | 变更说明 |
-|-----|------|------|---------|
-| 1.0 | 2025-10-17 | AI Assistant | 初始版本 |
+| 版本 | 日期       | 作者         | 变更说明 |
+| ---- | ---------- | ------------ | -------- |
+| 1.0  | 2025-10-17 | AI Assistant | 初始版本 |

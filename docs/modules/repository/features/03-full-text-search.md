@@ -15,6 +15,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 秒级全文搜索
 - ✅ 智能排序（相关度）
 - ✅ 高亮匹配结果
@@ -94,7 +95,7 @@ interface SearchService {
       page: options?.page || 1,
       perPage: 20
     });
-    
+
     return results.map(hit => ({
       documentUuid: hit.uuid,
       title: hit.title,
@@ -118,4 +119,3 @@ interface SearchService {
 ---
 
 **文档状态**: ✅ Ready
-

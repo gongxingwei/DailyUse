@@ -30,10 +30,10 @@ export const validateTaskTemplate = (template: ITaskTemplate) => {
 export const validateAndReport = (template: ITaskTemplate) => {
   const result = TaskTemplateValidator.validateWithContext(template);
   const report = ValidationReportGenerator.generateReport(template, result);
-  
+
   return {
     result,
-    report
+    report,
   };
 };
 
@@ -58,8 +58,20 @@ export const VALIDATION_CONSTANTS = {
   MAX_REMINDER_COUNT: 10,
   MAX_REMINDER_ADVANCE_MINUTES: 10080, // 7天
   RECOMMENDED_CATEGORIES: [
-    'work', 'personal', 'health', 'learning', 'family',
-    'finance', 'hobby', 'travel', 'habit', 'project',
-    'meeting', 'exercise', 'reading', 'shopping', 'maintenance'
-  ]
+    'work',
+    'personal',
+    'health',
+    'learning',
+    'family',
+    'finance',
+    'hobby',
+    'travel',
+    'habit',
+    'project',
+    'meeting',
+    'exercise',
+    'reading',
+    'shopping',
+    'maintenance',
+  ],
 } as const;

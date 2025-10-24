@@ -77,8 +77,8 @@ eventBus.on('user-logged-in', handler);
 eventBus.off('user-logged-in', handler);
 
 // 清除所有监听
-eventBus.off('user-logged-in');  // 清除该事件的所有监听
-eventBus.all.clear();             // 清除所有事件
+eventBus.off('user-logged-in'); // 清除该事件的所有监听
+eventBus.all.clear(); // 清除所有事件
 ```
 
 ### 2. 类型安全的事件
@@ -107,13 +107,10 @@ export function publishUserLoggedInEvent(payload: UserLoggedInEventPayload): voi
 }
 
 // 类型安全的订阅
-eventBus.on<UserLoggedInEventPayload>(
-  AUTH_EVENTS.USER_LOGGED_IN,
-  (payload) => {
-    console.log('用户登录:', payload.username);
-    console.log('账户 UUID:', payload.accountUuid);
-  }
-);
+eventBus.on<UserLoggedInEventPayload>(AUTH_EVENTS.USER_LOGGED_IN, (payload) => {
+  console.log('用户登录:', payload.username);
+  console.log('账户 UUID:', payload.accountUuid);
+});
 ```
 
 ### 3. 双向通信（请求-响应）
@@ -231,19 +228,14 @@ export class AccountEventHandlers {
     // 监听用户登录成功事件
     eventBus.on<UserLoggedInEventPayload>(
       AUTH_EVENTS.USER_LOGGED_IN,
-      AccountEventHandlers.handleUserLoggedIn
+      AccountEventHandlers.handleUserLoggedIn,
     );
 
     // 监听用户登出事件
-    eventBus.on(
-      AUTH_EVENTS.USER_LOGGED_OUT,
-      AccountEventHandlers.handleUserLoggedOut
-    );
+    eventBus.on(AUTH_EVENTS.USER_LOGGED_OUT, AccountEventHandlers.handleUserLoggedOut);
   }
 
-  private static async handleUserLoggedIn(
-    payload: UserLoggedInEventPayload
-  ): Promise<void> {
+  private static async handleUserLoggedIn(payload: UserLoggedInEventPayload): Promise<void> {
     const accountStore = useAccountStore();
 
     console.log('🔔 收到用户登录事件:', payload.username);
@@ -312,11 +304,13 @@ AppInitializationManager.initializeApp().then(() => {
 ### 1. 使用常量定义事件名
 
 ❌ **不推荐**:
+
 ```typescript
-eventBus.emit('user-logged-in', payload);  // 字符串硬编码，容易拼写错误
+eventBus.emit('user-logged-in', payload); // 字符串硬编码，容易拼写错误
 ```
 
 ✅ **推荐**:
+
 ```typescript
 const AUTH_EVENTS = {
   USER_LOGGED_IN: 'auth:user-logged-in',
@@ -328,13 +322,15 @@ eventBus.emit(AUTH_EVENTS.USER_LOGGED_IN, payload);
 ### 2. 为事件定义类型
 
 ❌ **不推荐**:
+
 ```typescript
 eventBus.on('user-logged-in', (payload: any) => {
-  console.log(payload.username);  // 类型不安全
+  console.log(payload.username); // 类型不安全
 });
 ```
 
 ✅ **推荐**:
+
 ```typescript
 interface UserLoggedInPayload {
   accountUuid: string;
@@ -342,26 +338,27 @@ interface UserLoggedInPayload {
 }
 
 eventBus.on<UserLoggedInPayload>('user-logged-in', (payload) => {
-  console.log(payload.username);  // 类型安全
+  console.log(payload.username); // 类型安全
 });
 ```
 
 ### 3. 使用事件命名空间
 
 ✅ **推荐**:
+
 ```typescript
 export const AUTH_EVENTS = {
-  USER_LOGGED_IN: 'auth:user-logged-in',      // 认证模块
+  USER_LOGGED_IN: 'auth:user-logged-in', // 认证模块
   USER_LOGGED_OUT: 'auth:user-logged-out',
 };
 
 export const GOAL_EVENTS = {
-  GOAL_CREATED: 'goal:created',               // 目标模块
+  GOAL_CREATED: 'goal:created', // 目标模块
   GOAL_UPDATED: 'goal:updated',
 };
 
 export const TASK_EVENTS = {
-  TASK_COMPLETED: 'task:completed',           // 任务模块
+  TASK_COMPLETED: 'task:completed', // 任务模块
   TASK_DELETED: 'task:deleted',
 };
 ```
@@ -402,6 +399,7 @@ eventBus.on(AUTH_EVENTS.USER_LOGGED_IN, async (payload) => {
 ### 6. 使用封装的发布函数
 
 ✅ **推荐**:
+
 ```typescript
 // 封装发布函数，提供类型检查和文档
 export function publishUserLoggedInEvent(payload: UserLoggedInEventPayload): void {
@@ -481,14 +479,14 @@ import { eventBus, AUTH_EVENTS } from '@/shared/events';
 describe('EventBus', () => {
   it('should emit and receive event', () => {
     const handler = vi.fn();
-    
+
     eventBus.on(AUTH_EVENTS.USER_LOGGED_IN, handler);
-    
+
     eventBus.emit(AUTH_EVENTS.USER_LOGGED_IN, {
       accountUuid: 'test-uuid',
       username: 'test-user',
     });
-    
+
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith({
       accountUuid: 'test-uuid',
@@ -498,12 +496,12 @@ describe('EventBus', () => {
 
   it('should remove event listener', () => {
     const handler = vi.fn();
-    
+
     eventBus.on(AUTH_EVENTS.USER_LOGGED_IN, handler);
     eventBus.off(AUTH_EVENTS.USER_LOGGED_IN, handler);
-    
+
     eventBus.emit(AUTH_EVENTS.USER_LOGGED_IN, { accountUuid: 'test' });
-    
+
     expect(handler).not.toHaveBeenCalled();
   });
 });
@@ -517,23 +515,23 @@ describe('EventBus', () => {
 
 #### 方法
 
-| 方法 | 签名 | 说明 |
-|------|------|------|
-| `on()` | `on<T>(type: string, handler: (payload: T) => void): void` | 监听事件 |
-| `off()` | `off(type: string, handler?: Function): void` | 移除监听 |
-| `emit()` | `emit<T>(type: string, payload: T): void` | 发布事件 |
-| `send()` | `send<T>(type: string, payload: T): void` | 发送事件（别名） |
-| `handle()` | `handle<TReq, TRes>(type: string, handler: (payload: TReq) => Promise<TRes>): void` | 注册请求处理器 |
-| `invoke()` | `invoke<TReq, TRes>(type: string, payload: TReq): Promise<TRes>` | 发送请求并等待响应 |
-| `getStats()` | `getStats(): EventStats` | 获取事件统计 |
-| `clearStats()` | `clearStats(): void` | 清除统计 |
+| 方法           | 签名                                                                                | 说明               |
+| -------------- | ----------------------------------------------------------------------------------- | ------------------ |
+| `on()`         | `on<T>(type: string, handler: (payload: T) => void): void`                          | 监听事件           |
+| `off()`        | `off(type: string, handler?: Function): void`                                       | 移除监听           |
+| `emit()`       | `emit<T>(type: string, payload: T): void`                                           | 发布事件           |
+| `send()`       | `send<T>(type: string, payload: T): void`                                           | 发送事件（别名）   |
+| `handle()`     | `handle<TReq, TRes>(type: string, handler: (payload: TReq) => Promise<TRes>): void` | 注册请求处理器     |
+| `invoke()`     | `invoke<TReq, TRes>(type: string, payload: TReq): Promise<TRes>`                    | 发送请求并等待响应 |
+| `getStats()`   | `getStats(): EventStats`                                                            | 获取事件统计       |
+| `clearStats()` | `clearStats(): void`                                                                | 清除统计           |
 
 ### 事件对象
 
 ```typescript
 interface EventStats {
-  sent: Record<string, number>;      // 发送统计
-  received: Record<string, number>;  // 接收统计
+  sent: Record<string, number>; // 发送统计
+  received: Record<string, number>; // 接收统计
 }
 ```
 
@@ -548,9 +546,9 @@ interface EventStats {
 
 ## 📝 变更历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
-| 1.0.0 | 2025-01-01 | 初始版本，基于 mitt |
+| 版本  | 日期       | 变更                 |
+| ----- | ---------- | -------------------- |
+| 1.0.0 | 2025-01-01 | 初始版本，基于 mitt  |
 | 1.1.0 | 2025-10-03 | 添加登录流程事件示例 |
 
 ---

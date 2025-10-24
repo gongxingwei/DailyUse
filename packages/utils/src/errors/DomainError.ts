@@ -41,7 +41,7 @@ export abstract class DomainError extends Error {
     code: string,
     message: string,
     context?: Record<string, any>,
-    httpStatus: number = 400
+    httpStatus: number = 400,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -114,12 +114,7 @@ export class BusinessRuleViolationError extends DomainError {
  */
 export class NotFoundError extends DomainError {
   constructor(resource: string, identifier: string) {
-    super(
-      'NOT_FOUND',
-      `${resource} not found: ${identifier}`,
-      { resource, identifier },
-      404
-    );
+    super('NOT_FOUND', `${resource} not found: ${identifier}`, { resource, identifier }, 404);
   }
 }
 

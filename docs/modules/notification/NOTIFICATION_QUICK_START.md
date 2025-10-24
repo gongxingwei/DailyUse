@@ -9,7 +9,7 @@
   <div id="app">
     <!-- 你的主要内容 -->
     <router-view />
-    
+
     <!-- 添加以下两个组件 -->
     <InAppNotification />
     <NotificationPermissionWarning />
@@ -17,10 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  InAppNotification, 
-  NotificationPermissionWarning 
-} from '@/modules/notification';
+import { InAppNotification, NotificationPermissionWarning } from '@/modules/notification';
 </script>
 ```
 
@@ -143,6 +140,7 @@ location.reload();
 ### Q: 为什么看不到系统通知？
 
 A: 可能的原因：
+
 1. 浏览器权限未授予 → 点击警告横幅的"开启通知"按钮
 2. 系统级通知被禁用 → 会自动降级到应用内通知
 3. 勿扰模式开启 → 检查通知服务配置
@@ -183,11 +181,11 @@ const showWarning = ref(false); // 设置为 false 禁用
 <template>
   <div class="app-container">
     <h1>我的应用</h1>
-    
+
     <button @click="testNotifications">测试通知系统</button>
     <button @click="checkStatus">检查权限状态</button>
     <button @click="requestPerm">请求权限</button>
-    
+
     <!-- 通知组件 -->
     <InAppNotification />
     <NotificationPermissionWarning />
@@ -195,8 +193,8 @@ const showWarning = ref(false); // 设置为 false 禁用
 </template>
 
 <script setup lang="ts">
-import { 
-  InAppNotification, 
+import {
+  InAppNotification,
   NotificationPermissionWarning,
   NotificationService,
   InAppNotificationService,
@@ -223,17 +221,17 @@ async function testNotifications() {
 async function checkStatus() {
   const status = await notificationService.checkPermissionStatus();
   const description = await notificationService.getPermissionDescription();
-  
+
   console.log('权限状态:', status);
   console.log('状态描述:', description);
-  
+
   alert(description);
 }
 
 async function requestPerm() {
   const result = await notificationService.requestPermission();
   console.log('权限请求结果:', result);
-  
+
   if (result === 'granted') {
     alert('通知权限已授予！');
   } else {
@@ -246,5 +244,6 @@ async function requestPerm() {
 ## 7. 更多信息
 
 详细文档请参考：
+
 - [通知系统优化总结](NOTIFICATION_SYSTEM_OPTIMIZATION.md)
 - [SSE 提醒通知实现指南](SSE_REMINDER_NOTIFICATION_IMPLEMENTATION.md)

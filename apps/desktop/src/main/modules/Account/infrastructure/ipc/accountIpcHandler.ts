@@ -1,7 +1,10 @@
-import { ipcMain } from "electron";
+import { ipcMain } from 'electron';
 
-import { MainAccountApplicationService } from "../../application/services/mainAccountApplicationService";
-import type { AccountRegistrationRequest, AccountDTO } from '../../../../../common/modules/account/types/account';
+import { MainAccountApplicationService } from '../../application/services/mainAccountApplicationService';
+import type {
+  AccountRegistrationRequest,
+  AccountDTO,
+} from '../../../../../common/modules/account/types/account';
 import { withAuth } from '@electron/modules/Authentication/application/services/authTokenService';
 
 /**
@@ -26,10 +29,10 @@ export class AccountIpcHandler {
     try {
       console.log('🔄 [AccountIpc] 开始初始化账号IPC处理器...');
       this.accountApplicationService = new MainAccountApplicationService();
-      
+
       // 设置IPC处理器
       await this.setupIpcHandlers();
-      
+
       this._isInitialized = true;
       console.log('✅ [AccountIpc] 账号IPC处理器初始化完成');
     } catch (error) {
@@ -63,16 +66,16 @@ export class AccountIpcHandler {
       async (_event, request: AccountRegistrationRequest): Promise<ApiResponse<AccountDTO>> => {
         try {
           await this.ensureInitialized();
-          
+
           console.log('🏠 [AccountIpc] 收到账号注册请求:', request);
-          
+
           const response = await this.accountApplicationService!.register(request);
           if (response.success && response.data) {
             console.log('✅ [AccountIpc] 账号注册成功:', response.data);
             return {
               success: true,
               data: response.data.toDTO(),
-              message: '账号注册成功'
+              message: '账号注册成功',
             };
           } else {
             console.error('❌ [AccountIpc] 账号注册失败:', response.message);
@@ -82,21 +85,21 @@ export class AccountIpcHandler {
           console.error('❌ [AccountIpc] 账号注册处理异常:', error);
           throw error;
         }
-      }
+      },
     );
     ipcMain.handle(
       'account:get-by-id',
       withAuth(async (_event, [accountUuid], auth): Promise<ApiResponse<AccountDTO>> => {
         try {
           await this.ensureInitialized();
-          
+
           if (!auth.accountUuid) {
             return {
               success: false,
               message: '未登录或登录已过期，请重新登录',
             };
           }
-          
+
           const response = await this.accountApplicationService!.getAccountById(accountUuid);
           if (response.success && response.data) {
             console.log('📝 [AccountIpc] 获取账号信息成功');
@@ -104,7 +107,7 @@ export class AccountIpcHandler {
             return {
               success: true,
               data: accountDTO,
-              message: '获取账号信息成功'
+              message: '获取账号信息成功',
             };
           } else {
             console.error('❌ [AccountIpc] 获取账号信息失败:', response.message);
@@ -120,11 +123,11 @@ export class AccountIpcHandler {
             message: '获取账号信息失败，请稍后重试',
           };
         }
-      })
+      }),
     );
     // 处理账号注销请求
     // ipcMain.handle(
-    //   'account:request-deactivation', 
+    //   'account:request-deactivation',
     //   withAuth(async (_event, [request], auth): Promise<AccountDeactivationResult> => {
     //     try {
     //       await this.ensureInitialized();
@@ -138,14 +141,13 @@ export class AccountIpcHandler {
     //           errorCode: 'PERMISSION_DENIED'
     //         };
     //       }
-          
+
     //       const result = await this.deactivationService!.requestAccountDeactivation(request);
-          
-          
+
     //       return result;
     //     } catch (error) {
     //       console.error('❌ [AccountIpc] 账号注销请求处理异常:', error);
-          
+
     //       return {
     //         success: false,
     //         accountUuid: request.accountUuid,
@@ -170,11 +172,14 @@ export class AccountIpcHandler {
             };
           }
 
-          const response = await this.accountApplicationService!.updateUserProfile(auth.accountUuid, userDTO);
+          const response = await this.accountApplicationService!.updateUserProfile(
+            auth.accountUuid,
+            userDTO,
+          );
           if (response.success && response.data) {
             return {
               success: true,
-              message: '用户信息更新成功'
+              message: '用户信息更新成功',
             };
           } else {
             return {
@@ -189,7 +194,7 @@ export class AccountIpcHandler {
             message: '用户信息更新失败，请稍后重试',
           };
         }
-      })
+      }),
     );
 
     ipcMain.handle(
@@ -205,7 +210,9 @@ export class AccountIpcHandler {
             };
           }
 
-          const response = await this.accountApplicationService!.getCurrentAccount(auth.accountUuid);
+          const response = await this.accountApplicationService!.getCurrentAccount(
+            auth.accountUuid,
+          );
           if (response.success) {
             return {
               success: true,
@@ -225,7 +232,7 @@ export class AccountIpcHandler {
             message: '获取当前用户信息失败，请稍后重试',
           };
         }
-      })
+      }),
     );
 
     console.log('✅ [AccountIpc] Account IPC handlers registered');
@@ -245,7 +252,7 @@ export class AccountIpcHandler {
       ipcMain.removeHandler('account:get-info');
       this.accountApplicationService = null;
       this._isInitialized = false;
-      
+
       console.log('🧹 [AccountIpc] Account IPC handlers cleaned up');
     } catch (error) {
       console.error('❌ [AccountIpc] 清理账号IPC处理器失败:', error);

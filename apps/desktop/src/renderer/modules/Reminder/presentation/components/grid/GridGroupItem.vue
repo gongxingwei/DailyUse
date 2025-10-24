@@ -1,6 +1,6 @@
 <template>
-  <div 
-    class="grid-group-item" 
+  <div
+    class="grid-group-item"
     :class="{ open: isOpen, disabled: !item.enabled }"
     @click="handleOpenFolder"
     @dragover.prevent="onDragOver"
@@ -9,9 +9,7 @@
     <!-- Folder icon and name when closed -->
     <div class="folder-closed">
       <div class="folder-icon">
-        <v-icon size="48" :color="item.enabled ? 'amber' : 'grey'">
-          mdi-folder
-        </v-icon>
+        <v-icon size="48" :color="item.enabled ? 'amber' : 'grey'"> mdi-folder </v-icon>
       </div>
       <div class="folder-name">
         {{ item.name }}
@@ -19,9 +17,7 @@
     </div>
   </div>
 
-  <div>
-
-  </div>
+  <div></div>
 </template>
 
 <script setup lang="ts">
@@ -34,7 +30,9 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-const onStartMoveTemplate = inject<((template: ReminderTemplate, group: ReminderTemplateGroup) => void) | undefined>('onStartMoveTemplate');
+const onStartMoveTemplate = inject<
+  ((template: ReminderTemplate, group: ReminderTemplateGroup) => void) | undefined
+>('onStartMoveTemplate');
 
 const onGroupOpen = inject<(group: ReminderTemplateGroup) => void>('onGroupOpen');
 
@@ -43,8 +41,7 @@ const isOpen = ref(false);
 const handleOpenFolder = () => {
   if (onGroupOpen) {
     onGroupOpen(props.item);
-  } 
-  
+  }
 };
 
 const onDragOver = (event: DragEvent) => {

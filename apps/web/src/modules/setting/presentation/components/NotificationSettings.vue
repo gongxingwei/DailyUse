@@ -57,7 +57,12 @@
         <v-list-item-title>免打扰模式</v-list-item-title>
         <v-list-item-subtitle>在指定时间段内静音通知</v-list-item-subtitle>
         <template v-slot:append>
-          <v-switch v-model="dndEnabled" color="primary" hide-details :disabled="!notificationsEnabled" />
+          <v-switch
+            v-model="dndEnabled"
+            color="primary"
+            hide-details
+            :disabled="!notificationsEnabled"
+          />
         </template>
       </v-list-item>
 
@@ -103,7 +108,12 @@
             @click="testSound"
             :disabled="!notificationsEnabled"
           />
-          <v-switch v-model="soundEnabled" color="primary" hide-details :disabled="!notificationsEnabled" />
+          <v-switch
+            v-model="soundEnabled"
+            color="primary"
+            hide-details
+            :disabled="!notificationsEnabled"
+          />
         </template>
       </v-list-item>
 
@@ -117,18 +127,10 @@
         <v-list-item-title>桌面通知</v-list-item-title>
         <v-list-item-subtitle>在桌面显示系统通知（需要浏览器权限）</v-list-item-subtitle>
         <template v-slot:append>
-          <v-chip
-            v-if="desktopPermissionStatus === 'denied'"
-            color="error"
-            size="small"
-          >
+          <v-chip v-if="desktopPermissionStatus === 'denied'" color="error" size="small">
             已拒绝
           </v-chip>
-          <v-chip
-            v-else-if="desktopPermissionStatus === 'granted'"
-            color="success"
-            size="small"
-          >
+          <v-chip v-else-if="desktopPermissionStatus === 'granted'" color="success" size="small">
             已授权
           </v-chip>
           <v-btn
@@ -170,9 +172,7 @@
     <!-- 保存按钮 -->
     <v-row class="mt-4">
       <v-col cols="12">
-        <v-btn color="primary" block @click="saveSettings" :loading="saving">
-          保存设置
-        </v-btn>
+        <v-btn color="primary" block @click="saveSettings" :loading="saving"> 保存设置 </v-btn>
       </v-col>
     </v-row>
 
@@ -199,7 +199,7 @@ const props = withDefaults(
   }>(),
   {
     autoSave: false,
-  }
+  },
 );
 
 // 可用的通知渠道
@@ -370,7 +370,7 @@ if (props.autoSave) {
         saveSettings();
       }, 500);
     },
-    { deep: true }
+    { deep: true },
   );
 }
 </script>

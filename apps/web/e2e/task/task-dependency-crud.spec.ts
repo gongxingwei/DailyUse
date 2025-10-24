@@ -1,17 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { TaskPage } from '../page-objects/TaskPage';
-import { login, navigateToTasks, createTestTask, cleanupTask, TEST_USER } from '../helpers/testHelpers';
+import {
+  login,
+  navigateToTasks,
+  createTestTask,
+  cleanupTask,
+  TEST_USER,
+} from '../helpers/testHelpers';
 
 /**
  * Task Dependency CRUD E2E Tests
- * 
+ *
  * Tests the complete lifecycle of task dependencies:
  * - Creating dependencies with different types
  * - Detecting circular dependencies
  * - Deleting dependencies and status updates
  * - Updating dependency types
  * - Bulk dependency creation
- * 
+ *
  * Covers: STORY-022 (Task Dependency Data Model)
  */
 test.describe('Task Dependency CRUD', () => {
@@ -26,10 +32,10 @@ test.describe('Task Dependency CRUD', () => {
 
     // Login
     await login(page, TEST_USER.username, TEST_USER.password);
-    
+
     // Navigate to Tasks page
     await navigateToTasks(page);
-    
+
     console.log('✅ Setup complete\n');
   });
 
@@ -59,7 +65,7 @@ test.describe('Task Dependency CRUD', () => {
 
   /**
    * Scenario 1.1: Create Finish-to-Start Dependency
-   * 
+   *
    * Given: User has created Task "Design API" and "Implement API"
    * When: User adds dependency "Design API" (finish-to-start) to "Implement API"
    * Then: Dependency is created
@@ -71,15 +77,19 @@ test.describe('Task Dependency CRUD', () => {
 
     // Arrange: Create two tasks
     console.log('Step 1: Creating tasks...');
-    await taskPage.createTask(createTestTask('E2E Test - Design API', {
-      description: 'Design the REST API',
-      duration: 180,
-    }));
+    await taskPage.createTask(
+      createTestTask('E2E Test - Design API', {
+        description: 'Design the REST API',
+        duration: 180,
+      }),
+    );
 
-    await taskPage.createTask(createTestTask('E2E Test - Implement API', {
-      description: 'Implement the REST API',
-      duration: 240,
-    }));
+    await taskPage.createTask(
+      createTestTask('E2E Test - Implement API', {
+        description: 'Implement the REST API',
+        duration: 240,
+      }),
+    );
 
     // Verify tasks are created
     await taskPage.expectTaskVisible('E2E Test - Design API');
@@ -94,7 +104,7 @@ test.describe('Task Dependency CRUD', () => {
     await taskPage.createDependency(
       'E2E Test - Implement API',
       'E2E Test - Design API',
-      'finish-to-start'
+      'finish-to-start',
     );
 
     // Wait for dependency creation
@@ -117,7 +127,7 @@ test.describe('Task Dependency CRUD', () => {
     await expect(successNotification).toBeVisible({ timeout: 3000 });
 
     console.log('✅ Finish-to-start dependency created successfully\n');
-    
+
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║  ✅ Test Passed: Finish-to-Start Dependency              ║');
     console.log('╠════════════════════════════════════════════════════════════╣');
@@ -128,7 +138,7 @@ test.describe('Task Dependency CRUD', () => {
 
   /**
    * Scenario 1.2: Detect Circular Dependency
-   * 
+   *
    * Given: Task dependency chain: A -> B -> C
    * When: User tries to add dependency C -> A
    * Then: System displays error "会形成循环依赖"
@@ -140,7 +150,7 @@ test.describe('Task Dependency CRUD', () => {
 
     // Arrange: Create chain A -> B -> C
     console.log('Step 1: Creating task chain A -> B -> C...');
-    
+
     await taskPage.createTask(createTestTask('E2E Test - Task A', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Test - Task B', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Test - Task C', { duration: 60 }));
@@ -160,20 +170,20 @@ test.describe('Task Dependency CRUD', () => {
 
     // Act: Try to create C -> A (circular)
     console.log('Step 2: Attempting to create circular dependency C -> A...');
-    
+
     // Click on Task A to add dependency from C
     await taskPage.taskCard('E2E Test - Task A').click();
     await page.click('button:has-text("添加依赖"), [data-testid="add-dependency-btn"]');
-    
+
     // Wait for dialog
     await page.waitForSelector('[role="dialog"]');
-    
+
     // Select Task C as predecessor
     await page.selectOption('[name="predecessorTask"], select', { label: 'E2E Test - Task C' });
-    
+
     // Try to save
     await page.click('button:has-text("保存"), button:has-text("确定")');
-    
+
     // Wait for error to appear
     await page.waitForTimeout(1000);
 
@@ -188,7 +198,7 @@ test.describe('Task Dependency CRUD', () => {
     // Assert: Verify circular path is shown
     const circularPath = page.locator('text=/Task C.*Task A.*Task B.*Task C/i');
     const pathVisible = await circularPath.isVisible().catch(() => false);
-    
+
     if (pathVisible) {
       console.log('✅ Circular path displayed');
     } else {
@@ -204,7 +214,7 @@ test.describe('Task Dependency CRUD', () => {
     await taskPage.expectDependencyNotExists('E2E Test - Task C', 'E2E Test - Task A');
 
     console.log('✅ Circular dependency detected and blocked\n');
-    
+
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║  ✅ Test Passed: Circular Dependency Detection           ║');
     console.log('╠════════════════════════════════════════════════════════════╣');
@@ -216,7 +226,7 @@ test.describe('Task Dependency CRUD', () => {
 
   /**
    * Scenario 1.3: Delete Dependency Updates Status
-   * 
+   *
    * Given: "Task B" depends on "Task A" (status: blocked)
    * When: User deletes the dependency
    * Then: Dependency is deleted
@@ -228,7 +238,7 @@ test.describe('Task Dependency CRUD', () => {
 
     // Arrange: Create dependency A -> B
     console.log('Step 1: Creating tasks with dependency...');
-    
+
     await taskPage.createTask(createTestTask('E2E Test - Task A', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Test - Task B', { duration: 60 }));
 
@@ -261,7 +271,7 @@ test.describe('Task Dependency CRUD', () => {
     expect(status).toBe('ready');
 
     console.log('✅ Dependency deleted and status updated\n');
-    
+
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║  ✅ Test Passed: Delete Dependency Status Update         ║');
     console.log('╠════════════════════════════════════════════════════════════╣');
@@ -272,7 +282,7 @@ test.describe('Task Dependency CRUD', () => {
 
   /**
    * Scenario 1.4: Update Dependency Type
-   * 
+   *
    * Given: Dependency A -> B (finish-to-start)
    * When: User changes to start-to-start
    * Then: Dependency type is updated
@@ -283,7 +293,7 @@ test.describe('Task Dependency CRUD', () => {
 
     // Arrange: Create finish-to-start dependency
     console.log('Step 1: Creating finish-to-start dependency...');
-    
+
     await taskPage.createTask(createTestTask('E2E Test - Task A', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Test - Task B', { duration: 60 }));
 
@@ -297,19 +307,19 @@ test.describe('Task Dependency CRUD', () => {
 
     // Act: Update to start-to-start
     console.log('Step 2: Updating to start-to-start...');
-    
+
     // Click on Task B
     await taskPage.taskCard('E2E Test - Task B').click();
-    
+
     // Click edit dependency button
     await page.click('button:has-text("编辑依赖"), [data-testid="edit-dependency-btn"]');
-    
+
     // Wait for dialog
     await page.waitForSelector('[role="dialog"]');
-    
+
     // Change type to start-to-start
     await page.selectOption('[name="dependencyType"], select', 'start-to-start');
-    
+
     // Save
     await page.click('button:has-text("保存"), button:has-text("确定")');
     await page.waitForTimeout(1000);
@@ -319,14 +329,14 @@ test.describe('Task Dependency CRUD', () => {
 
     // Assert: Verify dependency type changed
     console.log('Step 3: Verifying dependency type changed...');
-    
+
     // Check if dependency still exists
     await taskPage.expectDependencyExists('E2E Test - Task A', 'E2E Test - Task B');
-    
+
     // Verify type indicator (if visible)
     const typeIndicator = page.locator('text=/start-to-start|SS/i');
     const typeVisible = await typeIndicator.isVisible().catch(() => false);
-    
+
     if (typeVisible) {
       console.log('✅ Dependency type updated to start-to-start');
     } else {
@@ -334,7 +344,7 @@ test.describe('Task Dependency CRUD', () => {
     }
 
     console.log('✅ Dependency type updated\n');
-    
+
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║  ✅ Test Passed: Update Dependency Type                  ║');
     console.log('╠════════════════════════════════════════════════════════════╣');
@@ -345,7 +355,7 @@ test.describe('Task Dependency CRUD', () => {
 
   /**
    * Scenario 1.5: Bulk Dependency Creation
-   * 
+   *
    * Given: User selects 3 tasks
    * When: User bulk adds dependency to "Milestone Task"
    * Then: 3 dependencies are created
@@ -356,7 +366,7 @@ test.describe('Task Dependency CRUD', () => {
 
     // Arrange: Create 4 tasks (3 + 1 milestone)
     console.log('Step 1: Creating tasks...');
-    
+
     await taskPage.createTask(createTestTask('E2E Test - Task A', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Test - Task B', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Test - Task C', { duration: 60 }));
@@ -369,43 +379,58 @@ test.describe('Task Dependency CRUD', () => {
 
     // Act: Create bulk dependencies
     console.log('Step 2: Creating bulk dependencies...');
-    
+
     // Note: This assumes there's a bulk action UI
     // If not, we'll create them one by one
-    
+
     // Check if bulk action button exists
-    const bulkActionBtn = page.locator('button:has-text("批量添加依赖"), [data-testid="bulk-add-dependency-btn"]');
+    const bulkActionBtn = page.locator(
+      'button:has-text("批量添加依赖"), [data-testid="bulk-add-dependency-btn"]',
+    );
     const hasBulkAction = await bulkActionBtn.isVisible().catch(() => false);
 
     if (hasBulkAction) {
       // Use bulk action
       console.log('Using bulk action feature...');
-      
+
       // Select tasks A, B, C
       await page.click('[type="checkbox"][data-task="E2E Test - Task A"]');
       await page.click('[type="checkbox"][data-task="E2E Test - Task B"]');
       await page.click('[type="checkbox"][data-task="E2E Test - Task C"]');
-      
+
       // Click bulk add dependency
       await bulkActionBtn.click();
-      
+
       // Select milestone task
-      await page.selectOption('[name="targetTask"], select', { label: 'E2E Test - Milestone Task' });
-      
+      await page.selectOption('[name="targetTask"], select', {
+        label: 'E2E Test - Milestone Task',
+      });
+
       // Confirm
       await page.click('button:has-text("确定"), button:has-text("保存")');
-      
     } else {
       // Create individually
       console.log('No bulk action found, creating individually...');
-      
-      await taskPage.createDependency('E2E Test - Milestone Task', 'E2E Test - Task A', 'finish-to-start');
+
+      await taskPage.createDependency(
+        'E2E Test - Milestone Task',
+        'E2E Test - Task A',
+        'finish-to-start',
+      );
       await page.waitForTimeout(500);
-      
-      await taskPage.createDependency('E2E Test - Milestone Task', 'E2E Test - Task B', 'finish-to-start');
+
+      await taskPage.createDependency(
+        'E2E Test - Milestone Task',
+        'E2E Test - Task B',
+        'finish-to-start',
+      );
       await page.waitForTimeout(500);
-      
-      await taskPage.createDependency('E2E Test - Milestone Task', 'E2E Test - Task C', 'finish-to-start');
+
+      await taskPage.createDependency(
+        'E2E Test - Milestone Task',
+        'E2E Test - Task C',
+        'finish-to-start',
+      );
       await page.waitForTimeout(500);
     }
 
@@ -414,13 +439,13 @@ test.describe('Task Dependency CRUD', () => {
 
     // Assert: Verify all 3 dependencies exist
     console.log('Step 3: Verifying dependencies...');
-    
+
     await taskPage.expectDependencyExists('E2E Test - Task A', 'E2E Test - Milestone Task');
     await taskPage.expectDependencyExists('E2E Test - Task B', 'E2E Test - Milestone Task');
     await taskPage.expectDependencyExists('E2E Test - Task C', 'E2E Test - Milestone Task');
 
     console.log('✅ All 3 dependencies created\n');
-    
+
     // Assert: Open DAG to verify visual connections
     console.log('Step 4: Verifying DAG visualization...');
     await taskPage.openDAGVisualization();
@@ -434,7 +459,7 @@ test.describe('Task Dependency CRUD', () => {
     await page.screenshot({ path: 'test-results/11-bulk-dag.png', fullPage: true });
 
     console.log('✅ Bulk dependencies created successfully\n');
-    
+
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║  ✅ Test Passed: Bulk Dependency Creation                ║');
     console.log('╠════════════════════════════════════════════════════════════╣');

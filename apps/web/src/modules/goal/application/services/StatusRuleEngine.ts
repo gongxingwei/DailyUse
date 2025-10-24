@@ -11,7 +11,11 @@ import type {
   RuleOperator,
 } from '../../../../../../../packages/contracts/src/modules/goal/rules/StatusRule';
 import type { GoalStatus } from '../../../../../../../packages/contracts/src/modules/goal/enums';
-import { BUILT_IN_RULES, sortRulesByPriority, getEnabledRules } from '../../domain/rules/BuiltInRules';
+import {
+  BUILT_IN_RULES,
+  sortRulesByPriority,
+  getEnabledRules,
+} from '../../domain/rules/BuiltInRules';
 
 /**
  * 目标数据接口（用于规则评估）
@@ -45,7 +49,7 @@ export class StatusRuleEngine {
    */
   private evaluateCondition(condition: RuleCondition, goal: GoalData): boolean {
     const value = this.extractMetricValue(condition.metric, condition.scope || 'all', goal);
-    
+
     if (value === null) {
       return false;
     }
@@ -56,26 +60,22 @@ export class StatusRuleEngine {
   /**
    * 提取指标值
    */
-  private extractMetricValue(
-    metric: RuleMetric,
-    scope: string,
-    goal: GoalData
-  ): number | null {
+  private extractMetricValue(metric: RuleMetric, scope: string, goal: GoalData): number | null {
     switch (metric) {
       case 'progress':
         return this.getProgressValue(scope, goal);
-      
+
       case 'weight':
         return this.getWeightValue(scope, goal);
-      
+
       case 'kr_count':
         return goal.keyResults.length;
-      
+
       case 'deadline':
         if (!goal.deadline) return null;
         const daysRemaining = Math.floor((goal.deadline - Date.now()) / (1000 * 60 * 60 * 24));
         return daysRemaining;
-      
+
       default:
         return null;
     }
@@ -93,10 +93,10 @@ export class StatusRuleEngine {
     } else if (scope === 'any') {
       // 任意 KR 的最小进度
       if (goal.keyResults.length === 0) return 0;
-      return Math.min(...goal.keyResults.map(kr => kr.progress));
+      return Math.min(...goal.keyResults.map((kr) => kr.progress));
     } else {
       // 特定 KR 的进度
-      const kr = goal.keyResults.find(k => k.uuid === scope);
+      const kr = goal.keyResults.find((k) => k.uuid === scope);
       return kr ? kr.progress : null;
     }
   }
@@ -111,10 +111,10 @@ export class StatusRuleEngine {
     } else if (scope === 'any') {
       // 任意 KR 的权重（返回最小值）
       if (goal.keyResults.length === 0) return 0;
-      return Math.min(...goal.keyResults.map(kr => kr.weight));
+      return Math.min(...goal.keyResults.map((kr) => kr.weight));
     } else {
       // 特定 KR 的权重
-      const kr = goal.keyResults.find(k => k.uuid === scope);
+      const kr = goal.keyResults.find((k) => k.uuid === scope);
       return kr ? kr.weight : null;
     }
   }
@@ -160,9 +160,13 @@ export class StatusRuleEngine {
 
     let matched: boolean;
     if (rule.conditionType === 'all') {
-      matched = conditionResults.every((r: { condition: RuleCondition; matched: boolean }) => r.matched);
+      matched = conditionResults.every(
+        (r: { condition: RuleCondition; matched: boolean }) => r.matched,
+      );
     } else {
-      matched = conditionResults.some((r: { condition: RuleCondition; matched: boolean }) => r.matched);
+      matched = conditionResults.some(
+        (r: { condition: RuleCondition; matched: boolean }) => r.matched,
+      );
     }
 
     return {
@@ -204,8 +208,8 @@ export class StatusRuleEngine {
   public evaluateAll(goal: GoalData): RuleExecutionResult[] {
     const enabledRules = getEnabledRules(this.rules);
     return enabledRules
-      .map(rule => this.evaluateRule(rule, goal))
-      .filter(result => result.matched);
+      .map((rule) => this.evaluateRule(rule, goal))
+      .filter((result) => result.matched);
   }
 
   /**
@@ -219,7 +223,7 @@ export class StatusRuleEngine {
    * 移除规则
    */
   public removeRule(ruleId: string): boolean {
-    const index = this.rules.findIndex(r => r.id === ruleId);
+    const index = this.rules.findIndex((r) => r.id === ruleId);
     if (index !== -1) {
       this.rules.splice(index, 1);
       return true;
@@ -231,7 +235,7 @@ export class StatusRuleEngine {
    * 更新规则
    */
   public updateRule(ruleId: string, updates: Partial<StatusRule>): boolean {
-    const index = this.rules.findIndex(r => r.id === ruleId);
+    const index = this.rules.findIndex((r) => r.id === ruleId);
     if (index !== -1) {
       this.rules[index] = {
         ...this.rules[index],

@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { notificationService } from '../services/notificationService';
-import type { NotificationWindowOptions } from "@renderer/modules/notification/types/notification";
+import type { NotificationWindowOptions } from '@renderer/modules/notification/types/notification';
 
 export function setupNotificationHandler() {
   ipcMain.handle('show-notification', async (_event, options: NotificationWindowOptions) => {
@@ -22,11 +22,14 @@ export function setupNotificationHandler() {
   });
 
   // 通知操作
-  ipcMain.on('notification-action', (_event, uuid: string, action: { text: string; type: string }) => {
-    try {
-      return notificationService.handleNotificationAction(uuid, action);
-    } catch (error) {
-      console.error('IPC Error - notification-action:', error);
-    }
-  });
+  ipcMain.on(
+    'notification-action',
+    (_event, uuid: string, action: { text: string; type: string }) => {
+      try {
+        return notificationService.handleNotificationAction(uuid, action);
+      } catch (error) {
+        console.error('IPC Error - notification-action:', error);
+      }
+    },
+  );
 }

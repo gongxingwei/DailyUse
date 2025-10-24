@@ -1,10 +1,10 @@
-import type { 
+import type {
   TaskResponse,
   TaskStats,
   TaskTimeline,
   ITaskTemplateDTO,
   ITaskInstanceDTO,
-  ITaskMetaTemplateDTO
+  ITaskMetaTemplateDTO,
 } from '@common/modules/task/types/task';
 import { serializeForIpc, deepSerializeForIpc } from '@renderer/shared/utils/ipcSerialization';
 import { ipcInvokeWithAuth } from '@renderer/shared/utils/ipcInvokeWithAuth';
@@ -14,7 +14,6 @@ import { ipcInvokeWithAuth } from '@renderer/shared/utils/ipcInvokeWithAuth';
  * 负责与主进程的 IPC 通信，只处理数据传输，不涉及业务逻辑
  */
 export class TaskIpcClient {
-  
   // === MetaTemplate IPC 调用 ===
 
   async getAllMetaTemplates(): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
@@ -25,7 +24,9 @@ export class TaskIpcClient {
     return await ipcInvokeWithAuth('task:meta-templates:get-by-id', uuid);
   }
 
-  async getMetaTemplatesByCategory(category: string): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
+  async getMetaTemplatesByCategory(
+    category: string,
+  ): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
     return await ipcInvokeWithAuth('task:meta-templates:get-by-category', category);
   }
 
@@ -47,7 +48,10 @@ export class TaskIpcClient {
     return await ipcInvokeWithAuth('task:templates:get-all');
   }
 
-  async getTaskTemplateForKeyResult(goalUuid: string, keyResultId: string): Promise<TaskResponse<ITaskTemplateDTO[]>> {
+  async getTaskTemplateForKeyResult(
+    goalUuid: string,
+    keyResultId: string,
+  ): Promise<TaskResponse<ITaskTemplateDTO[]>> {
     return await ipcInvokeWithAuth('task:templates:get-by-key-result', goalUuid, keyResultId);
   }
 
@@ -85,23 +89,25 @@ export class TaskIpcClient {
   }
 
   async createTaskTemplateFromMetaTemplate(
-    metaTemplateId: string, 
-    title: string, 
+    metaTemplateId: string,
+    title: string,
     customOptions?: {
       description?: string;
       priority?: number;
       tags?: string[];
-    }
+    },
   ): Promise<TaskResponse<ITaskTemplateDTO>> {
     return await ipcInvokeWithAuth(
-      'task:templates:create-from-meta-template', 
-      metaTemplateId, 
-      title, 
-      serializeForIpc(customOptions)
+      'task:templates:create-from-meta-template',
+      metaTemplateId,
+      title,
+      serializeForIpc(customOptions),
     );
   }
 
-  async saveTaskTemplate(taskTemplateDTO: ITaskTemplateDTO): Promise<TaskResponse<ITaskTemplateDTO>> {
+  async saveTaskTemplate(
+    taskTemplateDTO: ITaskTemplateDTO,
+  ): Promise<TaskResponse<ITaskTemplateDTO>> {
     return await ipcInvokeWithAuth('task:templates:save', serializeForIpc(taskTemplateDTO));
   }
 
@@ -139,8 +145,17 @@ export class TaskIpcClient {
     return await ipcInvokeWithAuth('task:instances:cancel', taskInstanceUuid);
   }
 
-  async rescheduleTaskInstance(taskInstanceUuid: string, newScheduledTime: string, newEndTime?: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:reschedule', taskInstanceUuid, newScheduledTime, newEndTime);
+  async rescheduleTaskInstance(
+    taskInstanceUuid: string,
+    newScheduledTime: string,
+    newEndTime?: string,
+  ): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth(
+      'task:instances:reschedule',
+      taskInstanceUuid,
+      newScheduledTime,
+      newEndTime,
+    );
   }
 
   async deleteTaskInstance(taskInstanceUuid: string): Promise<TaskResponse<void>> {
@@ -161,8 +176,19 @@ export class TaskIpcClient {
     return await ipcInvokeWithAuth('task:instances:trigger-reminder', instanceId, alertId);
   }
 
-  async snoozeReminder(instanceId: string, alertId: string, snoozeUntil: string, reason?: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:snooze-reminder', instanceId, alertId, snoozeUntil, reason);
+  async snoozeReminder(
+    instanceId: string,
+    alertId: string,
+    snoozeUntil: string,
+    reason?: string,
+  ): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth(
+      'task:instances:snooze-reminder',
+      instanceId,
+      alertId,
+      snoozeUntil,
+      reason,
+    );
   }
 
   async dismissReminder(instanceId: string, alertId: string): Promise<TaskResponse<void>> {
@@ -183,8 +209,17 @@ export class TaskIpcClient {
     return await ipcInvokeWithAuth('task:stats:get-for-goal', goalUuid);
   }
 
-  async getTaskCompletionTimeline(goalUuid: string, startDate: string, endDate: string): Promise<TaskResponse<TaskTimeline[]>> {
-    return await ipcInvokeWithAuth('task:stats:get-completion-timeline', goalUuid, startDate, endDate);
+  async getTaskCompletionTimeline(
+    goalUuid: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<TaskResponse<TaskTimeline[]>> {
+    return await ipcInvokeWithAuth(
+      'task:stats:get-completion-timeline',
+      goalUuid,
+      startDate,
+      endDate,
+    );
   }
 }
 

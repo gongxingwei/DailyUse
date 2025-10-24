@@ -1,6 +1,6 @@
 /**
  * GoalTimelineService
- * 
+ *
  * 目标时间线服务，用于获取和处理目标历史快照数据
  * 支持基于权重快照的时间线动画
  */
@@ -83,51 +83,52 @@ export interface TimelinePlayState {
  */
 export function generateTimelineFromGoal(
   goal: GoalContracts.GoalClientDTO,
-  weightSnapshots: GoalContracts.KeyResultWeightSnapshotClientDTO[]
+  weightSnapshots: GoalContracts.KeyResultWeightSnapshotClientDTO[],
 ): TimelineData {
   const snapshots: TimelineSnapshot[] = [];
-  
+
   // 1. 创建初始快照（目标创建时）
   const initialSnapshot: TimelineSnapshot = {
     timestamp: goal.createdAt,
     date: new Date(goal.createdAt),
     goalUuid: goal.uuid,
     data: {
-      keyResults: goal.keyResults?.map((kr) => ({
-        uuid: kr.uuid,
-        title: kr.title,
-        weight: kr.weight || 0,
-        progress: kr.progressPercentage || 0,
-      })) || [],
+      keyResults:
+        goal.keyResults?.map((kr) => ({
+          uuid: kr.uuid,
+          title: kr.title,
+          weight: kr.weight || 0,
+          progress: kr.progressPercentage || 0,
+        })) || [],
       totalWeight: goal.keyResults?.reduce((sum, kr) => sum + (kr.weight || 0), 0) || 0,
       totalProgress: goal.overallProgress || 0,
     },
     trigger: 'initial',
     reason: '目标创建',
   };
-  
+
   snapshots.push(initialSnapshot);
-  
+
   // 2. 从 weight snapshots 生成快照
   if (goal.keyResults && weightSnapshots.length > 0) {
     // 按时间排序权重快照
-    const sortedSnapshots = [...weightSnapshots].sort((a, b) => 
-      Number(a.snapshotTime) - Number(b.snapshotTime)
+    const sortedSnapshots = [...weightSnapshots].sort(
+      (a, b) => Number(a.snapshotTime) - Number(b.snapshotTime),
     );
-    
+
     // 为每个 weight change 创建快照
     const currentWeights = new Map<string, number>();
     goal.keyResults.forEach((kr) => {
       currentWeights.set(kr.uuid, kr.weight || 0);
     });
-    
+
     sortedSnapshots.forEach((ws) => {
       // 更新权重
       currentWeights.set(ws.keyResultUuid, ws.newWeight);
-      
+
       // 查找对应的 KeyResult
       const kr = goal.keyResults?.find((k) => k.uuid === ws.keyResultUuid);
-      
+
       // 创建快照
       const snapshot: TimelineSnapshot = {
         timestamp: Number(ws.snapshotTime),
@@ -146,45 +147,47 @@ export function generateTimelineFromGoal(
         trigger: ws.trigger,
         reason: ws.reason || (kr ? `${kr.title}: ${ws.oldWeight}% → ${ws.newWeight}%` : '权重调整'),
       };
-      
+
       snapshots.push(snapshot);
     });
   }
-  
+
   // 3. 添加当前状态快照
   const currentSnapshot: TimelineSnapshot = {
     timestamp: Date.now(),
     date: new Date(),
     goalUuid: goal.uuid,
     data: {
-      keyResults: goal.keyResults?.map((kr) => ({
-        uuid: kr.uuid,
-        title: kr.title,
-        weight: kr.weight || 0,
-        progress: kr.progressPercentage || 0,
-      })) || [],
+      keyResults:
+        goal.keyResults?.map((kr) => ({
+          uuid: kr.uuid,
+          title: kr.title,
+          weight: kr.weight || 0,
+          progress: kr.progressPercentage || 0,
+        })) || [],
       totalWeight: goal.keyResults?.reduce((sum, kr) => sum + (kr.weight || 0), 0) || 0,
       totalProgress: goal.overallProgress || 0,
     },
     trigger: 'current',
     reason: '当前状态',
   };
-  
+
   snapshots.push(currentSnapshot);
-  
+
   // 4. 确保快照按时间排序
   snapshots.sort((a, b) => a.timestamp - b.timestamp);
-  
+
   // 5. 计算统计信息
   const totalChanges = snapshots.length - 2; // 排除初始和当前快照
   const weightChanges = snapshots.slice(1).map((snapshot, idx) => {
     const prevSnapshot = snapshots[idx];
     return Math.abs(snapshot.data.totalWeight - prevSnapshot.data.totalWeight);
   });
-  const avgWeightChange = weightChanges.length > 0
-    ? weightChanges.reduce((sum, change) => sum + change, 0) / weightChanges.length
-    : 0;
-  
+  const avgWeightChange =
+    weightChanges.length > 0
+      ? weightChanges.reduce((sum, change) => sum + change, 0) / weightChanges.length
+      : 0;
+
   return {
     goalUuid: goal.uuid,
     goalTitle: goal.title,
@@ -208,7 +211,7 @@ export function generateTimelineFromGoal(
 export function interpolateSnapshots(
   snapshot1: TimelineSnapshot,
   snapshot2: TimelineSnapshot,
-  progress: number // 0-1
+  progress: number, // 0-1
 ): TimelineSnapshot {
   return {
     timestamp: snapshot1.timestamp + (snapshot2.timestamp - snapshot1.timestamp) * progress,
@@ -218,7 +221,7 @@ export function interpolateSnapshots(
       keyResults: snapshot1.data.keyResults.map((kr1, idx) => {
         const kr2 = snapshot2.data.keyResults[idx];
         if (!kr2) return kr1;
-        
+
         return {
           uuid: kr1.uuid,
           title: kr1.title,
@@ -226,9 +229,11 @@ export function interpolateSnapshots(
           progress: kr1.progress + (kr2.progress - kr1.progress) * progress,
         };
       }),
-      totalWeight: snapshot1.data.totalWeight + 
+      totalWeight:
+        snapshot1.data.totalWeight +
         (snapshot2.data.totalWeight - snapshot1.data.totalWeight) * progress,
-      totalProgress: snapshot1.data.totalProgress + 
+      totalProgress:
+        snapshot1.data.totalProgress +
         (snapshot2.data.totalProgress - snapshot1.data.totalProgress) * progress,
     },
     trigger: progress < 0.5 ? snapshot1.trigger : snapshot2.trigger,
@@ -244,21 +249,21 @@ export function formatTimelineTimestamp(timestamp: number): string {
   const now = new Date();
   const diffMs = now.getTime() - timestamp;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) {
-    return date.toLocaleTimeString('zh-CN', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
   } else if (diffDays < 7) {
     return `${diffDays}天前`;
   } else if (diffDays < 30) {
     return `${Math.floor(diffDays / 7)}周前`;
   } else {
-    return date.toLocaleDateString('zh-CN', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     });
   }
 }
@@ -271,7 +276,7 @@ export function formatTimelineTimestamp(timestamp: number): string {
  */
 export function calculatePlayDuration(snapshotCount: number, speed: number): number {
   const baseInterval = 1000; // 每个快照间隔 1 秒
-  return (snapshotCount - 1) * baseInterval / speed;
+  return ((snapshotCount - 1) * baseInterval) / speed;
 }
 
 /**

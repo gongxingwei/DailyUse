@@ -1,11 +1,11 @@
 /**
  * Fuzzy Search Engine
- * 
+ *
  * Implements fuzzy string matching using:
  * - Levenshtein distance algorithm
  * - Token-based matching
  * - Acronym detection
- * 
+ *
  * @module fuzzySearch
  */
 
@@ -38,10 +38,10 @@ export interface FuzzyMatchOptions {
 
 /**
  * Calculate Levenshtein distance between two strings
- * 
+ *
  * Time complexity: O(m * n) where m, n are string lengths
  * Space complexity: O(m * n)
- * 
+ *
  * @param a First string
  * @param b Second string
  * @returns Edit distance
@@ -73,7 +73,7 @@ export function levenshteinDistance(a: string, b: string): number {
         matrix[i][j] = Math.min(
           matrix[i - 1][j - 1] + 1, // substitution
           matrix[i][j - 1] + 1, // insertion
-          matrix[i - 1][j] + 1 // deletion
+          matrix[i - 1][j] + 1, // deletion
         );
       }
     }
@@ -84,9 +84,9 @@ export function levenshteinDistance(a: string, b: string): number {
 
 /**
  * Calculate similarity score from Levenshtein distance
- * 
+ *
  * Score = (1 - distance / maxLength) * 100
- * 
+ *
  * @param distance Levenshtein distance
  * @param maxLength Maximum string length
  * @returns Similarity score (0-100)
@@ -98,7 +98,7 @@ function distanceToScore(distance: number, maxLength: number): number {
 
 /**
  * Find all occurrences of substring in text (case insensitive)
- * 
+ *
  * @param text Text to search in
  * @param substring Substring to find
  * @returns Array of match positions
@@ -123,13 +123,13 @@ function findSubstringMatches(text: string, substring: string): TextMatch[] {
 
 /**
  * Perform fuzzy matching between query and target string
- * 
+ *
  * Algorithm:
  * 1. Exact substring match → 100 score
  * 2. Token-based matching → weighted score
  * 3. Acronym matching → 90 score
  * 4. Levenshtein distance → similarity score
- * 
+ *
  * @param query Search query
  * @param target Target string to match against
  * @param options Matching options
@@ -138,14 +138,9 @@ function findSubstringMatches(text: string, substring: string): TextMatch[] {
 export function fuzzyMatch(
   query: string,
   target: string,
-  options: FuzzyMatchOptions = {}
+  options: FuzzyMatchOptions = {},
 ): FuzzyMatchResult {
-  const {
-    threshold = 60,
-    caseSensitive = false,
-    tokenize = true,
-    acronym = true,
-  } = options;
+  const { threshold = 60, caseSensitive = false, tokenize = true, acronym = true } = options;
 
   // Normalize strings
   const q = caseSensitive ? query.trim() : query.toLowerCase().trim();
@@ -244,7 +239,7 @@ export function fuzzyMatch(
 
 /**
  * Search multiple fields with weighted scoring
- * 
+ *
  * @param query Search query
  * @param fields Object with field name → field value
  * @param weights Object with field name → weight (default: 1.0)
@@ -253,7 +248,7 @@ export function fuzzyMatch(
 export function fuzzyMatchMultiField(
   query: string,
   fields: Record<string, string>,
-  weights: Record<string, number> = {}
+  weights: Record<string, number> = {},
 ): FuzzyMatchResult {
   let totalScore = 0;
   let totalWeight = 0;
@@ -278,7 +273,7 @@ export function fuzzyMatchMultiField(
 
 /**
  * Filter and sort array of items by fuzzy match score
- * 
+ *
  * @param query Search query
  * @param items Array of items to search
  * @param getSearchText Function to extract searchable text from item
@@ -289,7 +284,7 @@ export function fuzzyFilter<T>(
   query: string,
   items: T[],
   getSearchText: (item: T) => string,
-  options: FuzzyMatchOptions = {}
+  options: FuzzyMatchOptions = {},
 ): Array<T & { _score: number; _matches: TextMatch[] }> {
   const threshold = options.threshold || 60;
 
@@ -309,7 +304,7 @@ export function fuzzyFilter<T>(
 
 /**
  * Highlight matched text with markers
- * 
+ *
  * @param text Original text
  * @param matches Match positions
  * @param before Opening marker (e.g., '<mark>')
@@ -320,7 +315,7 @@ export function highlightMatches(
   text: string,
   matches: TextMatch[],
   before = '<mark>',
-  after = '</mark>'
+  after = '</mark>',
 ): string {
   if (matches.length === 0) return text;
 

@@ -1,19 +1,19 @@
-import { getGoalDomainApplicationService } from "../../application/services/goalDomainApplicationService";
+import { getGoalDomainApplicationService } from '../../application/services/goalDomainApplicationService';
 
 // Composables
-import { useSnackbar } from "@renderer/shared/composables/useSnackbar";
+import { useSnackbar } from '@renderer/shared/composables/useSnackbar';
 // Domain entities
-import { Goal } from "../../domain/aggregates/goal";
-import { GoalDir } from "../../domain/aggregates/goalDir";
-import { GoalRecord } from "../../domain/entities/record";
-import { GoalReview } from "../../domain/entities/goalReview";
+import { Goal } from '../../domain/aggregates/goal';
+import { GoalDir } from '../../domain/aggregates/goalDir';
+import { GoalRecord } from '../../domain/entities/record';
+import { GoalReview } from '../../domain/entities/goalReview';
 
 /**
  * useGoalServices
- * 
+ *
  * This composable encapsulates all goal-related business operations (CRUD, etc.),
  * and provides unified error handling and user feedback through snackbar.
- * 
+ *
  * Responsibilities:
  * - Call application services (goalService) to perform business operations
  * - Handle operation results and exceptions uniformly
@@ -40,8 +40,8 @@ export function useGoalServices() {
         showError(`创建目标失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error creating goal:", error);
-      showError("创建目标时发生未知错误");
+      console.error('Error creating goal:', error);
+      showError('创建目标时发生未知错误');
     }
   };
 
@@ -59,8 +59,8 @@ export function useGoalServices() {
         showError(`更新目标失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error updating goal:", error);
-      showError("更新目标时发生未知错误");
+      console.error('Error updating goal:', error);
+      showError('更新目标时发生未知错误');
     }
   };
 
@@ -78,8 +78,8 @@ export function useGoalServices() {
         showError(`删除目标失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error deleting goal:", error);
-      showError("删除目标时发生未知错误");
+      console.error('Error deleting goal:', error);
+      showError('删除目标时发生未知错误');
     }
   };
 
@@ -96,8 +96,8 @@ export function useGoalServices() {
         showError(`删除所有目标失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error deleting all goals:", error);
-      showError("删除所有目标时发生未知错误");
+      console.error('Error deleting all goals:', error);
+      showError('删除所有目标时发生未知错误');
     }
   };
 
@@ -115,8 +115,8 @@ export function useGoalServices() {
         showError(`创建目标目录失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error creating goal directory:", error);
-      showError("创建目标目录时发生未知错误");
+      console.error('Error creating goal directory:', error);
+      showError('创建目标目录时发生未知错误');
     }
   };
 
@@ -134,8 +134,8 @@ export function useGoalServices() {
         showError(`更新目标目录失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error updating goal directory:", error);
-      showError("更新目标目录时发生未知错误");
+      console.error('Error updating goal directory:', error);
+      showError('更新目标目录时发生未知错误');
     }
   };
 
@@ -153,8 +153,8 @@ export function useGoalServices() {
         showError(`删除目标目录失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error deleting goal directory:", error);
-      showError("删除目标目录时发生未知错误");
+      console.error('Error deleting goal directory:', error);
+      showError('删除目标目录时发生未知错误');
     }
   };
 
@@ -172,8 +172,8 @@ export function useGoalServices() {
         showError(`添加记录失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error adding record to goal:", error);
-      showError("添加记录时发生未知错误");
+      console.error('Error adding record to goal:', error);
+      showError('添加记录时发生未知错误');
     }
   };
 
@@ -191,8 +191,8 @@ export function useGoalServices() {
         showError(`删除记录失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error removing record from goal:", error);
-      showError("删除记录时发生未知错误");
+      console.error('Error removing record from goal:', error);
+      showError('删除记录时发生未知错误');
     }
   };
 
@@ -210,8 +210,8 @@ export function useGoalServices() {
         showError(`添加复盘失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error adding review to goal:", error);
-      showError("添加复盘时发生未知错误");
+      console.error('Error adding review to goal:', error);
+      showError('添加复盘时发生未知错误');
     }
   };
 
@@ -229,8 +229,8 @@ export function useGoalServices() {
         showError(`更新复盘失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error updating review in goal:", error);
-      showError("更新复盘时发生未知错误");
+      console.error('Error updating review in goal:', error);
+      showError('更新复盘时发生未知错误');
     }
   };
 
@@ -248,8 +248,8 @@ export function useGoalServices() {
         showError(`移除复盘失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error removing review from goal:", error);
-      showError("移除复盘时发生未知错误");
+      console.error('Error removing review from goal:', error);
+      showError('移除复盘时发生未知错误');
     }
   };
 
@@ -262,8 +262,8 @@ export function useGoalServices() {
       await goalService.syncAllData();
       showSuccess(`数据同步完成`);
     } catch (error) {
-      console.error("Error syncing all goal data:", error);
-      showError("数据同步时发生未知错误");
+      console.error('Error syncing all goal data:', error);
+      showError('数据同步时发生未知错误');
     }
   };
 

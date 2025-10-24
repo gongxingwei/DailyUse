@@ -43,8 +43,6 @@ export interface ChannelErrorServerDTO {
   details?: any;
 }
 
-
-
 /**
  * ChannelError Persistence DTO
  */

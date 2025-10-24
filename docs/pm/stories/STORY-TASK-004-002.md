@@ -21,6 +21,7 @@
 ## 🎯 Acceptance Criteria
 
 ### 1. DAG Visualization Display ✅
+
 - [ ] Display tasks as nodes with title, status, and metadata
 - [ ] Display dependencies as directed edges between tasks
 - [ ] Support multiple layout algorithms (hierarchical, force-directed)
@@ -32,11 +33,13 @@
   - ⚪ Gray: Pending (not started)
 
 ### 2. Critical Path Highlighting ✅
+
 - [ ] Calculate and highlight the critical path
 - [ ] Show critical tasks with thicker borders
 - [ ] Display total estimated duration for critical path
 
 ### 3. Interactive Features ✅
+
 - [ ] Zoom in/out with mouse wheel or buttons
 - [ ] Pan by dragging the canvas
 - [ ] Click node to show task details panel
@@ -44,12 +47,14 @@
 - [ ] Double-click node to navigate to task edit page
 
 ### 4. Export Functionality ✅
+
 - [ ] Export as PNG image
 - [ ] Export as SVG vector
 - [ ] Export as JSON data
 - [ ] Copy graph to clipboard
 
 ### 5. Performance Requirements ✅
+
 - [ ] Render <300ms for graphs with up to 50 tasks
 - [ ] Smooth animations (60 FPS) during zoom/pan
 - [ ] No memory leaks during repeated renders
@@ -73,6 +78,7 @@ TaskDAGView.vue (Page)
 ### Component Reuse from Goal Module
 
 **Reuse ~60% from Goal DAG Visualization**:
+
 - ECharts configuration patterns
 - Layout algorithms (hierarchical, force-directed)
 - Export functionality
@@ -80,6 +86,7 @@ TaskDAGView.vue (Page)
 - Animation patterns
 
 **Adapt for Task-specific needs**:
+
 - Task status colors (vs Goal status)
 - Dependency types (vs Goal parent-child)
 - Critical path calculation (new feature)
@@ -90,15 +97,18 @@ TaskDAGView.vue (Page)
 ## 📋 Implementation Tasks
 
 ### Task 1: Code Analysis & Reuse Planning (0.5 SP)
+
 **Objective**: Analyze Goal DAG code for reusable patterns
 
 **Subtasks**:
+
 - [ ] Read `GoalDAGVisualization.vue` and extract reusable logic
 - [ ] Identify ECharts configurations to adapt
 - [ ] Document differences between Goal and Task DAG requirements
 - [ ] Create component structure plan
 
 **Deliverables**:
+
 - Component reuse mapping document
 - TaskDAGVisualization component scaffold
 
@@ -107,9 +117,11 @@ TaskDAGView.vue (Page)
 ---
 
 ### Task 2: TaskDAGVisualization Component (1.5 SP)
+
 **Objective**: Create the main DAG visualization component
 
 **Subtasks**:
+
 - [ ] Create `TaskDAGVisualization.vue` component (300-400 lines)
 - [ ] Integrate ECharts with task-specific configuration
 - [ ] Implement node rendering with task status colors
@@ -118,37 +130,34 @@ TaskDAGView.vue (Page)
 - [ ] Implement layout algorithm selection (hierarchical/force-directed)
 
 **Key Code**:
+
 ```vue
 <template>
   <div class="task-dag-container">
-    <TaskDAGToolbar 
-      @layout-change="handleLayoutChange"
-      @export="handleExport"
-    />
+    <TaskDAGToolbar @layout-change="handleLayoutChange" @export="handleExport" />
     <div ref="chartRef" class="dag-canvas" />
-    <TaskDetailPanel 
-      v-if="selectedTask"
-      :task="selectedTask"
-      @close="selectedTask = null"
-    />
+    <TaskDetailPanel v-if="selectedTask" :task="selectedTask" @close="selectedTask = null" />
   </div>
 </template>
 
 <script setup lang="ts">
 // ECharts graph visualization
 const chartOption = computed(() => ({
-  series: [{
-    type: 'graph',
-    layout: layoutMode.value,
-    data: taskNodes.value,
-    links: dependencyEdges.value,
-    // ... other configs
-  }]
+  series: [
+    {
+      type: 'graph',
+      layout: layoutMode.value,
+      data: taskNodes.value,
+      links: dependencyEdges.value,
+      // ... other configs
+    },
+  ],
 }));
 </script>
 ```
 
 **Deliverables**:
+
 - TaskDAGVisualization.vue component
 - Task status color scheme
 - Basic zoom/pan functionality
@@ -158,9 +167,11 @@ const chartOption = computed(() => ({
 ---
 
 ### Task 3: Data Transformation Service (0.8 SP)
+
 **Objective**: Transform task dependency data for ECharts
 
 **Subtasks**:
+
 - [ ] Create `TaskDependencyGraphService.ts` (200 lines)
 - [ ] Implement `transformToGraphData()` method
 - [ ] Calculate node positions for hierarchical layout
@@ -168,25 +179,26 @@ const chartOption = computed(() => ({
 - [ ] Handle edge routing and styling
 
 **Key Methods**:
+
 ```typescript
 class TaskDependencyGraphService {
   transformToGraphData(tasks, dependencies) {
     return {
-      nodes: tasks.map(task => ({
+      nodes: tasks.map((task) => ({
         id: task.uuid,
         name: task.title,
         value: task.status,
         itemStyle: {
-          color: this.getStatusColor(task.status)
-        }
+          color: this.getStatusColor(task.status),
+        },
       })),
-      edges: dependencies.map(dep => ({
+      edges: dependencies.map((dep) => ({
         source: dep.predecessorTaskUuid,
-        target: dep.successorTaskUuid
-      }))
+        target: dep.successorTaskUuid,
+      })),
     };
   }
-  
+
   calculateCriticalPath(tasks, dependencies) {
     // Topological sort + longest path algorithm
   }
@@ -194,6 +206,7 @@ class TaskDependencyGraphService {
 ```
 
 **Deliverables**:
+
 - TaskDependencyGraphService.ts
 - Unit tests for data transformation
 - Critical path calculation algorithm
@@ -203,9 +216,11 @@ class TaskDependencyGraphService {
 ---
 
 ### Task 4: Critical Path Implementation (0.6 SP)
+
 **Objective**: Implement critical path calculation and highlighting
 
 **Subtasks**:
+
 - [ ] Implement topological sort algorithm
 - [ ] Calculate longest path (critical path)
 - [ ] Highlight critical tasks with thicker borders
@@ -213,25 +228,27 @@ class TaskDependencyGraphService {
 - [ ] Add legend for critical path indicator
 
 **Algorithm**:
+
 ```typescript
 // Longest path in DAG = Critical Path
 function calculateCriticalPath(tasks, dependencies) {
   const sorted = topologicalSort(tasks, dependencies);
   const longestPath = new Map();
-  
+
   for (const task of sorted) {
     const predecessors = getPredecessors(task);
     const maxPredecessorPath = Math.max(
-      ...predecessors.map(p => longestPath.get(p) + p.duration)
+      ...predecessors.map((p) => longestPath.get(p) + p.duration),
     );
     longestPath.set(task, maxPredecessorPath);
   }
-  
+
   return extractPath(longestPath);
 }
 ```
 
 **Deliverables**:
+
 - Critical path calculation service
 - Visual highlighting of critical tasks
 - Duration display
@@ -241,9 +258,11 @@ function calculateCriticalPath(tasks, dependencies) {
 ---
 
 ### Task 5: Export Functionality (0.3 SP)
+
 **Objective**: Implement export to PNG/SVG/JSON
 
 **Subtasks**:
+
 - [ ] Reuse export utilities from Goal module
 - [ ] Implement PNG export (canvas.toDataURL)
 - [ ] Implement SVG export (ECharts built-in)
@@ -251,6 +270,7 @@ function calculateCriticalPath(tasks, dependencies) {
 - [ ] Add "Copy to Clipboard" functionality
 
 **Deliverables**:
+
 - Export toolbar buttons
 - Export functionality for 3 formats
 - Clipboard integration
@@ -260,9 +280,11 @@ function calculateCriticalPath(tasks, dependencies) {
 ---
 
 ### Task 6: Integration & Testing (0.3 SP)
+
 **Objective**: Integrate into task management page
 
 **Subtasks**:
+
 - [ ] Add DAG view toggle to task list page
 - [ ] Implement view state persistence (localStorage)
 - [ ] Add loading states and error handling
@@ -270,6 +292,7 @@ function calculateCriticalPath(tasks, dependencies) {
 - [ ] Performance testing and optimization
 
 **Deliverables**:
+
 - Integrated task DAG view
 - Performance benchmarks
 - User acceptance testing scenarios
@@ -294,13 +317,13 @@ function calculateCriticalPath(tasks, dependencies) {
 
 ### Color Scheme
 
-| Status | Color | Description |
-|--------|-------|-------------|
-| COMPLETED | #52C41A (Green) | Task finished |
-| IN_PROGRESS | #1890FF (Blue) | Currently working |
-| READY | #FAAD14 (Yellow) | Dependencies met |
-| BLOCKED | #F5222D (Red) | Waiting for dependencies |
-| PENDING | #D9D9D9 (Gray) | Not started |
+| Status      | Color            | Description              |
+| ----------- | ---------------- | ------------------------ |
+| COMPLETED   | #52C41A (Green)  | Task finished            |
+| IN_PROGRESS | #1890FF (Blue)   | Currently working        |
+| READY       | #FAAD14 (Yellow) | Dependencies met         |
+| BLOCKED     | #F5222D (Red)    | Waiting for dependencies |
+| PENDING     | #D9D9D9 (Gray)   | Not started              |
 
 ### Node Design
 
@@ -326,17 +349,20 @@ function calculateCriticalPath(tasks, dependencies) {
 ## 📊 Success Metrics
 
 ### Technical Metrics
+
 - DAG rendering time: <300ms for 50 tasks ✅
 - Zoom/Pan FPS: ≥60 FPS ✅
 - Memory usage: <50MB for 100 tasks ✅
 - Export success rate: 100% ✅
 
 ### Functional Metrics
+
 - Critical path accuracy: 100% ✅
 - Layout algorithm correctness: No edge crossings in simple graphs ✅
 - Color coding accuracy: 100% status mapping ✅
 
 ### User Metrics
+
 - DAG view adoption: ≥40% of users with dependencies
 - Export usage: ≥20% of DAG viewers
 - User satisfaction: ≥8/10 for visualization clarity
@@ -346,9 +372,11 @@ function calculateCriticalPath(tasks, dependencies) {
 ## 🔗 Dependencies
 
 ### Prerequisite
+
 - ✅ STORY-022 (Task Dependency Data Model) must be complete
 
 ### External Dependencies
+
 - ECharts v5.x (already in project)
 - Goal DAG components (Sprint 3)
 - Task API endpoints (STORY-022)
@@ -358,18 +386,21 @@ function calculateCriticalPath(tasks, dependencies) {
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 - [ ] TaskDependencyGraphService.transformToGraphData()
 - [ ] Critical path calculation algorithm
 - [ ] Status color mapping
 - [ ] Edge routing logic
 
 ### Component Tests
+
 - [ ] TaskDAGVisualization renders correctly
 - [ ] Zoom/Pan interactions work
 - [ ] Export functionality works
 - [ ] Node click opens detail panel
 
 ### E2E Tests
+
 - [ ] User can view task DAG
 - [ ] User can zoom and pan
 - [ ] User can export graph
@@ -395,17 +426,20 @@ function calculateCriticalPath(tasks, dependencies) {
 ## 📝 Notes
 
 ### Code Reuse Opportunities
+
 - Reuse ~60% from `GoalDAGVisualization.vue`
 - Adapt layout algorithms (already implemented)
 - Reuse export utilities (PNG/SVG/JSON)
 - Reuse zoom/pan controls
 
 ### Challenges
+
 - **Circular dependency prevention**: Rely on STORY-022's validation
 - **Performance with large graphs**: Test with 100+ tasks, optimize if needed
 - **Layout algorithm selection**: Provide both hierarchical and force-directed
 
 ### Future Enhancements (Out of Scope)
+
 - Gantt chart view integration
 - Real-time collaboration (multi-user editing)
 - AI-suggested task ordering

@@ -1,14 +1,14 @@
 import {
   IAuthCredentialRepository,
   ISessionRepository,
-} from "../../domain/repositories/authenticationRepository";
-import { eventBus } from "@dailyuse/utils";
-import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
+} from '../../domain/repositories/authenticationRepository';
+import { eventBus } from '@dailyuse/utils';
+import { AuthenticationContainer } from '../../infrastructure/di/authenticationContainer';
 import {
   AccountDeactivationVerificationRequestedEvent,
   AccountDeactivationConfirmedEvent,
-} from "../../domain/events/authenticationEvents";
-import { authSession } from "../../application/services/authSessionStore";
+} from '../../domain/events/authenticationEvents';
+import { authSession } from '../../application/services/authSessionStore';
 
 /**
  * 账号注销服务
@@ -21,7 +21,7 @@ export class AuthenticationDeactivationService {
 
   constructor(
     authCredentialRepository: IAuthCredentialRepository,
-    sessionRepository: ISessionRepository
+    sessionRepository: ISessionRepository,
   ) {
     this.authCredentialRepository = authCredentialRepository;
     this.sessionRepository = sessionRepository;
@@ -29,18 +29,13 @@ export class AuthenticationDeactivationService {
 
   static async createInstance(
     authCredentialRepository?: IAuthCredentialRepository,
-    sessionRepository?: ISessionRepository
+    sessionRepository?: ISessionRepository,
   ): Promise<AuthenticationDeactivationService> {
     const authenticationContainer = await AuthenticationContainer.getInstance();
     const authCredentialRepo =
-      authCredentialRepository ||
-      authenticationContainer.getAuthCredentialRepository();
-    const sessionRepo =
-      sessionRepository || authenticationContainer.getSessionRepository();
-    return new AuthenticationDeactivationService(
-      authCredentialRepo,
-      sessionRepo
-    );
+      authCredentialRepository || authenticationContainer.getAuthCredentialRepository();
+    const sessionRepo = sessionRepository || authenticationContainer.getSessionRepository();
+    return new AuthenticationDeactivationService(authCredentialRepo, sessionRepo);
   }
 
   static async getInstance(): Promise<AuthenticationDeactivationService> {
@@ -60,12 +55,12 @@ export class AuthenticationDeactivationService {
   async requestDeactivationVerification(
     accountUuid: string,
     username: string,
-    requestedBy: "user" | "admin" | "system" = "user",
-    reason?: string
+    requestedBy: 'user' | 'admin' | 'system' = 'user',
+    reason?: string,
   ): Promise<{ requestId: string }> {
     const requestId = crypto.randomUUID();
     const event: AccountDeactivationVerificationRequestedEvent = {
-      eventType: "AccountDeactivationVerificationRequested",
+      eventType: 'AccountDeactivationVerificationRequested',
       aggregateId: accountUuid,
       occurredOn: new Date(),
       payload: {
@@ -88,8 +83,8 @@ export class AuthenticationDeactivationService {
   async confirmDeactivation(
     accountUuid: string,
     username: string,
-    deactivatedBy: "user" | "admin" | "system" = "user",
-    reason?: string
+    deactivatedBy: 'user' | 'admin' | 'system' = 'user',
+    reason?: string,
   ): Promise<void> {
     // 1. 清理认证凭证
     await this.authCredentialRepository.delete(accountUuid);
@@ -103,7 +98,7 @@ export class AuthenticationDeactivationService {
 
     // 4. 发布账号注销确认事件
     const event: AccountDeactivationConfirmedEvent = {
-      eventType: "AccountDeactivationConfirmed",
+      eventType: 'AccountDeactivationConfirmed',
       aggregateId: accountUuid,
       occurredOn: new Date(),
       payload: {

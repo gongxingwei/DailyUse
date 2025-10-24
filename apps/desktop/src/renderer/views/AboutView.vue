@@ -22,22 +22,16 @@
         </div>
         <v-divider class="my-4"></v-divider>
         <div class="d-flex gap-3">
-          <v-btn 
-            variant="outlined" 
+          <v-btn
+            variant="outlined"
             color="primary"
-            prepend-icon="mdi-github" 
+            prepend-icon="mdi-github"
             href="https://github.com/yourusername/dailyuse"
             target="_blank"
           >
             GitHub
           </v-btn>
-          <v-btn 
-            variant="text" 
-            prepend-icon="mdi-heart"
-            color="error"
-          >
-            支持项目
-          </v-btn>
+          <v-btn variant="text" prepend-icon="mdi-heart" color="error"> 支持项目 </v-btn>
         </div>
       </v-card-text>
     </v-card>
@@ -45,8 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-const { t } = useI18n()
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 </script>
 
 <style scoped>
@@ -60,7 +54,11 @@ const { t } = useI18n()
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
 }
 .settings-section-title {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-primary), 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.08) 0%,
+    rgba(var(--v-theme-primary), 0.02) 100%
+  );
   font-size: 1.25rem;
   font-weight: 600;
   padding: 1.5rem 1.5rem 1rem;
@@ -68,6 +66,10 @@ const { t } = useI18n()
 }
 /* 深色主题适配 */
 .v-theme--dark .settings-section-title {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.12) 0%, rgba(var(--v-theme-primary), 0.04) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.12) 0%,
+    rgba(var(--v-theme-primary), 0.04) 100%
+  );
 }
 </style>

@@ -30,24 +30,46 @@
 
         <!-- 开始时间 -->
         <v-col cols="12" md="6">
-          <v-text-field v-model="startDateInput" label="开始日期" type="date" variant="outlined" required
-            @update:model-value="updateStartDate" />
+          <v-text-field
+            v-model="startDateInput"
+            label="开始日期"
+            type="date"
+            variant="outlined"
+            required
+            @update:model-value="updateStartDate"
+          />
         </v-col>
 
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type !== 'allDay'">
-          <v-text-field v-model="startTimeInput" label="开始时间" type="time" variant="outlined" required
-            @update:model-value="updateStartTime" />
+          <v-text-field
+            v-model="startTimeInput"
+            label="开始时间"
+            type="time"
+            variant="outlined"
+            required
+            @update:model-value="updateStartTime"
+          />
         </v-col>
 
         <!-- 结束时间（仅时间段类型） -->
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type === 'timeRange'">
-          <v-text-field v-model="endDateInput" label="结束日期" type="date" variant="outlined"
-            @update:model-value="updateEndDate" />
+          <v-text-field
+            v-model="endDateInput"
+            label="结束日期"
+            type="date"
+            variant="outlined"
+            @update:model-value="updateEndDate"
+          />
         </v-col>
 
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type === 'timeRange'">
-          <v-text-field v-model="endTimeInput" label="结束时间" type="time" variant="outlined"
-            @update:model-value="updateEndTime" />
+          <v-text-field
+            v-model="endTimeInput"
+            label="结束时间"
+            type="time"
+            variant="outlined"
+            @update:model-value="updateEndTime"
+          />
         </v-col>
       </v-row>
     </v-card-text>
@@ -59,7 +81,12 @@ import type { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/task
 import { computed, ref, watch } from 'vue';
 import { useTimeConfigValidation } from '@renderer/modules/Task/presentation/composables/useTimeConfigValidation';
 // utils
-import { updateDateKeepTime, updateTimeKeepDate, formatDateToInput, formatTimeToInput } from '@dailyuse/utils';
+import {
+  updateDateKeepTime,
+  updateTimeKeepDate,
+  formatDateToInput,
+  formatTimeToInput,
+} from '@dailyuse/utils';
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -80,23 +107,16 @@ const updateTemplate = (updater: (template: TaskTemplate) => void) => {
 
 const timeConfigType = computed({
   get: () => props.modelValue.timeConfig.type,
-  set: (newType: "allDay" | "timed" | "timeRange") => {
+  set: (newType: 'allDay' | 'timed' | 'timeRange') => {
     console.log('Setting timeConfigType to:', newType);
     updateTemplate((template) => {
       template.switchTimeConfigType(newType);
     });
-  }
-})
-
+  },
+});
 
 // 使用时间配置验证
-const {
-  isValid,
-  hasWarnings,
-  errors,
-  warnings,
-  validateTimeConfig
-} = useTimeConfigValidation();
+const { isValid, hasWarnings, errors, warnings, validateTimeConfig } = useTimeConfigValidation();
 
 // 表单输入字段
 const startDateInput = ref('');
@@ -115,8 +135,8 @@ const updateStartDate = (date: string) => {
     ...updatedTemplate.timeConfig,
     baseTime: {
       ...updatedTemplate.timeConfig.baseTime,
-      start: newStart
-    }
+      start: newStart,
+    },
   });
   emit('update:modelValue', updatedTemplate);
 };
@@ -132,11 +152,12 @@ const updateStartTime = (time: string) => {
     ...updatedTemplate.timeConfig,
     baseTime: {
       ...updatedTemplate.timeConfig.baseTime,
-      start: newStart
-    }
+      start: newStart,
+    },
   });
   emit('update:modelValue', updatedTemplate);
-}; const updateEndDate = (date: string) => {
+};
+const updateEndDate = (date: string) => {
   if (!date) return;
 
   const currentEnd = props.modelValue.timeConfig.baseTime.end;
@@ -149,8 +170,8 @@ const updateStartTime = (time: string) => {
     ...updatedTemplate.timeConfig,
     baseTime: {
       ...updatedTemplate.timeConfig.baseTime,
-      end: newEnd
-    }
+      end: newEnd,
+    },
   });
   emit('update:modelValue', updatedTemplate);
 };
@@ -168,11 +189,11 @@ const updateEndTime = (time: string) => {
     ...updatedTemplate.timeConfig,
     baseTime: {
       ...updatedTemplate.timeConfig.baseTime,
-      end: newEnd
-    }
+      end: newEnd,
+    },
   });
   emit('update:modelValue', updatedTemplate);
-};// 初始化表单数据
+}; // 初始化表单数据
 const initializeFormData = () => {
   if (props.modelValue?.timeConfig?.baseTime?.start) {
     const startTime = props.modelValue.timeConfig.baseTime.start;
@@ -188,15 +209,23 @@ const initializeFormData = () => {
 };
 
 // 监听时间配置变化，触发验证
-watch(() => props.modelValue.timeConfig, () => {
-  const isValid = validateTimeConfig(props.modelValue.timeConfig);
-  emit('update:validation', isValid);
-}, { deep: true, immediate: true });
+watch(
+  () => props.modelValue.timeConfig,
+  () => {
+    const isValid = validateTimeConfig(props.modelValue.timeConfig);
+    emit('update:validation', isValid);
+  },
+  { deep: true, immediate: true },
+);
 
 // 监听模板变化，初始化表单数据
-watch(() => props.modelValue, () => {
-  initializeFormData();
-}, { immediate: true });
+watch(
+  () => props.modelValue,
+  () => {
+    initializeFormData();
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>

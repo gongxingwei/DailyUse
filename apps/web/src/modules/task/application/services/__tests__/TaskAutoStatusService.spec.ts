@@ -19,7 +19,7 @@ interface TestTask {
 // 创建测试用的依赖对象
 function createTestDependency(
   predecessorUuid: string,
-  successorUuid: string
+  successorUuid: string,
 ): TaskDependencyClientDTO {
   return {
     uuid: `dep-${Math.random().toString(36).substr(2, 9)}`,
@@ -53,7 +53,7 @@ describe('TaskAutoStatusService', () => {
       const status = taskAutoStatusService.calculateTaskStatus(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(status).toBe('READY');
@@ -71,7 +71,7 @@ describe('TaskAutoStatusService', () => {
       const status = taskAutoStatusService.calculateTaskStatus(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(status).toBe('READY');
@@ -89,7 +89,7 @@ describe('TaskAutoStatusService', () => {
       const status = taskAutoStatusService.calculateTaskStatus(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(status).toBe('BLOCKED');
@@ -107,7 +107,7 @@ describe('TaskAutoStatusService', () => {
       const status = taskAutoStatusService.calculateTaskStatus(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(status).toBe('IN_PROGRESS');
@@ -119,7 +119,7 @@ describe('TaskAutoStatusService', () => {
       const status = taskAutoStatusService.calculateTaskStatus(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(status).toBe('COMPLETED');
@@ -133,7 +133,7 @@ describe('TaskAutoStatusService', () => {
       const analysis = taskAutoStatusService.analyzeTaskReadiness(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(analysis.totalPredecessors).toBe(0);
@@ -158,7 +158,7 @@ describe('TaskAutoStatusService', () => {
       const analysis = taskAutoStatusService.analyzeTaskReadiness(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(analysis.totalPredecessors).toBe(2);
@@ -183,7 +183,7 @@ describe('TaskAutoStatusService', () => {
       const analysis = taskAutoStatusService.analyzeTaskReadiness(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(analysis.totalPredecessors).toBe(2);
@@ -201,7 +201,7 @@ describe('TaskAutoStatusService', () => {
       const result = taskAutoStatusService.canTaskStart(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(result.canStart).toBe(true);
@@ -220,7 +220,7 @@ describe('TaskAutoStatusService', () => {
       const result = taskAutoStatusService.canTaskStart(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(result.canStart).toBe(true);
@@ -238,7 +238,7 @@ describe('TaskAutoStatusService', () => {
       const result = taskAutoStatusService.canTaskStart(
         task as any,
         mockTasks as any,
-        mockDependencies
+        mockDependencies,
       );
 
       expect(result.canStart).toBe(false);

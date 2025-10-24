@@ -1,7 +1,7 @@
 import { Database } from 'better-sqlite3';
 import { MFADevice } from '../../domain/entities/mfaDevice';
 import { IMFADeviceRepository } from '../../domain/repositories/authenticationRepository';
-import { getDatabase } from "../../../../shared/database/index";
+import { getDatabase } from '../../../../shared/database/index';
 
 /**
  * SQLite MFA设备 仓库实现
@@ -47,7 +47,7 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
       data.verification_attempts,
       data.max_attempts,
       data.created_at,
-      data.last_used_at
+      data.last_used_at,
     );
   }
 
@@ -78,7 +78,7 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
     `);
 
     const rows = stmt.all(accountUuid) as any[];
-    return rows.map(row => MFADevice.fromDatabase(row));
+    return rows.map((row) => MFADevice.fromDatabase(row));
   }
 
   /**
@@ -93,7 +93,7 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
     `);
 
     const rows = stmt.all(accountUuid) as any[];
-    return rows.map(row => MFADevice.fromDatabase(row));
+    return rows.map((row) => MFADevice.fromDatabase(row));
   }
 
   /**
@@ -108,7 +108,7 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
     `);
 
     const rows = stmt.all(accountUuid, type) as any[];
-    return rows.map(row => MFADevice.fromDatabase(row));
+    return rows.map((row) => MFADevice.fromDatabase(row));
   }
 
   /**
@@ -161,7 +161,7 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
     `);
 
     const rows = stmt.all(accountUuid) as any[];
-    return rows.map(row => MFADevice.fromDatabase(row));
+    return rows.map((row) => MFADevice.fromDatabase(row));
   }
 
   /**

@@ -14,297 +14,297 @@ const __dirname = path.dirname(__filename);
 
 // 直接定义 OpenAPI 规范，避免依赖编译
 const openApiSpec = {
-    openapi: '3.0.0',
-    info: {
-        title: 'DailyUse API',
-        version: '1.0.0',
-        description: 'DailyUse 应用的 REST API 文档',
-        contact: {
-            name: 'DailyUse Team',
-            email: 'support@dailyuse.com'
-        },
-        license: {
-            name: 'MIT',
-            url: 'https://opensource.org/licenses/MIT'
-        }
+  openapi: '3.0.0',
+  info: {
+    title: 'DailyUse API',
+    version: '1.0.0',
+    description: 'DailyUse 应用的 REST API 文档',
+    contact: {
+      name: 'DailyUse Team',
+      email: 'support@dailyuse.com',
     },
-    servers: [
-        {
-            url: 'http://localhost:3888/api/v1',
-            description: '开发环境'
-        },
-        {
-            url: 'https://api.dailyuse.com/v1',
-            description: '生产环境'
-        }
-    ],
-    components: {
-        securitySchemes: {
-            bearerAuth: {
-                type: 'http',
-                scheme: 'bearer',
-                bearerFormat: 'JWT'
-            }
-        },
-        schemas: {
-            ApiResponse: {
-                type: 'object',
-                properties: {
-                    success: {
-                        type: 'boolean',
-                        description: '操作是否成功'
-                    },
-                    message: {
-                        type: 'string',
-                        description: '响应消息'
-                    },
-                    data: {
-                        type: 'object',
-                        description: '响应数据'
-                    },
-                    metadata: {
-                        type: 'object',
-                        properties: {
-                            timestamp: {
-                                type: 'number',
-                                description: '时间戳'
-                            },
-                            version: {
-                                type: 'string',
-                                description: 'API版本'
-                            }
-                        }
-                    }
-                },
-                required: ['success', 'message']
-            },
-            ErrorResponse: {
-                type: 'object',
-                properties: {
-                    success: {
-                        type: 'boolean',
-                        example: false
-                    },
-                    message: {
-                        type: 'string',
-                        description: '错误消息'
-                    },
-                    error: {
-                        type: 'object',
-                        properties: {
-                            code: {
-                                type: 'string',
-                                description: '错误代码'
-                            },
-                            details: {
-                                type: 'string',
-                                description: '错误详情'
-                            }
-                        }
-                    }
-                },
-                required: ['success', 'message']
-            }
-        }
+    license: {
+      name: 'MIT',
+      url: 'https://opensource.org/licenses/MIT',
     },
-    security: [
-        {
-            bearerAuth: []
-        }
-    ],
-    paths: {
-        // 添加主要的 API 路径
-        '/auth/login': {
-            post: {
-                tags: ['Authentication'],
-                summary: '用户登录',
-                requestBody: {
-                    required: true,
-                    content: {
-                        'application/json': {
-                            schema: {
-                                type: 'object',
-                                required: ['username', 'password'],
-                                properties: {
-                                    username: {
-                                        type: 'string',
-                                        example: 'Test1'
-                                    },
-                                    password: {
-                                        type: 'string',
-                                        example: 'Llh123123'
-                                    },
-                                    accountType: {
-                                        type: 'string',
-                                        enum: ['GUEST', 'ADMIN'],
-                                        default: 'GUEST'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                responses: {
-                    200: {
-                        description: '登录成功',
-                        content: {
-                            'application/json': {
-                                schema: {
-                                    $ref: '#/components/schemas/ApiResponse'
-                                }
-                            }
-                        }
-                    },
-                    401: {
-                        description: '认证失败',
-                        content: {
-                            'application/json': {
-                                schema: {
-                                    $ref: '#/components/schemas/ErrorResponse'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        '/schedules': {
-            get: {
-                tags: ['Schedules'],
-                summary: '获取调度任务列表',
-                parameters: [
-                    {
-                        name: 'page',
-                        in: 'query',
-                        schema: {
-                            type: 'integer',
-                            default: 1
-                        }
-                    },
-                    {
-                        name: 'limit',
-                        in: 'query',
-                        schema: {
-                            type: 'integer',
-                            default: 50
-                        }
-                    },
-                    {
-                        name: 'search',
-                        in: 'query',
-                        schema: {
-                            type: 'string'
-                        }
-                    }
-                ],
-                responses: {
-                    200: {
-                        description: '任务列表',
-                        content: {
-                            'application/json': {
-                                schema: {
-                                    $ref: '#/components/schemas/ApiResponse'
-                                }
-                            }
-                        }
-                    }
-                }
+  },
+  servers: [
+    {
+      url: 'http://localhost:3888/api/v1',
+      description: '开发环境',
+    },
+    {
+      url: 'https://api.dailyuse.com/v1',
+      description: '生产环境',
+    },
+  ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+    schemas: {
+      ApiResponse: {
+        type: 'object',
+        properties: {
+          success: {
+            type: 'boolean',
+            description: '操作是否成功',
+          },
+          message: {
+            type: 'string',
+            description: '响应消息',
+          },
+          data: {
+            type: 'object',
+            description: '响应数据',
+          },
+          metadata: {
+            type: 'object',
+            properties: {
+              timestamp: {
+                type: 'number',
+                description: '时间戳',
+              },
+              version: {
+                type: 'string',
+                description: 'API版本',
+              },
             },
-            post: {
-                tags: ['Schedules'],
-                summary: '创建调度任务',
-                requestBody: {
-                    required: true,
-                    content: {
-                        'application/json': {
-                            schema: {
-                                type: 'object',
-                                required: ['name', 'type', 'triggerTime'],
-                                properties: {
-                                    name: {
-                                        type: 'string',
-                                        description: '任务名称'
-                                    },
-                                    description: {
-                                        type: 'string',
-                                        description: '任务描述'
-                                    },
-                                    type: {
-                                        type: 'string',
-                                        enum: ['ONCE', 'RECURRING', 'CONDITIONAL']
-                                    },
-                                    triggerTime: {
-                                        type: 'string',
-                                        format: 'date-time'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                responses: {
-                    201: {
-                        description: '任务创建成功',
-                        content: {
-                            'application/json': {
-                                schema: {
-                                    $ref: '#/components/schemas/ApiResponse'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+          },
         },
-        '/schedules/events': {
-            get: {
-                tags: ['Schedule Events'],
-                summary: 'SSE 事件流连接',
-                responses: {
-                    200: {
-                        description: 'SSE 连接建立成功',
-                        content: {
-                            'text/event-stream': {
-                                schema: {
-                                    type: 'string'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+        required: ['success', 'message'],
+      },
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          success: {
+            type: 'boolean',
+            example: false,
+          },
+          message: {
+            type: 'string',
+            description: '错误消息',
+          },
+          error: {
+            type: 'object',
+            properties: {
+              code: {
+                type: 'string',
+                description: '错误代码',
+              },
+              details: {
+                type: 'string',
+                description: '错误详情',
+              },
+            },
+          },
+        },
+        required: ['success', 'message'],
+      },
+    },
+  },
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
+  paths: {
+    // 添加主要的 API 路径
+    '/auth/login': {
+      post: {
+        tags: ['Authentication'],
+        summary: '用户登录',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['username', 'password'],
+                properties: {
+                  username: {
+                    type: 'string',
+                    example: 'Test1',
+                  },
+                  password: {
+                    type: 'string',
+                    example: 'Llh123123',
+                  },
+                  accountType: {
+                    type: 'string',
+                    enum: ['GUEST', 'ADMIN'],
+                    default: 'GUEST',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: '登录成功',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ApiResponse',
+                },
+              },
+            },
+          },
+          401: {
+            description: '认证失败',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/schedules': {
+      get: {
+        tags: ['Schedules'],
+        summary: '获取调度任务列表',
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: {
+              type: 'integer',
+              default: 1,
+            },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: {
+              type: 'integer',
+              default: 50,
+            },
+          },
+          {
+            name: 'search',
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          200: {
+            description: '任务列表',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ApiResponse',
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ['Schedules'],
+        summary: '创建调度任务',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name', 'type', 'triggerTime'],
+                properties: {
+                  name: {
+                    type: 'string',
+                    description: '任务名称',
+                  },
+                  description: {
+                    type: 'string',
+                    description: '任务描述',
+                  },
+                  type: {
+                    type: 'string',
+                    enum: ['ONCE', 'RECURRING', 'CONDITIONAL'],
+                  },
+                  triggerTime: {
+                    type: 'string',
+                    format: 'date-time',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: '任务创建成功',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ApiResponse',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/schedules/events': {
+      get: {
+        tags: ['Schedule Events'],
+        summary: 'SSE 事件流连接',
+        responses: {
+          200: {
+            description: 'SSE 连接建立成功',
+            content: {
+              'text/event-stream': {
+                schema: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 };
 
 /**
  * 导出 OpenAPI JSON 文档
  */
 async function exportOpenAPIDoc() {
-    try {
-        const outputPath = path.join(__dirname, '../../docs/api-docs.json');
+  try {
+    const outputPath = path.join(__dirname, '../../docs/api-docs.json');
 
-        // 确保目录存在
-        await fs.mkdir(path.dirname(outputPath), { recursive: true });
+    // 确保目录存在
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
-        // 写入 JSON 文件
-        await fs.writeFile(outputPath, JSON.stringify(openApiSpec, null, 2), 'utf8');
+    // 写入 JSON 文件
+    await fs.writeFile(outputPath, JSON.stringify(openApiSpec, null, 2), 'utf8');
 
-        console.log('✅ OpenAPI 文档已导出到:', outputPath);
-        console.log('📋 您可以将此文件导入到 Apifox 中');
+    console.log('✅ OpenAPI 文档已导出到:', outputPath);
+    console.log('📋 您可以将此文件导入到 Apifox 中');
 
-        return outputPath;
-    } catch (error) {
-        console.error('❌ 导出 OpenAPI 文档失败:', error);
-        throw error;
-    }
+    return outputPath;
+  } catch (error) {
+    console.error('❌ 导出 OpenAPI 文档失败:', error);
+    throw error;
+  }
 }
 
 /**
  * 生成 Apifox 导入指南
  */
 async function generateApifoxGuide() {
-    const guideContent = `# Apifox API 导入指南
+  const guideContent = `# Apifox API 导入指南
 
 ## 方法一：通过 OpenAPI 文档导入（推荐）
 
@@ -434,40 +434,39 @@ Accept: text/event-stream
 利用 Apifox 的 Mock 功能为前端开发提供数据。
 `;
 
-    const guidePath = path.join(__dirname, '../../docs/apifox-import-guide.md');
-    await fs.writeFile(guidePath, guideContent, 'utf8');
+  const guidePath = path.join(__dirname, '../../docs/apifox-import-guide.md');
+  await fs.writeFile(guidePath, guideContent, 'utf8');
 
-    console.log('📖 Apifox 导入指南已生成:', guidePath);
-    return guidePath;
+  console.log('📖 Apifox 导入指南已生成:', guidePath);
+  return guidePath;
 }
 
 /**
  * 主函数
  */
 async function main() {
-    console.log('🚀 开始生成 API 文档...');
+  console.log('🚀 开始生成 API 文档...');
 
-    try {
-        // 导出 OpenAPI 文档
-        const docPath = await exportOpenAPIDoc();
+  try {
+    // 导出 OpenAPI 文档
+    const docPath = await exportOpenAPIDoc();
 
-        // 生成导入指南
-        const guidePath = await generateApifoxGuide();
+    // 生成导入指南
+    const guidePath = await generateApifoxGuide();
 
-        console.log('\n✨ API 文档导出完成！');
-        console.log('\n📁 生成的文件：');
-        console.log(`  - OpenAPI 文档: ${docPath}`);
-        console.log(`  - 导入指南: ${guidePath}`);
+    console.log('\n✨ API 文档导出完成！');
+    console.log('\n📁 生成的文件：');
+    console.log(`  - OpenAPI 文档: ${docPath}`);
+    console.log(`  - 导入指南: ${guidePath}`);
 
-        console.log('\n🎯 接下来的步骤：');
-        console.log('  1. 启动 API 服务器: pnpm dev:api');
-        console.log('  2. 访问文档: http://localhost:3888/api-docs');
-        console.log('  3. 在 Apifox 中导入: http://localhost:3888/api-docs.json');
-
-    } catch (error) {
-        console.error('❌ 生成失败:', error);
-        process.exit(1);
-    }
+    console.log('\n🎯 接下来的步骤：');
+    console.log('  1. 启动 API 服务器: pnpm dev:api');
+    console.log('  2. 访问文档: http://localhost:3888/api-docs');
+    console.log('  3. 在 Apifox 中导入: http://localhost:3888/api-docs.json');
+  } catch (error) {
+    console.error('❌ 生成失败:', error);
+    process.exit(1);
+  }
 }
 
 // 直接执行主函数

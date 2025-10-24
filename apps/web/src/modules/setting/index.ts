@@ -1,6 +1,6 @@
 /**
  * Setting Module - Public API
- * 
+ *
  * 此文件是 Setting 模块的统一导出入口
  */
 
@@ -31,17 +31,17 @@ export { userSettingApiClient } from './infrastructure/api/userSettingApiClient'
 
 /**
  * 使用示例：
- * 
+ *
  * // 1. 在路由中使用视图
  * import { UserSettingsView } from '@/modules/setting';
- * 
+ *
  * // 2. 在组件中使用 composable
  * import { useUserSetting } from '@/modules/setting';
  * const { userSetting, switchTheme, switchLanguage } = useUserSetting();
- * 
+ *
  * // 3. 在组件中使用子组件
  * import { AppearanceSettings } from '@/modules/setting';
- * 
+ *
  * // 4. 在服务中使用 Application Service
  * import { UserSettingWebApplicationService } from '@/modules/setting';
  * const service = await UserSettingWebApplicationService.getInstance();

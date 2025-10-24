@@ -25,6 +25,7 @@
 ### 方案 1: 添加可选参数（推荐）
 
 **优点**:
+
 - 向后兼容，不破坏现有代码
 - 实施简单，影响范围小
 - 逐步迁移
@@ -40,11 +41,8 @@ export interface IAuthCredentialRepository {
    * @param credential 凭证聚合根
    * @param tx 可选的 Prisma 事务客户端
    */
-  save(
-    credential: AuthCredential,
-    tx?: Prisma.TransactionClient
-  ): Promise<void>;
-  
+  save(credential: AuthCredential, tx?: Prisma.TransactionClient): Promise<void>;
+
   // ... 其他方法
 }
 ```
@@ -65,6 +63,7 @@ await prisma.$transaction(async (tx) => {
 ### 方案 2: 独立的事务管理器
 
 **优点**:
+
 - 更清晰的事务边界
 - 更好的测试性
 - 事务逻辑集中管理
@@ -111,17 +110,14 @@ export interface IAuthCredentialRepository {
    * @param credential 凭证聚合根
    * @param tx 可选的 Prisma 事务客户端，用于支持事务操作
    */
-  save(
-    credential: AuthCredential,
-    tx?: Prisma.TransactionClient
-  ): Promise<void>;
-  
+  save(credential: AuthCredential, tx?: Prisma.TransactionClient): Promise<void>;
+
   // 其他查询方法也可以添加 tx 参数
   findByAccountUuid(
     accountUuid: string,
-    tx?: Prisma.TransactionClient
+    tx?: Prisma.TransactionClient,
   ): Promise<AuthCredential | null>;
-  
+
   // ... 其他方法保持不变
 }
 ```
@@ -134,16 +130,10 @@ export interface IAuthCredentialRepository {
 import { Prisma } from '@prisma/client';
 
 export interface IAuthSessionRepository {
-  save(
-    session: AuthSession,
-    tx?: Prisma.TransactionClient
-  ): Promise<void>;
-  
-  findByAccountUuid(
-    accountUuid: string,
-    tx?: Prisma.TransactionClient
-  ): Promise<AuthSession[]>;
-  
+  save(session: AuthSession, tx?: Prisma.TransactionClient): Promise<void>;
+
+  findByAccountUuid(accountUuid: string, tx?: Prisma.TransactionClient): Promise<AuthSession[]>;
+
   // ... 其他方法
 }
 ```
@@ -156,16 +146,10 @@ export interface IAuthSessionRepository {
 import { Prisma } from '@prisma/client';
 
 export interface IAccountRepository {
-  save(
-    account: Account,
-    tx?: Prisma.TransactionClient
-  ): Promise<void>;
-  
-  findById(
-    id: string,
-    tx?: Prisma.TransactionClient
-  ): Promise<Account | null>;
-  
+  save(account: Account, tx?: Prisma.TransactionClient): Promise<void>;
+
+  findById(id: string, tx?: Prisma.TransactionClient): Promise<Account | null>;
+
   // ... 其他方法
 }
 ```
@@ -180,33 +164,30 @@ export interface IAccountRepository {
 export class PrismaAuthCredentialRepository implements IAuthCredentialRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async save(
-    credential: AuthCredential,
-    tx?: Prisma.TransactionClient
-  ): Promise<void> {
+  async save(credential: AuthCredential, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx || this.prisma;
     const dto = credential.toPersistenceDTO();
-    
+
     await client.authCredential.upsert({
       where: { uuid: dto.uuid },
       create: dto,
       update: dto,
     });
   }
-  
+
   async findByAccountUuid(
     accountUuid: string,
-    tx?: Prisma.TransactionClient
+    tx?: Prisma.TransactionClient,
   ): Promise<AuthCredential | null> {
     const client = tx || this.prisma;
     const record = await client.authCredential.findFirst({
       where: { accountUuid },
     });
-    
+
     if (!record) return null;
     return AuthCredential.fromPersistenceDTO(record);
   }
-  
+
   // ... 其他方法
 }
 ```
@@ -344,7 +325,7 @@ async login(request: LoginRequest): Promise<LoginResponse> {
         ipAddress: request.ipAddress,
         location: request.location,
       });
-      
+
       await this.sessionRepository.save(newSession, tx);
 
       // 重置失败尝试
@@ -479,11 +460,9 @@ describe('AuthenticationApplicationService', () => {
     const mockTx = {
       authCredential: { upsert: jest.fn().mockRejectedValue(new Error('DB Error')) },
     };
-    
-    await expect(
-      service.login(validRequest)
-    ).rejects.toThrow();
-    
+
+    await expect(service.login(validRequest)).rejects.toThrow();
+
     // 验证事务被回滚
     expect(mockTx.authCredential.upsert).toHaveBeenCalled();
   });
@@ -500,26 +479,24 @@ describe('Registration Integration Test', () => {
       email: 'test@example.com',
       password: 'Password123!',
     });
-    
+
     expect(result.success).toBe(true);
-    
+
     // 验证账户已创建
     const account = await accountRepository.findById(result.account.uuid);
     expect(account).not.toBeNull();
-    
+
     // 验证凭证已创建
     const credential = await credentialRepository.findByAccountUuid(result.account.uuid);
     expect(credential).not.toBeNull();
   });
-  
+
   it('should rollback on credential creation failure', async () => {
     // 模拟凭证创建失败
     jest.spyOn(credentialRepository, 'save').mockRejectedValue(new Error('Fail'));
-    
-    await expect(
-      registrationService.register(validRequest)
-    ).rejects.toThrow();
-    
+
+    await expect(registrationService.register(validRequest)).rejects.toThrow();
+
     // 验证账户也没有被创建（事务回滚）
     const account = await accountRepository.findByUsername('testuser');
     expect(account).toBeNull();
@@ -531,12 +508,12 @@ describe('Registration Integration Test', () => {
 
 ## 📊 实施优先级
 
-| 优先级 | Repository | 原因 |
-|--------|-----------|------|
-| 🔴 高 | IAccountRepository | 用户注册需要原子性 |
-| 🔴 高 | IAuthCredentialRepository | 与账户创建同时进行 |
-| 🟡 中 | IAuthSessionRepository | 登录时需要原子性 |
-| 🟢 低 | 其他 Repository | 单一操作，事务可选 |
+| 优先级 | Repository                | 原因               |
+| ------ | ------------------------- | ------------------ |
+| 🔴 高  | IAccountRepository        | 用户注册需要原子性 |
+| 🔴 高  | IAuthCredentialRepository | 与账户创建同时进行 |
+| 🟡 中  | IAuthSessionRepository    | 登录时需要原子性   |
+| 🟢 低  | 其他 Repository           | 单一操作，事务可选 |
 
 ---
 

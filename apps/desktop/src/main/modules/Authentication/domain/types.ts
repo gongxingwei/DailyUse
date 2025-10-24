@@ -21,8 +21,8 @@ export interface PasswordAuthenticationRequest extends AuthenticationRequest {
   password: string;
   remember?: boolean;
 }
-export interface PasswordAuthenticationResponse extends AuthenticationResponsePayload{
-  type?: 'passwordAuthentication'
+export interface PasswordAuthenticationResponse extends AuthenticationResponsePayload {
+  type?: 'passwordAuthentication';
 }
 
 export interface RememberMeTokenAuthenticationRequest extends AuthenticationRequest {
@@ -32,9 +32,8 @@ export interface RememberMeTokenAuthenticationRequest extends AuthenticationRequ
 }
 
 export interface RememberMeTokenAuthenticationResponse extends AuthenticationResponsePayload {
-  type?: 'rememberMeTokenAuthentication'
+  type?: 'rememberMeTokenAuthentication';
 }
-
 
 export interface AuthInfo {
   username: string;

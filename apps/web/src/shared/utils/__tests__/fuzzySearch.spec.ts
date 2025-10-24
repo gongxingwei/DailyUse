@@ -101,7 +101,7 @@ describe('FuzzySearch', () => {
         {
           title: 1.0,
           description: 0.5,
-        }
+        },
       );
 
       expect(result.score).toBeGreaterThan(80);
@@ -117,7 +117,7 @@ describe('FuzzySearch', () => {
         {
           title: 1.0,
           description: 0.1,
-        }
+        },
       );
 
       const result2 = fuzzyMatchMultiField(
@@ -129,7 +129,7 @@ describe('FuzzySearch', () => {
         {
           title: 1.0,
           description: 0.1,
-        }
+        },
       );
 
       expect(result1.score).toBeGreaterThan(result2.score);
@@ -145,7 +145,7 @@ describe('FuzzySearch', () => {
         {
           title: 1.0,
           description: 0.5,
-        }
+        },
       );
 
       expect(result.score).toBeGreaterThan(0);
@@ -161,12 +161,7 @@ describe('FuzzySearch', () => {
     ];
 
     it('should filter and sort items by score', () => {
-      const results = fuzzyFilter(
-        'typescript',
-        items,
-        (item) => item.name,
-        { threshold: 60 }
-      );
+      const results = fuzzyFilter('typescript', items, (item) => item.name, { threshold: 60 });
 
       expect(results.length).toBe(2);
       expect(results[0].name).toContain('TypeScript');
@@ -174,23 +169,13 @@ describe('FuzzySearch', () => {
     });
 
     it('should return empty array for no matches', () => {
-      const results = fuzzyFilter(
-        'rust',
-        items,
-        (item) => item.name,
-        { threshold: 60 }
-      );
+      const results = fuzzyFilter('rust', items, (item) => item.name, { threshold: 60 });
 
       expect(results).toHaveLength(0);
     });
 
     it('should include match positions', () => {
-      const results = fuzzyFilter(
-        'script',
-        items,
-        (item) => item.name,
-        { threshold: 50 }
-      );
+      const results = fuzzyFilter('script', items, (item) => item.name, { threshold: 50 });
 
       expect(results.length).toBeGreaterThan(0);
       expect(results[0]._matches).toBeDefined();
@@ -203,7 +188,7 @@ describe('FuzzySearch', () => {
         'hello world',
         [{ start: 0, end: 5, length: 5 }],
         '<mark>',
-        '</mark>'
+        '</mark>',
       );
 
       expect(result).toBe('<mark>hello</mark> world');
@@ -217,7 +202,7 @@ describe('FuzzySearch', () => {
           { start: 12, end: 17, length: 5 },
         ],
         '<mark>',
-        '</mark>'
+        '</mark>',
       );
 
       expect(result).toBe('<mark>hello</mark> world <mark>hello</mark>');
@@ -231,7 +216,7 @@ describe('FuzzySearch', () => {
           { start: 3, end: 8, length: 5 },
         ],
         '<mark>',
-        '</mark>'
+        '</mark>',
       );
 
       expect(result).toBe('<mark>hello wo</mark>rld');
@@ -244,12 +229,7 @@ describe('FuzzySearch', () => {
     });
 
     it('should use custom markers', () => {
-      const result = highlightMatches(
-        'hello world',
-        [{ start: 0, end: 5, length: 5 }],
-        '**',
-        '**'
-      );
+      const result = highlightMatches('hello world', [{ start: 0, end: 5, length: 5 }], '**', '**');
 
       expect(result).toBe('**hello** world');
     });
@@ -286,12 +266,7 @@ describe('FuzzySearch', () => {
       }));
 
       const startTime = performance.now();
-      const results = fuzzyFilter(
-        'random',
-        items,
-        (item) => item.name,
-        { threshold: 60 }
-      );
+      const results = fuzzyFilter('random', items, (item) => item.name, { threshold: 60 });
       const endTime = performance.now();
 
       const duration = endTime - startTime;

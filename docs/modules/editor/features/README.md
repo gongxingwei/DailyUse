@@ -1,14 +1,8 @@
 # Editor 模块功能文档# Editor 模块功能构思
 
-
-
 本目录收录 Editor 模块的所有 Feature Spec 文档。本文件汇总 Editor 模块所有“超越 CRUD”的功能点，分阶段（MVP/MMP/未来）列出，并链接详细文档。
 
-
-
 ## 📋 功能列表## MVP
-
-
 
 | 编号 | 功能名称 | 优先级 | 文档 |1. 富文本协作编辑（[01-collaborative-richtext.md](./01-collaborative-richtext.md)）
 
@@ -45,11 +39,13 @@
 类 Notion/Obsidian 的双向链接系统，支持 `[[文档名]]` 语法
 
 ### Markdown 编辑器 (P2)
+
 基于 TipTap/Milkdown 的所见即所得 Markdown 编辑器
 
 ### 协同编辑 (P3)
+
 基于 Yjs CRDT 的实时多人协同编辑
 
 ---
 
-*最后更新: 2025-10-21*
+_最后更新: 2025-10-21_

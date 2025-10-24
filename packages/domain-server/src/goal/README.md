@@ -53,6 +53,7 @@ goal/
 ## 待实现（参考 repository 模块）
 
 ### 1. 值对象 (Value Objects)
+
 - [ ] KeyResultProgress - 关键成果进度
 - [ ] KeyResultSnapshot - 关键成果快照
 - [ ] GoalReminderConfig - 目标提醒配置
@@ -60,26 +61,31 @@ goal/
 - [ ] 修正 GoalTimeRange 以匹配 contracts
 
 ### 2. 实体 (Entities)
+
 - [ ] KeyResult - 关键成果实体
 - [ ] GoalRecord - 目标记录实体
 - [ ] GoalReview - 目标复盘实体
 
 ### 3. 聚合根 (Aggregates)
+
 - [ ] Goal - 目标聚合根（主要）
 - [ ] GoalFolder - 目标文件夹聚合根
 - [ ] GoalStatistics - 目标统计聚合根
 
 ### 4. 仓储接口 (Repositories)
+
 - [ ] IGoalRepository
 - [ ] IGoalFolderRepository
 - [ ] IGoalStatisticsRepository
 
 ### 5. 领域服务 (Domain Services)
+
 - [ ] GoalDomainService
 - [ ] GoalFolderDomainService
 - [ ] GoalStatisticsDomainService
 
 ### 6. 基础设施层 (Infrastructure)
+
 - [ ] PrismaGoalRepository
 - [ ] PrismaGoalFolderRepository
 - [ ] PrismaGoalStatisticsRepository
@@ -92,6 +98,7 @@ goal/
 请严格参考 `packages/domain-server/src/repository` 模块的实现方式：
 
 ### 聚合根实现要点
+
 ```typescript
 export class Goal extends AggregateRoot implements IGoalServer {
   // 1. 私有字段
@@ -104,33 +111,36 @@ export class Goal extends AggregateRoot implements IGoalServer {
   private _reviews: GoalReview[];
 
   // 3. 构造函数（私有）
-  private constructor(params) { }
+  private constructor(params) {}
 
   // 4. Getter 属性
-  public get uuid(): string { return this._uuid; }
+  public get uuid(): string {
+    return this._uuid;
+  }
   // ... 其他 getters
 
   // 5. 工厂方法
-  public static create(params): Goal { }
+  public static create(params): Goal {}
 
   // 6. 子实体管理方法
-  public addKeyResult(keyResult: KeyResult): void { }
-  public removeKeyResult(uuid: string): KeyResult | null { }
+  public addKeyResult(keyResult: KeyResult): void {}
+  public removeKeyResult(uuid: string): KeyResult | null {}
 
   // 7. 业务方法
-  public complete(): void { }
-  public archive(): void { }
-  public updateProgress(): void { }
+  public complete(): void {}
+  public archive(): void {}
+  public updateProgress(): void {}
 
   // 8. 转换方法
-  public toServerDTO(includeChildren = false): GoalServerDTO { }
-  public toPersistenceDTO(): GoalPersistenceDTO { }
-  public static fromServerDTO(dto): Goal { }
-  public static fromPersistenceDTO(dto): Goal { }
+  public toServerDTO(includeChildren = false): GoalServerDTO {}
+  public toPersistenceDTO(): GoalPersistenceDTO {}
+  public static fromServerDTO(dto): Goal {}
+  public static fromPersistenceDTO(dto): Goal {}
 }
 ```
 
 ### 实体实现要点
+
 ```typescript
 export class KeyResult extends Entity implements IKeyResultServer {
   // 类似聚合根，但继承 Entity
@@ -139,6 +149,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
 ```
 
 ### 值对象实现要点
+
 ```typescript
 export class KeyResultProgress extends ValueObject {
   // 不可变
@@ -150,6 +161,7 @@ export class KeyResultProgress extends ValueObject {
 ```
 
 ### 仓储接口要点
+
 ```typescript
 export interface IGoalRepository {
   save(goal: Goal): Promise<void>;
@@ -161,6 +173,7 @@ export interface IGoalRepository {
 ```
 
 ### 领域服务要点
+
 ```typescript
 export class GoalDomainService {
   constructor(
@@ -183,14 +196,17 @@ export class GoalDomainService {
 ## contracts 类型映射
 
 ### Goal 聚合根
+
 - GoalServerDTO → Goal 聚合根
 - GoalPersistenceDTO → 数据库映射
 
 ### KeyResult 实体
+
 - KeyResultServerDTO → KeyResult 实体
 - KeyResultPersistenceDTO → 数据库映射
 
 ### 值对象
+
 - GoalMetadataServerDTO → GoalMetadata 值对象
 - GoalTimeRangeServerDTO → GoalTimeRange 值对象
 - KeyResultProgressServerDTO → KeyResultProgress 值对象

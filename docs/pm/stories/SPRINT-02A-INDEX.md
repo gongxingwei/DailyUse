@@ -11,17 +11,17 @@
 
 ## 📋 Story 清单
 
-| Story ID | Story 名称 | SP | 优先级 | 负责人 | 状态 | 依赖 |
-|----------|-----------|----:|--------|--------|------|------|
-| [STORY-GOAL-002-001](./STORY-GOAL-002-001.md) | Contracts & Domain 层 | 3 | P0 | Backend | To Do | 无 |
-| [STORY-GOAL-002-002](./STORY-GOAL-002-002.md) | Application Service | 3 | P0 | Backend | To Do | 001 |
-| [STORY-GOAL-002-003](./STORY-GOAL-002-003.md) | Repository & Infrastructure | 3 | P0 | Backend | To Do | 001 |
-| [STORY-GOAL-002-004](./STORY-GOAL-002-004.md) | API Endpoints | 4 | P0 | Backend | To Do | 002, 003 |
-| [STORY-GOAL-002-005](./STORY-GOAL-002-005.md) | 客户端服务层 | 3 | P0 | Frontend | To Do | 004 |
-| [STORY-GOAL-002-006](./STORY-GOAL-002-006.md) | UI - 权重快照列表 | 3 | P0 | Frontend | To Do | 005 |
-| [STORY-GOAL-002-007](./STORY-GOAL-002-007.md) | UI - 权重趋势图 | 3 | P1 | Frontend | To Do | 005 |
-| [STORY-GOAL-002-008](./STORY-GOAL-002-008.md) | UI - 权重对比视图 | 2 | P2 | Frontend | To Do | 005 |
-| [STORY-GOAL-002-009](./STORY-GOAL-002-009.md) | Spike - DAG 可视化调研 | 1 | P2 | Tech Lead | To Do | 无 |
+| Story ID                                      | Story 名称                  |  SP | 优先级 | 负责人    | 状态  | 依赖     |
+| --------------------------------------------- | --------------------------- | --: | ------ | --------- | ----- | -------- |
+| [STORY-GOAL-002-001](./STORY-GOAL-002-001.md) | Contracts & Domain 层       |   3 | P0     | Backend   | To Do | 无       |
+| [STORY-GOAL-002-002](./STORY-GOAL-002-002.md) | Application Service         |   3 | P0     | Backend   | To Do | 001      |
+| [STORY-GOAL-002-003](./STORY-GOAL-002-003.md) | Repository & Infrastructure |   3 | P0     | Backend   | To Do | 001      |
+| [STORY-GOAL-002-004](./STORY-GOAL-002-004.md) | API Endpoints               |   4 | P0     | Backend   | To Do | 002, 003 |
+| [STORY-GOAL-002-005](./STORY-GOAL-002-005.md) | 客户端服务层                |   3 | P0     | Frontend  | To Do | 004      |
+| [STORY-GOAL-002-006](./STORY-GOAL-002-006.md) | UI - 权重快照列表           |   3 | P0     | Frontend  | To Do | 005      |
+| [STORY-GOAL-002-007](./STORY-GOAL-002-007.md) | UI - 权重趋势图             |   3 | P1     | Frontend  | To Do | 005      |
+| [STORY-GOAL-002-008](./STORY-GOAL-002-008.md) | UI - 权重对比视图           |   2 | P2     | Frontend  | To Do | 005      |
+| [STORY-GOAL-002-009](./STORY-GOAL-002-009.md) | Spike - DAG 可视化调研      |   1 | P2     | Tech Lead | To Do | 无       |
 
 **Total**: 9 Stories, 25 Story Points
 
@@ -32,6 +32,7 @@
 **核心目标**: 为 Goal 模块添加 KR 权重快照功能，实现权重变更的完整历史追溯和可视化分析。
 
 **价值交付**:
+
 - ✅ 用户可以查看 KR 权重的完整变更历史
 - ✅ 支持权重趋势图和时间点对比分析
 - ✅ 建立 Goal 模块的基础架构（为 Sprint 2b 铺路）
@@ -64,6 +65,7 @@ STORY-009 (DAG Spike) - 独立并行任务
 ## 🏗️ 架构分层
 
 ### Backend Stories (13 SP)
+
 1. **STORY-001**: Contracts & Domain 层 (3 SP)
    - 定义 `KeyResultWeightSnapshotServerDTO`
    - 实现 `KeyResultWeightSnapshot` 值对象
@@ -85,6 +87,7 @@ STORY-009 (DAG Spike) - 独立并行任务
    - 编写集成测试
 
 ### Frontend Stories (11 SP)
+
 5. **STORY-005**: 客户端服务层 (3 SP)
    - 实现 `WeightSnapshotClientApplicationService`
    - 使用 React Query 管理状态
@@ -106,6 +109,7 @@ STORY-009 (DAG Spike) - 独立并行任务
    - 高亮权重变化
 
 ### Research Stories (1 SP)
+
 9. **STORY-009**: DAG 可视化 Spike (1 SP)
    - 调研 3 种可视化方案（ELK.js, Cytoscape.js, D3-DAG）
    - 性能测试（1000+ 节点）
@@ -116,6 +120,7 @@ STORY-009 (DAG Spike) - 独立并行任务
 ## 🚀 开发顺序建议
 
 ### Week 3 (Nov 3-7): 后端开发 + DAG Spike
+
 - **Day 1 (Mon)**: STORY-001 ✅
 - **Day 2 (Tue)**: STORY-002 ✅
 - **Day 3 (Wed)**: STORY-003 ✅
@@ -124,6 +129,7 @@ STORY-009 (DAG Spike) - 独立并行任务
 - **Day 5 (Fri)**: STORY-004 (下半天) ✅
 
 ### Week 4 (Nov 10-14): 前端开发 + 集成测试
+
 - **Day 6 (Mon)**: STORY-005 ✅
 - **Day 7 (Tue)**: STORY-006 ✅
 - **Day 8 (Wed)**: STORY-007 ✅
@@ -135,24 +141,28 @@ STORY-009 (DAG Spike) - 独立并行任务
 ## ✅ Sprint 完成标准
 
 ### 功能完整性
+
 - [ ] 所有 9 个 Stories 状态为 Done
 - [ ] 5 个 API 端点全部实现并通过测试
 - [ ] 3 个 UI 视图全部实现并可用
 - [ ] DAG Spike 报告完成并审批
 
 ### 测试覆盖
+
 - [ ] 单元测试覆盖率 ≥ 80%
 - [ ] 集成测试覆盖关键路径
 - [ ] E2E 测试覆盖核心用户流程
 - [ ] 所有测试通过
 
 ### 质量标准
+
 - [ ] 无 P0 Bug（阻塞性缺陷）
 - [ ] P1 Bug ≤ 3 个
 - [ ] TypeScript 编译无错误
 - [ ] ESLint 无警告
 
 ### 交付物
+
 - [ ] 可部署到 Staging 环境
 - [ ] Sprint Review Demo 完成
 - [ ] Sprint Retrospective 完成
@@ -171,13 +181,13 @@ STORY-009 (DAG Spike) - 独立并行任务
 
 ## 🎯 成功指标
 
-| 指标 | 目标 | 测量方式 |
-|------|------|---------|
-| Story 完成率 | ≥ 90% (23/25 SP) | Jira/GitHub Projects |
-| 代码覆盖率 | ≥ 80% | Vitest Coverage Report |
-| Bug 数量 | P0=0, P1≤3 | Bug Tracking System |
-| API 响应时间 | P95 < 500ms | 性能测试 |
-| 前端渲染性能 | 趋势图 < 500ms (100 快照) | Performance Monitor |
+| 指标         | 目标                      | 测量方式               |
+| ------------ | ------------------------- | ---------------------- |
+| Story 完成率 | ≥ 90% (23/25 SP)          | Jira/GitHub Projects   |
+| 代码覆盖率   | ≥ 80%                     | Vitest Coverage Report |
+| Bug 数量     | P0=0, P1≤3                | Bug Tracking System    |
+| API 响应时间 | P95 < 500ms               | 性能测试               |
+| 前端渲染性能 | 趋势图 < 500ms (100 快照) | Performance Monitor    |
 
 ---
 
@@ -187,4 +197,4 @@ STORY-009 (DAG Spike) - 独立并行任务
 
 ---
 
-*祝 Sprint 2a 开发顺利！🚀*
+_祝 Sprint 2a 开发顺利！🚀_

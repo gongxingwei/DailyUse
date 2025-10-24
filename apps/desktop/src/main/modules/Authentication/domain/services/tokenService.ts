@@ -1,5 +1,5 @@
-import { Token } from "../valueObjects/token";
-import type { ITokenRepository } from "../repositories/authenticationRepository";
+import { Token } from '../valueObjects/token';
+import type { ITokenRepository } from '../repositories/authenticationRepository';
 
 export class TokenService {
   private static instance: TokenService;
@@ -18,7 +18,7 @@ export class TokenService {
     try {
       await tokenRepository.save(token);
     } catch (error) {
-      console.error("Error saving token:", error);
+      console.error('Error saving token:', error);
     }
   }
 
@@ -29,7 +29,11 @@ export class TokenService {
    * @param tokenRepository Token仓库
    * @returns 合法返回 true，否则 false
    */
-  async isTokenValid(accountUuid: string, tokenValue: string, tokenRepository: ITokenRepository): Promise<boolean> {
+  async isTokenValid(
+    accountUuid: string,
+    tokenValue: string,
+    tokenRepository: ITokenRepository,
+  ): Promise<boolean> {
     try {
       const token = await tokenRepository.findByValue(tokenValue);
       if (!token) return false;
@@ -39,7 +43,7 @@ export class TokenService {
       if (token.isExpired()) return false;
       return true;
     } catch (error) {
-      console.error("Error validating token:", error);
+      console.error('Error validating token:', error);
       return false;
     }
   }

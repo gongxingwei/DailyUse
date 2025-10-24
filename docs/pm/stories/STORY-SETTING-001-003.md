@@ -35,7 +35,7 @@ Scenario: 创建 UserPreference model
   And 设置正确的字段类型和约束
   And 设置 accountUuid 为 unique 索引
   And 设置 uuid 为主键
-  
+
   Examples: 字段定义
   | Field            | Type      | Constraints                     |
   | uuid             | String    | @id @default(uuid())            |
@@ -120,6 +120,7 @@ Scenario: 测试完整的 CRUD 流程
   - [ ] 添加注释说明
 
 - [ ] **Task 1.2**: 生成 Prisma migration
+
   ```bash
   pnpm nx run api:prisma:migrate:dev --name add_user_preference
   ```
@@ -172,38 +173,39 @@ Scenario: 测试完整的 CRUD 流程
 ### Prisma Schema
 
 **apps/api/prisma/schema.prisma** (添加):
+
 ```prisma
 model UserPreference {
   /// 用户偏好唯一标识
   uuid             String   @id @default(uuid()) @db.Uuid
-  
+
   /// 所属账户 UUID (唯一索引)
   accountUuid      String   @unique @db.Uuid
-  
+
   /// 主题设置 (light, dark, auto)
   theme            String   @db.VarChar(10)
-  
+
   /// 语言设置 (zh-CN, en-US, ja-JP)
   language         String   @db.VarChar(10)
-  
+
   /// 通知设置 (JSON)
   notifications    Json     @db.JsonB
-  
+
   /// 快捷键设置 (JSON)
   shortcuts        Json     @db.JsonB
-  
+
   /// 侧边栏位置 (left, right)
   sidebarPosition  String   @db.VarChar(10)
-  
+
   /// 字体大小 (12-24)
   fontSize         Int      @db.SmallInt
-  
+
   /// 创建时间
   createdAt        DateTime @default(now()) @db.Timestamptz
-  
+
   /// 更新时间 (自动更新)
   updatedAt        DateTime @updatedAt @db.Timestamptz
-  
+
   @@map("user_preferences")
   @@index([accountUuid], name: "idx_user_preferences_account_uuid")
 }
@@ -212,6 +214,7 @@ model UserPreference {
 ### Repository Implementation
 
 **packages/domain-server/src/setting/infrastructure/prisma/PrismaUserPreferenceRepository.ts**:
+
 ```typescript
 import type { PrismaClient } from '@prisma/client';
 import type { IUserPreferenceRepository } from '../../../domain/repositories/IUserPreferenceRepository';
@@ -265,14 +268,12 @@ export class PrismaUserPreferenceRepository implements IUserPreferenceRepository
 ```
 
 **UserPreferenceMapper.ts**:
+
 ```typescript
 import type { UserPreference as PrismaUserPreference } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { UserPreference } from '../../../domain/entities/UserPreference';
-import type {
-  NotificationSettings,
-  ShortcutSettings,
-} from '@dailyuse/contracts';
+import type { NotificationSettings, ShortcutSettings } from '@dailyuse/contracts';
 
 export class UserPreferenceMapper {
   /**
@@ -291,7 +292,7 @@ export class UserPreferenceMapper {
         createdAt: data.createdAt.getTime(),
         updatedAt: data.updatedAt.getTime(),
       },
-      data.uuid
+      data.uuid,
     );
   }
 
@@ -317,7 +318,8 @@ export class UserPreferenceMapper {
 
 ### 集成测试
 
-**infrastructure/prisma/__tests__/PrismaUserPreferenceRepository.test.ts**:
+**infrastructure/prisma/**tests**/PrismaUserPreferenceRepository.test.ts**:
+
 ```typescript
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
@@ -431,27 +433,32 @@ function createTestEntity(accountUuid: string): UserPreference {
 ## ✅ Definition of Done
 
 ### 功能完整性
+
 - [x] Prisma schema 定义完整
 - [x] Migration 已生成并应用
 - [x] Repository 实现所有接口方法
 - [x] Mapper 正确处理数据转换
 
 ### 代码质量
+
 - [x] TypeScript strict 模式无错误
 - [x] ESLint 无警告
 - [x] 集成测试覆盖率 ≥ 80%
 
 ### 测试
+
 - [x] 所有集成测试通过
 - [x] 测试数据库隔离
 - [x] JSON 字段序列化测试通过
 
 ### 数据库
+
 - [x] Migration 成功运行
 - [x] 索引正确创建
 - [x] 约束验证正常
 
 ### Code Review
+
 - [x] Code Review 完成
 - [x] DBA Review 通过 (schema 设计)
 
@@ -459,13 +466,13 @@ function createTestEntity(accountUuid: string): UserPreference {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| Prisma Schema & Migration | 1 小时 |
-| Repository 实现 | 2 小时 |
-| Mapper 实现 | 1 小时 |
-| 集成测试编写 | 2 小时 |
-| **总计** | **6 小时** |
+| 任务                      | 预估时间   |
+| ------------------------- | ---------- |
+| Prisma Schema & Migration | 1 小时     |
+| Repository 实现           | 2 小时     |
+| Mapper 实现               | 1 小时     |
+| 集成测试编写              | 2 小时     |
+| **总计**                  | **6 小时** |
 
 **Story Points**: 2 SP
 
@@ -474,10 +481,12 @@ function createTestEntity(accountUuid: string): UserPreference {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-001 (Domain 层)
 - ✅ STORY-SETTING-001-002 (Application Service)
 
 ### 下游依赖
+
 - STORY-SETTING-001-004 (API Endpoints) 依赖此 Story
 
 ---

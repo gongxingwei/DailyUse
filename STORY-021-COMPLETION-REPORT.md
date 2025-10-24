@@ -1,7 +1,9 @@
 # STORY-021 完成报告
+
 **自动目标状态更新规则 (Auto Goal Status Update Rules)**
 
 ## 📊 基本信息
+
 - **Story ID**: STORY-021 (STORY-AI-003-003)
 - **优先级**: P2
 - **预估工时**: 2 SP
@@ -10,17 +12,21 @@
 - **完成时间**: 2024-XX-XX
 
 ## 🎯 Story 目标
+
 根据关键结果 (KeyResult) 的进度、权重和其他指标，自动建议或应用目标状态变更，提升目标管理的智能化水平。
 
 ## ✅ 完成的功能
 
 ### 1. 规则引擎架构 (0.5 SP)
-**文件**: 
+
+**文件**:
+
 - `packages/contracts/src/modules/goal/rules/StatusRule.ts` (150 lines)
 - `apps/web/src/modules/goal/domain/rules/BuiltInRules.ts` (240 lines)
 - `apps/web/src/modules/goal/application/services/StatusRuleEngine.ts` (260 lines)
 
 **核心功能**:
+
 - ✅ StatusRule 契约定义 (8 个类型/接口)
   - StatusRule: 规则定义
   - RuleCondition: 条件定义 (metric, operator, value, scope)
@@ -43,15 +49,18 @@
   - `resetToBuiltIn()`: 重置为内置规则
 
 **支持的指标** (RuleMetric):
+
 - `progress`: 关键结果进度 (0-100)
 - `weight`: 关键结果权重 (0-100)
 - `kr_count`: 关键结果数量
 - `deadline`: 剩余天数
 
 **支持的操作符** (RuleOperator):
+
 - `>`, `<`, `>=`, `<=`, `=`, `!=`
 
 **条件范围** (Scope):
+
 - `all`: 所有关键结果 (平均值/总和)
 - `any`: 任意关键结果 (最小值)
 - `<kr-uuid>`: 特定关键结果
@@ -59,9 +68,11 @@
 ---
 
 ### 2. 规则评估服务 (0.25 SP)
+
 **文件**: `apps/web/src/modules/goal/application/composables/useAutoStatusRules.ts` (190 lines)
 
 **核心功能**:
+
 - ✅ `evaluateGoal()`: 评估目标并返回规则建议
 - ✅ `recordHistory()`: 记录规则执行历史
 - ✅ `getGoalHistory()`: 获取目标的执行历史
@@ -71,11 +82,13 @@
   - 兼容不同 DTO 格式
 
 **配置选项** (AutoRuleConfig):
+
 - `enabled`: 启用/禁用自动规则
 - `allowManualOverride`: 允许手动覆盖
 - `notifyOnChange`: 状态变更时通知
 
 **返回类型** (RuleSuggestion):
+
 ```typescript
 {
   goalUuid: string;
@@ -90,9 +103,11 @@
 ---
 
 ### 3. 规则编辑器 UI (0.5 SP)
+
 **文件**: `apps/web/src/modules/goal/presentation/components/rules/StatusRuleEditor.vue` (560 lines)
 
 **核心功能**:
+
 - ✅ 规则列表展示
   - 优先级排序
   - 启用/禁用切换
@@ -123,6 +138,7 @@
   - 状态变更时通知
 
 **UI 亮点**:
+
 - 实时更新规则列表
 - 内联启用/禁用切换
 - 条件/动作可读摘要
@@ -131,18 +147,22 @@
 ---
 
 ### 4. 集成到 Goal 流程 (0.25 SP + 0.5 SP)
-**修改文件**: 
+
+**修改文件**:
+
 - `apps/web/src/modules/goal/presentation/components/dialogs/GoalDialog.vue` (+10 lines)
 - `apps/web/src/modules/goal/presentation/views/StatusRulesDemoView.vue` (330 lines, NEW)
 - `apps/web/src/shared/router/routes.ts` (+9 lines)
 
 **GoalDialog 集成**:
+
 - ✅ 添加第 4 个标签页 "规则设置"
   - Tab 图标: `mdi-robot` (info 颜色)
   - 直接嵌入 StatusRuleEditor 组件
   - 用户可在创建/编辑目标时管理规则
 
 **StatusRulesDemoView 测试器**:
+
 - ✅ 左右分栏布局
   - 左侧: StatusRuleEditor (规则配置)
   - 右侧: 规则测试器
@@ -167,6 +187,7 @@
 ## 📁 新增/修改文件清单
 
 ### 新增文件 (5 个)
+
 1. `packages/contracts/src/modules/goal/rules/StatusRule.ts` (150 lines)
 2. `apps/web/src/modules/goal/domain/rules/BuiltInRules.ts` (240 lines)
 3. `apps/web/src/modules/goal/application/services/StatusRuleEngine.ts` (260 lines)
@@ -177,6 +198,7 @@
 **总代码量**: ~1,730 lines
 
 ### 修改文件 (2 个)
+
 1. `apps/web/src/modules/goal/presentation/components/dialogs/GoalDialog.vue` (+10 lines)
 2. `apps/web/src/shared/router/routes.ts` (+9 lines)
 3. `packages/contracts/src/modules/goal/index.ts` (+1 line)
@@ -186,6 +208,7 @@
 ## 🔧 技术实现
 
 ### 架构分层
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Presentation Layer                      │
@@ -244,6 +267,7 @@
 ## 🚀 使用方式
 
 ### 1. 在 GoalDialog 中管理规则
+
 ```typescript
 // 打开目标编辑对话框 → 切换到"规则设置"标签页
 // 可以:
@@ -254,6 +278,7 @@
 ```
 
 ### 2. 在代码中使用规则评估
+
 ```typescript
 import { useAutoStatusRules } from '@/modules/goal/application/composables/useAutoStatusRules';
 
@@ -265,16 +290,16 @@ const suggestion = evaluateGoal(goal);
 if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
   // 应用状态变更
   await updateGoalStatus(goal.uuid, suggestion.suggestedStatus);
-  
+
   // 记录历史
   recordHistory(
     goal.uuid,
     suggestion.executionResult.ruleId,
     goal.status,
     suggestion.suggestedStatus,
-    suggestion.message
+    suggestion.message,
   );
-  
+
   // 显示通知
   if (suggestion.notify && suggestion.message) {
     showNotification(suggestion.message);
@@ -283,6 +308,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 ```
 
 ### 3. 使用测试器
+
 1. 访问 `/goals/rules-demo`
 2. 左侧配置规则
 3. 右侧输入测试数据
@@ -294,6 +320,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 ## 📈 内置规则示例
 
 ### 示例 1: 自动完成规则
+
 ```typescript
 {
   id: 'rule-completed',
@@ -310,10 +337,12 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
   }
 }
 ```
+
 **触发条件**: 所有 KR 进度达到 100%
 **结果**: 状态变为 COMPLETED, 发送祝贺通知
 
 ### 示例 2: 进度风险警告
+
 ```typescript
 {
   id: 'rule-at-risk',
@@ -330,10 +359,12 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
   }
 }
 ```
+
 **触发条件**: 任意一个 KR 进度 < 30%
 **结果**: 状态不变, 发送警告通知
 
 ### 示例 3: 权重异常提醒
+
 ```typescript
 {
   id: 'rule-weight-warning',
@@ -349,6 +380,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
   }
 }
 ```
+
 **触发条件**: KR 权重总和 ≠ 100%
 **结果**: 仅发送通知, 不改变状态
 
@@ -357,6 +389,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 ## 🧪 测试建议
 
 ### 功能测试
+
 - [ ] 创建自定义规则
 - [ ] 编辑内置规则 (修改优先级, 启用/禁用)
 - [ ] 删除自定义规则 (验证内置规则不可删除)
@@ -366,12 +399,14 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 - [ ] 验证优先级排序 (高优先级规则先匹配)
 
 ### 集成测试
+
 - [ ] 在 GoalDialog 中打开规则设置标签页
 - [ ] 使用测试器验证规则逻辑
 - [ ] 检查执行历史记录
 - [ ] 验证通知消息显示
 
 ### 边界测试
+
 - [ ] KR 数量 = 0
 - [ ] 所有 KR 进度 = 100
 - [ ] 权重总和 ≠ 100
@@ -383,6 +418,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 ## 📝 后续优化建议
 
 ### 短期 (Sprint 4)
+
 1. **持久化规则配置**
    - 将自定义规则保存到 localStorage 或后端
    - 支持规则导入/导出 (JSON 格式)
@@ -396,6 +432,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
    - 可选的自动应用模式 (需确认 vs 静默应用)
 
 ### 中期 (Sprint 5-6)
+
 1. **高级条件**
    - 支持时间范围条件 (例如: 创建后 7 天内)
    - 支持依赖条件 (例如: 前置目标完成后)
@@ -411,6 +448,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
    - 提供规则优化建议
 
 ### 长期 (Sprint 7+)
+
 1. **机器学习优化**
    - 根据用户历史学习最佳规则
    - 自动调整规则优先级
@@ -428,6 +466,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 **Sprint 3 总进度**: 15.4/21 SP (73.3%)
 
 **已完成** (✅ 15.4 SP):
+
 - STORY-015: DAG Export (2 SP)
 - STORY-020: Template Recommendations (2 SP)
 - STORY-019: AI Weight Allocation (3 SP)
@@ -436,6 +475,7 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 - KeyResult Weight Refactoring (2.9 SP, BREAKING)
 
 **待完成** (5.6 SP):
+
 - STORY-012: Test Environment (3 SP, P0) - 需要用户决策
 - STORY-013: DTO Tests (2 SP, P1) - 依赖 STORY-012
 - STORY-014/017/018: Performance/Animation (2.6 SP, P2)
@@ -463,9 +503,11 @@ if (suggestion.suggestedStatus && suggestion.suggestedStatus !== goal.status) {
 ---
 
 ## 🎉 总结
+
 STORY-021 (Auto Goal Status Update Rules) 已成功完成！
 
 **核心成就**:
+
 - ✅ 完整的规则引擎系统 (契约 → 域 → 应用 → 展示)
 - ✅ 6 个开箱即用的内置规则
 - ✅ 灵活的自定义规则编辑器
@@ -473,12 +515,14 @@ STORY-021 (Auto Goal Status Update Rules) 已成功完成！
 - ✅ 无缝集成到目标编辑流程
 
 **代码质量**:
+
 - 类型安全 (TypeScript)
 - 分层架构 (Contracts → Domain → Application → Presentation)
 - 可扩展设计 (易于添加新规则/指标)
 - 完整的错误处理
 
 **用户体验**:
+
 - 直观的 UI 设计
 - 实时反馈
 - 丰富的提示信息

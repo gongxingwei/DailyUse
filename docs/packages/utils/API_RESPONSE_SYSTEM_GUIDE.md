@@ -89,25 +89,25 @@ export enum ResponseCode {
   SUCCESS = 200,
 
   // 客户端错误 (4xx)
-  BAD_REQUEST = 400,          // 请求参数错误
-  UNAUTHORIZED = 401,         // 未授权
-  FORBIDDEN = 403,            // 禁止访问
-  NOT_FOUND = 404,            // 资源不存在
-  CONFLICT = 409,             // 资源冲突
-  VALIDATION_ERROR = 422,     // 验证错误
-  TOO_MANY_REQUESTS = 429,    // 请求过于频繁
+  BAD_REQUEST = 400, // 请求参数错误
+  UNAUTHORIZED = 401, // 未授权
+  FORBIDDEN = 403, // 禁止访问
+  NOT_FOUND = 404, // 资源不存在
+  CONFLICT = 409, // 资源冲突
+  VALIDATION_ERROR = 422, // 验证错误
+  TOO_MANY_REQUESTS = 429, // 请求过于频繁
 
   // 服务器错误 (5xx)
-  INTERNAL_ERROR = 500,       // 服务器内部错误
-  BAD_GATEWAY = 502,          // 网关错误
-  SERVICE_UNAVAILABLE = 503,  // 服务不可用
-  GATEWAY_TIMEOUT = 504,      // 网关超时
+  INTERNAL_ERROR = 500, // 服务器内部错误
+  BAD_GATEWAY = 502, // 网关错误
+  SERVICE_UNAVAILABLE = 503, // 服务不可用
+  GATEWAY_TIMEOUT = 504, // 网关超时
 
   // 业务错误 (1xxx)
-  BUSINESS_ERROR = 1000,      // 通用业务错误
-  DOMAIN_ERROR = 1001,        // 领域逻辑错误
-  EXTERNAL_SERVICE_ERROR = 1002,  // 外部服务错误
-  DATABASE_ERROR = 1003       // 数据库错误
+  BUSINESS_ERROR = 1000, // 通用业务错误
+  DOMAIN_ERROR = 1001, // 领域逻辑错误
+  EXTERNAL_SERVICE_ERROR = 1002, // 外部服务错误
+  DATABASE_ERROR = 1003, // 数据库错误
 }
 ```
 
@@ -118,9 +118,9 @@ ResponseCode 会自动映射到对应的 HTTP 状态码：
 ```typescript
 import { getHttpStatusCode } from '@dailyuse/contracts';
 
-getHttpStatusCode(ResponseCode.SUCCESS);          // 200
+getHttpStatusCode(ResponseCode.SUCCESS); // 200
 getHttpStatusCode(ResponseCode.VALIDATION_ERROR); // 422
-getHttpStatusCode(ResponseCode.BUSINESS_ERROR);   // 400
+getHttpStatusCode(ResponseCode.BUSINESS_ERROR); // 400
 ```
 
 ---
@@ -150,7 +150,7 @@ router.get('/users', async (req: Request, res: Response) => {
     total,
     totalPages: Math.ceil(total / (Number(req.query.limit) || 20)),
   };
-  
+
   return Response.list(res, items, pagination, '获取用户列表成功');
 });
 
@@ -167,11 +167,11 @@ router.post('/users', async (req: Request, res: Response) => {
 // 404 - 资源不存在
 router.get('/users/:id', async (req: Request, res: Response) => {
   const user = await getUserById(req.params.id);
-  
+
   if (!user) {
     return Response.notFound(res, '用户不存在');
   }
-  
+
   return Response.ok(res, user);
 });
 
@@ -180,7 +180,7 @@ router.post('/users', async (req: Request, res: Response) => {
   if (!req.body.email) {
     return Response.badRequest(res, '邮箱不能为空');
   }
-  
+
   const user = await createUser(req.body);
   return Response.created(res, user);
 });
@@ -188,11 +188,11 @@ router.post('/users', async (req: Request, res: Response) => {
 // 422 - 验证错误（带详细错误信息）
 router.post('/users', async (req: Request, res: Response) => {
   const errors = validateUserInput(req.body);
-  
+
   if (errors.length > 0) {
     return Response.validationError(res, '输入数据验证失败', errors);
   }
-  
+
   const user = await createUser(req.body);
   return Response.created(res, user);
 });
@@ -200,11 +200,11 @@ router.post('/users', async (req: Request, res: Response) => {
 // 409 - 资源冲突
 router.post('/users', async (req: Request, res: Response) => {
   const existingUser = await findUserByEmail(req.body.email);
-  
+
   if (existingUser) {
     return Response.conflict(res, '该邮箱已被注册');
   }
-  
+
   const user = await createUser(req.body);
   return Response.created(res, user);
 });
@@ -214,7 +214,7 @@ router.get('/profile', async (req: Request, res: Response) => {
   if (!req.user) {
     return Response.unauthorized(res, '请先登录');
   }
-  
+
   return Response.ok(res, req.user);
 });
 
@@ -223,7 +223,7 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
   if (!req.user?.isAdmin) {
     return Response.forbidden(res, '只有管理员可以删除用户');
   }
-  
+
   await deleteUser(req.params.id);
   return Response.ok(res, null, '用户删除成功');
 });
@@ -239,21 +239,16 @@ router.post('/orders', async (req: Request, res: Response) => {
     return Response.ok(res, order);
   } catch (error) {
     if (error instanceof InsufficientBalanceError) {
-      return Response.businessError(
-        res,
-        '余额不足，无法创建订单',
-        'INSUFFICIENT_BALANCE',
-        [
-          {
-            code: 'INSUFFICIENT_BALANCE',
-            field: 'balance',
-            message: '当前余额不足',
-            value: error.currentBalance,
-          },
-        ]
-      );
+      return Response.businessError(res, '余额不足，无法创建订单', 'INSUFFICIENT_BALANCE', [
+        {
+          code: 'INSUFFICIENT_BALANCE',
+          field: 'balance',
+          message: '当前余额不足',
+          value: error.currentBalance,
+        },
+      ]);
     }
-    
+
     throw error; // 其他错误继续抛出
   }
 });
@@ -265,7 +260,7 @@ router.post('/orders', async (req: Request, res: Response) => {
 // 全局错误处理中间件
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('错误:', err);
-  
+
   // 开发环境返回详细错误信息
   if (process.env.NODE_ENV === 'development') {
     return Response.error(res, err.message || '服务器内部错误', {
@@ -273,7 +268,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       message: err.message,
     });
   }
-  
+
   // 生产环境返回通用错误
   return Response.error(res, '服务器内部错误');
 });
@@ -281,20 +276,20 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 ### 可用的响应函数
 
-| 函数 | HTTP 状态 | 响应代码 | 说明 |
-|------|-----------|---------|------|
-| `ok(res, data?, message?)` | 200 | 200 | 成功响应 |
-| `created(res, data?, message?)` | 201 | 200 | 资源创建成功 |
-| `list(res, data, pagination, message?)` | 200 | 200 | 列表响应（带分页） |
-| `badRequest(res, message, errors?)` | 400 | 400 | 请求参数错误 |
-| `unauthorized(res, message)` | 401 | 401 | 未授权 |
-| `forbidden(res, message)` | 403 | 403 | 禁止访问 |
-| `notFound(res, message)` | 404 | 404 | 资源不存在 |
-| `conflict(res, message)` | 409 | 409 | 资源冲突 |
-| `validationError(res, message, errors?)` | 422 | 422 | 验证错误 |
-| `businessError(res, message, errorCode?, errors?)` | 400 | 1000 | 业务错误 |
-| `error(res, message, debug?)` | 500 | 500 | 服务器错误 |
-| `serviceUnavailable(res, message)` | 503 | 503 | 服务不可用 |
+| 函数                                               | HTTP 状态 | 响应代码 | 说明               |
+| -------------------------------------------------- | --------- | -------- | ------------------ |
+| `ok(res, data?, message?)`                         | 200       | 200      | 成功响应           |
+| `created(res, data?, message?)`                    | 201       | 200      | 资源创建成功       |
+| `list(res, data, pagination, message?)`            | 200       | 200      | 列表响应（带分页） |
+| `badRequest(res, message, errors?)`                | 400       | 400      | 请求参数错误       |
+| `unauthorized(res, message)`                       | 401       | 401      | 未授权             |
+| `forbidden(res, message)`                          | 403       | 403      | 禁止访问           |
+| `notFound(res, message)`                           | 404       | 404      | 资源不存在         |
+| `conflict(res, message)`                           | 409       | 409      | 资源冲突           |
+| `validationError(res, message, errors?)`           | 422       | 422      | 验证错误           |
+| `businessError(res, message, errorCode?, errors?)` | 400       | 1000     | 业务错误           |
+| `error(res, message, debug?)`                      | 500       | 500      | 服务器错误         |
+| `serviceUnavailable(res, message)`                 | 503       | 503      | 服务不可用         |
 
 ---
 
@@ -340,17 +335,17 @@ try {
 } catch (error: any) {
   // error.response.data 是 ErrorResponse 类型
   const errorResponse = error.response?.data as ErrorResponse;
-  
+
   console.error('错误代码:', errorResponse.code);
   console.error('错误消息:', errorResponse.message);
-  
+
   // 处理验证错误
   if (errorResponse.code === 422 && errorResponse.errors) {
     errorResponse.errors.forEach((err) => {
       console.error(`字段 ${err.field}: ${err.message}`);
     });
   }
-  
+
   // 处理业务错误
   if (errorResponse.code === 1000) {
     console.error('业务错误代码:', errorResponse.errorCode);
@@ -365,11 +360,11 @@ import { useRequest } from '@/shared/api/composables/useRequest';
 
 export function useUsers() {
   const { data, loading, error, execute } = useRequest<User[]>();
-  
+
   const fetchUsers = async () => {
     await execute(() => apiClient.get<User[]>('/users'));
   };
-  
+
   return {
     users: data,
     loading,
@@ -439,7 +434,7 @@ if (errorResponse.code === ResponseCode.BUSINESS_ERROR) {
 const httpClient = createApiClient({
   errorHandler: (error) => {
     const errorResponse = error.response?.data as ErrorResponse;
-    
+
     // 显示错误提示
     if (errorResponse?.message) {
       showNotification({
@@ -447,7 +442,7 @@ const httpClient = createApiClient({
         message: errorResponse.message,
       });
     }
-    
+
     // 特殊状态码处理
     if (errorResponse?.code === ResponseCode.UNAUTHORIZED) {
       // 清除登录状态，跳转到登录页
@@ -465,6 +460,7 @@ const httpClient = createApiClient({
 ### 1. 始终使用响应工具函数
 
 ❌ **不推荐**：
+
 ```typescript
 res.status(200).json({
   success: true,
@@ -474,6 +470,7 @@ res.status(200).json({
 ```
 
 ✅ **推荐**：
+
 ```typescript
 return Response.ok(res, user, '获取成功');
 ```
@@ -481,11 +478,13 @@ return Response.ok(res, user, '获取成功');
 ### 2. 提供清晰的错误消息
 
 ❌ **不推荐**：
+
 ```typescript
 return Response.badRequest(res, '错误');
 ```
 
 ✅ **推荐**：
+
 ```typescript
 return Response.badRequest(res, '邮箱格式不正确，请输入有效的邮箱地址');
 ```
@@ -493,6 +492,7 @@ return Response.badRequest(res, '邮箱格式不正确，请输入有效的邮�
 ### 3. 使用适当的错误代码
 
 ❌ **不推荐**（所有错误都返回 400）：
+
 ```typescript
 if (!user) {
   return Response.badRequest(res, '用户不存在');
@@ -500,6 +500,7 @@ if (!user) {
 ```
 
 ✅ **推荐**（使用 404）：
+
 ```typescript
 if (!user) {
   return Response.notFound(res, '用户不存在');
@@ -509,6 +510,7 @@ if (!user) {
 ### 4. 提供详细的验证错误
 
 ✅ **推荐**：
+
 ```typescript
 const errors: ErrorDetail[] = [
   {
@@ -532,17 +534,19 @@ return Response.validationError(res, '输入数据验证失败', errors);
 ### 5. 前端类型安全
 
 ✅ **推荐**：
+
 ```typescript
 // 明确指定返回类型
 const user = await apiClient.get<User>('/users/123');
 
 // TypeScript 会自动推断 user 的类型为 User
-console.log(user.name);  // ✅ 类型安全
+console.log(user.name); // ✅ 类型安全
 ```
 
 ### 6. 统一的分页处理
 
 ✅ **推荐**：
+
 ```typescript
 // 后端
 const pagination: PaginationInfo = {
@@ -632,10 +636,10 @@ import type { ApiResponse, SuccessResponse, ErrorResponse } from '@/shared/api/c
 ```typescript
 // 旧代码
 const response = await apiClient.get('/users');
-const users = response.data;  // 需要手动提取 data
+const users = response.data; // 需要手动提取 data
 
 // 新代码
-const users = await apiClient.get<User[]>('/users');  // 自动提取 data
+const users = await apiClient.get<User[]>('/users'); // 自动提取 data
 ```
 
 #### 步骤 3：更新错误处理
@@ -655,7 +659,7 @@ try {
   const errorResponse = error.response?.data as ErrorResponse;
   console.error('错误代码:', errorResponse.code);
   console.error('错误消息:', errorResponse.message);
-  
+
   if (errorResponse.errors) {
     errorResponse.errors.forEach((err) => {
       console.error(`字段 ${err.field}: ${err.message}`);

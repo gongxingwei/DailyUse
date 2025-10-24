@@ -1,9 +1,12 @@
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-import { AuthenticationService } from "../../application/services/authenticationService";
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { AuthenticationService } from '../../application/services/authenticationService';
 
-import { useSnackbar } from "@renderer/shared/composables/useSnackbar";
-import type { PasswordAuthenticationRequest, RememberMeTokenAuthenticationRequest } from "@renderer/modules/Authentication/domain/types";
+import { useSnackbar } from '@renderer/shared/composables/useSnackbar';
+import type {
+  PasswordAuthenticationRequest,
+  RememberMeTokenAuthenticationRequest,
+} from '@renderer/modules/Authentication/domain/types';
 
 /**
  * 登录表单 Composable
@@ -15,8 +18,8 @@ export function useAuthenticationService() {
   const router = useRouter();
   const loading = ref(false);
   const passwordAuthenticationForm = ref<PasswordAuthenticationRequest>({
-    username: "Test1",
-    password: "Llh123123",
+    username: 'Test1',
+    password: 'Llh123123',
     remember: false,
   });
 
@@ -28,17 +31,20 @@ export function useAuthenticationService() {
    */
   const resetForm = (): void => {
     passwordAuthenticationForm.value = {
-      username: "",
-      password: "",
+      username: '',
+      password: '',
       remember: false,
     };
     formValid.value = false;
     showPassword.value = false;
   };
 
-  const getQuickLoginAccounts = async (): Promise<Array<{ accountUuid: string; username: string; token: string }>> => {
+  const getQuickLoginAccounts = async (): Promise<
+    Array<{ accountUuid: string; username: string; token: string }>
+  > => {
     try {
-      const accounts: Array<{ accountUuid: string; username: string; token: string }> = await authenticationService.getQuickLoginAccounts();
+      const accounts: Array<{ accountUuid: string; username: string; token: string }> =
+        await authenticationService.getQuickLoginAccounts();
       return accounts;
     } catch (error) {
       showError((error as Error).message);
@@ -58,39 +64,42 @@ export function useAuthenticationService() {
 
   const handleLocalLoginByPassword = async (): Promise<void> => {
     try {
-      const response = await authenticationService.passwordAuthentication(passwordAuthenticationForm.value);
+      const response = await authenticationService.passwordAuthentication(
+        passwordAuthenticationForm.value,
+      );
       if (response.success) {
         // 登录成功
-        showSuccess("登录成功");
+        showSuccess('登录成功');
         // 跳转到首页
-        router.push("/summary");
-        console.log("🚀！！[useAuthentication]: 登录成功", response.data);
+        router.push('/summary');
+        console.log('🚀！！[useAuthentication]: 登录成功', response.data);
       } else {
         // 登录失败
         showError(response.message);
       }
     } catch (error) {
-      console.error("[useAuthentication]: handleLocalLoginByPassword", error);
+      console.error('[useAuthentication]: handleLocalLoginByPassword', error);
     }
-    
   };
 
-  const handleLocalQuickLogin = async (request: RememberMeTokenAuthenticationRequest): Promise<void> => {
+  const handleLocalQuickLogin = async (
+    request: RememberMeTokenAuthenticationRequest,
+  ): Promise<void> => {
     try {
-      console.log("🚀！！[useAuthentication]: 快速登录", request);
+      console.log('🚀！！[useAuthentication]: 快速登录', request);
       const response = await authenticationService.rememberMeTokenAuthentication(request);
       if (response.success) {
         // 登录成功
-        showSuccess("登录成功");
+        showSuccess('登录成功');
         // 跳转到首页
-        router.push("/summary");
-        console.log("🚀！！[useAuthentication]: 登录成功", response.data);
+        router.push('/summary');
+        console.log('🚀！！[useAuthentication]: 登录成功', response.data);
       } else {
         // 登录失败
         showError(response.message);
       }
     } catch (error) {
-      console.error("[useAuthentication]: handleLocalQuickLogin", error);
+      console.error('[useAuthentication]: handleLocalQuickLogin', error);
     }
   };
 

@@ -7,7 +7,13 @@
           <h1 class="page-title">我的仓库</h1>
           <p class="page-subtitle">管理您的知识库和项目文档</p>
         </div>
-        <v-btn color="primary" prepend-icon="mdi-plus" variant="elevated" @click="startCreateRepo" class="create-btn">
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-plus"
+          variant="elevated"
+          @click="startCreateRepo"
+          class="create-btn"
+        >
           新建仓库
         </v-btn>
       </div>
@@ -16,19 +22,32 @@
     <!-- 仓库列表 -->
     <div class="content-section">
       <div v-if="repositoryStore.getAllRepositories.length > 0" class="repo-list">
-        <v-card v-for="repo in repositoryStore.getAllRepositories" :key="repo.uuid" class="repo-card" elevation="3"
-          hover>
+        <v-card
+          v-for="repo in repositoryStore.getAllRepositories"
+          :key="repo.uuid"
+          class="repo-card"
+          elevation="3"
+          hover
+        >
           <v-card-text class="pa-6">
             <div class="repo-header">
               <div class="repo-info">
-                <router-link :to="`/repository/${encodeURIComponent(repo.uuid)}`" class="repo-title">
+                <router-link
+                  :to="`/repository/${encodeURIComponent(repo.uuid)}`"
+                  class="repo-title"
+                >
                   <v-icon class="mr-2" color="primary">mdi-folder</v-icon>
                   {{ repo.name }}
                 </router-link>
 
                 <!-- 关联目标标签 -->
-                <v-chip v-if="repo.relatedGoals && repo.relatedGoals.length > 0" color="primary" variant="tonal"
-                  size="small" class="ml-2">
+                <v-chip
+                  v-if="repo.relatedGoals && repo.relatedGoals.length > 0"
+                  color="primary"
+                  variant="tonal"
+                  size="small"
+                  class="ml-2"
+                >
                   <v-icon start size="small">mdi-target</v-icon>
                   {{ getGoalTitle(repo.relatedGoals[0]) }}
                 </v-chip>
@@ -36,7 +55,13 @@
 
               <v-menu>
                 <template v-slot:activator="{ props }">
-                  <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props" class="action-btn" />
+                  <v-btn
+                    icon="mdi-dots-vertical"
+                    variant="text"
+                    size="small"
+                    v-bind="props"
+                    class="action-btn"
+                  />
                 </template>
                 <v-list>
                   <v-list-item @click="openSettings(Repository.ensureRepositoryNeverNull(repo))">
@@ -66,8 +91,10 @@
               </div>
               <div class="meta-item">
                 <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                <span class="text-caption">更新于 {{ formatDistanceToNow(new Date(repo.updatedAt), { locale: zhCN }) }}
-                  前</span>
+                <span class="text-caption"
+                  >更新于
+                  {{ formatDistanceToNow(new Date(repo.updatedAt), { locale: zhCN }) }} 前</span
+                >
               </div>
             </div>
           </v-card-text>
@@ -79,92 +106,106 @@
         <div class="empty-content">
           <v-icon color="primary" size="120" class="mb-4 empty-icon">mdi-folder-plus</v-icon>
           <h3 class="text-h4 mb-3">开始您的知识管理之旅</h3>
-          <p class="text-body-1 text-medium-emphasis mb-6">创建您的第一个仓库，开始整理和管理您的文档资料</p>
+          <p class="text-body-1 text-medium-emphasis mb-6">
+            创建您的第一个仓库，开始整理和管理您的文档资料
+          </p>
         </div>
       </div>
     </div>
 
     <!-- 对话框 -->
-    <RepoDialog v-model="repoDialog.show" :repository="Repository.ensureRepository(repoDialog.repository)"
-      @create-repo="handleCreateRepository" @edit-repo="handleUpdateRepository"
-      @handle-delete-repo="handleDeleteRepository" />
-    <RepoSettings v-model="showSettings" :repo="Repository.ensureRepositoryNeverNull(selectedRepo)" />
+    <RepoDialog
+      v-model="repoDialog.show"
+      :repository="Repository.ensureRepository(repoDialog.repository)"
+      @create-repo="handleCreateRepository"
+      @edit-repo="handleUpdateRepository"
+      @handle-delete-repo="handleDeleteRepository"
+    />
+    <RepoSettings
+      v-model="showSettings"
+      :repo="Repository.ensureRepositoryNeverNull(selectedRepo)"
+    />
 
     <!-- snackbar -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right">
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+      location="top right"
+    >
       {{ snackbar.message }}
     </v-snackbar>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRepositoryStore } from '../stores/repositoryStore'
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore'
-import { Repository } from '@renderer/modules/Repository/domain/aggregates/repository'
+import { ref } from 'vue';
+import { useRepositoryStore } from '../stores/repositoryStore';
+import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
+import { Repository } from '@renderer/modules/Repository/domain/aggregates/repository';
 import { useRepositoryServices } from '../composables/useRepositoryServices';
-import RepoDialog from '../components/RepoDialog.vue'
-import RepoSettings from '../components/RepoSettings.vue'
+import RepoDialog from '../components/RepoDialog.vue';
+import RepoSettings from '../components/RepoSettings.vue';
 // utils
-import { fileSystem } from '@renderer/shared/utils/fileUtils'
+import { fileSystem } from '@renderer/shared/utils/fileUtils';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
-const {
-  snackbar,
-  handleCreateRepository,
-  handleUpdateRepository,
-  handleDeleteRepository,
-} = useRepositoryServices()
+const { snackbar, handleCreateRepository, handleUpdateRepository, handleDeleteRepository } =
+  useRepositoryServices();
 
-const repositoryStore = useRepositoryStore()
-const goalStore = useGoalStore()
-const showSettings = ref(false)
-const selectedRepo = ref<Repository | null>(null)
+const repositoryStore = useRepositoryStore();
+const goalStore = useGoalStore();
+const showSettings = ref(false);
+const selectedRepo = ref<Repository | null>(null);
 
 const repoDialog = ref({
   show: false,
-  repository: null as Repository | null
-})
+  repository: null as Repository | null,
+});
 
 const startCreateRepo = () => {
   repoDialog.value = {
     show: true,
-    repository: null
-  }
-}
-
+    repository: null,
+  };
+};
 
 const getGoalTitle = (goalUuid: string) => {
-  const goal = goalStore.goals.find(g => g.uuid === goalUuid)
-  return goal?.name || '未知目标'
-}
+  const goal = goalStore.goals.find((g) => g.uuid === goalUuid);
+  return goal?.name || '未知目标';
+};
 
 const openSettings = (repo: Repository) => {
-  selectedRepo.value = repo
-  showSettings.value = true
-}
+  selectedRepo.value = repo;
+  showSettings.value = true;
+};
 
 const openInExplorer = (repo: Repository) => {
   // 打开文件夹的逻辑
   if (!repo.path) {
-    console.warn('仓库路径未设置，无法打开文件夹')
-    return
+    console.warn('仓库路径未设置，无法打开文件夹');
+    return;
   }
-  fileSystem.openFileInExplorer(repo.path)
+  fileSystem
+    .openFileInExplorer(repo.path)
     .then(() => {
-      console.log(`已成功打开文件夹: ${repo.path}`)
+      console.log(`已成功打开文件夹: ${repo.path}`);
     })
     .catch((err: Error) => {
-      console.error(`打开文件夹失败: ${err.message}`)
-    })
-}
+      console.error(`打开文件夹失败: ${err.message}`);
+    });
+};
 </script>
 
 <style scoped>
 .repository-page {
   min-height: 100%;
-  background: linear-gradient(135deg, rgba(var(--v-theme-surface), 0.8), rgba(var(--v-theme-background), 0.95));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-surface), 0.8),
+    rgba(var(--v-theme-background), 0.95)
+  );
   padding: 1rem;
 }
 
@@ -327,7 +368,6 @@ const openInExplorer = (repo: Repository) => {
 }
 
 @keyframes gentle-bounce {
-
   0%,
   100% {
     transform: translateY(0);

@@ -1,4 +1,8 @@
-import { InitializationManager, InitializationPhase, InitializationTask } from '../../../shared/initialization/initializationManager';
+import {
+  InitializationManager,
+  InitializationPhase,
+  InitializationTask,
+} from '../../../shared/initialization/initializationManager';
 import { SessionLoggingEventHandler } from '../../../modules/SessionLogging/application/eventHandlers/sessionLoggingEventHandler';
 const SessionLoggingEventHandlerInitTask: InitializationTask = {
   name: 'session-logging-event-handler',

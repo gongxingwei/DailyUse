@@ -52,4 +52,5 @@ Prefix for experiments: `wip/`
 - When merging, use `Squash and merge` for small feature branches to keep history tidy
 
 ---
+
 Small, clear PRs and good commit messages speed up review and make changelogs easier to generate.

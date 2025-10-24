@@ -150,7 +150,9 @@ export const useTaskStore = defineStore('task', {
       };
     },
 
-    async addTaskInstances(instances: (TaskInstance | any)[]): Promise<ApiResponse<TaskInstance[]>> {
+    async addTaskInstances(
+      instances: (TaskInstance | any)[],
+    ): Promise<ApiResponse<TaskInstance[]>> {
       this.taskInstances.push(...(instances as TaskInstance[]));
       return {
         success: true,

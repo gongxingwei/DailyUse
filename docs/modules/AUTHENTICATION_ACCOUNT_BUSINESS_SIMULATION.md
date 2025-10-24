@@ -71,15 +71,15 @@ async function handleRegister() {
     errorMessage.value = 'Passwords do not match';
     return;
   }
-  
+
   if (!form.value.agreeToTerms) {
     errorMessage.value = 'You must agree to the terms';
     return;
   }
-  
+
   isSubmitting.value = true;
   errorMessage.value = '';
-  
+
   try {
     // 调用 Composable
     const result = await authComposable.register({
@@ -88,10 +88,10 @@ async function handleRegister() {
       password: form.value.password,
       displayName: form.value.displayName
     });
-    
+
     // 注册成功，自动登录
     console.log('Register successful:', result);
-    
+
     // 跳转到 Dashboard
     router.push('/dashboard');
   } catch (error: any) {
@@ -130,71 +130,71 @@ export function useAuthComposable() {
     const account = await accountService.createAccount({
       username: data.username,
       email: data.email,
-      displayName: data.displayName
+      displayName: data.displayName,
     });
-    
+
     // Step 2: 调用 Auth Service 设置密码 (通过事件总线触发)
     // 后端已经通过事件处理器自动创建了 AuthCredential
-    
+
     // Step 3: 自动登录
     const loginResult = await authService.login({
       identifier: data.email, // 使用邮箱或用户名登录
       password: data.password,
-      rememberMe: true
+      rememberMe: true,
     });
-    
+
     // Step 4: 更新本地状态
     currentAccount.value = account;
     currentSession.value = loginResult.session;
-    
+
     // Step 5: 存储 tokens
     localStorage.setItem('accessToken', loginResult.session.accessToken);
     if (loginResult.rememberMeToken) {
       localStorage.setItem('rememberMeToken', loginResult.rememberMeToken);
     }
-    
+
     return {
       account,
-      session: loginResult.session
+      session: loginResult.session,
     };
   }
-  
+
   async function login(data: {
     identifier: string; // email or username
     password: string;
     rememberMe?: boolean;
   }) {
     const result = await authService.login(data);
-    
+
     currentSession.value = result.session;
     localStorage.setItem('accessToken', result.session.accessToken);
-    
+
     if (result.rememberMeToken) {
       localStorage.setItem('rememberMeToken', result.rememberMeToken);
     }
-    
+
     // 获取账户信息
     currentAccount.value = await accountService.getCurrentAccount();
-    
+
     return result;
   }
-  
+
   async function logout() {
     await authService.logout();
-    
+
     currentSession.value = null;
     currentAccount.value = null;
     localStorage.removeItem('accessToken');
     localStorage.removeItem('rememberMeToken');
   }
-  
+
   return {
     currentAccount,
     currentSession,
     isAuthenticated,
     register,
     login,
-    logout
+    logout,
   };
 }
 ```
@@ -206,40 +206,31 @@ export function useAuthComposable() {
 ```typescript
 // File: apps/web/src/modules/account/services/accountService.ts
 import { apiClient } from '@/shared/api/apiClient';
-import type { 
-  AccountClient, 
+import type {
+  AccountClient,
   AccountCreateRequest,
-  AccountUpdateRequest 
+  AccountUpdateRequest,
 } from '@daily-use/contracts';
 
 export const accountService = {
   async createAccount(data: AccountCreateRequest): Promise<AccountClient> {
-    const response = await apiClient.post<AccountClient>(
-      '/api/accounts',
-      data
-    );
+    const response = await apiClient.post<AccountClient>('/api/accounts', data);
     return response.data;
   },
-  
+
   async getCurrentAccount(): Promise<AccountClient> {
     const response = await apiClient.get<AccountClient>('/api/accounts/me');
     return response.data;
   },
-  
-  async updateAccount(
-    accountUuid: string,
-    data: AccountUpdateRequest
-  ): Promise<AccountClient> {
-    const response = await apiClient.put<AccountClient>(
-      `/api/accounts/${accountUuid}`,
-      data
-    );
+
+  async updateAccount(accountUuid: string, data: AccountUpdateRequest): Promise<AccountClient> {
+    const response = await apiClient.put<AccountClient>(`/api/accounts/${accountUuid}`, data);
     return response.data;
   },
-  
+
   async deleteAccount(accountUuid: string): Promise<void> {
     await apiClient.delete(`/api/accounts/${accountUuid}`);
-  }
+  },
 };
 ```
 
@@ -254,45 +245,38 @@ import type {
   AuthSessionClient,
   AuthCredentialClient,
   LoginRequest,
-  LoginResponse
+  LoginResponse,
 } from '@daily-use/contracts';
 
 export const authService = {
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>(
-      '/api/auth/login',
-      data
-    );
+    const response = await apiClient.post<LoginResponse>('/api/auth/login', data);
     return response.data;
   },
-  
+
   async logout(): Promise<void> {
     await apiClient.post('/api/auth/logout');
   },
-  
+
   async refreshToken(refreshToken: string): Promise<{
     accessToken: string;
     accessTokenExpiresAt: number;
   }> {
     const response = await apiClient.post('/api/auth/refresh', {
-      refreshToken
+      refreshToken,
     });
     return response.data;
   },
-  
+
   async getCurrentSession(): Promise<AuthSessionClient> {
-    const response = await apiClient.get<AuthSessionClient>(
-      '/api/auth/session'
-    );
+    const response = await apiClient.get<AuthSessionClient>('/api/auth/session');
     return response.data;
   },
-  
+
   async getActiveSessions(): Promise<AuthSessionClient[]> {
-    const response = await apiClient.get<AuthSessionClient[]>(
-      '/api/auth/sessions'
-    );
+    const response = await apiClient.get<AuthSessionClient[]>('/api/auth/sessions');
     return response.data;
-  }
+  },
 };
 ```
 
@@ -336,15 +320,15 @@ import type { AccountCreateRequest } from '@daily-use/contracts';
 
 export class AccountController {
   private accountAppService: AccountApplicationService;
-  
+
   constructor() {
     this.accountAppService = new AccountApplicationService();
   }
-  
+
   createAccount = async (req: Request, res: Response) => {
     try {
       const data: AccountCreateRequest = req.body;
-      
+
       // 调用 Application Service
       const account = await this.accountAppService.createAccount({
         username: data.username,
@@ -352,82 +336,82 @@ export class AccountController {
         displayName: data.displayName,
         password: data.password, // 传递密码，用于事件
         timezone: data.timezone || 'UTC',
-        language: data.language || 'en'
+        language: data.language || 'en',
       });
-      
+
       // 返回 ClientDTO
       const accountClient = account.toClientDTO();
-      
+
       res.status(201).json(accountClient);
     } catch (error: any) {
       console.error('Create account error:', error);
-      
+
       if (error.code === 'DUPLICATE_USERNAME') {
         return res.status(409).json({
-          error: 'Username already exists'
+          error: 'Username already exists',
         });
       }
-      
+
       if (error.code === 'DUPLICATE_EMAIL') {
         return res.status(409).json({
-          error: 'Email already exists'
+          error: 'Email already exists',
         });
       }
-      
+
       res.status(500).json({
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     }
   };
-  
+
   getCurrentAccount = async (req: Request, res: Response) => {
     try {
       // req.user 由 authenticate 中间件注入
       const accountUuid = req.user.accountUuid;
-      
+
       const account = await this.accountAppService.getAccountByUuid(accountUuid);
-      
+
       if (!account) {
         return res.status(404).json({ error: 'Account not found' });
       }
-      
+
       res.json(account.toClientDTO());
     } catch (error) {
       console.error('Get current account error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-  
+
   updateAccount = async (req: Request, res: Response) => {
     try {
       const { uuid } = req.params;
       const data = req.body;
-      
+
       // 权限检查: 只能更新自己的账户
       if (req.user.accountUuid !== uuid) {
         return res.status(403).json({ error: 'Forbidden' });
       }
-      
+
       const account = await this.accountAppService.updateAccount(uuid, data);
-      
+
       res.json(account.toClientDTO());
     } catch (error) {
       console.error('Update account error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-  
+
   deleteAccount = async (req: Request, res: Response) => {
     try {
       const { uuid } = req.params;
-      
+
       // 权限检查
       if (req.user.accountUuid !== uuid) {
         return res.status(403).json({ error: 'Forbidden' });
       }
-      
+
       await this.accountAppService.deleteAccount(uuid);
-      
+
       res.status(204).send();
     } catch (error) {
       console.error('Delete account error:', error);
@@ -451,12 +435,12 @@ import { AccountCreatedEvent } from '../events/AccountCreatedEvent';
 export class AccountApplicationService {
   private accountRepo: AccountRepository;
   private eventBus: EventBus;
-  
+
   constructor() {
     this.accountRepo = new AccountRepository();
     this.eventBus = EventBus.getInstance();
   }
-  
+
   async createAccount(data: {
     username: string;
     email: string;
@@ -466,25 +450,23 @@ export class AccountApplicationService {
     language?: string;
   }): Promise<AccountEntity> {
     // Step 1: 检查用户名是否已存在
-    const existingByUsername = await this.accountRepo.findByUsername(
-      data.username
-    );
+    const existingByUsername = await this.accountRepo.findByUsername(data.username);
     if (existingByUsername) {
       throw {
         code: 'DUPLICATE_USERNAME',
-        message: 'Username already exists'
+        message: 'Username already exists',
       };
     }
-    
+
     // Step 2: 检查邮箱是否已存在
     const existingByEmail = await this.accountRepo.findByEmail(data.email);
     if (existingByEmail) {
       throw {
         code: 'DUPLICATE_EMAIL',
-        message: 'Email already exists'
+        message: 'Email already exists',
       };
     }
-    
+
     // Step 3: 创建 Account 实体
     const account = AccountEntity.forCreate({
       username: data.username,
@@ -492,75 +474,75 @@ export class AccountApplicationService {
       profile: {
         displayName: data.displayName,
         timezone: data.timezone || 'UTC',
-        language: data.language || 'en'
-      }
+        language: data.language || 'en',
+      },
     });
-    
+
     // Step 4: 保存到数据库
     await this.accountRepo.save(account);
-    
+
     // Step 5: 发布领域事件 ⭐️
     const event = new AccountCreatedEvent({
       accountUuid: account.uuid,
       username: account.username,
       email: account.email,
       password: data.password, // 传递明文密码给 Authentication 模块
-      createdAt: account.createdAt
+      createdAt: account.createdAt,
     });
-    
+
     await this.eventBus.publish(event);
-    
+
     console.log('[Account] AccountCreatedEvent published:', {
       accountUuid: account.uuid,
-      email: account.email
+      email: account.email,
     });
-    
+
     return account;
   }
-  
+
   async getAccountByUuid(uuid: string): Promise<AccountEntity | null> {
     return this.accountRepo.findByUuid(uuid);
   }
-  
+
   async updateAccount(
     uuid: string,
     data: Partial<{
       profile: Partial<AccountEntity['profile']>;
       timezone: string;
       language: string;
-    }>
+    }>,
   ): Promise<AccountEntity> {
     const account = await this.accountRepo.findByUuid(uuid);
     if (!account) {
       throw { code: 'NOT_FOUND', message: 'Account not found' };
     }
-    
+
     // 更新 profile
     if (data.profile) {
       account.updateProfile(data.profile);
     }
-    
+
     await this.accountRepo.save(account);
-    
+
     return account;
   }
-  
+
   async deleteAccount(uuid: string): Promise<void> {
     const account = await this.accountRepo.findByUuid(uuid);
     if (!account) {
       throw { code: 'NOT_FOUND', message: 'Account not found' };
     }
-    
+
     // 软删除
     account.softDelete();
     await this.accountRepo.save(account);
-    
+
     // 发布账户删除事件
     const event = new AccountDeletedEvent({
       accountUuid: account.uuid,
-      deletedAt: Date.now()
+      deletedAt: Date.now(),
     });
-    
+
     await this.eventBus.publish(event);
   }
 }
@@ -579,7 +561,7 @@ import type { AccountPersistence } from '@daily-use/contracts';
 export class AccountRepository {
   async save(account: AccountEntity): Promise<void> {
     const persistence = account.toPersistenceDTO();
-    
+
     await prisma.account.upsert({
       where: { uuid: persistence.uuid },
       create: {
@@ -598,7 +580,7 @@ export class AccountRepository {
         created_at: persistence.created_at,
         updated_at: persistence.updated_at,
         last_active_at: persistence.last_active_at,
-        deleted_at: persistence.deleted_at
+        deleted_at: persistence.deleted_at,
       },
       update: {
         username: persistence.username,
@@ -614,44 +596,44 @@ export class AccountRepository {
         stats: persistence.stats,
         updated_at: persistence.updated_at,
         last_active_at: persistence.last_active_at,
-        deleted_at: persistence.deleted_at
-      }
+        deleted_at: persistence.deleted_at,
+      },
     });
   }
-  
+
   async findByUuid(uuid: string): Promise<AccountEntity | null> {
     const record = await prisma.account.findUnique({
-      where: { uuid }
+      where: { uuid },
     });
-    
+
     if (!record) return null;
-    
+
     return AccountEntity.fromPersistenceDTO(record as AccountPersistence);
   }
-  
+
   async findByUsername(username: string): Promise<AccountEntity | null> {
     const record = await prisma.account.findUnique({
-      where: { username }
+      where: { username },
     });
-    
+
     if (!record) return null;
-    
+
     return AccountEntity.fromPersistenceDTO(record as AccountPersistence);
   }
-  
+
   async findByEmail(email: string): Promise<AccountEntity | null> {
     const record = await prisma.account.findUnique({
-      where: { email }
+      where: { email },
     });
-    
+
     if (!record) return null;
-    
+
     return AccountEntity.fromPersistenceDTO(record as AccountPersistence);
   }
-  
+
   async delete(uuid: string): Promise<void> {
     await prisma.account.delete({
-      where: { uuid }
+      where: { uuid },
     });
   }
 }
@@ -692,16 +674,16 @@ import { EventHandler } from './EventHandler';
 export class EventBus {
   private static instance: EventBus;
   private handlers: Map<string, EventHandler<any>[]> = new Map();
-  
+
   private constructor() {}
-  
+
   static getInstance(): EventBus {
     if (!EventBus.instance) {
       EventBus.instance = new EventBus();
     }
     return EventBus.instance;
   }
-  
+
   /**
    * 订阅事件
    */
@@ -709,42 +691,39 @@ export class EventBus {
     const handlers = this.handlers.get(eventName) || [];
     handlers.push(handler);
     this.handlers.set(eventName, handlers);
-    
+
     console.log(`[EventBus] Handler subscribed to event: ${eventName}`);
   }
-  
+
   /**
    * 发布事件 (异步执行所有处理器)
    */
   async publish<T>(event: DomainEvent<T>): Promise<void> {
     const handlers = this.handlers.get(event.eventName) || [];
-    
+
     console.log(`[EventBus] Publishing event: ${event.eventName}`, {
       eventId: event.eventId,
-      handlerCount: handlers.length
+      handlerCount: handlers.length,
     });
-    
+
     // 并发执行所有处理器
-    const promises = handlers.map(handler => 
-      handler.handle(event).catch(error => {
-        console.error(
-          `[EventBus] Handler failed for event ${event.eventName}:`,
-          error
-        );
+    const promises = handlers.map((handler) =>
+      handler.handle(event).catch((error) => {
+        console.error(`[EventBus] Handler failed for event ${event.eventName}:`, error);
         // 不阻塞其他处理器
-      })
+      }),
     );
-    
+
     await Promise.all(promises);
   }
-  
+
   /**
    * 取消订阅
    */
   unsubscribe<T>(eventName: string, handler: EventHandler<T>): void {
     const handlers = this.handlers.get(eventName) || [];
     const index = handlers.indexOf(handler);
-    
+
     if (index > -1) {
       handlers.splice(index, 1);
       this.handlers.set(eventName, handlers);
@@ -762,7 +741,7 @@ export abstract class DomainEvent<T> {
   readonly eventName: string;
   readonly payload: T;
   readonly occurredAt: number; // epoch ms
-  
+
   constructor(eventName: string, payload: T) {
     this.eventId = uuidv4();
     this.eventName = eventName;
@@ -791,28 +770,26 @@ import { EventHandler } from '@/shared/eventBus/EventHandler';
 import { AccountCreatedEvent } from '@/modules/account/events/AccountCreatedEvent';
 import { AuthCredentialApplicationService } from '../services/AuthCredentialApplicationService';
 
-export class AccountCreatedEventHandler 
-  implements EventHandler<AccountCreatedEvent['payload']> {
-  
+export class AccountCreatedEventHandler implements EventHandler<AccountCreatedEvent['payload']> {
   private authCredentialService: AuthCredentialApplicationService;
-  
+
   constructor() {
     this.authCredentialService = new AuthCredentialApplicationService();
   }
-  
+
   async handle(event: AccountCreatedEvent): Promise<void> {
     console.log('[Authentication] Handling AccountCreatedEvent:', {
       accountUuid: event.payload.accountUuid,
-      email: event.payload.email
+      email: event.payload.email,
     });
-    
+
     try {
       // 为新账户创建认证凭证
       await this.authCredentialService.createCredentialForAccount({
         accountUuid: event.payload.accountUuid,
-        password: event.payload.password
+        password: event.payload.password,
       });
-      
+
       console.log('[Authentication] AuthCredential created successfully');
     } catch (error) {
       console.error('[Authentication] Failed to create AuthCredential:', error);
@@ -835,12 +812,12 @@ import { AuthCredentialDomainService } from '../domain/AuthCredentialDomainServi
 export class AuthCredentialApplicationService {
   private credentialRepo: AuthCredentialRepository;
   private credentialDomainService: AuthCredentialDomainService;
-  
+
   constructor() {
     this.credentialRepo = new AuthCredentialRepository();
     this.credentialDomainService = new AuthCredentialDomainService();
   }
-  
+
   /**
    * 为新账户创建认证凭证 (由事件处理器调用)
    */
@@ -849,38 +826,34 @@ export class AuthCredentialApplicationService {
     password: string;
   }): Promise<AuthCredentialEntity> {
     // Step 1: Hash 密码
-    const hashedPassword = await this.credentialDomainService.hashPassword(
-      data.password
-    );
-    
+    const hashedPassword = await this.credentialDomainService.hashPassword(data.password);
+
     // Step 2: 创建 AuthCredential 实体
     const credential = AuthCredentialEntity.forCreate({
       accountUuid: data.accountUuid,
       type: 'PASSWORD',
-      hashedPassword
+      hashedPassword,
     });
-    
+
     // Step 3: 保存到数据库
     await this.credentialRepo.save(credential);
-    
+
     console.log('[AuthCredential] Credential created:', {
       uuid: credential.uuid,
-      accountUuid: credential.accountUuid
+      accountUuid: credential.accountUuid,
     });
-    
+
     return credential;
   }
-  
+
   async setPassword(accountUuid: string, plainPassword: string): Promise<void> {
     const credential = await this.credentialRepo.findByAccountUuid(accountUuid);
     if (!credential) {
       throw { code: 'NOT_FOUND', message: 'Credential not found' };
     }
-    
-    const hashedPassword = await this.credentialDomainService.hashPassword(
-      plainPassword
-    );
-    
+
+    const hashedPassword = await this.credentialDomainService.hashPassword(plainPassword);
+
     credential.setPassword(hashedPassword);
     await this.credentialRepo.save(credential);
   }
@@ -901,17 +874,14 @@ import { AccountCreatedEventHandler } from '@/modules/authentication/eventHandle
  */
 export function registerEventHandlers(): void {
   const eventBus = EventBus.getInstance();
-  
+
   // Account 模块事件
-  eventBus.subscribe(
-    'account.created',
-    new AccountCreatedEventHandler()
-  );
-  
+  eventBus.subscribe('account.created', new AccountCreatedEventHandler());
+
   // 可以添加更多事件处理器
   // eventBus.subscribe('account.updated', new AccountUpdatedEventHandler());
   // eventBus.subscribe('account.deleted', new AccountDeletedEventHandler());
-  
+
   console.log('[EventBus] All event handlers registered');
 }
 ```
@@ -1047,26 +1017,22 @@ import type { LoginRequest } from '@daily-use/contracts';
 export class AuthController {
   private authSessionService: AuthSessionApplicationService;
   private deviceFingerprintService: DeviceFingerprintService;
-  
+
   constructor() {
     this.authSessionService = new AuthSessionApplicationService();
     this.deviceFingerprintService = new DeviceFingerprintService();
   }
-  
+
   login = async (req: Request, res: Response) => {
     try {
       const data: LoginRequest = req.body;
       const userAgent = req.headers['user-agent'] || '';
       const ipAddress = req.ip || req.connection.remoteAddress || '';
-      
+
       // 生成设备信息
-      const deviceInfo = this.deviceFingerprintService.extractDeviceInfo(
-        userAgent
-      );
-      const location = await this.deviceFingerprintService.lookupLocation(
-        ipAddress
-      );
-      
+      const deviceInfo = this.deviceFingerprintService.extractDeviceInfo(userAgent);
+      const location = await this.deviceFingerprintService.lookupLocation(ipAddress);
+
       // 调用 Application Service
       const result = await this.authSessionService.login({
         identifier: data.identifier, // email or username
@@ -1077,89 +1043,83 @@ export class AuthController {
           ...deviceInfo,
           ipAddress,
           userAgent,
-          location
-        }
+          location,
+        },
       });
-      
+
       // 返回 session + rememberMeToken (可选)
       res.json({
         session: result.session.toClientDTO(),
-        rememberMeToken: result.rememberMeToken
+        rememberMeToken: result.rememberMeToken,
       });
     } catch (error: any) {
       console.error('Login error:', error);
-      
+
       if (error.code === 'INVALID_CREDENTIALS') {
         return res.status(401).json({
-          error: 'Invalid email/username or password'
+          error: 'Invalid email/username or password',
         });
       }
-      
+
       if (error.code === 'ACCOUNT_LOCKED') {
         return res.status(423).json({
           error: 'Account is locked',
-          lockedUntil: error.lockedUntil
+          lockedUntil: error.lockedUntil,
         });
       }
-      
+
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-  
+
   logout = async (req: Request, res: Response) => {
     try {
       const sessionUuid = req.user.sessionUuid;
-      
+
       await this.authSessionService.logout(sessionUuid);
-      
+
       res.status(204).send();
     } catch (error) {
       console.error('Logout error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-  
+
   refreshToken = async (req: Request, res: Response) => {
     try {
       const { refreshToken } = req.body;
-      
-      const result = await this.authSessionService.refreshAccessToken(
-        refreshToken
-      );
-      
+
+      const result = await this.authSessionService.refreshAccessToken(refreshToken);
+
       res.json(result);
     } catch (error: any) {
       if (error.code === 'INVALID_TOKEN') {
         return res.status(401).json({ error: 'Invalid refresh token' });
       }
-      
+
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-  
+
   getCurrentSession = async (req: Request, res: Response) => {
     try {
-      const session = await this.authSessionService.getSessionById(
-        req.user.sessionUuid
-      );
-      
+      const session = await this.authSessionService.getSessionById(req.user.sessionUuid);
+
       if (!session) {
         return res.status(404).json({ error: 'Session not found' });
       }
-      
+
       res.json(session.toClientDTO());
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
-  
+
   getActiveSessions = async (req: Request, res: Response) => {
     try {
-      const sessions = await this.authSessionService.getActiveSessions(
-        req.user.accountUuid
-      );
-      
-      res.json(sessions.map(s => s.toClientDTO()));
+      const sessions = await this.authSessionService.getActiveSessions(req.user.accountUuid);
+
+      res.json(sessions.map((s) => s.toClientDTO()));
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -1189,7 +1149,7 @@ export class AuthSessionApplicationService {
   private sessionDomainService: AuthSessionDomainService;
   private credentialDomainService: AuthCredentialDomainService;
   private eventBus: EventBus;
-  
+
   constructor() {
     this.sessionRepo = new AuthSessionRepository();
     this.credentialRepo = new AuthCredentialRepository();
@@ -1198,7 +1158,7 @@ export class AuthSessionApplicationService {
     this.credentialDomainService = new AuthCredentialDomainService();
     this.eventBus = EventBus.getInstance();
   }
-  
+
   async login(data: {
     identifier: string; // email or username
     password: string;
@@ -1226,98 +1186,96 @@ export class AuthSessionApplicationService {
     if (!account) {
       account = await this.accountRepo.findByUsername(data.identifier);
     }
-    
+
     if (!account) {
       throw { code: 'INVALID_CREDENTIALS' };
     }
-    
+
     // Step 2: 查找认证凭证
-    const credential = await this.credentialRepo.findByAccountUuid(
-      account.uuid
-    );
+    const credential = await this.credentialRepo.findByAccountUuid(account.uuid);
     if (!credential) {
       throw { code: 'INVALID_CREDENTIALS' };
     }
-    
+
     // Step 3: 检查账户是否锁定
     if (credential.isLocked()) {
       throw {
         code: 'ACCOUNT_LOCKED',
-        lockedUntil: credential.security.lockedUntil
+        lockedUntil: credential.security.lockedUntil,
       };
     }
-    
+
     // Step 4: 验证密码
     const passwordValid = await this.credentialDomainService.verifyPassword(
       data.password,
-      credential.passwordCredential!.hashedPassword
+      credential.passwordCredential!.hashedPassword,
     );
-    
+
     if (!passwordValid) {
       // 记录失败尝试
       credential.recordFailedLogin();
       await this.credentialRepo.save(credential);
-      
+
       throw { code: 'INVALID_CREDENTIALS' };
     }
-    
+
     // Step 5: 重置失败尝试
     credential.resetFailedAttempts();
     await this.credentialRepo.save(credential);
-    
+
     // Step 6: 创建设备信息值对象
     const device = DeviceInfoValue.create(data.deviceInfo);
-    
+
     // Step 7: 创建 Session
     const session = await this.sessionDomainService.createSession(
       account.uuid,
       device,
       data.deviceInfo.ipAddress,
-      data.deviceInfo.location
+      data.deviceInfo.location,
     );
-    
+
     await this.sessionRepo.save(session);
-    
+
     // Step 8: 创建 RememberMeToken (可选)
     let rememberMeToken: string | undefined;
     if (data.rememberMe) {
       const result = await this.credentialDomainService.generateRememberMeToken(
         credential,
         device,
-        data.rememberMeDays || 30
+        data.rememberMeDays || 30,
       );
-      
+
       rememberMeToken = result.plainToken;
-      
+
       // 保存 credential (包含新的 rememberMeToken)
       await this.credentialRepo.save(credential);
     }
-    
+
     // Step 9: 发布登录事件 ⭐️
     const event = new UserLoggedInEvent({
       accountUuid: account.uuid,
       sessionUuid: session.uuid,
       deviceType: device.deviceType,
       ipAddress: data.deviceInfo.ipAddress,
-      loggedInAt: Date.now()
+      loggedInAt: Date.now(),
     });
-    
+
     await this.eventBus.publish(event);
-    
+
     return {
       session,
-      rememberMeToken
+      rememberMeToken,
     };
   }
-  
+
   async logout(sessionUuid: string): Promise<void> {
     const session = await this.sessionRepo.findByUuid(sessionUuid);
     if (!session) return;
-    
+
     session.revoke();
     await this.sessionRepo.save(session);
   }
-  
+
   async refreshAccessToken(refreshToken: string): Promise<{
     accessToken: string;
     accessTokenExpiresAt: number;
@@ -1326,30 +1284,30 @@ export class AuthSessionApplicationService {
     if (!session) {
       throw { code: 'INVALID_TOKEN' };
     }
-    
+
     if (!session.isValid() || session.isRefreshTokenExpired()) {
       throw { code: 'INVALID_TOKEN' };
     }
-    
+
     // 生成新的 access token
     const newAccessToken = await this.sessionDomainService.generateAccessToken(
       session.accountUuid,
-      15 // 15 minutes
+      15, // 15 minutes
     );
-    
+
     session.refreshAccessToken(newAccessToken, 15);
     await this.sessionRepo.save(session);
-    
+
     return {
       accessToken: newAccessToken,
-      accessTokenExpiresAt: session.accessTokenExpiresAt
+      accessTokenExpiresAt: session.accessTokenExpiresAt,
     };
   }
-  
+
   async getSessionById(uuid: string): Promise<AuthSessionEntity | null> {
     return this.sessionRepo.findByUuid(uuid);
   }
-  
+
   async getActiveSessions(accountUuid: string): Promise<AuthSessionEntity[]> {
     return this.sessionRepo.findActiveSessionsByAccount(accountUuid);
   }
@@ -1389,24 +1347,22 @@ import { EventHandler } from '@/shared/eventBus/EventHandler';
 import { UserLoggedInEvent } from '@/modules/authentication/events/UserLoggedInEvent';
 import { AccountApplicationService } from '../services/AccountApplicationService';
 
-export class UserLoggedInEventHandler 
-  implements EventHandler<UserLoggedInEvent['payload']> {
-  
+export class UserLoggedInEventHandler implements EventHandler<UserLoggedInEvent['payload']> {
   private accountService: AccountApplicationService;
-  
+
   constructor() {
     this.accountService = new AccountApplicationService();
   }
-  
+
   async handle(event: UserLoggedInEvent): Promise<void> {
     console.log('[Account] Handling UserLoggedInEvent:', {
-      accountUuid: event.payload.accountUuid
+      accountUuid: event.payload.accountUuid,
     });
-    
+
     try {
       // 更新账户的登录统计
       await this.accountService.recordLogin(event.payload.accountUuid);
-      
+
       console.log('[Account] Login stats updated successfully');
     } catch (error) {
       console.error('[Account] Failed to update login stats:', error);
@@ -1420,14 +1376,14 @@ export class UserLoggedInEventHandler
 // File: apps/api/src/modules/account/services/AccountApplicationService.ts (新增方法)
 export class AccountApplicationService {
   // ... 前面的代码 ...
-  
+
   async recordLogin(accountUuid: string): Promise<void> {
     const account = await this.accountRepo.findByUuid(accountUuid);
     if (!account) return;
-    
+
     // 调用 Account 实体的 recordLogin 方法
     account.recordLogin();
-    
+
     await this.accountRepo.save(account);
   }
 }
@@ -1536,52 +1492,48 @@ export class PasswordChangedEvent extends DomainEvent<PasswordChangedEventPayloa
 // File: apps/api/src/modules/authentication/services/AuthCredentialApplicationService.ts (新增方法)
 export class AuthCredentialApplicationService {
   // ... 前面的代码 ...
-  
+
   async changePassword(data: {
     accountUuid: string;
     oldPassword: string;
     newPassword: string;
   }): Promise<void> {
     // Step 1: 查找凭证
-    const credential = await this.credentialRepo.findByAccountUuid(
-      data.accountUuid
-    );
+    const credential = await this.credentialRepo.findByAccountUuid(data.accountUuid);
     if (!credential) {
       throw { code: 'NOT_FOUND' };
     }
-    
+
     // Step 2: 验证旧密码
     const oldPasswordValid = await this.credentialDomainService.verifyPassword(
       data.oldPassword,
-      credential.passwordCredential!.hashedPassword
+      credential.passwordCredential!.hashedPassword,
     );
-    
+
     if (!oldPasswordValid) {
       throw { code: 'INVALID_OLD_PASSWORD' };
     }
-    
+
     // Step 3: Hash 新密码
-    const newHashedPassword = await this.credentialDomainService.hashPassword(
-      data.newPassword
-    );
-    
+    const newHashedPassword = await this.credentialDomainService.hashPassword(data.newPassword);
+
     // Step 4: 更新密码
     credential.setPassword(newHashedPassword);
-    
+
     // Step 5: 吊销所有 Remember-Me Tokens
     credential.revokeAllRememberMeTokens();
-    
+
     // Step 6: 保存
     await this.credentialRepo.save(credential);
-    
+
     // Step 7: 发布密码修改事件 ⭐️
     const event = new PasswordChangedEvent({
       accountUuid: data.accountUuid,
       credentialUuid: credential.uuid,
       changedAt: Date.now(),
-      revokeAllSessions: false // 不吊销当前会话，只吊销其他会话
+      revokeAllSessions: false, // 不吊销当前会话，只吊销其他会话
     });
-    
+
     await this.eventBus.publish(event);
   }
 }
@@ -1597,31 +1549,27 @@ import { EventHandler } from '@/shared/eventBus/EventHandler';
 import { PasswordChangedEvent } from '@/modules/authentication/events/PasswordChangedEvent';
 import { AccountRepository } from '../repositories/AccountRepository';
 
-export class PasswordChangedEventHandler 
-  implements EventHandler<PasswordChangedEvent['payload']> {
-  
+export class PasswordChangedEventHandler implements EventHandler<PasswordChangedEvent['payload']> {
   private accountRepo: AccountRepository;
-  
+
   constructor() {
     this.accountRepo = new AccountRepository();
   }
-  
+
   async handle(event: PasswordChangedEvent): Promise<void> {
     console.log('[Account] Handling PasswordChangedEvent:', {
-      accountUuid: event.payload.accountUuid
+      accountUuid: event.payload.accountUuid,
     });
-    
+
     try {
-      const account = await this.accountRepo.findByUuid(
-        event.payload.accountUuid
-      );
+      const account = await this.accountRepo.findByUuid(event.payload.accountUuid);
       if (!account) return;
-      
+
       // 更新安全信息中的 lastPasswordChange
       account.changePassword(); // 调用 Account 实体方法
-      
+
       await this.accountRepo.save(account);
-      
+
       console.log('[Account] Password change timestamp updated');
     } catch (error) {
       console.error('[Account] Failed to update password change:', error);
@@ -1673,36 +1621,32 @@ import { AccountDeletedEvent } from '@/modules/account/events/AccountDeletedEven
 import { AuthCredentialRepository } from '../repositories/AuthCredentialRepository';
 import { AuthSessionRepository } from '../repositories/AuthSessionRepository';
 
-export class AccountDeletedEventHandler 
-  implements EventHandler<AccountDeletedEvent['payload']> {
-  
+export class AccountDeletedEventHandler implements EventHandler<AccountDeletedEvent['payload']> {
   private credentialRepo: AuthCredentialRepository;
   private sessionRepo: AuthSessionRepository;
-  
+
   constructor() {
     this.credentialRepo = new AuthCredentialRepository();
     this.sessionRepo = new AuthSessionRepository();
   }
-  
+
   async handle(event: AccountDeletedEvent): Promise<void> {
     console.log('[Authentication] Handling AccountDeletedEvent:', {
-      accountUuid: event.payload.accountUuid
+      accountUuid: event.payload.accountUuid,
     });
-    
+
     try {
       // Step 1: 吊销所有凭证
-      const credential = await this.credentialRepo.findByAccountUuid(
-        event.payload.accountUuid
-      );
-      
+      const credential = await this.credentialRepo.findByAccountUuid(event.payload.accountUuid);
+
       if (credential) {
         credential.revoke();
         await this.credentialRepo.save(credential);
       }
-      
+
       // Step 2: 吊销所有会话
       await this.sessionRepo.revokeAllSessions(event.payload.accountUuid);
-      
+
       console.log('[Authentication] All credentials and sessions revoked');
     } catch (error) {
       console.error('[Authentication] Failed to revoke credentials:', error);
@@ -1727,31 +1671,19 @@ import { AccountDeletedEventHandler } from '@/modules/authentication/eventHandle
 
 export function registerEventHandlers(): void {
   const eventBus = EventBus.getInstance();
-  
+
   // Account 创建 -> 创建认证凭证
-  eventBus.subscribe(
-    'account.created',
-    new AccountCreatedEventHandler()
-  );
-  
+  eventBus.subscribe('account.created', new AccountCreatedEventHandler());
+
   // 用户登录 -> 更新登录统计
-  eventBus.subscribe(
-    'user.loggedIn',
-    new UserLoggedInEventHandler()
-  );
-  
+  eventBus.subscribe('user.loggedIn', new UserLoggedInEventHandler());
+
   // 密码修改 -> 更新安全信息
-  eventBus.subscribe(
-    'password.changed',
-    new PasswordChangedEventHandler()
-  );
-  
+  eventBus.subscribe('password.changed', new PasswordChangedEventHandler());
+
   // 账户删除 -> 吊销凭证和会话
-  eventBus.subscribe(
-    'account.deleted',
-    new AccountDeletedEventHandler()
-  );
-  
+  eventBus.subscribe('account.deleted', new AccountDeletedEventHandler());
+
   console.log('[EventBus] All event handlers registered');
 }
 ```
@@ -1769,12 +1701,12 @@ export function registerEventHandlers(): void {
 
 ### 核心事件流
 
-| 事件 | 发布者 | 订阅者 | 作用 |
-|------|--------|--------|------|
-| `account.created` | Account | Authentication | 创建认证凭证 |
-| `user.loggedIn` | Authentication | Account | 更新登录统计 |
-| `password.changed` | Authentication | Account | 更新安全信息 |
-| `account.deleted` | Account | Authentication | 吊销凭证和会话 |
+| 事件               | 发布者         | 订阅者         | 作用           |
+| ------------------ | -------------- | -------------- | -------------- |
+| `account.created`  | Account        | Authentication | 创建认证凭证   |
+| `user.loggedIn`    | Authentication | Account        | 更新登录统计   |
+| `password.changed` | Authentication | Account        | 更新安全信息   |
+| `account.deleted`  | Account        | Authentication | 吊销凭证和会话 |
 
 ### 技术栈
 

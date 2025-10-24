@@ -33,18 +33,18 @@
 
 ```typescript
 enum KeyResultValueType {
-  INCREMENTAL = 'INCREMENTAL',  // 累积值（如完成 10 次）
-  ABSOLUTE = 'ABSOLUTE',        // 绝对值（如达到 90 分）
-  PERCENTAGE = 'PERCENTAGE',    // 百分比（如提升 20%）
-  BINARY = 'BINARY'             // 二元（完成/未完成）
+  INCREMENTAL = 'INCREMENTAL', // 累积值（如完成 10 次）
+  ABSOLUTE = 'ABSOLUTE', // 绝对值（如达到 90 分）
+  PERCENTAGE = 'PERCENTAGE', // 百分比（如提升 20%）
+  BINARY = 'BINARY', // 二元（完成/未完成）
 }
 
 enum AggregationMethod {
-  SUM = 'SUM',                  // 求和（适合累计型）
-  AVERAGE = 'AVERAGE',          // 平均值
-  MAX = 'MAX',                  // 最大值
-  MIN = 'MIN',                  // 最小值
-  LAST = 'LAST'                 // 最后一次（适合绝对值型）
+  SUM = 'SUM', // 求和（适合累计型）
+  AVERAGE = 'AVERAGE', // 平均值
+  MAX = 'MAX', // 最大值
+  MIN = 'MIN', // 最小值
+  LAST = 'LAST', // 最后一次（适合绝对值型）
 }
 ```
 
@@ -62,16 +62,16 @@ POST /api/goals/:goalUuid/key-results
 
 ```typescript
 interface AddKeyResultRequest {
-  title: string;                          // 必填，1-256 字符
-  description?: string | null;            // 可选描述
-  valueType: KeyResultValueType;          // 值类型
-  targetValue: number;                    // 目标值
-  currentValue?: number;                  // 当前值（默认 0）
-  unit?: string | null;                   // 单位（如 "次"、"小时"、"%"）
-  aggregationMethod?: AggregationMethod;  // 聚合方式（默认 SUM）
-  weight?: number;                        // 权重（默认 1）
-  endDate?: number | null;                // 截止日期（timestamp）
-  order?: number;                         // 排序（默认最后）
+  title: string; // 必填，1-256 字符
+  description?: string | null; // 可选描述
+  valueType: KeyResultValueType; // 值类型
+  targetValue: number; // 目标值
+  currentValue?: number; // 当前值（默认 0）
+  unit?: string | null; // 单位（如 "次"、"小时"、"%"）
+  aggregationMethod?: AggregationMethod; // 聚合方式（默认 SUM）
+  weight?: number; // 权重（默认 1）
+  endDate?: number | null; // 截止日期（timestamp）
+  order?: number; // 排序（默认最后）
 }
 ```
 
@@ -80,7 +80,7 @@ interface AddKeyResultRequest {
 ```typescript
 interface AddKeyResultResponse {
   keyResult: KeyResultClientDTO;
-  goal: GoalClientDTO;                    // 返回更新后的目标（包含新进度）
+  goal: GoalClientDTO; // 返回更新后的目标（包含新进度）
   message: string;
 }
 ```
@@ -205,8 +205,8 @@ async addKeyResult(
   <el-dialog v-model="visible" title="添加关键结果" width="600px">
     <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
       <el-form-item label="标题" prop="title">
-        <el-input 
-          v-model="form.title" 
+        <el-input
+          v-model="form.title"
           placeholder="例如：完成 10 次演讲"
           maxlength="256"
           show-word-limit
@@ -214,9 +214,9 @@ async addKeyResult(
       </el-form-item>
 
       <el-form-item label="描述" prop="description">
-        <el-input 
-          v-model="form.description" 
-          type="textarea" 
+        <el-input
+          v-model="form.description"
+          type="textarea"
           :rows="3"
           placeholder="详细描述这个关键结果"
         />
@@ -232,58 +232,30 @@ async addKeyResult(
       </el-form-item>
 
       <el-form-item label="目标值" prop="targetValue">
-        <el-input-number 
-          v-model="form.targetValue" 
-          :min="0.01" 
-          :precision="2"
-        />
+        <el-input-number v-model="form.targetValue" :min="0.01" :precision="2" />
       </el-form-item>
 
       <el-form-item label="当前值" prop="currentValue">
-        <el-input-number 
-          v-model="form.currentValue" 
-          :min="0" 
-          :precision="2"
-        />
+        <el-input-number v-model="form.currentValue" :min="0" :precision="2" />
       </el-form-item>
 
       <el-form-item label="单位" prop="unit">
-        <el-input 
-          v-model="form.unit" 
-          placeholder="如：次、小时、%"
-          maxlength="20"
-        />
+        <el-input v-model="form.unit" placeholder="如：次、小时、%" maxlength="20" />
       </el-form-item>
 
       <el-form-item label="权重" prop="weight">
-        <el-slider 
-          v-model="form.weight" 
-          :min="0.1" 
-          :max="2" 
-          :step="0.1"
-          show-input
-        />
+        <el-slider v-model="form.weight" :min="0.1" :max="2" :step="0.1" show-input />
         <span class="tip">权重影响该关键结果在总进度中的占比</span>
       </el-form-item>
 
       <el-form-item label="截止日期" prop="endDate">
-        <el-date-picker 
-          v-model="form.endDate" 
-          type="date"
-          placeholder="选择截止日期"
-        />
+        <el-date-picker v-model="form.endDate" type="date" placeholder="选择截止日期" />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="visible = false">取消</el-button>
-      <el-button 
-        type="primary" 
-        @click="handleSubmit"
-        :loading="isSubmitting"
-      >
-        添加
-      </el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="isSubmitting"> 添加 </el-button>
     </template>
   </el-dialog>
 </template>
@@ -321,14 +293,12 @@ const form = reactive<AddKeyResultRequest>({
 const rules = {
   title: [
     { required: true, message: '请输入标题', trigger: 'blur' },
-    { min: 1, max: 256, message: '标题长度应在 1-256 字符之间', trigger: 'blur' }
+    { min: 1, max: 256, message: '标题长度应在 1-256 字符之间', trigger: 'blur' },
   ],
-  valueType: [
-    { required: true, message: '请选择值类型', trigger: 'change' }
-  ],
+  valueType: [{ required: true, message: '请选择值类型', trigger: 'change' }],
   targetValue: [
     { required: true, message: '请输入目标值', trigger: 'blur' },
-    { type: 'number', min: 0.01, message: '目标值必须大于 0', trigger: 'blur' }
+    { type: 'number', min: 0.01, message: '目标值必须大于 0', trigger: 'blur' },
   ],
 };
 
@@ -339,14 +309,14 @@ function open() {
 async function handleSubmit() {
   try {
     await formRef.value.validate();
-    
+
     isSubmitting.value = true;
     await goalStore.addKeyResult(props.goalUuid, form);
-    
+
     ElMessage.success('关键结果添加成功');
     visible.value = false;
     emit('success');
-    
+
     // 重置表单
     formRef.value.resetFields();
   } catch (error: any) {
@@ -378,8 +348,8 @@ PATCH /api/goals/:goalUuid/key-results/:keyResultUuid/progress
 
 ```typescript
 interface UpdateKeyResultProgressRequest {
-  currentValue: number;                   // 新的当前值
-  incrementBy?: number;                   // 或者增量（二选一）
+  currentValue: number; // 新的当前值
+  incrementBy?: number; // 或者增量（二选一）
 }
 ```
 
@@ -388,7 +358,7 @@ interface UpdateKeyResultProgressRequest {
 ```typescript
 // Goal.ts
 public updateKeyResultProgress(
-  keyResultUuid: string, 
+  keyResultUuid: string,
   currentValue: number
 ): void {
   // 1. 查找关键结果
@@ -434,7 +404,7 @@ public updateKeyResultProgress(
 
 // 增量更新
 public incrementKeyResultProgress(
-  keyResultUuid: string, 
+  keyResultUuid: string,
   incrementBy: number
 ): void {
   const keyResult = this._keyResults.find(kr => kr.uuid === keyResultUuid);
@@ -481,29 +451,24 @@ export class KeyResult extends Entity {
     <div class="header">
       <span class="title">{{ keyResult.title }}</span>
       <span class="progress-text">
-        {{ keyResult.currentValue }} / {{ keyResult.targetValue }} 
+        {{ keyResult.currentValue }} / {{ keyResult.targetValue }}
         {{ keyResult.unit || '' }}
         ({{ progressPercent }}%)
       </span>
     </div>
 
-    <el-progress 
-      :percentage="progressPercent" 
+    <el-progress
+      :percentage="progressPercent"
       :color="progressColor"
       :status="keyResult.isCompleted ? 'success' : undefined"
     />
 
     <div class="actions">
-      <el-button 
-        size="small" 
-        @click="showUpdateDialog = true"
-      >
-        更新进度
-      </el-button>
+      <el-button size="small" @click="showUpdateDialog = true"> 更新进度 </el-button>
 
-      <el-button 
-        v-if="keyResult.valueType === 'INCREMENTAL'" 
-        size="small" 
+      <el-button
+        v-if="keyResult.valueType === 'INCREMENTAL'"
+        size="small"
         type="primary"
         @click="handleQuickIncrement"
       >
@@ -515,8 +480,8 @@ export class KeyResult extends Entity {
     <el-dialog v-model="showUpdateDialog" title="更新进度" width="400px">
       <el-form :model="progressForm">
         <el-form-item label="当前值">
-          <el-input-number 
-            v-model="progressForm.currentValue" 
+          <el-input-number
+            v-model="progressForm.currentValue"
             :min="0"
             :max="keyResult.targetValue * 2"
             :precision="2"
@@ -524,20 +489,13 @@ export class KeyResult extends Entity {
         </el-form-item>
 
         <el-form-item label="或增加">
-          <el-input-number 
-            v-model="progressForm.incrementBy" 
-            :precision="2"
-          />
+          <el-input-number v-model="progressForm.incrementBy" :precision="2" />
         </el-form-item>
       </el-form>
 
       <template #footer>
         <el-button @click="showUpdateDialog = false">取消</el-button>
-        <el-button 
-          type="primary" 
-          @click="handleUpdateProgress"
-          :loading="isUpdating"
-        >
+        <el-button type="primary" @click="handleUpdateProgress" :loading="isUpdating">
           更新
         </el-button>
       </template>
@@ -580,11 +538,7 @@ const progressColor = computed(() => {
 async function handleQuickIncrement() {
   isUpdating.value = true;
   try {
-    await goalStore.incrementKeyResultProgress(
-      props.goalUuid,
-      props.keyResult.uuid,
-      1
-    );
+    await goalStore.incrementKeyResultProgress(props.goalUuid, props.keyResult.uuid, 1);
     ElMessage.success('进度 +1');
   } catch (error: any) {
     ElMessage.error(error.message || '更新失败');
@@ -601,14 +555,14 @@ async function handleUpdateProgress() {
       await goalStore.incrementKeyResultProgress(
         props.goalUuid,
         props.keyResult.uuid,
-        progressForm.incrementBy
+        progressForm.incrementBy,
       );
     } else {
       // 绝对值更新
       await goalStore.updateKeyResultProgress(
         props.goalUuid,
         props.keyResult.uuid,
-        progressForm.currentValue
+        progressForm.currentValue,
       );
     }
 
@@ -845,7 +799,7 @@ public getOverallProgress(): number {
   for (const kr of this._keyResults) {
     const progress = kr.getProgress(); // 0-100
     const weight = kr.weight || 1;
-    
+
     weightedProgress += progress * weight;
     totalWeight += weight;
   }
@@ -865,18 +819,18 @@ public getOverallProgress(): number {
 <template>
   <div class="goal-progress-card">
     <h3>{{ goal.title }}</h3>
-    
+
     <div class="overall-progress">
       <span>总体进度</span>
-      <el-progress 
-        :percentage="goal.overallProgress" 
+      <el-progress
+        :percentage="goal.overallProgress"
         :color="progressColor"
         :status="goal.isCompleted ? 'success' : undefined"
       />
     </div>
 
     <div class="key-results-list">
-      <KeyResultProgressBar 
+      <KeyResultProgressBar
         v-for="kr in goal.keyResults"
         :key="kr.uuid"
         :goal-uuid="goal.uuid"
@@ -884,12 +838,7 @@ public getOverallProgress(): number {
       />
     </div>
 
-    <el-button 
-      type="primary" 
-      @click="handleAddKeyResult"
-    >
-      添加关键结果
-    </el-button>
+    <el-button type="primary" @click="handleAddKeyResult"> 添加关键结果 </el-button>
   </div>
 </template>
 ```
@@ -904,26 +853,22 @@ public getOverallProgress(): number {
 // apps/api/src/modules/statistics/initialization/eventHandlers.ts
 
 eventBus.on('KeyResultAddedEvent', async (event) => {
-  await statisticsService.incrementKeyResultCount(
-    event.payload.goalUuid
-  );
+  await statisticsService.incrementKeyResultCount(event.payload.goalUuid);
 });
 
 eventBus.on('KeyResultProgressUpdatedEvent', async (event) => {
   const { goalUuid, isCompleted } = event.payload;
-  
+
   if (isCompleted) {
     await statisticsService.incrementCompletedKeyResultCount(goalUuid);
   }
-  
+
   // 更新目标进度统计
   await statisticsService.updateGoalProgress(goalUuid);
 });
 
 eventBus.on('KeyResultRemovedEvent', async (event) => {
-  await statisticsService.decrementKeyResultCount(
-    event.payload.goalUuid
-  );
+  await statisticsService.decrementKeyResultCount(event.payload.goalUuid);
 });
 ```
 
@@ -947,7 +892,7 @@ eventBus.on('KeyResultRemovedEvent', async (event) => {
 describe('Goal.addKeyResult()', () => {
   it('should add key result to goal', () => {
     const goal = Goal.create({ ...params });
-    
+
     const kr = goal.addKeyResult({
       title: 'Complete 10 presentations',
       valueType: 'INCREMENTAL',
@@ -962,7 +907,7 @@ describe('Goal.addKeyResult()', () => {
 
   it('should throw error when title is empty', () => {
     const goal = Goal.create({ ...params });
-    
+
     expect(() => {
       goal.addKeyResult({
         title: '',
@@ -1008,7 +953,7 @@ describe('Goal.updateKeyResultProgress()', () => {
 describe('Goal.getOverallProgress()', () => {
   it('should calculate weighted average progress', () => {
     const goal = Goal.create({ ...params });
-    
+
     goal.addKeyResult({
       title: 'KR1',
       valueType: 'PERCENTAGE',
@@ -1016,7 +961,7 @@ describe('Goal.getOverallProgress()', () => {
       currentValue: 50,
       weight: 1,
     });
-    
+
     goal.addKeyResult({
       title: 'KR2',
       valueType: 'PERCENTAGE',
@@ -1044,11 +989,11 @@ async batchUpdateKeyResultsProgress(
   updates: Array<{ keyResultUuid: string; currentValue: number }>
 ): Promise<GoalClientDTO> {
   const goal = await this.goalRepository.findByUuid(goalUuid);
-  
+
   for (const update of updates) {
     goal.updateKeyResultProgress(update.keyResultUuid, update.currentValue);
   }
-  
+
   await this.goalRepository.save(goal);
   return goal.toClientDTO(true);
 }
@@ -1067,7 +1012,7 @@ async updateKeyResultProgress(
   const goal = this.goals.find(g => g.uuid === goalUuid);
   const kr = goal.keyResults.find(k => k.uuid === keyResultUuid);
   const oldValue = kr.currentValue;
-  
+
   kr.currentValue = currentValue;
   goal.overallProgress = this.calculateOverallProgress(goal);
 

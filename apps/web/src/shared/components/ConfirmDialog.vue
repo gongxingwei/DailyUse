@@ -19,11 +19,11 @@
 
 <script setup lang="ts">
 interface Props {
-  modelValue: boolean
-  title: string
-  message: string
-  cancelText?: string
-  confirmText?: string
+  modelValue: boolean;
+  title: string;
+  message: string;
+  cancelText?: string;
+  confirmText?: string;
 }
 
 const {
@@ -31,24 +31,24 @@ const {
   title,
   message,
   cancelText = '取消',
-  confirmText = '确认'
-} = defineProps<Props>()
+  confirmText = '确认',
+} = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'confirm'): void
-  (e: 'cancel'): void
-}>()
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'confirm'): void;
+  (e: 'cancel'): void;
+}>();
 
 const cancel = () => {
-  emit('update:modelValue', false)
-  emit('cancel')
-}
+  emit('update:modelValue', false);
+  emit('cancel');
+};
 
 const confirm = () => {
-  emit('update:modelValue', false)
-  emit('confirm')
-}
+  emit('update:modelValue', false);
+  emit('confirm');
+};
 </script>
 
 <style scoped>

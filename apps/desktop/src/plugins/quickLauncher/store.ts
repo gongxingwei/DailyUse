@@ -16,23 +16,25 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
     state: {
       selectedCategoryId: '',
       selectedItemId: '',
-    }
-  }),
-  
-  getters: {
-    getItemById: (state) => (uuid: string): ShortcutItem | undefined => {
-      for (const category of state.categories) {
-        const item = category.items.find(item => item.uuid === uuid);
-        if (item) return item;
-      }
-      return undefined;
     },
+  }),
+
+  getters: {
+    getItemById:
+      (state) =>
+      (uuid: string): ShortcutItem | undefined => {
+        for (const category of state.categories) {
+          const item = category.items.find((item) => item.uuid === uuid);
+          if (item) return item;
+        }
+        return undefined;
+      },
 
     recentlyUsedItems: (state): ShortcutItem[] => {
       return state.recentItems
-        .map(id => {
+        .map((id) => {
           for (const category of state.categories) {
-            const item = category.items.find(item => item.uuid === id);
+            const item = category.items.find((item) => item.uuid === id);
             if (item) return item;
           }
           return null;
@@ -42,18 +44,20 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
 
     favoriteItems: (state): ShortcutItem[] => {
       return state.favorites
-        .map(id => {
+        .map((id) => {
           for (const category of state.categories) {
-            const item = category.items.find(item => item.uuid === id);
+            const item = category.items.find((item) => item.uuid === id);
             if (item) return item;
           }
           return null;
         })
         .filter((item): item is ShortcutItem => item !== null);
     },
-    getCategoryById: (state) => (uuid: string): ShortcutCategory | undefined => {
-      return state.categories.find(c => c.uuid === uuid);
-    },
+    getCategoryById:
+      (state) =>
+      (uuid: string): ShortcutCategory | undefined => {
+        return state.categories.find((c) => c.uuid === uuid);
+      },
     sortedCategories: (state) => {
       return [...state.categories].sort((a, b) => {
         // 首先按照 order 排序
@@ -65,33 +69,33 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
       });
     },
   },
-  
+
   actions: {
     addCategory(category: Omit<ShortcutCategory, 'items'>) {
       this.categories.push({
         ...category,
-        items: []
+        items: [],
       });
     },
 
     updateCategory(categoryId: string, updates: Partial<ShortcutCategory>) {
-      const index = this.categories.findIndex(c => c.uuid === categoryId);
+      const index = this.categories.findIndex((c) => c.uuid === categoryId);
       if (index !== -1) {
         this.categories[index] = { ...this.categories[index], ...updates };
       }
     },
 
     removeCategory(categoryId: string) {
-      this.categories = this.categories.filter(c => c.uuid !== categoryId);
+      this.categories = this.categories.filter((c) => c.uuid !== categoryId);
     },
 
     addShortcut(categoryId: string, shortcut: ShortcutItem) {
-      const category = this.categories.find(c => c.uuid === categoryId);
+      const category = this.categories.find((c) => c.uuid === categoryId);
       if (category) {
         if (!category.items) {
           category.items = [];
         }
-        if (!category.items.find(item => item.uuid === shortcut.uuid)) {
+        if (!category.items.find((item) => item.uuid === shortcut.uuid)) {
           shortcut.lastUsed = new Date();
           shortcut.useCount = 0;
           category.items.push(shortcut);
@@ -100,9 +104,9 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
     },
 
     updateShortcut(categoryId: string, shortcutId: string, updates: Partial<ShortcutItem>) {
-      const category = this.categories.find(c => c.uuid === categoryId);
+      const category = this.categories.find((c) => c.uuid === categoryId);
       if (category) {
-        const index = category.items.findIndex(item => item.uuid === shortcutId);
+        const index = category.items.findIndex((item) => item.uuid === shortcutId);
         if (index !== -1) {
           category.items[index] = { ...category.items[index], ...updates };
         }
@@ -110,27 +114,27 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
     },
 
     removeShortcut(categoryId: string, shortcutId: string) {
-      const category = this.categories.find(c => c.uuid === categoryId);
+      const category = this.categories.find((c) => c.uuid === categoryId);
       if (category) {
-        category.items = category.items.filter(item => item.uuid !== shortcutId);
+        category.items = category.items.filter((item) => item.uuid !== shortcutId);
         // 同时从最近使用和收藏中移除
-        this.recentItems = this.recentItems.filter(id => id !== shortcutId);
-        this.favorites = this.favorites.filter(id => id !== shortcutId);
+        this.recentItems = this.recentItems.filter((id) => id !== shortcutId);
+        this.favorites = this.favorites.filter((id) => id !== shortcutId);
       }
     },
 
     recordItemUsage(itemId: string) {
-      const item = this.categories.flatMap(c => c.items).find(item => item.uuid === itemId);
+      const item = this.categories.flatMap((c) => c.items).find((item) => item.uuid === itemId);
       if (item) {
         // 更新使用次数和最后使用时间
         item.useCount = (item.useCount || 0) + 1;
         item.lastUsed = new Date();
 
         // 更新最近使用列表
-        this.recentItems = [
-          itemId,
-          ...this.recentItems.filter(id => id !== itemId)
-        ].slice(0, this.settings.maxRecentItems);
+        this.recentItems = [itemId, ...this.recentItems.filter((id) => id !== itemId)].slice(
+          0,
+          this.settings.maxRecentItems,
+        );
       }
     },
 
@@ -148,11 +152,11 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
     },
 
     moveShortcut(itemId: string, fromCategoryId: string, toCategoryId: string) {
-      const fromCategory = this.categories.find(c => c.uuid === fromCategoryId);
-      const toCategory = this.categories.find(c => c.uuid === toCategoryId);
-      
+      const fromCategory = this.categories.find((c) => c.uuid === fromCategoryId);
+      const toCategory = this.categories.find((c) => c.uuid === toCategoryId);
+
       if (fromCategory && toCategory) {
-        const itemIndex = fromCategory.items.findIndex(item => item.uuid === itemId);
+        const itemIndex = fromCategory.items.findIndex((item) => item.uuid === itemId);
         if (itemIndex !== -1) {
           const [item] = fromCategory.items.splice(itemIndex, 1);
           toCategory.items.push({ ...item, category: toCategoryId });
@@ -165,13 +169,15 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
     },
     setSelectedItem(itemId: string) {
       this.state.selectedItemId = itemId;
-    }
+    },
   },
 
-  persist: [{
-    key: 'quickLauncher',
-    storage: localStorage,
-  }],
+  persist: [
+    {
+      key: 'quickLauncher',
+      storage: localStorage,
+    },
+  ],
 });
 
 declare module 'pinia' {
@@ -180,7 +186,11 @@ declare module 'pinia' {
     updateCategory: (categoryId: string, updates: Partial<ShortcutCategory>) => void;
     removeCategory: (categoryId: string) => void;
     addShortcut: (categoryId: string, shortcut: ShortcutItem) => void;
-    updateShortcut: (categoryId: string, shortcutId: string, updates: Partial<ShortcutItem>) => void;
+    updateShortcut: (
+      categoryId: string,
+      shortcutId: string,
+      updates: Partial<ShortcutItem>,
+    ) => void;
     removeShortcut: (categoryId: string, shortcutId: string) => void;
     recordItemUsage: (itemId: string) => void;
     toggleFavorite: (itemId: string) => void;

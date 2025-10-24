@@ -55,13 +55,13 @@ import type { RepositoryContracts } from '@dailyuse/contracts';
 /**
  * 仓库聚合根
  * Repository Aggregate Root
- * 
+ *
  * @description
  * 负责管理仓库的完整生命周期
  */
 export class Repository extends AggregateRoot {
   // ============ 私有属性 ============
-  
+
   private _accountUuid: string;
   private _name: string;
   private _path: string;
@@ -77,7 +77,7 @@ export class Repository extends AggregateRoot {
   private _stats: RepositoryContracts.RepositoryStats | null;
 
   // ============ 只读访问器 ============
-  
+
   get accountUuid(): string {
     return this._accountUuid;
   }
@@ -131,7 +131,7 @@ export class Repository extends AggregateRoot {
   }
 
   // ============ 构造函数（私有）============
-  
+
   /**
    * 私有构造函数
    * ⚠️ 不要直接 new，使用静态工厂方法
@@ -153,7 +153,7 @@ export class Repository extends AggregateRoot {
     stats: RepositoryContracts.RepositoryStats | null,
     createdAt: Date,
     updatedAt: Date,
-    version: number
+    version: number,
   ) {
     super(uuid, createdAt, updatedAt, version);
     this._accountUuid = accountUuid;
@@ -183,7 +183,7 @@ export class Repository extends AggregateRoot {
     path: string,
     type: RepositoryContracts.RepositoryType,
     description?: string,
-    config?: Partial<RepositoryContracts.RepositoryConfig>
+    config?: Partial<RepositoryContracts.RepositoryConfig>,
   ): Repository {
     // 验证
     if (!name || name.trim().length === 0) {
@@ -219,7 +219,7 @@ export class Repository extends AggregateRoot {
       null, // stats
       now, // createdAt
       now, // updatedAt
-      1    // version
+      1, // version
     );
 
     // 发布领域事件
@@ -257,7 +257,7 @@ export class Repository extends AggregateRoot {
       dto.stats,
       dto.createdAt,
       dto.updatedAt,
-      dto.version
+      dto.version,
     );
   }
 
@@ -392,10 +392,7 @@ export class Repository extends AggregateRoot {
   /**
    * 更新同步状态
    */
-  updateSyncStatus(
-    syncStatus: RepositoryContracts.SyncStatus,
-    lastSyncedAt?: Date
-  ): void {
+  updateSyncStatus(syncStatus: RepositoryContracts.SyncStatus, lastSyncedAt?: Date): void {
     this._syncStatus = syncStatus;
     if (lastSyncedAt) {
       this._lastSyncedAt = lastSyncedAt;
@@ -461,10 +458,12 @@ export class Repository extends AggregateRoot {
 ### ⚠️ 易错点
 
 ❌ **错误 1**：使用 public 构造函数
+
 ```typescript
 // 错误示例
 export class Repository extends AggregateRoot {
-  constructor(uuid: string, name: string) {  // ❌ public
+  constructor(uuid: string, name: string) {
+    // ❌ public
     super(uuid);
     this._name = name;
   }
@@ -472,14 +471,15 @@ export class Repository extends AggregateRoot {
 ```
 
 ✅ **正确**：使用 private 构造函数 + 静态工厂
+
 ```typescript
 export class Repository extends AggregateRoot {
   private constructor(...) { ... }  // ✅ private
-  
+
   static create(...) {              // ✅ 静态工厂
     return new Repository(...);
   }
-  
+
   static fromDTO(...) {             // ✅ 从 DTO 重建
     return new Repository(...);
   }
@@ -487,25 +487,29 @@ export class Repository extends AggregateRoot {
 ```
 
 ❌ **错误 2**：直接暴露可变属性
+
 ```typescript
 // 错误示例
 export class Repository {
-  public tags: string[];  // ❌ 可以外部修改
+  public tags: string[]; // ❌ 可以外部修改
 }
 ```
 
 ✅ **正确**：使用 private 属性 + getter
+
 ```typescript
 export class Repository {
   private _tags: string[];
-  
-  get tags(): readonly string[] {  // ✅ 只读
+
+  get tags(): readonly string[] {
+    // ✅ 只读
     return Object.freeze([...this._tags]);
   }
 }
 ```
 
 ❌ **错误 3**：忘记发布领域事件
+
 ```typescript
 // 错误示例
 activate(): void {
@@ -515,11 +519,12 @@ activate(): void {
 ```
 
 ✅ **正确**：状态变更发布事件
+
 ```typescript
 activate(): void {
   this._status = RepositoryStatus.ACTIVE;
   this.markAsModified();
-  
+
   // ✅ 发布领域事件
   this.addDomainEvent({
     eventType: 'RepositoryStatusChanged',
@@ -554,8 +559,8 @@ import type { RepositoryContracts } from '@dailyuse/contracts';
  */
 export class Resource extends Entity {
   // ============ 私有属性 ============
-  
-  private _repositoryUuid: string;  // ⚠️ 聚合根ID，必填
+
+  private _repositoryUuid: string; // ⚠️ 聚合根ID，必填
   private _accountUuid: string;
   private _name: string;
   private _path: string;
@@ -570,7 +575,7 @@ export class Resource extends Entity {
   private _metadata: Record<string, any> | null;
 
   // ============ 只读访问器 ============
-  
+
   get repositoryUuid(): string {
     return this._repositoryUuid;
   }
@@ -624,7 +629,7 @@ export class Resource extends Entity {
   }
 
   // ============ 构造函数（私有）============
-  
+
   private constructor(
     uuid: string,
     repositoryUuid: string,
@@ -642,7 +647,7 @@ export class Resource extends Entity {
     metadata: Record<string, any> | null,
     createdAt: Date,
     updatedAt: Date,
-    version: number
+    version: number,
   ) {
     super(uuid, createdAt, updatedAt, version);
     this._repositoryUuid = repositoryUuid;
@@ -679,11 +684,11 @@ export class Resource extends Entity {
       description?: string;
       tags?: string[];
       metadata?: Record<string, any>;
-    }
+    },
   ): Resource {
     // 验证
     if (!repositoryUuid) {
-      throw new Error('Repository UUID is required');  // ⚠️ 必须验证
+      throw new Error('Repository UUID is required'); // ⚠️ 必须验证
     }
     if (!name.trim()) {
       throw new Error('Resource name is required');
@@ -709,7 +714,7 @@ export class Resource extends Entity {
       options?.metadata || null,
       now,
       now,
-      1
+      1,
     );
   }
 
@@ -734,7 +739,7 @@ export class Resource extends Entity {
       dto.metadata,
       dto.createdAt,
       dto.updatedAt,
-      dto.version
+      dto.version,
     );
   }
 
@@ -866,7 +871,7 @@ export interface IRepositoryRepository {
    */
   findByStatus(
     accountUuid: string,
-    status: RepositoryContracts.RepositoryStatus
+    status: RepositoryContracts.RepositoryStatus,
   ): Promise<Repository[]>;
 
   /**
@@ -884,17 +889,19 @@ export interface IRepositoryRepository {
 ### ⚠️ 易错点
 
 ❌ **错误**：仓储方法返回 DTO
+
 ```typescript
 // 错误示例
 interface IRepositoryRepository {
-  findByUuid(uuid: string): Promise<RepositoryServerDTO>;  // ❌
+  findByUuid(uuid: string): Promise<RepositoryServerDTO>; // ❌
 }
 ```
 
 ✅ **正确**：仓储方法返回领域实体
+
 ```typescript
 interface IRepositoryRepository {
-  findByUuid(uuid: string): Promise<Repository | null>;  // ✅
+  findByUuid(uuid: string): Promise<Repository | null>; // ✅
 }
 ```
 

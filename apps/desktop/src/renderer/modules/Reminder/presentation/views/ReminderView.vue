@@ -1,44 +1,68 @@
 <template>
   <div class="reminder-view">
-    
     <!-- Grid Container -->
     <div class="grid-container">
       <ReminderGrid :items="allGridItems" :grid-size="gridSize" />
     </div>
 
-
-    <ConfirmDialog :model-value="deleteDialog.show" :title="'确认删除'"
+    <ConfirmDialog
+      :model-value="deleteDialog.show"
+      :title="'确认删除'"
       :message="`确定要删除 “${deleteDialog.itemName}”${deleteDialog.type === 'group' ? '？这将同时删除该组中的所有模板。' : '？'}`"
-      cancel-text="取消" confirm-text="删除" @update:modelValue="deleteDialog.show = $event" @confirm="confirmDelete"
-      @cancel="deleteDialog.show = false" />
+      cancel-text="取消"
+      confirm-text="删除"
+      @update:modelValue="deleteDialog.show = $event"
+      @confirm="confirmDelete"
+      @cancel="deleteDialog.show = false"
+    />
 
     <!-- ReminderTemplateCard -->
-    <reminder-template-card :show="reminderTemplateCard.show" :template="reminderTemplateCard.template"
-      @back="handleBackFromReminderTemplateCard" />
+    <reminder-template-card
+      :show="reminderTemplateCard.show"
+      :template="reminderTemplateCard.template"
+      @back="handleBackFromReminderTemplateCard"
+    />
 
     <!-- ReminderTemplateGroupCard -->
-    <reminder-template-group-card :show="reminderTemplateGroupCard.show"
-      :template-group-uuid="(reminderTemplateGroupCard.templateGroupUuid as string)" @back="handleBackFromReminderTemplateGroupCard" />
+    <reminder-template-group-card
+      :show="reminderTemplateGroupCard.show"
+      :template-group-uuid="reminderTemplateGroupCard.templateGroupUuid as string"
+      @back="handleBackFromReminderTemplateGroupCard"
+    />
 
     <!-- TemplateDialog -->
-    <template-dialog :model-value="templateDialog.show"
-      :template="(templateDialog.template as ReminderTemplate)"
-      @update:modelValue="templateDialog.show = $event" @create-template="handleCreateReminderTemplate"
-      @update-template="handleUpdateReminderTemplate" />
+    <template-dialog
+      :model-value="templateDialog.show"
+      :template="templateDialog.template as ReminderTemplate"
+      @update:modelValue="templateDialog.show = $event"
+      @create-template="handleCreateReminderTemplate"
+      @update-template="handleUpdateReminderTemplate"
+    />
 
     <!-- GroupDialog -->
-    <group-dialog :model-value="groupDialog.show"
-      :group="(groupDialog.group as ReminderTemplateGroup)"
-      @update:modelValue="groupDialog.show = $event" @create-group="handleCreateReminderGroup"
-      @update-group="handleUpdateReminderGroup" />
+    <group-dialog
+      :model-value="groupDialog.show"
+      :group="groupDialog.group as ReminderTemplateGroup"
+      @update:modelValue="groupDialog.show = $event"
+      @create-group="handleCreateReminderGroup"
+      @update-group="handleUpdateReminderGroup"
+    />
 
     <!-- TemplateMoveDialog -->
-    <template-move-dialog :model-value="moveTemplateDialog.show"
-      :template="(moveTemplateDialog.template as ReminderTemplate)"
-      @update:modelValue="moveTemplateDialog.show = $event" @move="handleMoveTemplateToGroup" />
+    <template-move-dialog
+      :model-value="moveTemplateDialog.show"
+      :template="moveTemplateDialog.template as ReminderTemplate"
+      @update:modelValue="moveTemplateDialog.show = $event"
+      @move="handleMoveTemplateToGroup"
+    />
 
     <!-- snackbar -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right">
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+      location="top right"
+    >
       {{ snackbar.message }}
     </v-snackbar>
   </div>
@@ -46,7 +70,6 @@
 
 <script setup lang="ts">
 import { ref, provide } from 'vue';
-
 
 import { useReminderGrid } from '../composables/useReminderGrid';
 import { GridItem } from '../../../../../common/modules/reminder/types/reminder';
@@ -74,7 +97,6 @@ provide('onGroupOpen', (group: any) => {
 provide('onClickTemplate', (item: ReminderTemplate) => {
   console.log('祖先组件收到点击:', item);
   handleClickTemplate(item);
-
 });
 
 // 新建提醒模板
@@ -107,9 +129,12 @@ provide('onStartMoveTemplate', (template: ReminderTemplate) => {
   startMoveTemplate(template);
 });
 
-provide('onSetGroupEnableMode', (groupUuid: string, enableMode: ReminderTemplateGroup['enableMode']) => {
-  handleSetGroupEnableMode(groupUuid, enableMode);
-});
+provide(
+  'onSetGroupEnableMode',
+  (groupUuid: string, enableMode: ReminderTemplateGroup['enableMode']) => {
+    handleSetGroupEnableMode(groupUuid, enableMode);
+  },
+);
 
 provide('onSetGroupEnabled', (groupUuid: string, enabled: boolean) => {
   handleSetGroupEnabled(groupUuid, enabled);
@@ -120,12 +145,7 @@ provide('onSetTemplateEnabled', (templateUuid: string, enabled: boolean) => {
 });
 
 // Use the reminder grid composable
-const {
-  allGridItems,
-  selectItem,
-  closeDetailPanel,
-
-} = useReminderGrid();
+const { allGridItems, selectItem, closeDetailPanel } = useReminderGrid();
 
 const {
   snackbar,
@@ -141,24 +161,23 @@ const {
   handleSetTemplateEnabled,
 } = useReminderServices();
 
-
 const deleteDialog = ref({
   show: false,
   item: null as GridItem | null,
   itemName: '',
-  type: ''
+  type: '',
 });
 
 // templateCard
 const reminderTemplateCard = ref({
   show: false,
-  template: null as any
+  template: null as any,
 });
 
 const handleClickTemplate = (item: ReminderTemplate) => {
   reminderTemplateCard.value = {
     show: true,
-    template: item
+    template: item,
   };
   selectItem(item);
 };
@@ -171,19 +190,19 @@ const handleBackFromReminderTemplateCard = () => {
 // reminderTemplateGroupCard
 const reminderTemplateGroupCard = ref({
   show: false,
-  templateGroupUuid: null as string | null
+  templateGroupUuid: null as string | null,
 });
 
 // reminderTemplateDialog
 const templateDialog = ref({
   show: false,
-  template: null as ReminderTemplate | null
+  template: null as ReminderTemplate | null,
 });
 
 const handleOpenGroup = (group: any) => {
   reminderTemplateGroupCard.value = {
     show: true,
-    templateGroupUuid: group.uuid
+    templateGroupUuid: group.uuid,
   };
   selectItem(group);
 };
@@ -201,7 +220,7 @@ const startCreateTemplate = () => {
 // groupDialog
 const groupDialog = ref({
   show: false,
-  group: null as ReminderTemplateGroup | null
+  group: null as ReminderTemplateGroup | null,
 });
 
 const startCreateGroup = () => {
@@ -212,7 +231,7 @@ const startCreateGroup = () => {
 // mmove template dialog
 const moveTemplateDialog = ref({
   show: false,
-  template: null as ReminderTemplate | null
+  template: null as ReminderTemplate | null,
 });
 
 const startMoveTemplate = (template: ReminderTemplate) => {
@@ -244,10 +263,6 @@ const handleDeleteGridItem = (item: GridItem) => {
   }
 };
 
-
-
-
-
 const confirmDelete = () => {
   if (deleteDialog.value.item) {
     if (deleteDialog.value.type === 'template') {
@@ -262,8 +277,6 @@ const confirmDelete = () => {
   deleteDialog.value.show = false;
   closeDetailPanel();
 };
-
-
 </script>
 
 <style scoped>
@@ -271,9 +284,11 @@ const confirmDelete = () => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg,
-      rgba(var(--v-theme-primary), 0.02) 0%,
-      rgba(var(--v-theme-surface), 0.95) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.02) 0%,
+    rgba(var(--v-theme-surface), 0.95) 100%
+  );
 }
 
 .reminder-header {

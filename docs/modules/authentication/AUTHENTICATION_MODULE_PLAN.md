@@ -11,10 +11,12 @@
 Authentication 模块处理用户认证和会话管理。
 
 ### 主要聚合根
+
 1. **Session** - 用户会话
 2. **AuthToken** - 认证令牌（JWT/Refresh Token）
 
 ### 主要实体
+
 1. **LoginHistory** - 登录历史记录
 
 ---
@@ -23,19 +25,19 @@ Authentication 模块处理用户认证和会话管理。
 
 ```typescript
 // Server DTO
-SessionServerDTO
-AuthTokenServerDTO
-LoginHistoryServerDTO
+SessionServerDTO;
+AuthTokenServerDTO;
+LoginHistoryServerDTO;
 
 // Client DTO（注意 Client 后缀）
-SessionClientDTO
-AuthTokenClientDTO
-LoginHistoryClientDTO
+SessionClientDTO;
+AuthTokenClientDTO;
+LoginHistoryClientDTO;
 
 // Persistence DTO
-SessionPersistenceDTO
-AuthTokenPersistenceDTO
-LoginHistoryPersistenceDTO
+SessionPersistenceDTO;
+AuthTokenPersistenceDTO;
+LoginHistoryPersistenceDTO;
 ```
 
 ---
@@ -67,11 +69,11 @@ export class Session extends AggregateRoot {
   public refresh(): void;
   public revoke(reason: string): void;
   public softDelete(): void;
-  
+
   // 验证
   public isValid(): boolean;
   public isExpired(): boolean;
-  
+
   // 更新
   public updateLastActivity(): void;
   public updateDeviceInfo(info: DeviceInfo): void;
@@ -88,11 +90,11 @@ export interface ISessionRepository {
   findByUuid(uuid: string): Promise<Session | null>;
   findByAccountUuid(accountUuid: string): Promise<Session[]>;
   findByToken(token: string): Promise<Session | null>;
-  
+
   // 会话管理
   revokeAll(accountUuid: string): Promise<void>;
   deleteExpired(): Promise<void>;
-  
+
   // 查询
   findActiveSessions(accountUuid: string): Promise<Session[]>;
 }

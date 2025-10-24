@@ -44,6 +44,7 @@ src/
 ### 2. 核心配置文件
 
 #### vitest.config.ts
+
 ```typescript
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
@@ -57,35 +58,37 @@ export default defineConfig({
     },
   },
   test: {
-    globals: true,                    // 全局 describe、it、expect
-    environment: 'node',              // Node.js 环境
+    globals: true, // 全局 describe、it、expect
+    environment: 'node', // Node.js 环境
     setupFiles: ['./src/test/setup.ts'], // 测试设置文件
     include: ['src/**/*.{test,spec}.{js,ts}'],
     exclude: ['node_modules', 'dist', 'prisma/**/*'],
     coverage: {
-      provider: 'v8',                // 高性能覆盖率提供者
+      provider: 'v8', // 高性能覆盖率提供者
       reporter: ['text', 'json', 'html'],
-      thresholds: {                  // 覆盖率要求
+      thresholds: {
+        // 覆盖率要求
         global: {
           branches: 75,
           functions: 90,
           lines: 80,
-          statements: 80
-        }
-      }
+          statements: 80,
+        },
+      },
     },
-    testTimeout: 30000,              // API 测试超时设置
-    pool: 'forks',                   // 进程隔离
+    testTimeout: 30000, // API 测试超时设置
+    pool: 'forks', // 进程隔离
     poolOptions: {
       forks: {
-        singleFork: true             // 避免数据库冲突
-      }
-    }
-  }
+        singleFork: true, // 避免数据库冲突
+      },
+    },
+  },
 });
 ```
 
 #### package.json 测试脚本
+
 ```json
 {
   "scripts": {
@@ -102,6 +105,7 @@ export default defineConfig({
 ### 3. 测试环境配置
 
 #### src/test/setup.ts
+
 ```typescript
 import { beforeEach, afterEach, vi } from 'vitest';
 import { mockPrismaClient, resetMockData } from './mocks/prismaMock.js';
@@ -116,17 +120,17 @@ vi.mock('../config/prisma.js', () => ({
 beforeEach(async () => {
   // 重置所有模拟函数
   vi.clearAllMocks();
-  
+
   // 设置测试环境变量
   process.env.NODE_ENV = 'test';
   process.env.JWT_SECRET = 'test-jwt-secret-key';
-  
+
   // 重置 Mock 数据
   resetMockData();
-  
+
   // 设置统一时区
   process.env.TZ = 'UTC';
-  
+
   // 模拟时间（可选）
   vi.useFakeTimers({
     shouldAdvanceTime: true,
@@ -143,6 +147,7 @@ afterEach(async () => {
 ### 4. 数据库 Mock 方案
 
 #### src/test/mocks/prismaMock.ts
+
 ```typescript
 import { vi } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
@@ -158,34 +163,36 @@ const mockDataStore = {
 // 创建 Mock 模型操作
 function createMockModel(tableName: keyof typeof mockDataStore) {
   const store = mockDataStore[tableName];
-  
+
   return {
     findMany: vi.fn(async (args?: any) => {
       const allRecords = Array.from(store.values());
-      
+
       // 处理 where 条件
       if (args?.where) {
-        return allRecords.filter(record => {
+        return allRecords.filter((record) => {
           return Object.entries(args.where).every(([key, value]) => {
             return record[key] === value;
           });
         });
       }
-      
+
       return allRecords;
     }),
-    
+
     findUnique: vi.fn(async (args: any) => {
       const { where } = args;
       const allRecords = Array.from(store.values());
-      
-      return allRecords.find(record => {
-        return Object.entries(where).every(([key, value]) => {
-          return record[key] === value;
-        });
-      }) || null;
+
+      return (
+        allRecords.find((record) => {
+          return Object.entries(where).every(([key, value]) => {
+            return record[key] === value;
+          });
+        }) || null
+      );
     }),
-    
+
     create: vi.fn(async (args: any) => {
       const { data } = args;
       const uuid = data.uuid || generateTestUuid();
@@ -193,25 +200,25 @@ function createMockModel(tableName: keyof typeof mockDataStore) {
       store.set(uuid, record);
       return record;
     }),
-    
+
     update: vi.fn(async (args: any) => {
       const { where, data } = args;
       const record = await mockModel.findUnique({ where });
       if (!record) throw new Error('Record not found');
-      
+
       const updated = { ...record, ...data, updatedAt: new Date() };
       store.set(record.uuid, updated);
       return updated;
     }),
-    
+
     delete: vi.fn(async (args: any) => {
       const { where } = args;
       const record = await mockModel.findUnique({ where });
       if (!record) throw new Error('Record not found');
-      
+
       store.delete(record.uuid);
       return record;
-    })
+    }),
   };
 }
 
@@ -220,7 +227,7 @@ export const mockPrismaClient = {
   user: createMockModel('user'),
   post: createMockModel('post'),
   comment: createMockModel('comment'),
-  
+
   // 事务支持
   $transaction: vi.fn(async (operations: any[]) => {
     const results = [];
@@ -229,20 +236,20 @@ export const mockPrismaClient = {
     }
     return results;
   }),
-  
+
   $connect: vi.fn(),
   $disconnect: vi.fn(),
 } as unknown as PrismaClient;
 
 // 工具函数
 export function resetMockData() {
-  Object.values(mockDataStore).forEach(store => store.clear());
+  Object.values(mockDataStore).forEach((store) => store.clear());
 }
 
 export function setMockData<T>(tableName: keyof typeof mockDataStore, data: T[]) {
   const store = mockDataStore[tableName];
   store.clear();
-  
+
   data.forEach((item: any) => {
     const uuid = item.uuid || generateTestUuid();
     store.set(uuid, { ...item, uuid });
@@ -257,6 +264,7 @@ function generateTestUuid(prefix = 'test'): string {
 ### 5. 测试助手工具库
 
 #### ApiTestHelpers 核心功能
+
 ```typescript
 export const ApiTestHelpers = {
   // JWT Token 生成
@@ -265,7 +273,7 @@ export const ApiTestHelpers = {
     const secret = process.env.JWT_SECRET || 'test-secret';
     return jwt.default.sign(payload, secret, { expiresIn: '1h' });
   },
-  
+
   // CRUD 测试助手
   crud: {
     testCreate: async (request, endpoint, authToken, data, expectedStatus = 201) => {
@@ -276,7 +284,7 @@ export const ApiTestHelpers = {
         .expect(expectedStatus);
       return response.body;
     },
-    
+
     testRead: async (request, endpoint, authToken, expectedStatus = 200) => {
       const response = await request
         .get(endpoint)
@@ -284,7 +292,7 @@ export const ApiTestHelpers = {
         .expect(expectedStatus);
       return response.body;
     },
-    
+
     testUpdate: async (request, endpoint, authToken, data, expectedStatus = 200) => {
       const response = await request
         .put(endpoint)
@@ -293,16 +301,16 @@ export const ApiTestHelpers = {
         .expect(expectedStatus);
       return response.body;
     },
-    
+
     testDelete: async (request, endpoint, authToken, expectedStatus = 200) => {
       const response = await request
         .delete(endpoint)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(expectedStatus);
       return response.body;
-    }
+    },
   },
-  
+
   // 业务逻辑测试助手
   business: {
     testValidation: async (request, endpoint, authToken, invalidData) => {
@@ -313,45 +321,39 @@ export const ApiTestHelpers = {
         .expect(400);
       return response.body;
     },
-    
+
     testUnauthorized: async (request, endpoint, method = 'get') => {
       const response = await request[method](endpoint).expect(401);
       return response.body;
     },
-    
+
     testNotFound: async (request, endpoint, authToken, method = 'get') => {
       const response = await request[method](endpoint)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
       return response.body;
-    }
+    },
   },
-  
+
   // 性能测试助手
   performance: {
     testResponseTime: async (request, endpoint, authToken, maxTime = 1000) => {
       const start = Date.now();
-      await request
-        .get(endpoint)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
+      await request.get(endpoint).set('Authorization', `Bearer ${authToken}`).expect(200);
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(maxTime);
       return duration;
     },
-    
+
     testConcurrency: async (request, endpoint, authToken, concurrency = 10) => {
-      const promises = Array(concurrency).fill(null).map(() =>
-        request
-          .get(endpoint)
-          .set('Authorization', `Bearer ${authToken}`)
-          .expect(200)
-      );
-      
+      const promises = Array(concurrency)
+        .fill(null)
+        .map(() => request.get(endpoint).set('Authorization', `Bearer ${authToken}`).expect(200));
+
       const results = await Promise.all(promises);
       return results;
-    }
-  }
+    },
+  },
 };
 ```
 
@@ -360,6 +362,7 @@ export const ApiTestHelpers = {
 ### 1. 完整测试示例
 
 #### 用户模块集成测试
+
 ```typescript
 import request from 'supertest';
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -373,7 +376,7 @@ describe('[API集成测试] 用户模块', () => {
 
   beforeEach(async () => {
     resetMockData();
-    
+
     // 设置测试用户数据
     setMockData('user', [
       {
@@ -383,9 +386,9 @@ describe('[API集成测试] 用户模块', () => {
         status: 'active',
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      },
     ]);
-    
+
     authToken = await ApiTestHelpers.createTestToken({ userId: testUserId });
   });
 
@@ -394,14 +397,14 @@ describe('[API集成测试] 用户模块', () => {
       const userData = {
         email: 'newuser@example.com',
         name: '新用户',
-        password: 'password123'
+        password: 'password123',
       };
 
       const result = await ApiTestHelpers.crud.testCreate(
         request(app),
         '/api/v1/users',
         authToken,
-        userData
+        userData,
       );
 
       expect(result.success).toBe(true);
@@ -413,14 +416,14 @@ describe('[API集成测试] 用户模块', () => {
       const invalidData = {
         email: 'invalid-email',
         name: '测试用户',
-        password: 'password123'
+        password: 'password123',
       };
 
       const result = await ApiTestHelpers.business.testValidation(
         request(app),
         '/api/v1/users',
         authToken,
-        invalidData
+        invalidData,
       );
 
       expect(result.success).toBe(false);
@@ -431,14 +434,14 @@ describe('[API集成测试] 用户模块', () => {
       const duplicateData = {
         email: 'test@example.com', // 已存在的邮箱
         name: '重复用户',
-        password: 'password123'
+        password: 'password123',
       };
 
       const result = await ApiTestHelpers.business.testBusinessRule(
         request(app),
         '/api/v1/users',
         authToken,
-        duplicateData
+        duplicateData,
       );
 
       expect(result.success).toBe(false);
@@ -452,16 +455,12 @@ describe('[API集成测试] 用户模块', () => {
       setMockData('user', [
         { id: 'user-1', email: 'user1@test.com', name: '用户1', status: 'active' },
         { id: 'user-2', email: 'user2@test.com', name: '用户2', status: 'active' },
-        { id: 'user-3', email: 'user3@test.com', name: '用户3', status: 'inactive' }
+        { id: 'user-3', email: 'user3@test.com', name: '用户3', status: 'inactive' },
       ]);
     });
 
     it('应该返回用户列表', async () => {
-      const result = await ApiTestHelpers.crud.testRead(
-        request(app),
-        '/api/v1/users',
-        authToken
-      );
+      const result = await ApiTestHelpers.crud.testRead(request(app), '/api/v1/users', authToken);
 
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
@@ -472,7 +471,7 @@ describe('[API集成测试] 用户模块', () => {
       const result = await ApiTestHelpers.crud.testRead(
         request(app),
         '/api/v1/users?page=1&limit=2',
-        authToken
+        authToken,
       );
 
       expect(result.success).toBe(true);
@@ -486,11 +485,11 @@ describe('[API集成测试] 用户模块', () => {
       const result = await ApiTestHelpers.crud.testRead(
         request(app),
         '/api/v1/users?status=active',
-        authToken
+        authToken,
       );
 
       expect(result.success).toBe(true);
-      result.data.forEach(user => {
+      result.data.forEach((user) => {
         expect(user.status).toBe('active');
       });
     });
@@ -500,14 +499,14 @@ describe('[API集成测试] 用户模块', () => {
     it('应该成功更新用户信息', async () => {
       const updateData = {
         name: '更新后的名称',
-        email: 'updated@example.com'
+        email: 'updated@example.com',
       };
 
       const result = await ApiTestHelpers.crud.testUpdate(
         request(app),
         `/api/v1/users/${testUserId}`,
         authToken,
-        updateData
+        updateData,
       );
 
       expect(result.success).toBe(true);
@@ -520,7 +519,7 @@ describe('[API集成测试] 用户模块', () => {
         request(app),
         '/api/v1/users/non-existent-id',
         authToken,
-        'put'
+        'put',
       );
 
       expect(result.code).toBe('USER_NOT_FOUND');
@@ -532,7 +531,7 @@ describe('[API集成测试] 用户模块', () => {
       const result = await ApiTestHelpers.crud.testDelete(
         request(app),
         `/api/v1/users/${testUserId}`,
-        authToken
+        authToken,
       );
 
       expect(result.success).toBe(true);
@@ -542,10 +541,7 @@ describe('[API集成测试] 用户模块', () => {
 
   describe('权限验证', () => {
     it('未认证请求应该返回 401', async () => {
-      const result = await ApiTestHelpers.business.testUnauthorized(
-        request(app),
-        '/api/v1/users'
-      );
+      const result = await ApiTestHelpers.business.testUnauthorized(request(app), '/api/v1/users');
 
       expect(result.code).toBe('UNAUTHORIZED');
     });
@@ -566,7 +562,7 @@ describe('[API集成测试] 用户模块', () => {
         request(app),
         '/api/v1/users',
         authToken,
-        1000
+        1000,
       );
 
       console.log(`查询耗时: ${duration}ms`);
@@ -577,10 +573,10 @@ describe('[API集成测试] 用户模块', () => {
         request(app),
         '/api/v1/users',
         authToken,
-        5
+        5,
       );
 
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.body.success).toBe(true);
       });
     });
@@ -591,6 +587,7 @@ describe('[API集成测试] 用户模块', () => {
 ### 2. 高级测试模式
 
 #### 测试数据工厂
+
 ```typescript
 export class TestDataFactory {
   static createUser(overrides: Partial<User> = {}): User {
@@ -601,7 +598,7 @@ export class TestDataFactory {
       status: 'active',
       createdAt: new Date(),
       updatedAt: new Date(),
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -614,7 +611,7 @@ export class TestDataFactory {
       status: 'published',
       createdAt: new Date(),
       updatedAt: new Date(),
-      ...overrides
+      ...overrides,
     };
   }
 }
@@ -624,22 +621,23 @@ describe('文章管理', () => {
   it('应该创建文章', async () => {
     const user = TestDataFactory.createUser();
     const post = TestDataFactory.createPost(user.id);
-    
+
     setMockData('user', [user]);
-    
+
     const result = await ApiTestHelpers.crud.testCreate(
       request(app),
       '/api/v1/posts',
       authToken,
-      post
+      post,
     );
-    
+
     expect(result.success).toBe(true);
   });
 });
 ```
 
 #### 测试场景组合
+
 ```typescript
 describe('复杂业务场景测试', () => {
   it('用户完整生命周期', async () => {
@@ -649,44 +647,36 @@ describe('复杂业务场景测试', () => {
       request(app),
       '/api/v1/users',
       authToken,
-      userData
+      userData,
     );
-    
+
     const userId = createResult.data.id;
-    
+
     // 2. 查询用户
     const readResult = await ApiTestHelpers.crud.testRead(
       request(app),
       `/api/v1/users/${userId}`,
-      authToken
+      authToken,
     );
-    
+
     expect(readResult.data.email).toBe(userData.email);
-    
+
     // 3. 更新用户
     const updateData = { name: '更新后的名称' };
     const updateResult = await ApiTestHelpers.crud.testUpdate(
       request(app),
       `/api/v1/users/${userId}`,
       authToken,
-      updateData
+      updateData,
     );
-    
+
     expect(updateResult.data.name).toBe(updateData.name);
-    
+
     // 4. 删除用户
-    await ApiTestHelpers.crud.testDelete(
-      request(app),
-      `/api/v1/users/${userId}`,
-      authToken
-    );
-    
+    await ApiTestHelpers.crud.testDelete(request(app), `/api/v1/users/${userId}`, authToken);
+
     // 5. 验证删除
-    await ApiTestHelpers.business.testNotFound(
-      request(app),
-      `/api/v1/users/${userId}`,
-      authToken
-    );
+    await ApiTestHelpers.business.testNotFound(request(app), `/api/v1/users/${userId}`, authToken);
   });
 });
 ```
@@ -696,6 +686,7 @@ describe('复杂业务场景测试', () => {
 ### 1. 最佳实践
 
 #### ✅ 推荐做法
+
 - **独立性**: 每个测试用例应该独立，不依赖其他测试
 - **清理**: 在 `beforeEach` 和 `afterEach` 中进行数据清理
 - **命名**: 使用描述性的测试名称，说明测试的业务场景
@@ -724,6 +715,7 @@ describe('复杂业务场景测试', () => {
 ```
 
 #### 集成测试范围
+
 - **接口层**: 验证 HTTP 请求和响应
 - **业务层**: 验证业务逻辑的正确性
 - **权限层**: 验证认证和授权机制
@@ -732,6 +724,7 @@ describe('复杂业务场景测试', () => {
 ### 3. 性能优化技巧
 
 #### 测试执行优化
+
 ```typescript
 // vitest.config.ts
 export default defineConfig({
@@ -741,45 +734,39 @@ export default defineConfig({
     poolOptions: {
       threads: {
         maxThreads: 4,
-        minThreads: 1
-      }
+        minThreads: 1,
+      },
     },
-    
+
     // 测试文件匹配优化
     include: ['src/**/*.{test,spec}.{js,ts}'],
-    exclude: [
-      'node_modules',
-      'dist',
-      '**/*.d.ts',
-      'src/test/setup.ts'
-    ],
-    
+    exclude: ['node_modules', 'dist', '**/*.d.ts', 'src/test/setup.ts'],
+
     // 覆盖率优化
     coverage: {
-      exclude: [
-        'src/test/**',
-        'src/**/*.d.ts',
-        'src/**/*.config.*'
-      ]
-    }
-  }
+      exclude: ['src/test/**', 'src/**/*.d.ts', 'src/**/*.config.*'],
+    },
+  },
 });
 ```
 
 #### Mock 性能优化
+
 ```typescript
 // 使用内存存储而非文件系统
 const mockDataStore = new Map();
 
 // 批量数据操作
-export function setMockDataBatch(operations: Array<{
-  table: string;
-  action: 'create' | 'update' | 'delete';
-  data: any;
-}>) {
+export function setMockDataBatch(
+  operations: Array<{
+    table: string;
+    action: 'create' | 'update' | 'delete';
+    data: any;
+  }>,
+) {
   operations.forEach(({ table, action, data }) => {
     const store = mockDataStore.get(table) || new Map();
-    
+
     switch (action) {
       case 'create':
         store.set(data.id, data);
@@ -792,7 +779,7 @@ export function setMockDataBatch(operations: Array<{
         store.delete(data.id);
         break;
     }
-    
+
     mockDataStore.set(table, store);
   });
 }
@@ -801,16 +788,17 @@ export function setMockDataBatch(operations: Array<{
 ### 4. 常见问题解决
 
 #### 问题 1: 测试间数据污染
+
 ```typescript
 // ❌ 错误做法
 describe('用户测试', () => {
   const user = { id: '123', name: 'test' };
-  
+
   it('创建用户', () => {
     // 修改了全局变量
     user.name = '修改后的名称';
   });
-  
+
   it('查询用户', () => {
     // 这里的 user.name 已经被修改了
     expect(user.name).toBe('test'); // ❌ 会失败
@@ -820,16 +808,16 @@ describe('用户测试', () => {
 // ✅ 正确做法
 describe('用户测试', () => {
   let user: User;
-  
+
   beforeEach(() => {
     user = TestDataFactory.createUser();
   });
-  
+
   it('创建用户', () => {
     const modifiedUser = { ...user, name: '修改后的名称' };
     // 处理 modifiedUser...
   });
-  
+
   it('查询用户', () => {
     expect(user.name).toBe('Test User'); // ✅ 通过
   });
@@ -837,61 +825,61 @@ describe('用户测试', () => {
 ```
 
 #### 问题 2: 异步操作处理
+
 ```typescript
 // ❌ 错误做法
 it('应该创建用户', () => {
-  request(app)
-    .post('/api/users')
-    .send(userData)
-    .expect(201); // ❌ 没有等待异步操作
+  request(app).post('/api/users').send(userData).expect(201); // ❌ 没有等待异步操作
 });
 
 // ✅ 正确做法
 it('应该创建用户', async () => {
-  const response = await request(app)
-    .post('/api/users')
-    .send(userData)
-    .expect(201);
-    
+  const response = await request(app).post('/api/users').send(userData).expect(201);
+
   expect(response.body.success).toBe(true);
 });
 ```
 
 #### 问题 3: Mock 数据不一致
+
 ```typescript
 // ❌ 错误做法
 setMockData('user', [
-  { id: '123', tags: 'tag1,tag2' } // ❌ 字符串格式
+  { id: '123', tags: 'tag1,tag2' }, // ❌ 字符串格式
 ]);
 
 // ✅ 正确做法
 setMockData('user', [
-  { 
-    id: '123', 
-    tags: JSON.stringify(['tag1', 'tag2']) // ✅ JSON 格式
-  }
+  {
+    id: '123',
+    tags: JSON.stringify(['tag1', 'tag2']), // ✅ JSON 格式
+  },
 ]);
 ```
 
 ## 📚 信息参考
 
 ### 官方文档
+
 - [Vitest 官方文档](https://vitest.dev/)
 - [Supertest GitHub](https://github.com/visionmedia/supertest)
 - [Express.js 官方文档](https://expressjs.com/)
 
 ### 推荐资源
+
 - [测试金字塔理论](https://martinfowler.com/articles/practical-test-pyramid.html)
 - [API 测试最佳实践](https://github.com/microsoft/api-guidelines)
 - [Node.js 测试最佳实践](https://github.com/goldbergyoni/nodebestpractices#-6-testing-and-overall-quality-practices)
 
 ### 相关工具
+
 - **MSW**: Mock Service Worker，用于 Mock HTTP 请求
 - **Testcontainers**: 集成测试中使用真实数据库
 - **Artillery**: API 负载测试工具
 - **Postman/Newman**: API 测试和文档工具
 
 ### 扩展阅读
+
 - 《有效的单元测试》- Roy Osherove
 - 《Google 软件测试之道》- James Whittaker
 - 《微服务设计》- Sam Newman (测试策略章节)

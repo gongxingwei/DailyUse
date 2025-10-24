@@ -9,9 +9,7 @@
       <v-card-text class="pt-4">
         <!-- 循环依赖错误 -->
         <div v-if="error?.code === 'CIRCULAR_DEPENDENCY'" class="mb-4">
-          <p class="text-subtitle-1 font-weight-medium mb-3">
-            ⚠️ 创建此依赖会形成循环依赖路径：
-          </p>
+          <p class="text-subtitle-1 font-weight-medium mb-3">⚠️ 创建此依赖会形成循环依赖路径：</p>
 
           <v-card outlined class="pa-3 mb-3" color="error lighten-5">
             <div class="dependency-path">
@@ -26,9 +24,7 @@
                     <div class="font-weight-medium">
                       {{ getTaskTitle(taskUuid) }}
                     </div>
-                    <div class="text-caption text--secondary">
-                      {{ taskUuid.slice(0, 8) }}...
-                    </div>
+                    <div class="text-caption text--secondary">{{ taskUuid.slice(0, 8) }}...</div>
                   </div>
                 </div>
 
@@ -71,9 +67,7 @@
 
           <!-- 错误代码 -->
           <div class="mt-3">
-            <v-chip small outlined>
-              错误代码: {{ error?.code }}
-            </v-chip>
+            <v-chip small outlined> 错误代码: {{ error?.code }} </v-chip>
           </div>
         </div>
       </v-card-text>
@@ -81,19 +75,12 @@
       <v-divider />
 
       <v-card-actions>
-        <v-btn
-          v-if="showViewGraphButton"
-          color="primary"
-          variant="text"
-          @click="handleViewGraph"
-        >
+        <v-btn v-if="showViewGraphButton" color="primary" variant="text" @click="handleViewGraph">
           <v-icon left>mdi-graph-outline</v-icon>
           查看依赖图
         </v-btn>
         <v-spacer />
-        <v-btn color="grey" variant="text" @click="handleClose">
-          关闭
-        </v-btn>
+        <v-btn color="grey" variant="text" @click="handleClose"> 关闭 </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -136,8 +123,8 @@ const showViewGraphButton = computed(() => {
 
 const getTaskTitle = (taskUuid: string): string => {
   if (!props.tasks) return taskUuid.slice(0, 8) + '...';
-  
-  const task = props.tasks.find(t => t.uuid === taskUuid);
+
+  const task = props.tasks.find((t) => t.uuid === taskUuid);
   return task?.title || taskUuid.slice(0, 8) + '...';
 };
 

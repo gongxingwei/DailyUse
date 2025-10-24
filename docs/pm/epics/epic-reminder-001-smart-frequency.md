@@ -18,11 +18,13 @@
 根据用户响应行为自适应调整提醒频率，避免过度打扰，提升提醒有效性。
 
 **核心问题**:
+
 - ❌ 提醒频率固定，不考虑用户行为
 - ❌ 重复提醒过多导致用户疲劳
 - ❌ 重要提醒被忽略
 
 **解决方案**:
+
 - ✅ 基于用户响应率自动调整频率
 - ✅ 提醒渠道智能选择（推送/邮件/应用内）
 - ✅ 免打扰时段自动延后
@@ -39,33 +41,33 @@ export interface ReminderServerDTO {
   // ...existing fields...
   readonly frequency: ReminderFrequency;
   readonly adaptiveConfig?: AdaptiveConfig;
-  readonly effectivenessScore: number;  // 0-100
+  readonly effectivenessScore: number; // 0-100
 }
 
 export interface AdaptiveConfig {
   readonly isEnabled: boolean;
-  readonly minInterval: number;          // 最小间隔（ms）
-  readonly maxInterval: number;          // 最大间隔（ms）
-  readonly responseRate: number;         // 响应率 0-1
-  readonly adjustmentFactor: number;     // 调整系数
+  readonly minInterval: number; // 最小间隔（ms）
+  readonly maxInterval: number; // 最大间隔（ms）
+  readonly responseRate: number; // 响应率 0-1
+  readonly adjustmentFactor: number; // 调整系数
 }
 ```
 
 **Domain 逻辑**:
+
 ```typescript
 export class Reminder {
   calculateNextTriggerTime(): number {
     if (!this.adaptiveConfig?.isEnabled) {
       return this.baseInterval;
     }
-    
+
     // 响应率越低，间隔越长
-    const adjustedInterval = this.baseInterval * 
-      (1 + (1 - this.adaptiveConfig.responseRate));
-    
+    const adjustedInterval = this.baseInterval * (1 + (1 - this.adaptiveConfig.responseRate));
+
     return Math.min(
       Math.max(adjustedInterval, this.adaptiveConfig.minInterval),
-      this.adaptiveConfig.maxInterval
+      this.adaptiveConfig.maxInterval,
     );
   }
 }
@@ -79,17 +81,17 @@ export class Reminder {
 export class ReminderAdaptiveService {
   async recordResponse(reminderId: string, responded: boolean): Promise<void> {
     const reminder = await this.repo.findByUuid(reminderId);
-    
+
     // 更新响应率（滑动窗口）
     const recentResponses = await this.getRecentResponses(reminderId, 10);
-    const responseRate = recentResponses.filter(r => r).length / recentResponses.length;
-    
+    const responseRate = recentResponses.filter((r) => r).length / recentResponses.length;
+
     reminder.updateAdaptiveConfig({ responseRate });
-    
+
     // 调整下次触发时间
     const nextTime = reminder.calculateNextTriggerTime();
     reminder.scheduleNext(nextTime);
-    
+
     await this.repo.save(reminder);
   }
 }
@@ -107,9 +109,9 @@ model ReminderResponse {
   responded     Boolean  // 是否响应
   respondedAt   BigInt?  @map("responded_at")
   triggeredAt   BigInt   @map("triggered_at")
-  
+
   reminder      Reminder @relation(fields: [reminderId], references: [uuid])
-  
+
   @@index([reminderId, triggeredAt])
   @@map("reminder_responses")
 }
@@ -154,7 +156,7 @@ export function useAdaptiveReminder() {
 <template>
   <el-card title="智能频率调整">
     <el-switch v-model="adaptive.enabled" />
-    
+
     <div v-if="adaptive.enabled">
       <el-slider
         v-model="adaptive.minInterval"
@@ -162,7 +164,7 @@ export function useAdaptiveReminder() {
         :max="86400000"
         :format-tooltip="formatInterval"
       />
-      
+
       <div class="stats">
         <span>当前响应率: {{ stats.responseRate }}%</span>
         <span>平均间隔: {{ stats.avgInterval }}</span>
@@ -180,7 +182,7 @@ export function useAdaptiveReminder() {
 test('自适应频率调整', async ({ page }) => {
   await page.goto('/reminders/reminder-uuid');
   await page.click('[data-testid="enable-adaptive"]');
-  
+
   // 验证频率调整
   await page.click('[data-testid="mark-responded"]');
   await expect(page.locator('[data-testid="response-rate"]')).toContainText('100%');
@@ -201,6 +203,7 @@ test('自适应频率调整', async ({ page }) => {
 ## 4. Release Plan
 
 **Sprint 5-6 (Week 9-12)**:
+
 - Week 1: Stories 001-003
 - Week 2: Stories 004-007
 
@@ -221,4 +224,4 @@ Feature: 智能提醒频率
 
 ---
 
-*文档创建: 2025-10-21 | Epic Owner: PM Agent*
+_文档创建: 2025-10-21 | Epic Owner: PM Agent_

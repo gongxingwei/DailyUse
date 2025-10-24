@@ -8,7 +8,7 @@ export class NotificationWindowManager {
   private static readonly WINDOW_CONFIG = {
     WIDTH: 620,
     HEIGHT: 920,
-    MARGIN: 10
+    MARGIN: 10,
   };
 
   constructor() {}
@@ -22,7 +22,7 @@ export class NotificationWindowManager {
 
     const position = this.calculatePosition();
     const window = this.buildWindow(position);
-    
+
     this.setupWindowEvents(window, options.uuid);
     this.windows.set(options.uuid, window);
     console.log('NotificationWindowManager - Window created:', options.uuid);
@@ -61,11 +61,17 @@ export class NotificationWindowManager {
   private calculatePosition(): { x: number; y: number } {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width: screenWidth } = primaryDisplay.workAreaSize;
-    
-    const x = screenWidth - NotificationWindowManager.WINDOW_CONFIG.WIDTH - NotificationWindowManager.WINDOW_CONFIG.MARGIN;
-    const y = NotificationWindowManager.WINDOW_CONFIG.MARGIN + 
-              (this.windows.size * (NotificationWindowManager.WINDOW_CONFIG.HEIGHT + NotificationWindowManager.WINDOW_CONFIG.MARGIN));
-    
+
+    const x =
+      screenWidth -
+      NotificationWindowManager.WINDOW_CONFIG.WIDTH -
+      NotificationWindowManager.WINDOW_CONFIG.MARGIN;
+    const y =
+      NotificationWindowManager.WINDOW_CONFIG.MARGIN +
+      this.windows.size *
+        (NotificationWindowManager.WINDOW_CONFIG.HEIGHT +
+          NotificationWindowManager.WINDOW_CONFIG.MARGIN);
+
     return { x, y };
   }
 
@@ -89,8 +95,8 @@ export class NotificationWindowManager {
         preload: path.join(MAIN_DIST, 'main_preload.mjs'),
         contextIsolation: true,
         nodeIntegration: true,
-        webSecurity: false
-      }
+        webSecurity: false,
+      },
     });
   }
 
@@ -104,9 +110,9 @@ export class NotificationWindowManager {
         responseHeaders: {
           ...details.responseHeaders,
           'Content-Security-Policy': [
-            "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
-          ]
-        }
+            "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+          ],
+        },
       });
     });
 
@@ -124,8 +130,11 @@ export class NotificationWindowManager {
     let index = 0;
     for (const [, window] of this.windows) {
       if (!window.isDestroyed()) {
-        const y = NotificationWindowManager.WINDOW_CONFIG.MARGIN + 
-                  (index * (NotificationWindowManager.WINDOW_CONFIG.HEIGHT + NotificationWindowManager.WINDOW_CONFIG.MARGIN));
+        const y =
+          NotificationWindowManager.WINDOW_CONFIG.MARGIN +
+          index *
+            (NotificationWindowManager.WINDOW_CONFIG.HEIGHT +
+              NotificationWindowManager.WINDOW_CONFIG.MARGIN);
         window.setPosition(window.getPosition()[0], y);
         index++;
       }
@@ -140,10 +149,8 @@ export class NotificationWindowManager {
       uuid: options.uuid,
       title: options.title,
       body: options.body,
-      importance: options.importance
+      importance: options.importance,
     });
-
- 
 
     if (options.actions) {
       queryParams.append('actions', encodeURIComponent(JSON.stringify(options.actions)));

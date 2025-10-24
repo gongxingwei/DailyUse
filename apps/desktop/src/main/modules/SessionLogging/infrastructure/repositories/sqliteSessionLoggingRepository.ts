@@ -1,9 +1,13 @@
-import { Database } from "better-sqlite3";
-import { getDatabase } from "../../../../shared/database/index";
-import { OperationType, RiskLevel, OperationStatus } from "@common/modules/sessionLog/types/sessionLog";
-import { ISessionLoggingRepository } from "../../domain/repositories/sessionLoggingRepository";
-import { IPLocation } from "../../domain/valueObjects/ipLocation";
-import { SessionLog } from "../../domain/aggregates/sessionLog";
+import { Database } from 'better-sqlite3';
+import { getDatabase } from '../../../../shared/database/index';
+import {
+  OperationType,
+  RiskLevel,
+  OperationStatus,
+} from '@common/modules/sessionLog/types/sessionLog';
+import { ISessionLoggingRepository } from '../../domain/repositories/sessionLoggingRepository';
+import { IPLocation } from '../../domain/valueObjects/ipLocation';
+import { SessionLog } from '../../domain/aggregates/sessionLog';
 /**
  * SQLite SessionLogging 仓库实现
  */
@@ -26,7 +30,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async save(sessionLog: SessionLog): Promise<void> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return;
     }
 
@@ -62,7 +66,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
       row.session_duration,
       row.risk_level,
       row.created_at,
-      row.updated_at
+      row.updated_at,
     );
   }
 
@@ -72,7 +76,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findById(uuid: string): Promise<SessionLog | null> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return null;
     }
 
@@ -92,7 +96,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findByAccountUuid(accountUuid: string): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return [];
     }
 
@@ -112,7 +116,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findBySessionId(sessionId: string): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return [];
     }
 
@@ -132,7 +136,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findByOperationType(operationType: string): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return [];
     }
 
@@ -152,7 +156,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findAnomalous(): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return [];
     }
 
@@ -172,7 +176,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findByRiskLevel(riskLevel: string): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return [];
     }
 
@@ -192,7 +196,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findByTimeRange(startTime: Date, endTime: Date): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return [];
     }
 
@@ -212,11 +216,11 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async findByAccountUuidAndTimeRange(
     accountUuid: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return [];
     }
 
@@ -226,11 +230,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
       ORDER BY created_at DESC
     `);
 
-    const rows = stmt.all(
-      accountUuid,
-      startTime.getTime(),
-      endTime.getTime()
-    ) as any[];
+    const rows = stmt.all(accountUuid, startTime.getTime(), endTime.getTime()) as any[];
     return rows.map((row) => this.mapRowToSessionLog(row));
   }
 
@@ -240,7 +240,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async delete(uuid: string): Promise<void> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return;
     }
 
@@ -257,7 +257,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async deleteByAccountUuid(accountUuid: string): Promise<void> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return;
     }
 
@@ -274,7 +274,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
   async deleteOlderThan(date: Date): Promise<number> {
     await this.getDb();
     if (!this.db) {
-      console.error("Database not initialized");
+      console.error('Database not initialized');
       return 0;
     }
 
@@ -330,7 +330,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
       latitude: row.ip_latitude,
       longitude: row.ip_longitude,
       timezone: row.ip_timezone,
-      isp: row.ip_isp
+      isp: row.ip_isp,
     });
 
     const sessionLog = new SessionLog({
@@ -341,7 +341,7 @@ export class SqliteSessionLoggingRepository implements ISessionLoggingRepository
       deviceInfo: row.device_info,
       ipLocation,
       userAgent: row.user_agent,
-      sessionUuid: row.session_uuid
+      sessionUuid: row.session_uuid,
     });
 
     // 通过 set 方法同步其他属性

@@ -1,45 +1,42 @@
-import { AggregateRoot } from "@dailyuse/utils";
-import { TaskTemplate } from "./taskTemplate";
+import { AggregateRoot } from '@dailyuse/utils';
+import { TaskTemplate } from './taskTemplate';
 
 import type {
   IMainProcessTaskMetaTemplate,
   ITaskMetaTemplateDTO,
-} from "@common/modules/task/types/task";
-import { ImportanceLevel } from "@dailyuse/contracts";
-import { UrgencyLevel } from "@dailyuse/contracts";
+} from '@common/modules/task/types/task';
+import { ImportanceLevel } from '@dailyuse/contracts';
+import { UrgencyLevel } from '@dailyuse/contracts';
 
-export class TaskMetaTemplate
-  extends AggregateRoot
-  implements IMainProcessTaskMetaTemplate
-{
+export class TaskMetaTemplate extends AggregateRoot implements IMainProcessTaskMetaTemplate {
   private _name: string;
   private _description?: string;
   private _icon?: string;
   private _color?: string;
   private _category: string;
-  private _defaultTimeConfig: TaskTemplate["timeConfig"];
-  private _defaultReminderConfig: TaskTemplate["reminderConfig"];
-  private _defaultMetadata: TaskTemplate["metadata"];
+  private _defaultTimeConfig: TaskTemplate['timeConfig'];
+  private _defaultReminderConfig: TaskTemplate['reminderConfig'];
+  private _defaultMetadata: TaskTemplate['metadata'];
   private _lifecycle: {
     createdAt: Date;
     updatedAt: Date;
   };
 
-  private DefaultTimeConfig: TaskTemplate["timeConfig"] = {
-    type: "timed",
+  private DefaultTimeConfig: TaskTemplate['timeConfig'] = {
+    type: 'timed',
     baseTime: {
       start: new Date(),
       end: new Date(Date.now() + 60 * 60 * 1000), // 默认持续时间为60分钟
       duration: 60, // 默认持续时间为60分钟
     },
     recurrence: {
-      type: "none",
+      type: 'none',
     },
-    timezone: "UTC",
-    dstHandling: "ignore",
+    timezone: 'UTC',
+    dstHandling: 'ignore',
   };
 
-  private DefaultReminderConfig: TaskTemplate["reminderConfig"] = {
+  private DefaultReminderConfig: TaskTemplate['reminderConfig'] = {
     enabled: false,
     alerts: [],
     snooze: {
@@ -49,8 +46,8 @@ export class TaskMetaTemplate
     },
   };
 
-  private DefaultMetadata: TaskTemplate["metadata"] = {
-    category: "general",
+  private DefaultMetadata: TaskTemplate['metadata'] = {
+    category: 'general',
     tags: [],
     importance: ImportanceLevel.Moderate,
     urgency: UrgencyLevel.Medium,
@@ -64,9 +61,9 @@ export class TaskMetaTemplate
     icon?: string;
     color?: string;
     description?: string;
-    defaultTimeConfig?: TaskTemplate["timeConfig"];
-    defaultReminderConfig?: TaskTemplate["reminderConfig"];
-    defaultMetadata?: TaskTemplate["metadata"];
+    defaultTimeConfig?: TaskTemplate['timeConfig'];
+    defaultReminderConfig?: TaskTemplate['reminderConfig'];
+    defaultMetadata?: TaskTemplate['metadata'];
   }) {
     super(params.uuid || AggregateRoot.generateUUID());
     const now = new Date();
@@ -76,10 +73,8 @@ export class TaskMetaTemplate
     this._category = params.category;
     this._icon = params.icon;
     this._color = params.color;
-    this._defaultTimeConfig =
-      params.defaultTimeConfig || this.DefaultTimeConfig;
-    this._defaultReminderConfig =
-      params.defaultReminderConfig || this.DefaultReminderConfig;
+    this._defaultTimeConfig = params.defaultTimeConfig || this.DefaultTimeConfig;
+    this._defaultReminderConfig = params.defaultReminderConfig || this.DefaultReminderConfig;
     this._defaultMetadata = params.defaultMetadata || this.DefaultMetadata;
 
     this._lifecycle = {
@@ -107,20 +102,20 @@ export class TaskMetaTemplate
   get category(): string {
     return this._category;
   }
-  get defaultTimeConfig(): TaskTemplate["timeConfig"] {
+  get defaultTimeConfig(): TaskTemplate['timeConfig'] {
     return this._defaultTimeConfig;
   }
-  get defaultReminderConfig(): TaskTemplate["reminderConfig"] {
+  get defaultReminderConfig(): TaskTemplate['reminderConfig'] {
     return this._defaultReminderConfig;
   }
-  get defaultMetadata(): TaskTemplate["metadata"] {
+  get defaultMetadata(): TaskTemplate['metadata'] {
     return this._defaultMetadata;
   }
   get lifecycle() {
     return this._lifecycle;
   }
 
-   /**
+  /**
    * 从完整数据创建 TaskMetaTemplate 实例（用于反序列化）
    * 保留所有原始状态信息
    */
@@ -156,7 +151,7 @@ export class TaskMetaTemplate
       defaultReminderConfig: {
         ...data.defaultReminderConfig,
         enabled: !!data.defaultReminderConfig.enabled,
-        alerts: data.defaultReminderConfig.alerts.map(alert => ({
+        alerts: data.defaultReminderConfig.alerts.map((alert) => ({
           ...alert,
           timing: {
             ...alert.timing,
@@ -220,11 +215,13 @@ export class TaskMetaTemplate
         recurrence: {
           type: this._defaultTimeConfig.recurrence.type,
           interval: this._defaultTimeConfig.recurrence.interval,
-          endCondition: this._defaultTimeConfig.recurrence.endCondition ? {
-            type: this._defaultTimeConfig.recurrence.endCondition.type,
-            endDate: this._defaultTimeConfig.recurrence.endCondition.endDate?.getTime(),
-            count: this._defaultTimeConfig.recurrence.endCondition.count,
-          } : undefined,
+          endCondition: this._defaultTimeConfig.recurrence.endCondition
+            ? {
+                type: this._defaultTimeConfig.recurrence.endCondition.type,
+                endDate: this._defaultTimeConfig.recurrence.endCondition.endDate?.getTime(),
+                count: this._defaultTimeConfig.recurrence.endCondition.count,
+              }
+            : undefined,
           config: this._defaultTimeConfig.recurrence.config,
         },
         timezone: this._defaultTimeConfig.timezone,
@@ -232,7 +229,7 @@ export class TaskMetaTemplate
       },
       defaultReminderConfig: {
         enabled: this._defaultReminderConfig.enabled ? 1 : 0,
-        alerts: this._defaultReminderConfig.alerts.map(alert => ({
+        alerts: this._defaultReminderConfig.alerts.map((alert) => ({
           uuid: alert.uuid,
           timing: {
             type: alert.timing.type,

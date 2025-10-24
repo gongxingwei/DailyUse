@@ -50,11 +50,7 @@ export interface IWeightSnapshotRepository {
    * @param pageSize - 每页数量
    * @returns 快照列表和总数（按时间倒序）
    */
-  findByGoal(
-    goalUuid: string,
-    page?: number,
-    pageSize?: number,
-  ): Promise<SnapshotQueryResult>;
+  findByGoal(goalUuid: string, page?: number, pageSize?: number): Promise<SnapshotQueryResult>;
 
   /**
    * 查询 KeyResult 的所有快照
@@ -64,11 +60,7 @@ export interface IWeightSnapshotRepository {
    * @param pageSize - 每页数量
    * @returns 快照列表和总数（按时间倒序）
    */
-  findByKeyResult(
-    krUuid: string,
-    page?: number,
-    pageSize?: number,
-  ): Promise<SnapshotQueryResult>;
+  findByKeyResult(krUuid: string, page?: number, pageSize?: number): Promise<SnapshotQueryResult>;
 
   /**
    * 查询时间范围内的快照

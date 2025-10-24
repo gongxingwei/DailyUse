@@ -35,6 +35,7 @@ apps/api/src/modules/setting/
 **职责**: 协调领域服务和仓储，处理业务用例
 
 **架构职责**:
+
 - 委托给 DomainService 处理业务逻辑
 - 协调多个领域服务
 - 事务管理
@@ -69,7 +70,8 @@ apps/api/src/modules/setting/
    - `exportSettings(scope, contextUuid?)` - 导出配置
    - `importSettings(scope, config, contextUuid?, operatorUuid?)` - 导入配置
 
-**单例模式**: 
+**单例模式**:
+
 - `createInstance(settingRepository?)` - 支持依赖注入
 - `getInstance()` - 获取单例
 
@@ -82,6 +84,7 @@ apps/api/src/modules/setting/
 **职责**: HTTP 请求处理，统一响应格式
 
 **核心特性**:
+
 - ✅ 统一使用 `ResponseBuilder`
 - ✅ 完整的错误处理
 - ✅ JWT 身份验证
@@ -117,6 +120,7 @@ apps/api/src/modules/setting/
    - `importSettings()` - POST /api/settings/import
 
 **错误处理**:
+
 - `ResponseCode.UNAUTHORIZED` - 认证失败
 - `ResponseCode.NOT_FOUND` - 资源不存在
 - `ResponseCode.CONFLICT` - key 冲突
@@ -131,6 +135,7 @@ apps/api/src/modules/setting/
 **职责**: REST API 路由配置
 
 **路由设计原则**:
+
 1. 聚合根是操作的基本单位
 2. 体现聚合边界和业务规则
 3. 提供聚合根完整视图
@@ -139,6 +144,7 @@ apps/api/src/modules/setting/
 **路由分组**:
 
 1. **快捷查询路由** (优先级高):
+
    ```
    GET    /settings/user         获取用户设置
    GET    /settings/system       获取系统设置
@@ -147,6 +153,7 @@ apps/api/src/modules/setting/
    ```
 
 2. **聚合根控制路由**:
+
    ```
    PATCH  /settings/:id/value    更新值
    POST   /settings/:id/reset    重置
@@ -155,11 +162,13 @@ apps/api/src/modules/setting/
    ```
 
 3. **批量操作路由**:
+
    ```
    PATCH  /settings/batch        批量更新
    ```
 
 4. **导入导出路由**:
+
    ```
    GET    /settings/export       导出配置
    POST   /settings/import       导入配置
@@ -172,7 +181,8 @@ apps/api/src/modules/setting/
    DELETE /settings/:id          删除设置
    ```
 
-**Swagger 文档**: 
+**Swagger 文档**:
+
 - ✅ 完整的 API 文档注释
 - ✅ 参数定义
 - ✅ 响应码说明
@@ -187,11 +197,13 @@ apps/api/src/modules/setting/
 **职责**: DI 容器，管理仓储实例
 
 **核心方法**:
+
 - `getInstance()` - 获取容器单例
 - `getSettingRepository()` - 获取 Setting 仓储（懒加载）
 - `setSettingRepository(repository)` - 设置仓储（用于测试）
 
 **依赖注入**:
+
 - 使用单例模式
 - 支持懒加载
 - 支持测试替换
@@ -202,12 +214,14 @@ apps/api/src/modules/setting/
 
 **职责**: Prisma 仓储实现
 
-**当前状态**: 
+**当前状态**:
+
 - ✅ 接口定义完整
 - ⚠️ 实现待完成（需要 Prisma schema）
 - ✅ 数据映射方法已定义
 
 **实现的接口方法** (16 个):
+
 1. `save(setting)` - 保存聚合根
 2. `findById(uuid, options?)` - 通过 UUID 查找
 3. `findByKey(key, scope, contextUuid?)` - 通过 key 查找
@@ -223,6 +237,7 @@ apps/api/src/modules/setting/
 13. `search(query, scope?)` - 搜索
 
 **TODO**:
+
 - 创建 Prisma schema 定义（Setting 表、SettingHistory 表）
 - 实现所有方法的 Prisma 查询
 - 实现事务支持
@@ -233,6 +248,7 @@ apps/api/src/modules/setting/
 ## 📊 实现统计
 
 ### 文件数量
+
 - ✅ 应用层: 1 个文件 (SettingApplicationService.ts)
 - ✅ 接口层: 2 个文件 (Controller + Routes)
 - ✅ 基础设施层: 2 个文件 (Container + Repository)
@@ -240,6 +256,7 @@ apps/api/src/modules/setting/
 - **总计**: 9 个文件
 
 ### 代码行数
+
 - 应用服务: ~255 行
 - Controller: ~609 行
 - Routes: ~516 行
@@ -249,6 +266,7 @@ apps/api/src/modules/setting/
 - **总计**: ~1,651 行代码
 
 ### 功能完整度
+
 - ✅ 应用服务: 100%
 - ✅ HTTP Controller: 100%
 - ✅ REST 路由: 100%
@@ -260,11 +278,13 @@ apps/api/src/modules/setting/
 ## 🎯 设计模式与原则
 
 ### 1. 架构分层
+
 - **应用层**: 协调领域服务，处理用例
 - **接口层**: HTTP 请求处理，响应格式化
 - **基础设施层**: 持久化实现，DI 管理
 
 ### 2. 设计模式
+
 - ✅ **单例模式**: ApplicationService, Container
 - ✅ **依赖注入**: 构造函数注入仓储
 - ✅ **仓储模式**: 抽象数据访问
@@ -272,6 +292,7 @@ apps/api/src/modules/setting/
 - ✅ **策略模式**: 错误处理
 
 ### 3. API 设计原则
+
 - ✅ **RESTful**: 标准的 REST API 设计
 - ✅ **DDD 聚合根控制**: 路由体现聚合边界
 - ✅ **统一响应格式**: ResponseBuilder
@@ -279,6 +300,7 @@ apps/api/src/modules/setting/
 - ✅ **身份验证**: JWT Bearer Token
 
 ### 4. 代码质量
+
 - ✅ **类型安全**: TypeScript 完整类型定义
 - ✅ **文档齐全**: JSDoc + Swagger
 - ✅ **日志记录**: 结构化日志
@@ -290,8 +312,9 @@ apps/api/src/modules/setting/
 ## 🔧 技术实现细节
 
 ### 1. 依赖注入流程
+
 ```typescript
-Controller 
+Controller
   → ApplicationService.getInstance()
     → SettingContainer.getInstance()
       → PrismaSettingRepository(prisma)
@@ -299,6 +322,7 @@ Controller
 ```
 
 ### 2. 请求处理流程
+
 ```
 HTTP Request
   → SettingController (接口层)
@@ -311,6 +335,7 @@ HTTP Request
 ```
 
 ### 3. 响应格式
+
 ```typescript
 // 成功响应
 {
@@ -331,11 +356,13 @@ HTTP Request
 ```
 
 ### 4. 身份验证
+
 - 使用 JWT Bearer Token
 - 从 token 中提取 accountUuid
 - 用于用户作用域的设置操作
 
 ### 5. 懒加载支持
+
 - ApplicationService 单例懒加载
 - Repository 懒加载
 - 历史记录懒加载（includeHistory 参数）
@@ -345,6 +372,7 @@ HTTP Request
 ## 📋 待完成的工作
 
 ### 1. Prisma Schema 定义
+
 需要创建以下数据表：
 
 ```prisma
@@ -396,24 +424,29 @@ model SettingHistory {
 ```
 
 ### 2. PrismaSettingRepository 实现
+
 - 实现所有 CRUD 方法
 - 实现搜索功能
 - 实现事务支持
 - 实现级联保存（包含历史记录）
 
 ### 3. 路由注册
+
 在 `apps/api/src/app.ts` 中注册 Setting 路由：
+
 ```typescript
 import { settingRoutes } from './modules/setting';
 app.use('/api/settings', settingRoutes);
 ```
 
 ### 4. 测试
+
 - ❌ 单元测试（Controller, ApplicationService）
 - ❌ 集成测试（完整 API 流程）
 - ❌ E2E 测试
 
 ### 5. 文档
+
 - ✅ API 路由文档（Swagger）
 - ✅ 实现总结（本文档）
 - ❌ 使用示例
@@ -424,28 +457,33 @@ app.use('/api/settings', settingRoutes);
 ## ✨ 核心亮点
 
 ### 1. 完整的分层架构
+
 - 应用层、接口层、基础设施层清晰分离
 - 依赖方向正确（从外向内）
 - 每层职责明确
 
 ### 2. 优秀的 API 设计
+
 - RESTful 规范
 - 体现 DDD 聚合根控制
 - 路由优先级合理
 - 完整的 Swagger 文档
 
 ### 3. 统一的响应处理
+
 - ResponseBuilder 统一响应格式
 - 标准化错误码
 - 结构化日志
 
 ### 4. 良好的可扩展性
+
 - 依赖注入支持测试
 - 懒加载提升性能
 - 批量操作支持
 - 导入导出功能
 
 ### 5. 完善的错误处理
+
 - 分类错误处理
 - 友好的错误消息
 - 完整的日志记录
@@ -472,6 +510,7 @@ Setting 模块的 API 实现已经基本完成！
 ## 📝 使用示例
 
 ### 创建设置
+
 ```bash
 POST /api/settings
 Authorization: Bearer <token>
@@ -494,6 +533,7 @@ Content-Type: application/json
 ```
 
 ### 更新设置值
+
 ```bash
 PATCH /api/settings/:id/value
 Authorization: Bearer <token>
@@ -505,18 +545,21 @@ Content-Type: application/json
 ```
 
 ### 获取用户设置
+
 ```bash
 GET /api/settings/user?includeHistory=false
 Authorization: Bearer <token>
 ```
 
 ### 搜索设置
+
 ```bash
 GET /api/settings/search?query=theme&scope=USER
 Authorization: Bearer <token>
 ```
 
 ### 批量更新
+
 ```bash
 PATCH /api/settings/batch
 Authorization: Bearer <token>
@@ -531,12 +574,14 @@ Content-Type: application/json
 ```
 
 ### 导出配置
+
 ```bash
 GET /api/settings/export?scope=USER
 Authorization: Bearer <token>
 ```
 
 ### 导入配置
+
 ```bash
 POST /api/settings/import
 Authorization: Bearer <token>

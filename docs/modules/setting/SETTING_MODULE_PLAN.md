@@ -11,10 +11,12 @@
 Setting 模块管理用户的各种设置和偏好。
 
 ### 主要聚合根
+
 1. **UserPreference** - 用户偏好设置
 2. **ThemeSetting** - 主题设置
 
 ### 主要实体
+
 1. **AppConfig** - 应用配置
 
 ---
@@ -23,16 +25,16 @@ Setting 模块管理用户的各种设置和偏好。
 
 ```typescript
 // Server DTO
-UserPreferenceServerDTO
-ThemeSettingServerDTO
+UserPreferenceServerDTO;
+ThemeSettingServerDTO;
 
 // Client DTO（注意 Client 后缀）
-UserPreferenceClientDTO
-ThemeSettingClientDTO
+UserPreferenceClientDTO;
+ThemeSettingClientDTO;
 
 // Persistence DTO
-UserPreferencePersistenceDTO
-ThemeSettingPersistenceDTO
+UserPreferencePersistenceDTO;
+ThemeSettingPersistenceDTO;
 ```
 
 ---
@@ -67,10 +69,10 @@ export class UserPreference extends AggregateRoot {
   public updateLanguage(language: string): void;
   public updateTimezone(timezone: string): void;
   public updateTheme(theme: ThemeSetting): void;
-  
+
   // 重置
   public resetToDefault(): void;
-  
+
   // 验证
   public validate(): boolean;
 }
@@ -84,7 +86,7 @@ export class UserPreference extends AggregateRoot {
 export interface IUserPreferenceRepository {
   save(preference: UserPreference): Promise<void>;
   findByAccountUuid(accountUuid: string): Promise<UserPreference | null>;
-  
+
   // 默认设置
   getDefaultPreferences(): UserPreference;
 }

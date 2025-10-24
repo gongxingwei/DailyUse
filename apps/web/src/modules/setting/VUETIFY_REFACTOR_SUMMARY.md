@@ -3,6 +3,7 @@
 ## 🎯 改进目标
 
 将原生 HTML/CSS 组件重构为 Vuetify 组件库实现，以获得：
+
 1. ✅ **统一的设计系统** - 使用 Material Design 规范
 2. ✅ **主题支持** - 自动适配浅色/深色主题
 3. ✅ **响应式布局** - Vuetify 的栅格系统
@@ -12,7 +13,9 @@
 ## 📝 已重构组件
 
 ### 1. UserSettingsView.vue (主视图)
+
 **使用的 Vuetify 组件：**
+
 - `v-container` / `v-row` / `v-col` - 布局系统
 - `v-card` - 卡片容器
 - `v-tabs` / `v-tab` - 标签页导航
@@ -22,13 +25,16 @@
 - `v-btn` - 按钮
 
 **改进点：**
+
 - 使用 `v-tabs` 替代自定义标签页导航
 - 使用 `v-window` 实现流畅的内容切换动画
 - Material Design 图标替代 Emoji
 - 移除 300+ 行自定义 CSS
 
 ### 2. AppearanceSettings.vue (外观设置)
+
 **使用的 Vuetify 组件：**
+
 - `v-list` / `v-list-item` - 列表布局
 - `v-select` - 下拉选择器
 - `v-btn-toggle` / `v-btn` - 按钮组
@@ -38,13 +44,16 @@
 - `v-divider` - 分隔线
 
 **改进点：**
+
 - 使用 `v-list-item` 的 `prepend` / `append` 插槽实现左右布局
 - `v-btn-toggle` 替代自定义按钮组
 - `v-switch` 替代自定义开关
 - 移除 250+ 行自定义 CSS
 
 ### 3. LocaleSettings.vue (语言和地区)
+
 **使用的 Vuetify 组件：**
+
 - `v-list` / `v-list-item` - 统一的设置项布局
 - `v-select` - 语言/日期格式/货币选择
 - `v-text-field` - 时区输入
@@ -52,18 +61,22 @@
 - `v-icon` - 图标展示
 
 **改进点：**
+
 - 一致的设置项布局模式
 - Vuetify 表单组件的验证支持
 - 移除 200+ 行自定义 CSS
 
 ### 4. WorkflowSettings.vue (工作流设置)
+
 **使用的 Vuetify 组件：**
+
 - `v-list` / `v-list-item` - 设置项容器
 - `v-select` - 视图模式选择
 - `v-switch` - 开关选项
 - `v-text-field` - 数字输入（间隔设置）
 
 **改进点：**
+
 - 条件显示（自动保存间隔仅在启用时显示）
 - 使用 Vuetify 的 `v-text-field type="number"` 替代原生输入
 - 移除 150+ 行自定义 CSS
@@ -71,13 +84,17 @@
 ## 🎨 主题集成优势
 
 ### 自动主题适配
+
 ```vue
 <!-- 无需手动设置颜色，Vuetify 会自动适配主题 -->
-<v-btn color="primary">保存</v-btn>  <!-- 自动使用主题的 primary 色 -->
-<v-card>...</v-card>                 <!-- 自动适配浅色/深色背景 -->
+<v-btn color="primary">保存</v-btn>
+<!-- 自动使用主题的 primary 色 -->
+<v-card>...</v-card>
+<!-- 自动适配浅色/深色背景 -->
 ```
 
 ### CSS 变量支持
+
 ```css
 /* 可以使用 Vuetify 的主题变量 -->
 .custom-element {
@@ -87,20 +104,21 @@
 ```
 
 ### 深色模式
+
 当用户切换到深色主题时，所有 Vuetify 组件自动适配，无需额外代码。
 
 ## 📊 代码量对比
 
-| 组件 | 原版 (HTML+CSS) | Vuetify 版本 | 减少量 |
-|------|----------------|--------------|--------|
-| UserSettingsView | 350 行 CSS | ~10 行 CSS | **↓ 97%** |
-| AppearanceSettings | 270 行 CSS | ~10 行 CSS | **↓ 96%** |
-| LocaleSettings | 220 行 CSS | ~5 行 CSS | **↓ 98%** |
-| WorkflowSettings | 180 行 CSS | ~5 行 CSS | **↓ 97%** |
-| PrivacySettings | 160 行 CSS | ~5 行 CSS | **↓ 97%** |
-| ExperimentalSettings | 190 行 CSS | ~5 行 CSS | **↓ 97%** |
-| ShortcutSettings | 210 行 CSS | ~10 行 CSS | **↓ 95%** |
-| **总计** | **~1580 行 CSS** | **~50 行 CSS** | **↓ 97%** |
+| 组件                 | 原版 (HTML+CSS)  | Vuetify 版本   | 减少量    |
+| -------------------- | ---------------- | -------------- | --------- |
+| UserSettingsView     | 350 行 CSS       | ~10 行 CSS     | **↓ 97%** |
+| AppearanceSettings   | 270 行 CSS       | ~10 行 CSS     | **↓ 96%** |
+| LocaleSettings       | 220 行 CSS       | ~5 行 CSS      | **↓ 98%** |
+| WorkflowSettings     | 180 行 CSS       | ~5 行 CSS      | **↓ 97%** |
+| PrivacySettings      | 160 行 CSS       | ~5 行 CSS      | **↓ 97%** |
+| ExperimentalSettings | 190 行 CSS       | ~5 行 CSS      | **↓ 97%** |
+| ShortcutSettings     | 210 行 CSS       | ~10 行 CSS     | **↓ 95%** |
+| **总计**             | **~1580 行 CSS** | **~50 行 CSS** | **↓ 97%** |
 
 ## 🚀 性能优势
 
@@ -112,6 +130,7 @@
 ## 📱 响应式支持
 
 Vuetify 的组件天生支持响应式：
+
 ```vue
 <v-col cols="12" md="6" lg="4">  <!-- 自动适配不同屏幕 -->
   <v-card>...</v-card>
@@ -119,6 +138,7 @@ Vuetify 的组件天生支持响应式：
 ```
 
 原版需要大量媒体查询：
+
 ```css
 @media (max-width: 768px) {
   /* 大量自定义响应式样式 */
@@ -126,19 +146,24 @@ Vuetify 的组件天生支持响应式：
 ```
 
 ### 5. PrivacySettings.vue (隐私设置)
+
 **使用的 Vuetify 组件：**
+
 - `v-list` / `v-list-item` - 设置项布局
 - `v-select` - 可见性级别选择
 - `v-switch` - 隐私开关选项
 - `v-icon` - Material Design 图标
 
 **改进点：**
+
 - 使用 `v-select` 的 `prepend-inner-icon` 显示选项图标
 - 统一的设置项布局
 - 移除 150+ 行自定义 CSS
 
 ### 6. ExperimentalSettings.vue (实验性功能)
+
 **使用的 Vuetify 组件：**
+
 - `v-alert` - 警告横幅
 - `v-card` - 功能卡片
 - `v-row` / `v-col` - 响应式网格（2 列布局）
@@ -147,13 +172,16 @@ Vuetify 的组件天生支持响应式：
 - `v-icon` - 功能图标
 
 **改进点：**
+
 - 使用卡片式布局展示功能
 - 响应式 2 列网格（md 及以上）
 - 动态卡片颜色（启用时使用 primary tonal）
 - 移除 180+ 行自定义 CSS
 
 ### 7. ShortcutSettings.vue (快捷键设置)
+
 **使用的 Vuetify 组件：**
+
 - `v-list` / `v-list-item` - 快捷键列表
 - `v-text-field` - 快捷键输入
 - `v-avatar` - Emoji 图标容器
@@ -162,6 +190,7 @@ Vuetify 的组件天生支持响应式：
 - `v-icon` - 图标
 
 **改进点：**
+
 - 使用 `v-avatar` 展示 Emoji
 - `v-text-field` 的 `append-inner` 插槽放置清除按钮
 - 键盘事件处理保持不变
@@ -170,6 +199,7 @@ Vuetify 的组件天生支持响应式：
 ## 🔧 重构指南
 
 ### 步骤 1：使用 v-list 替代自定义 setting-item
+
 ```vue
 <!-- 之前 -->
 <div class="setting-item">
@@ -187,6 +217,7 @@ Vuetify 的组件天生支持响应式：
 ```
 
 ### 步骤 2：使用 Vuetify 表单组件
+
 ```vue
 <!-- select -->
 <v-select v-model="value" :items="options" />
@@ -205,7 +236,9 @@ Vuetify 的组件天生支持响应式：
 ```
 
 ### 步骤 3：删除自定义 CSS
+
 大部分情况下只需要保留：
+
 ```css
 <style scoped>
 /* 特殊的自定义样式（如颜色选择器） */
@@ -248,6 +281,7 @@ Vuetify 的组件天生支持响应式：
 ### 路由系统更新
 
 **旧路由结构**（使用子路由）：
+
 ```typescript
 {
   path: '/settings',
@@ -262,6 +296,7 @@ Vuetify 的组件天生支持响应式：
 ```
 
 **新路由结构**（单页面，内部标签导航）：
+
 ```typescript
 {
   path: '/settings',
@@ -288,7 +323,7 @@ Vuetify 的组件天生支持响应式：
 ✅ **完整的主题支持** - 自动适配浅色/深色模式  
 ✅ **Material Design 规范** - 统一的设计语言  
 ✅ **更好的可维护性** - 代码更简洁，结构更清晰  
-✅ **响应式设计** - 自动适配各种屏幕尺寸  
+✅ **响应式设计** - 自动适配各种屏幕尺寸
 
 ### 架构改进
 

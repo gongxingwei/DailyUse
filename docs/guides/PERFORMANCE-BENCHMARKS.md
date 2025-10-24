@@ -6,14 +6,14 @@ This document describes the performance benchmarking system for DailyUse applica
 
 ## 🎯 Performance Targets
 
-| Category | Metric | Target | Description |
-|----------|--------|--------|-------------|
-| DAG Rendering | Build time | < 500ms | Build DAG nodes for 100 goals |
-| Goal CRUD | Operation time | < 100ms | Average CRUD operation (Create/Read/Update/Delete) |
-| Weight Calculation | Computation | < 50ms | Calculate weighted progress for 10 KRs |
-| Rule Evaluation | Evaluation time | < 10ms | Single goal rule evaluation |
-| JSON Serialization | Serialize/Deserialize | < 20ms | Process 100 goals |
-| Array Operations | Filter/Map/Sort | < 10ms | Process 100 items |
+| Category           | Metric                | Target  | Description                                        |
+| ------------------ | --------------------- | ------- | -------------------------------------------------- |
+| DAG Rendering      | Build time            | < 500ms | Build DAG nodes for 100 goals                      |
+| Goal CRUD          | Operation time        | < 100ms | Average CRUD operation (Create/Read/Update/Delete) |
+| Weight Calculation | Computation           | < 50ms  | Calculate weighted progress for 10 KRs             |
+| Rule Evaluation    | Evaluation time       | < 10ms  | Single goal rule evaluation                        |
+| JSON Serialization | Serialize/Deserialize | < 20ms  | Process 100 goals                                  |
+| Array Operations   | Filter/Map/Sort       | < 10ms  | Process 100 items                                  |
 
 ## 🚀 Quick Start
 
@@ -33,6 +33,7 @@ pnpm bench performance.bench.ts
 ### Generate Reports
 
 Reports are automatically generated in `benchmarks/results/`:
+
 - `BENCHMARK-REPORT.md` - Markdown report
 - `benchmark-report.html` - HTML report (open in browser)
 - `benchmark-results.json` - Raw JSON data
@@ -56,7 +57,9 @@ apps/web/
 ## 📝 Benchmark Suites
 
 ### 1. Goal CRUD Operations
+
 Tests the performance of basic goal operations:
+
 - Create Goal
 - Read Goal
 - Update Goal
@@ -65,7 +68,9 @@ Tests the performance of basic goal operations:
 **Target**: < 100ms per operation
 
 ### 2. Weight Calculations
+
 Tests various weight-related computations:
+
 - Calculate Total Weight
 - Calculate Average Progress
 - Calculate Weighted Progress
@@ -74,7 +79,9 @@ Tests various weight-related computations:
 **Target**: < 50ms per calculation
 
 ### 3. Rule Evaluation
+
 Tests the auto status rules system:
+
 - Single Rule Evaluation
 - Batch Evaluation (10 goals)
 - Batch Evaluation (50 goals)
@@ -83,14 +90,18 @@ Tests the auto status rules system:
 **Target**: < 10ms per single evaluation
 
 ### 4. DAG Data Processing
+
 Tests DAG visualization data preparation:
+
 - Build nodes (10, 50, 100 goals)
 - Build edges (100 relationships)
 
 **Target**: < 500ms for 100 nodes
 
 ### 5. JSON Serialization
+
 Tests data serialization performance:
+
 - Serialize/Deserialize small (1 goal)
 - Serialize/Deserialize medium (10 goals)
 - Serialize/Deserialize large (100 goals)
@@ -98,7 +109,9 @@ Tests data serialization performance:
 **Target**: < 20ms for large datasets
 
 ### 6. Array Operations
+
 Tests common array operations:
+
 - Filter goals
 - Map goals
 - Sort goals
@@ -115,11 +128,15 @@ Tests common array operations:
 import { bench, describe } from 'vitest';
 
 describe('My Feature Performance', () => {
-  bench('My Operation', () => {
-    // Your code to benchmark
-  }, {
-    iterations: 100, // Number of iterations
-  });
+  bench(
+    'My Operation',
+    () => {
+      // Your code to benchmark
+    },
+    {
+      iterations: 100, // Number of iterations
+    },
+  );
 });
 ```
 
@@ -136,15 +153,18 @@ pnpm bench
 ## 📊 Interpreting Results
 
 ### Time Metrics
+
 - **time**: Average execution time per iteration (ms)
 - **hz**: Operations per second
 - **iterations**: Number of times the benchmark ran
 
 ### Pass/Fail Criteria
+
 - ✅ **Pass**: Execution time is within target
 - ❌ **Fail**: Execution time exceeds target
 
 ### Baseline Comparison
+
 - 🚀 **Improved**: > 10% faster than baseline
 - ✅ **Stable**: Within ±10% of baseline
 - ⚠️ **Regression**: > 10% slower than baseline
@@ -184,6 +204,7 @@ jobs:
 ### Performance Alerts
 
 Set up alerts for performance regressions:
+
 - > 10% slower: ⚠️ Warning comment on PR
 - > 25% slower: ❌ Block PR merge
 - > 50% slower: 🚨 Urgent notification
@@ -191,6 +212,7 @@ Set up alerts for performance regressions:
 ## 💡 Optimization Tips
 
 ### General Guidelines
+
 1. **Profile First**: Use browser DevTools to identify bottlenecks
 2. **Measure Twice**: Always benchmark before and after optimization
 3. **Test Realistically**: Use production-like data sizes
@@ -199,18 +221,18 @@ Set up alerts for performance regressions:
 ### Common Optimizations
 
 #### Array Operations
+
 ```typescript
 // ❌ Slow: Multiple iterations
-const active = goals.filter(g => g.status === 'ACTIVE');
-const titles = active.map(g => g.title);
+const active = goals.filter((g) => g.status === 'ACTIVE');
+const titles = active.map((g) => g.title);
 
 // ✅ Fast: Single iteration
-const titles = goals
-  .filter(g => g.status === 'ACTIVE')
-  .map(g => g.title);
+const titles = goals.filter((g) => g.status === 'ACTIVE').map((g) => g.title);
 ```
 
 #### Object Cloning
+
 ```typescript
 // ❌ Slow: JSON.parse(JSON.stringify)
 const clone = JSON.parse(JSON.stringify(goal));
@@ -223,6 +245,7 @@ const clone = structuredClone(goal);
 ```
 
 #### Memoization
+
 ```typescript
 // ❌ Slow: Recalculate every time
 const getProgress = () => {
@@ -242,12 +265,14 @@ const getProgress = () => {
 ## 📈 Historical Performance
 
 ### Baseline (2024-10-23)
+
 - DAG Rendering (100 nodes): 45.2ms ✅
 - Goal CRUD: 12.5ms ✅
 - Rule Evaluation: 8.3ms ✅
 - Weight Calculation: 5.1ms ✅
 
 ### Targets for Next Sprint
+
 - Reduce DAG rendering to < 300ms
 - Implement virtual scrolling for large lists
 - Optimize rule evaluation for batch operations
@@ -261,6 +286,7 @@ const getProgress = () => {
 ## 📝 Changelog
 
 ### 2024-10-23 (STORY-014)
+
 - ✅ Initial benchmark suite implementation
 - ✅ 6 benchmark categories added
 - ✅ Report generation (Markdown/HTML/JSON)

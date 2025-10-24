@@ -8,11 +8,12 @@
       </div>
       <div class="notification-body">{{ body }}</div>
       <div v-if="actions && actions.length" class="notification-actions">
-        <button 
-          v-for="action in actions" 
+        <button
+          v-for="action in actions"
           :key="action.text"
           @click="handleAction({ text: action.text, type: action.type })"
-          :class="action.type">
+          :class="action.type"
+        >
           {{ action.text }}
         </button>
       </div>
@@ -38,7 +39,7 @@ const progressWidth = ref(100);
 let progressInterval: NodeJS.Timeout | null = null;
 
 // 解析 actions 参数
-let actions = ref<Array<{ text: string, type: string }>>([]);
+let actions = ref<Array<{ text: string; type: string }>>([]);
 if (route.query.actions) {
   try {
     const actionsStr = route.query.actions as string;
@@ -61,7 +62,7 @@ const close = () => {
 const handleAction = (action: { text: string; type: string }) => {
   const serializedAction = {
     text: action.text,
-    type: action.type
+    type: action.type,
   };
   if (window.shared?.ipcRenderer) {
     window.shared.ipcRenderer.send('notification-action', id.value, serializedAction);
@@ -73,7 +74,7 @@ onMounted(() => {
     title: title.value,
     body: body.value,
     urgency: urgency.value,
-    actions: actions.value
+    actions: actions.value,
   });
 
   // 如果不是 critical 级别，3秒后自动关闭
@@ -82,7 +83,7 @@ onMounted(() => {
     const DURATION = 3000; // 3秒
     const INTERVAL = 50; // 50毫秒更新一次
     const STEP = (100 * INTERVAL) / DURATION;
-    
+
     progressInterval = setInterval(() => {
       progressWidth.value -= STEP;
       if (progressWidth.value <= 0) {
@@ -105,7 +106,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-
 .notification-window {
   width: 100vw;
   height: 100vh;

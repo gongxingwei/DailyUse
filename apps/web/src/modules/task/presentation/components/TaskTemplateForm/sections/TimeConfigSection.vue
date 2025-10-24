@@ -27,19 +27,39 @@
 
         <!-- 开始日期 -->
         <v-col cols="12" md="6">
-          <v-text-field v-model="startDateInput" label="开始日期" type="date" variant="outlined" required
-            prepend-inner-icon="mdi-calendar" @update:model-value="updateStartDate" />
+          <v-text-field
+            v-model="startDateInput"
+            label="开始日期"
+            type="date"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-calendar"
+            @update:model-value="updateStartDate"
+          />
         </v-col>
 
         <!-- 无期限选项 -->
         <v-col cols="12" md="6">
-          <v-switch v-model="isNoEndDate" label="无结束日期（长期任务）" color="primary" hide-details class="mt-2" />
+          <v-switch
+            v-model="isNoEndDate"
+            label="无结束日期（长期任务）"
+            color="primary"
+            hide-details
+            class="mt-2"
+          />
         </v-col>
 
         <!-- 结束日期 -->
         <v-col cols="12" md="6" v-if="!isNoEndDate">
-          <v-text-field v-model="endDateInput" label="结束日期" type="date" variant="outlined"
-            prepend-inner-icon="mdi-calendar-end" hint="留空表示无结束日期" @update:model-value="updateEndDate" />
+          <v-text-field
+            v-model="endDateInput"
+            label="结束日期"
+            type="date"
+            variant="outlined"
+            prepend-inner-icon="mdi-calendar-end"
+            hint="留空表示无结束日期"
+            @update:model-value="updateEndDate"
+          />
         </v-col>
       </v-row>
 
@@ -91,14 +111,28 @@
 
         <!-- 开始时间（非全天任务） -->
         <v-col cols="12" md="6" v-if="timeType !== 'allDay'">
-          <v-text-field v-model="startTimeInput" label="开始时间" type="time" variant="outlined" required
-            prepend-inner-icon="mdi-clock-start" @update:model-value="updateStartTime" />
+          <v-text-field
+            v-model="startTimeInput"
+            label="开始时间"
+            type="time"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-clock-start"
+            @update:model-value="updateStartTime"
+          />
         </v-col>
 
         <!-- 结束时间（仅时间段类型） -->
         <v-col cols="12" md="6" v-if="timeType === 'timeRange'">
-          <v-text-field v-model="endTimeInput" label="结束时间" type="time" variant="outlined"
-            prepend-inner-icon="mdi-clock-end" hint="必须在同一天内" @update:model-value="updateEndTime" />
+          <v-text-field
+            v-model="endTimeInput"
+            label="结束时间"
+            type="time"
+            variant="outlined"
+            prepend-inner-icon="mdi-clock-end"
+            hint="必须在同一天内"
+            @update:model-value="updateEndTime"
+          />
         </v-col>
 
         <!-- 时间段提示 -->
@@ -111,8 +145,15 @@
 
         <!-- 时区设置 -->
         <v-col cols="12" md="6">
-          <v-select v-model="timezone" :items="timezoneOptions" label="时区" variant="outlined"
-            prepend-inner-icon="mdi-earth" item-title="text" item-value="value" />
+          <v-select
+            v-model="timezone"
+            :items="timezoneOptions"
+            label="时区"
+            variant="outlined"
+            prepend-inner-icon="mdi-earth"
+            item-title="text"
+            item-value="value"
+          />
         </v-col>
       </v-row>
     </v-card-text>
@@ -125,7 +166,12 @@ import { computed, ref, watch } from 'vue';
 import { useTimeConfigValidation } from '@/modules/task/presentation/composables/useTimeConfigValidation';
 import { TaskContracts } from '@dailyuse/contracts';
 // utils
-import { updateDateKeepTime, updateTimeKeepDate, formatDateToInput, formatTimeToInput } from '@dailyuse/utils';
+import {
+  updateDateKeepTime,
+  updateTimeKeepDate,
+  formatDateToInput,
+  formatTimeToInput,
+} from '@dailyuse/utils';
 
 interface Props {
   modelValue: TaskTemplate;
@@ -166,11 +212,11 @@ const timeType = computed({
           timeType: newType,
           // 根据类型清理不相关的时间
           ...(newType === 'allDay' ? { startTime: undefined, endTime: undefined } : {}),
-          ...(newType === 'specificTime' ? { endTime: undefined } : {})
-        }
+          ...(newType === 'specificTime' ? { endTime: undefined } : {}),
+        },
       };
     });
-  }
+  },
 });
 
 // 时区控制
@@ -180,10 +226,10 @@ const timezone = computed({
     updateTemplate((template) => {
       (template as any)._timeConfig = {
         ...template.timeConfig,
-        timezone: newTimezone
+        timezone: newTimezone,
       };
     });
-  }
+  },
 });
 
 // 无期限任务控制
@@ -195,21 +241,15 @@ const isNoEndDate = computed({
         ...template.timeConfig,
         date: {
           ...template.timeConfig.date,
-          endDate: value ? undefined : new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000) // 默认30天后
-        }
+          endDate: value ? undefined : new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000), // 默认30天后
+        },
       };
     });
-  }
+  },
 });
 
 // 使用时间配置验证
-const {
-  isValid,
-  hasWarnings,
-  errors,
-  warnings,
-  validateTimeConfig
-} = useTimeConfigValidation();
+const { isValid, hasWarnings, errors, warnings, validateTimeConfig } = useTimeConfigValidation();
 
 // 表单输入字段
 const startDateInput = ref('');
@@ -227,8 +267,8 @@ const updateStartDate = (date: string) => {
       ...template.timeConfig,
       date: {
         ...template.timeConfig.date,
-        startDate: newStartDate
-      }
+        startDate: newStartDate,
+      },
     };
   });
 };
@@ -240,8 +280,8 @@ const updateEndDate = (date: string) => {
         ...template.timeConfig,
         date: {
           ...template.timeConfig.date,
-          endDate: undefined
-        }
+          endDate: undefined,
+        },
       };
     });
     return;
@@ -253,8 +293,8 @@ const updateEndDate = (date: string) => {
       ...template.timeConfig,
       date: {
         ...template.timeConfig.date,
-        endDate: newEndDate
-      }
+        endDate: newEndDate,
+      },
     };
   });
 };
@@ -268,8 +308,8 @@ const updateStartTime = (time: string) => {
       ...template.timeConfig,
       time: {
         ...template.timeConfig.time,
-        startTime: time
-      }
+        startTime: time,
+      },
     };
   });
 };
@@ -282,8 +322,8 @@ const updateEndTime = (time: string) => {
       ...template.timeConfig,
       time: {
         ...template.timeConfig.time,
-        endTime: time
-      }
+        endTime: time,
+      },
     };
   });
 };
@@ -308,15 +348,23 @@ const initializeFormData = () => {
 };
 
 // 监听时间配置变化，触发验证
-watch(() => props.modelValue.timeConfig, () => {
-  const isValid = validateTimeConfig(props.modelValue.timeConfig);
-  emit('update:validation', isValid);
-}, { deep: true, immediate: true });
+watch(
+  () => props.modelValue.timeConfig,
+  () => {
+    const isValid = validateTimeConfig(props.modelValue.timeConfig);
+    emit('update:validation', isValid);
+  },
+  { deep: true, immediate: true },
+);
 
 // 监听模板变化，初始化表单数据
-watch(() => props.modelValue, () => {
-  initializeFormData();
-}, { immediate: true });
+watch(
+  () => props.modelValue,
+  () => {
+    initializeFormData();
+  },
+  { immediate: true },
+);
 
 // 监听无期限开关，自动清空结束日期输入框
 watch(isNoEndDate, (newValue) => {

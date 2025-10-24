@@ -17,7 +17,7 @@ defineEmits(['click']);
   min-width: 80px;
   min-height: 80px;
   aspect-ratio: 1 / 1;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px dashed #bbb;
   border-radius: 12px;
   display: flex;
@@ -27,6 +27,6 @@ defineEmits(['click']);
   transition: background 0.2s;
 }
 .grid-blank-item:hover {
-  background: rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.18);
 }
 </style>

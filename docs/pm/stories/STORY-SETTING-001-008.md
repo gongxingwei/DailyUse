@@ -118,7 +118,7 @@ Feature: 快捷键格式化显示
 Scenario: Mac vs Windows 格式
   Given 我在 Windows 系统上
   Then 快捷键应该显示为 "Ctrl+N"
-  
+
   Given 我在 Mac 系统上
   Then 快捷键应该显示为 "⌘N"
 
@@ -343,7 +343,7 @@ const filteredShortcuts = computed(() => {
   Object.entries(shortcuts.value).forEach(([key, value]) => {
     const label = t(`settings.shortcuts.actions.${key}`).toLowerCase();
     const shortcut = value.toLowerCase();
-    
+
     if (label.includes(query) || shortcut.includes(query)) {
       filtered[key] = value;
     }
@@ -367,7 +367,7 @@ async function handleSave(key: string, newShortcut: string) {
   if (conflict) {
     const confirmed = await showConflictDialog(conflict, newShortcut);
     if (!confirmed) return;
-    
+
     // Clear conflicting shortcut
     shortcuts.value[conflict] = '';
   }
@@ -410,9 +410,7 @@ function checkConflict(shortcut: string, excludeKey: string): string | null {
 
 async function showConflictDialog(conflictKey: string, shortcut: string): Promise<boolean> {
   const conflictLabel = t(`settings.shortcuts.actions.${conflictKey}`);
-  return confirm(
-    t('settings.shortcuts.conflictWarning', { shortcut, action: conflictLabel })
-  );
+  return confirm(t('settings.shortcuts.conflictWarning', { shortcut, action: conflictLabel }));
 }
 </script>
 
@@ -455,9 +453,7 @@ async function showConflictDialog(conflictKey: string, shortcut: string): Promis
       <div class="captured-keys">
         {{ formatShortcut(capturedKeys) || t('settings.shortcuts.pressKey') }}
       </div>
-      <button @click="cancel" class="cancel-button">
-        {{ t('common.cancel') }} (Esc)
-      </button>
+      <button @click="cancel" class="cancel-button">{{ t('common.cancel') }} (Esc)</button>
     </div>
     <div v-else>
       <button @click="startCapture" class="edit-button">
@@ -525,7 +521,7 @@ function handleKeyDown(event: KeyboardEvent) {
   // If we have at least one modifier + key, save it
   if (keys.length >= 2) {
     const shortcut = ShortcutFormatter.format(keys);
-    
+
     // Check if it's a system reserved shortcut
     if (ShortcutFormatter.isSystemReserved(shortcut)) {
       alert(t('settings.shortcuts.systemReserved', { shortcut }));
@@ -591,17 +587,17 @@ onUnmounted(() => {
 ```typescript
 export class ShortcutFormatter {
   private static readonly MODIFIER_ORDER = ['Ctrl', 'Alt', 'Shift', 'Meta'];
-  
+
   private static readonly KEY_DISPLAY_NAMES: Record<string, string> = {
     ' ': '空格',
-    'Enter': '回车',
-    'Backspace': '退格',
-    'Delete': 'Del',
-    'ArrowUp': '↑',
-    'ArrowDown': '↓',
-    'ArrowLeft': '←',
-    'ArrowRight': '→',
-    'Escape': 'Esc',
+    Enter: '回车',
+    Backspace: '退格',
+    Delete: 'Del',
+    ArrowUp: '↑',
+    ArrowDown: '↓',
+    ArrowLeft: '←',
+    ArrowRight: '→',
+    Escape: 'Esc',
   };
 
   private static readonly SYSTEM_RESERVED = [
@@ -621,12 +617,12 @@ export class ShortcutFormatter {
    */
   static format(keys: string[]): string {
     const modifiers = keys
-      .filter(k => this.MODIFIER_ORDER.includes(k))
+      .filter((k) => this.MODIFIER_ORDER.includes(k))
       .sort((a, b) => this.MODIFIER_ORDER.indexOf(a) - this.MODIFIER_ORDER.indexOf(b));
-    
+
     const mainKeys = keys
-      .filter(k => !this.MODIFIER_ORDER.includes(k))
-      .map(k => this.KEY_DISPLAY_NAMES[k] || k);
+      .filter((k) => !this.MODIFIER_ORDER.includes(k))
+      .map((k) => this.KEY_DISPLAY_NAMES[k] || k);
 
     return [...modifiers, ...mainKeys].join('+');
   }
@@ -642,10 +638,7 @@ export class ShortcutFormatter {
    * Format for Mac (⌘ instead of Ctrl)
    */
   static formatForMac(shortcut: string): string {
-    return shortcut
-      .replace('Ctrl', '⌘')
-      .replace('Alt', '⌥')
-      .replace('Shift', '⇧');
+    return shortcut.replace('Ctrl', '⌘').replace('Alt', '⌥').replace('Shift', '⇧');
   }
 
   /**
@@ -678,16 +671,16 @@ export class ShortcutFormatter {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| 页面布局和列表 | 2 小时 |
-| 快捷键编辑器 | 2.5 小时 |
-| 冲突检测 | 1.5 小时 |
-| 格式化工具类 | 1.5 小时 |
-| 恢复默认功能 | 1 小时 |
-| 搜索功能 | 1 小时 |
-| 组件测试 | 2 小时 |
-| **总计** | **11.5 小时** |
+| 任务           | 预估时间      |
+| -------------- | ------------- |
+| 页面布局和列表 | 2 小时        |
+| 快捷键编辑器   | 2.5 小时      |
+| 冲突检测       | 1.5 小时      |
+| 格式化工具类   | 1.5 小时      |
+| 恢复默认功能   | 1 小时        |
+| 搜索功能       | 1 小时        |
+| 组件测试       | 2 小时        |
+| **总计**       | **11.5 小时** |
 
 **Story Points**: 3 SP
 
@@ -696,6 +689,7 @@ export class ShortcutFormatter {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-005 (Client Services)
 
 ---

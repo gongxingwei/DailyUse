@@ -22,10 +22,10 @@ export class WeightSnapshotApiClient {
     keyResult: { uuid: string; title: string; oldWeight: number; newWeight: number };
     snapshot: { oldWeight: number; newWeight: number; delta: number };
   }> {
-    const data = await apiClient.post(
-      `/goals/${goalUuid}/key-results/${krUuid}/weight`,
-      { newWeight, reason },
-    );
+    const data = await apiClient.post(`/goals/${goalUuid}/key-results/${krUuid}/weight`, {
+      newWeight,
+      reason,
+    });
     return data;
   }
 

@@ -9,7 +9,12 @@
           </v-avatar>
           <div>
             <h3 class="text-h6 font-weight-bold mb-1">{{ goal.name }}</h3>
-            <v-chip :color="getStatusColor()" size="small" variant="tonal" class="font-weight-medium">
+            <v-chip
+              :color="getStatusColor()"
+              size="small"
+              variant="tonal"
+              class="font-weight-medium"
+            >
               <v-icon start size="12">{{ getStatusIcon() }}</v-icon>
               {{ getStatusText() }}
             </v-chip>
@@ -17,7 +22,13 @@
         </div>
 
         <!-- 进度圆环 -->
-        <v-progress-circular :model-value="goalProgress" :color="goal.color" size="48" width="6" class="progress-ring">
+        <v-progress-circular
+          :model-value="goalProgress"
+          :color="goal.color"
+          size="48"
+          width="6"
+          class="progress-ring"
+        >
           <span class="text-caption font-weight-bold">{{ Math.round(goalProgress) }}%</span>
         </v-progress-circular>
       </div>
@@ -34,7 +45,12 @@
           {{ format(goal.startTime, 'yyyy-MM-dd') }} - {{ format(goal.endTime, 'yyyy-MM-dd') }}
         </span>
         <v-spacer />
-        <v-chip :color="getRemainingDaysColor()" size="small" variant="outlined" class="font-weight-medium">
+        <v-chip
+          :color="getRemainingDaysColor()"
+          size="small"
+          variant="outlined"
+          class="font-weight-medium"
+        >
           <v-icon start size="12">mdi-clock-outline</v-icon>
           {{ getRemainingDaysText() }}
         </v-chip>
@@ -46,7 +62,13 @@
           <span class="text-caption text-medium-emphasis">目标进度</span>
           <span class="text-caption font-weight-bold">{{ Math.round(goalProgress) }}%</span>
         </div>
-        <v-progress-linear :model-value="goalProgress" :color="goal.color" height="8" rounded class="progress-bar" />
+        <v-progress-linear
+          :model-value="goalProgress"
+          :color="goal.color"
+          height="8"
+          rounded
+          class="progress-bar"
+        />
       </div>
 
       <!-- 关键结果数量 -->
@@ -65,7 +87,13 @@
       <v-spacer></v-spacer>
 
       <!-- 复盘按钮 -->
-      <v-btn v-if="isGoalCompleted || isGoalArchived" variant="text" size="small" color="info" @click="reviewGoal">
+      <v-btn
+        v-if="isGoalCompleted || isGoalArchived"
+        variant="text"
+        size="small"
+        color="info"
+        @click="reviewGoal"
+      >
         <v-icon left size="16">mdi-clipboard-text</v-icon>
         复盘
       </v-btn>
@@ -92,9 +120,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, defineExpose } from 'vue'
-import { Goal, KeyResult } from '@dailyuse/domain-client'
-import { format } from 'date-fns'
+import { computed, ref, defineExpose } from 'vue';
+import { Goal, KeyResult } from '@dailyuse/domain-client';
+import { format } from 'date-fns';
 import { useRouter } from 'vue-router';
 import { useGoal } from '../../composables/useGoal';
 
@@ -102,8 +130,8 @@ const router = useRouter();
 const goalComposable = useGoal();
 
 const props = defineProps<{
-  goal: Goal
-}>()
+  goal: Goal;
+}>();
 
 // 内部状态控制
 const isCardOpen = ref(false);
@@ -142,7 +170,7 @@ const reviewGoal = async () => {
     // 导航到复盘页面或打开复盘对话框
     router.push({
       name: 'goal-review',
-      params: { goalUuid: props.goal.uuid }
+      params: { goalUuid: props.goal.uuid },
     });
   } catch (error) {
     console.error('Failed to open goal review:', error);
@@ -178,11 +206,11 @@ const goalProgress = computed(() => {
 });
 
 const isGoalArchived = computed(() => {
-  return props.goal.lifecycle.status === "archived";
+  return props.goal.lifecycle.status === 'archived';
 });
 
 const isGoalCompleted = computed(() => {
-  return props.goal.lifecycle.status === "completed";
+  return props.goal.lifecycle.status === 'completed';
 });
 
 const remainingDays = computed(() => {

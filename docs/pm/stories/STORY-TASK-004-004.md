@@ -14,30 +14,35 @@
 ## 🎯 Acceptance Criteria
 
 ### 1. Critical Path Calculation ✅
+
 - **AC-1.1**: System calculates the longest path from start to finish
 - **AC-1.2**: Identifies all tasks on the critical path (zero slack time)
 - **AC-1.3**: Calculation runs in O(V + E) time complexity
 - **AC-1.4**: Handles multiple independent paths correctly
 
 ### 2. Task Timing Analysis ✅
+
 - **AC-2.1**: Calculate Earliest Start (ES) for each task
 - **AC-2.2**: Calculate Latest Start (LS) for each task
 - **AC-2.3**: Calculate slack/float time (LS - ES)
 - **AC-2.4**: Show estimated completion date based on critical path
 
 ### 3. Visual Highlighting ✅
+
 - **AC-3.1**: Critical path tasks highlighted in red/orange in DAG
 - **AC-3.2**: Non-critical tasks shown in default color
 - **AC-3.3**: Toggle critical path view on/off
 - **AC-3.4**: Display slack time as task metadata
 
 ### 4. Timeline Panel ✅
+
 - **AC-4.1**: Show project total duration
 - **AC-4.2**: List all critical path tasks in sequence
 - **AC-4.3**: Display each task's duration and dependencies
 - **AC-4.4**: Show optimization suggestions (e.g., "Reduce Task X to speed up project")
 
 ### 5. Performance ✅
+
 - **AC-5.1**: Calculation completes in < 100ms for 100 tasks
 - **AC-5.2**: Real-time update when task duration changes
 - **AC-5.3**: Efficient memory usage (no unnecessary copies)
@@ -77,56 +82,53 @@
 #### 1. Critical Path Method (CPM)
 
 **Step 1: Topological Sort**
+
 ```typescript
 /**
  * Perform topological sort using Kahn's algorithm
  * Time Complexity: O(V + E)
  */
-function topologicalSort(
-  tasks: Task[],
-  dependencies: Dependency[]
-): Task[] {
+function topologicalSort(tasks: Task[], dependencies: Dependency[]): Task[] {
   // Build in-degree map
   const inDegree = new Map<string, number>();
   const adjList = new Map<string, string[]>();
-  
-  tasks.forEach(task => {
+
+  tasks.forEach((task) => {
     inDegree.set(task.uuid, 0);
     adjList.set(task.uuid, []);
   });
-  
-  dependencies.forEach(dep => {
-    inDegree.set(dep.successorTaskUuid, 
-      (inDegree.get(dep.successorTaskUuid) || 0) + 1
-    );
+
+  dependencies.forEach((dep) => {
+    inDegree.set(dep.successorTaskUuid, (inDegree.get(dep.successorTaskUuid) || 0) + 1);
     adjList.get(dep.predecessorTaskUuid)!.push(dep.successorTaskUuid);
   });
-  
+
   // Start with tasks that have no predecessors
   const queue: string[] = [];
   inDegree.forEach((degree, uuid) => {
     if (degree === 0) queue.push(uuid);
   });
-  
+
   const sorted: Task[] = [];
-  
+
   while (queue.length > 0) {
     const current = queue.shift()!;
-    sorted.push(tasks.find(t => t.uuid === current)!);
-    
-    adjList.get(current)!.forEach(successor => {
+    sorted.push(tasks.find((t) => t.uuid === current)!);
+
+    adjList.get(current)!.forEach((successor) => {
       inDegree.set(successor, inDegree.get(successor)! - 1);
       if (inDegree.get(successor) === 0) {
         queue.push(successor);
       }
     });
   }
-  
+
   return sorted;
 }
 ```
 
 **Step 2: Forward Pass (Earliest Start Times)**
+
 ```typescript
 /**
  * Calculate earliest start times for all tasks
@@ -134,35 +136,32 @@ function topologicalSort(
  */
 function calculateEarliestStartTimes(
   sortedTasks: Task[],
-  dependencies: Dependency[]
+  dependencies: Dependency[],
 ): Map<string, number> {
   const ES = new Map<string, number>();
-  
-  sortedTasks.forEach(task => {
-    const predecessors = dependencies.filter(
-      dep => dep.successorTaskUuid === task.uuid
-    );
-    
+
+  sortedTasks.forEach((task) => {
+    const predecessors = dependencies.filter((dep) => dep.successorTaskUuid === task.uuid);
+
     if (predecessors.length === 0) {
       ES.set(task.uuid, 0); // Start tasks
     } else {
       const maxES = Math.max(
-        ...predecessors.map(dep => {
-          const predTask = sortedTasks.find(
-            t => t.uuid === dep.predecessorTaskUuid
-          )!;
+        ...predecessors.map((dep) => {
+          const predTask = sortedTasks.find((t) => t.uuid === dep.predecessorTaskUuid)!;
           return ES.get(predTask.uuid)! + predTask.estimatedMinutes;
-        })
+        }),
       );
       ES.set(task.uuid, maxES);
     }
   });
-  
+
   return ES;
 }
 ```
 
 **Step 3: Backward Pass (Latest Start Times)**
+
 ```typescript
 /**
  * Calculate latest start times for all tasks
@@ -171,46 +170,41 @@ function calculateEarliestStartTimes(
 function calculateLatestStartTimes(
   sortedTasks: Task[],
   dependencies: Dependency[],
-  ES: Map<string, number>
+  ES: Map<string, number>,
 ): Map<string, number> {
   const LS = new Map<string, number>();
-  
+
   // Project completion time (max ES + duration)
   const projectDuration = Math.max(
-    ...sortedTasks.map(task => 
-      ES.get(task.uuid)! + task.estimatedMinutes
-    )
+    ...sortedTasks.map((task) => ES.get(task.uuid)! + task.estimatedMinutes),
   );
-  
+
   // Traverse in reverse order
   for (let i = sortedTasks.length - 1; i >= 0; i--) {
     const task = sortedTasks[i];
-    
-    const successors = dependencies.filter(
-      dep => dep.predecessorTaskUuid === task.uuid
-    );
-    
+
+    const successors = dependencies.filter((dep) => dep.predecessorTaskUuid === task.uuid);
+
     if (successors.length === 0) {
       // End tasks
       LS.set(task.uuid, projectDuration - task.estimatedMinutes);
     } else {
       const minLS = Math.min(
-        ...successors.map(dep => {
-          const succTask = sortedTasks.find(
-            t => t.uuid === dep.successorTaskUuid
-          )!;
+        ...successors.map((dep) => {
+          const succTask = sortedTasks.find((t) => t.uuid === dep.successorTaskUuid)!;
           return LS.get(succTask.uuid)! - task.estimatedMinutes;
-        })
+        }),
       );
       LS.set(task.uuid, minLS);
     }
   }
-  
+
   return LS;
 }
 ```
 
 **Step 4: Identify Critical Tasks**
+
 ```typescript
 /**
  * Tasks with slack = 0 are on the critical path
@@ -219,20 +213,21 @@ function calculateLatestStartTimes(
 function identifyCriticalTasks(
   tasks: Task[],
   ES: Map<string, number>,
-  LS: Map<string, number>
+  LS: Map<string, number>,
 ): CriticalPathResult {
   const criticalTasks: Task[] = [];
   const slack = new Map<string, number>();
-  
-  tasks.forEach(task => {
+
+  tasks.forEach((task) => {
     const taskSlack = LS.get(task.uuid)! - ES.get(task.uuid)!;
     slack.set(task.uuid, taskSlack);
-    
-    if (Math.abs(taskSlack) < 0.001) { // Floating point tolerance
+
+    if (Math.abs(taskSlack) < 0.001) {
+      // Floating point tolerance
       criticalTasks.push(task);
     }
   });
-  
+
   return {
     criticalTasks,
     slack,
@@ -249,12 +244,12 @@ function identifyCriticalTasks(
  */
 interface TaskTiming {
   uuid: string;
-  earliestStart: number;      // ES
-  latestStart: number;        // LS
-  earliestFinish: number;     // EF = ES + duration
-  latestFinish: number;       // LF = LS + duration
-  slack: number;              // LS - ES
-  isCritical: boolean;        // slack === 0
+  earliestStart: number; // ES
+  latestStart: number; // LS
+  earliestFinish: number; // EF = ES + duration
+  latestFinish: number; // LF = LS + duration
+  slack: number; // LS - ES
+  isCritical: boolean; // slack === 0
 }
 
 /**
@@ -262,8 +257,8 @@ interface TaskTiming {
  */
 interface CriticalPathResult {
   criticalTasks: Task[];
-  criticalPath: string[];     // Task UUIDs in order
-  projectDuration: number;    // Total minutes
+  criticalPath: string[]; // Task UUIDs in order
+  projectDuration: number; // Total minutes
   taskTimings: Map<string, TaskTiming>;
   suggestions: OptimizationSuggestion[];
 }
@@ -274,7 +269,7 @@ interface CriticalPathResult {
 interface OptimizationSuggestion {
   type: 'reduce_duration' | 'parallelize' | 'remove_dependency';
   taskUuid: string;
-  impact: number;             // Minutes saved
+  impact: number; // Minutes saved
   description: string;
 }
 ```
@@ -284,40 +279,37 @@ interface OptimizationSuggestion {
 ## 📝 Implementation Tasks
 
 ### Task 1: Create Critical Path Service (4 hours)
+
 **File**: `apps/web/src/modules/task/application/services/TaskCriticalPathService.ts`
 
 **Methods**:
+
 ```typescript
 export class TaskCriticalPathService {
   calculateCriticalPath(
     tasks: TaskForDAG[],
-    dependencies: TaskDependencyClientDTO[]
+    dependencies: TaskDependencyClientDTO[],
   ): CriticalPathResult;
-  
-  topologicalSort(
-    tasks: TaskForDAG[],
-    dependencies: TaskDependencyClientDTO[]
-  ): TaskForDAG[];
-  
+
+  topologicalSort(tasks: TaskForDAG[], dependencies: TaskDependencyClientDTO[]): TaskForDAG[];
+
   calculateTaskTimings(
     tasks: TaskForDAG[],
-    dependencies: TaskDependencyClientDTO[]
+    dependencies: TaskDependencyClientDTO[],
   ): Map<string, TaskTiming>;
-  
-  getOptimizationSuggestions(
-    result: CriticalPathResult
-  ): OptimizationSuggestion[];
-  
-  formatProjectTimeline(
-    result: CriticalPathResult
-  ): ProjectTimeline;
+
+  getOptimizationSuggestions(result: CriticalPathResult): OptimizationSuggestion[];
+
+  formatProjectTimeline(result: CriticalPathResult): ProjectTimeline;
 }
 ```
 
 ### Task 2: Add UI Highlighting (2 hours)
+
 **File**: `apps/web/src/modules/task/presentation/components/dag/TaskDAGVisualization.vue`
 
 **Changes**:
+
 - Add `showCriticalPath` prop
 - Modify node styling logic to highlight critical tasks
 - Add slack time display in node tooltip
@@ -329,7 +321,7 @@ const getNodeStyle = (task: TaskForDAG) => {
   if (showCriticalPath && criticalPathService.isCritical(task.uuid)) {
     return {
       itemStyle: {
-        color: '#FF4D4F',        // Red for critical
+        color: '#FF4D4F', // Red for critical
         borderColor: '#CF1322',
         borderWidth: 3,
       },
@@ -338,16 +330,20 @@ const getNodeStyle = (task: TaskForDAG) => {
       },
     };
   }
-  
+
   // Default styling
-  return { /* normal style */ };
+  return {
+    /* normal style */
+  };
 };
 ```
 
 ### Task 3: Create Critical Path Panel (3 hours)
+
 **File**: `apps/web/src/modules/task/presentation/components/critical-path/CriticalPathPanel.vue`
 
 **Features**:
+
 - Project duration display
 - Critical task list with timeline
 - Slack time visualization
@@ -360,7 +356,7 @@ const getNodeStyle = (task: TaskForDAG) => {
       <v-icon class="mr-2">mdi-timeline</v-icon>
       关键路径分析
     </v-card-title>
-    
+
     <v-card-text>
       <!-- Project Stats -->
       <v-row>
@@ -377,34 +373,28 @@ const getNodeStyle = (task: TaskForDAG) => {
           </v-sheet>
         </v-col>
       </v-row>
-      
+
       <!-- Critical Task List -->
       <v-list density="compact" class="mt-4">
         <v-list-subheader>关键路径任务</v-list-subheader>
-        <v-list-item
-          v-for="task in criticalTasks"
-          :key="task.uuid"
-        >
+        <v-list-item v-for="task in criticalTasks" :key="task.uuid">
           <template #prepend>
             <v-icon color="error">mdi-alert-circle</v-icon>
           </template>
-          
+
           <v-list-item-title>{{ task.title }}</v-list-item-title>
           <v-list-item-subtitle>
             工期: {{ formatDuration(task.estimatedMinutes) }}
           </v-list-item-subtitle>
         </v-list-item>
       </v-list>
-      
+
       <!-- Optimization Suggestions -->
       <v-expansion-panels class="mt-4">
         <v-expansion-panel title="优化建议">
           <v-expansion-panel-text>
             <v-list>
-              <v-list-item
-                v-for="(suggestion, index) in suggestions"
-                :key="index"
-              >
+              <v-list-item v-for="(suggestion, index) in suggestions" :key="index">
                 <v-list-item-title>
                   {{ suggestion.description }}
                 </v-list-item-title>
@@ -422,6 +412,7 @@ const getNodeStyle = (task: TaskForDAG) => {
 ```
 
 ### Task 4: Integration (1 hour)
+
 - Add critical path toggle to TaskListView
 - Integrate CriticalPathPanel into demo page
 - Add keyboard shortcut (Cmd+P for path analysis)
@@ -493,6 +484,7 @@ const getNodeStyle = (task: TaskForDAG) => {
 ### Unit Tests
 
 **TaskCriticalPathService**:
+
 ```typescript
 describe('TaskCriticalPathService', () => {
   describe('topologicalSort', () => {
@@ -500,14 +492,14 @@ describe('TaskCriticalPathService', () => {
     it('should handle diamond dependencies', () => {});
     it('should handle multiple start nodes', () => {});
   });
-  
+
   describe('calculateCriticalPath', () => {
     it('should identify single critical path', () => {});
     it('should handle multiple critical paths', () => {});
     it('should calculate correct slack times', () => {});
     it('should handle tasks with zero duration', () => {});
   });
-  
+
   describe('getOptimizationSuggestions', () => {
     it('should suggest parallelization opportunities', () => {});
     it('should suggest duration reduction for critical tasks', () => {});
@@ -517,11 +509,13 @@ describe('TaskCriticalPathService', () => {
 ```
 
 ### Integration Tests
+
 - Calculate critical path → Verify highlighting in DAG
 - Update task duration → Recalculate critical path
 - Toggle critical path view → UI updates correctly
 
 ### Performance Tests
+
 - 50 tasks: < 50ms
 - 100 tasks: < 100ms
 - 200 tasks: < 300ms
@@ -531,16 +525,19 @@ describe('TaskCriticalPathService', () => {
 ## 📊 Success Metrics
 
 ### Technical Metrics
+
 - Critical path calculation: O(V + E) verified
 - UI rendering: < 16ms (60 FPS)
 - Memory usage: < 5MB for 100 tasks
 
 ### Functional Metrics
+
 - Critical path accuracy: 100% (verified against manual calculation)
 - Slack time precision: ±1 minute
 - Suggestion relevance: ≥80% user acceptance
 
 ### User Metrics
+
 - Feature adoption: ≥30% of users with dependencies
 - Average time savings: ≥15% on project planning
 - User satisfaction: ≥8/10
@@ -550,10 +547,12 @@ describe('TaskCriticalPathService', () => {
 ## 🔗 Dependencies
 
 ### Requires (Must be complete first)
+
 - ✅ STORY-022: Task Dependency Data Model
 - ✅ STORY-023: Task DAG Visualization
 
 ### Enables (Can start after this)
+
 - STORY-026: Command Palette (can trigger critical path analysis)
 - STORY-027: Drag & Drop (can update critical path on changes)
 
@@ -570,14 +569,17 @@ describe('TaskCriticalPathService', () => {
 ## 💡 Innovation Points
 
 ### 1. Real-time Recalculation
+
 - Automatic critical path update on any task change
 - No manual refresh needed
 
 ### 2. Intelligent Suggestions
+
 - ML-based (future) suggestions based on historical data
 - Consider resource availability and team capacity
 
 ### 3. Interactive Visualization
+
 - Click critical task to see optimization options
 - Drag to simulate duration changes and see impact
 

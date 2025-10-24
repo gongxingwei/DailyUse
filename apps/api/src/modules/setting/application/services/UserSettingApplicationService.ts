@@ -1,7 +1,7 @@
 /**
  * UserSetting Application Service
  * 用户设置应用服务
- * 
+ *
  * 架构职责：
  * - 协调领域层（UserSettingServer）和基础设施层（Repository）
  * - 处理业务用例（创建、更新、查询、删除用户设置）
@@ -25,7 +25,7 @@ class UserSettingNotFoundError extends DomainError {
       'USER_SETTING_NOT_FOUND',
       `User setting not found with ${type}: ${identifier}`,
       { identifier, type },
-      404
+      404,
     );
   }
 }
@@ -36,7 +36,7 @@ class UserSettingAlreadyExistsError extends DomainError {
       'USER_SETTING_ALREADY_EXISTS',
       `User setting already exists for account: ${accountUuid}`,
       { accountUuid },
-      409
+      409,
     );
   }
 }
@@ -78,8 +78,7 @@ export class UserSettingApplicationService {
    */
   static async getInstance(): Promise<UserSettingApplicationService> {
     if (!UserSettingApplicationService.instance) {
-      UserSettingApplicationService.instance =
-        await UserSettingApplicationService.createInstance();
+      UserSettingApplicationService.instance = await UserSettingApplicationService.createInstance();
     }
     return UserSettingApplicationService.instance;
   }
@@ -352,9 +351,7 @@ export class UserSettingApplicationService {
    * 获取或创建用户设置
    * 确保用户设置存在
    */
-  async getOrCreate(
-    accountUuid: string,
-  ): Promise<SettingContracts.UserSettingClientDTO> {
+  async getOrCreate(accountUuid: string): Promise<SettingContracts.UserSettingClientDTO> {
     const existing = await this.repository.findByAccountUuid(accountUuid);
     if (existing) {
       return existing.toClientDTO();

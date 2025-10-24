@@ -26,8 +26,8 @@
         class="ma-4"
       >
         <div class="text-body-2">
-          <strong>关键路径</strong>是决定项目最短完成时间的任务序列。<br/>
-          <strong>松弛时间</strong>是任务可以延迟而不影响项目工期的时间。<br/>
+          <strong>关键路径</strong>是决定项目最短完成时间的任务序列。<br />
+          <strong>松弛时间</strong>是任务可以延迟而不影响项目工期的时间。<br />
           关键任务的松弛时间为 0，优先完成这些任务可以确保项目按时交付。
         </div>
       </v-alert>
@@ -35,9 +35,7 @@
 
     <v-card-text v-if="!result">
       <v-alert type="warning" density="compact">
-        <div class="text-body-2">
-          请添加任务依赖关系以计算关键路径。
-        </div>
+        <div class="text-body-2">请添加任务依赖关系以计算关键路径。</div>
       </v-alert>
     </v-card-text>
 
@@ -70,7 +68,11 @@
           <v-card variant="tonal" color="success">
             <v-card-text class="text-center py-4">
               <div class="text-h4 font-weight-bold">
-                {{ timeline.criticalTaskCount > 0 ? ((result.criticalTasks.length / timeline.criticalTaskCount) * 100).toFixed(0) : 0 }}%
+                {{
+                  timeline.criticalTaskCount > 0
+                    ? ((result.criticalTasks.length / timeline.criticalTaskCount) * 100).toFixed(0)
+                    : 0
+                }}%
               </div>
               <div class="text-caption mt-1">关键任务占比</div>
             </v-card-text>
@@ -118,23 +120,19 @@
                   <v-chip size="x-small" color="primary" variant="flat">
                     工期: {{ formatDuration(task.estimatedMinutes || 0) }}
                   </v-chip>
-                  <v-chip size="x-small" color="error" variant="flat">
-                    松弛: 0 min
-                  </v-chip>
-                  
+                  <v-chip size="x-small" color="error" variant="flat"> 松弛: 0 min </v-chip>
+
                   <v-tooltip location="top">
                     <template #activator="{ props }">
-                      <v-icon
-                        v-bind="props"
-                        size="small"
-                        class="ml-1"
-                      >
-                        mdi-information
-                      </v-icon>
+                      <v-icon v-bind="props" size="small" class="ml-1"> mdi-information </v-icon>
                     </template>
                     <div>
-                      <div>最早开始: {{ formatDuration(getTiming(task.uuid)?.earliestStart || 0) }}</div>
-                      <div>最晚开始: {{ formatDuration(getTiming(task.uuid)?.latestStart || 0) }}</div>
+                      <div>
+                        最早开始: {{ formatDuration(getTiming(task.uuid)?.earliestStart || 0) }}
+                      </div>
+                      <div>
+                        最晚开始: {{ formatDuration(getTiming(task.uuid)?.latestStart || 0) }}
+                      </div>
                     </div>
                   </v-tooltip>
                 </div>
@@ -159,10 +157,7 @@
           </v-expansion-panel-title>
           <v-expansion-panel-text>
             <v-list density="compact">
-              <v-list-item
-                v-for="task in nonCriticalTasks"
-                :key="task.uuid"
-              >
+              <v-list-item v-for="task in nonCriticalTasks" :key="task.uuid">
                 <template #prepend>
                   <v-icon :color="getSlackColor(getTiming(task.uuid)?.slack || 0)">
                     mdi-checkbox-marked-circle
@@ -204,10 +199,7 @@
           </v-expansion-panel-title>
           <v-expansion-panel-text>
             <v-list>
-              <v-list-item
-                v-for="(suggestion, index) in result.suggestions"
-                :key="index"
-              >
+              <v-list-item v-for="(suggestion, index) in result.suggestions" :key="index">
                 <template #prepend>
                   <v-icon :color="getPriorityColor(suggestion.priority)">
                     {{ getSuggestionIcon(suggestion.type) }}
@@ -239,12 +231,7 @@
 
       <!-- 导出选项 -->
       <div class="mt-4 text-center">
-        <v-btn
-          color="primary"
-          variant="outlined"
-          prepend-icon="mdi-download"
-          @click="handleExport"
-        >
+        <v-btn color="primary" variant="outlined" prepend-icon="mdi-download" @click="handleExport">
           导出报告
         </v-btn>
       </div>
@@ -295,9 +282,9 @@ const timeline = computed((): ProjectTimeline => {
 
 const nonCriticalTasks = computed(() => {
   if (!props.result) return [];
-  
+
   const criticalUuids = new Set(props.result.criticalPath);
-  return props.allTasks.filter(task => !criticalUuids.has(task.uuid));
+  return props.allTasks.filter((task) => !criticalUuids.has(task.uuid));
 });
 
 // Methods
@@ -307,10 +294,10 @@ const getTiming = (taskUuid: string): TaskTiming | undefined => {
 
 const formatDuration = (minutes: number): string => {
   if (minutes === 0) return '0 min';
-  
+
   const hours = Math.floor(minutes / 60);
   const mins = Math.round(minutes % 60);
-  
+
   if (hours > 0) {
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   }
@@ -357,7 +344,7 @@ const handleExport = () => {
   // 生成 JSON 报告
   const report = {
     projectDuration: props.result.projectDuration,
-    criticalTasks: props.result.criticalTasks.map(task => ({
+    criticalTasks: props.result.criticalTasks.map((task) => ({
       uuid: task.uuid,
       title: task.title,
       duration: task.estimatedMinutes,

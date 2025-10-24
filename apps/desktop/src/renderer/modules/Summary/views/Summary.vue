@@ -25,7 +25,10 @@
             <div class="stats-grid">
               <!-- 今日任务 -->
               <div class="stat-item">
-                <div class="stat-icon-wrapper" style="background: rgba(var(--v-theme-warning), 0.1);">
+                <div
+                  class="stat-icon-wrapper"
+                  style="background: rgba(var(--v-theme-warning), 0.1)"
+                >
                   <v-icon icon="mdi-list-box" size="24" color="warning" />
                 </div>
                 <div class="stat-info">
@@ -36,7 +39,7 @@
 
               <!-- 进行中目标 -->
               <div class="stat-item">
-                <div class="stat-icon-wrapper" style="background: rgba(var(--v-theme-info), 0.1);">
+                <div class="stat-icon-wrapper" style="background: rgba(var(--v-theme-info), 0.1)">
                   <v-icon icon="mdi-target" size="24" color="info" />
                 </div>
                 <div class="stat-info">
@@ -47,7 +50,10 @@
 
               <!-- 今日记录 -->
               <div class="stat-item">
-                <div class="stat-icon-wrapper" style="background: rgba(var(--v-theme-success), 0.1);">
+                <div
+                  class="stat-icon-wrapper"
+                  style="background: rgba(var(--v-theme-success), 0.1)"
+                >
                   <v-icon icon="mdi-chart-line" size="24" color="success" />
                 </div>
                 <div class="stat-info">
@@ -78,11 +84,21 @@
         <div v-if="goals.length === 0" class="no-goal-tip">
           <v-icon size="48" color="primary" class="mb-2">mdi-target-off</v-icon>
           <div class="tip-title">还没有进行中的目标</div>
-          <div class="tip-desc">目标可以帮你更好地规划和追踪进度，快去<span class="tip-link"
-              @click="$router.push('/goal-management')">目标模块</span>创建一个吧！</div>
+          <div class="tip-desc">
+            目标可以帮你更好地规划和追踪进度，快去<span
+              class="tip-link"
+              @click="$router.push('/goal-management')"
+              >目标模块</span
+            >创建一个吧！
+          </div>
         </div>
         <div v-else class="goals-grid">
-          <GoalInfoShowCard v-for="goal in goals" :key="goal.uuid" :goal="(goal as Goal)" class="goal-card-item" />
+          <GoalInfoShowCard
+            v-for="goal in goals"
+            :key="goal.uuid"
+            :goal="goal as Goal"
+            class="goal-card-item"
+          />
         </div>
       </section>
 
@@ -128,7 +144,7 @@ const getCurrentDateString = () => {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    weekday: 'long'
+    weekday: 'long',
   });
 };
 </script>
@@ -140,9 +156,11 @@ const getCurrentDateString = () => {
   gap: 2rem;
   padding: 2rem;
   width: 100%;
-  background: linear-gradient(135deg,
-      rgba(var(--v-theme-primary), 0.02) 0%,
-      rgba(var(--v-theme-surface), 0.91) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.02) 0%,
+    rgba(var(--v-theme-surface), 0.91) 100%
+  );
 }
 
 /* 头部样式 */
@@ -154,9 +172,11 @@ const getCurrentDateString = () => {
 }
 
 .header-title {
-  background: linear-gradient(135deg,
-      rgba(var(--v-theme-primary), 0.05) 0%,
-      rgba(var(--v-theme-secondary), 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05) 0%,
+    rgba(var(--v-theme-secondary), 0.05) 100%
+  );
   border-radius: 20px;
   padding: 1.5rem 2rem;
   border: 1px solid rgba(var(--v-theme-outline), 0.12);
@@ -272,7 +292,6 @@ const getCurrentDateString = () => {
   grid-template-rows: repeat(auto-fill, minmax(300px, 1fr));
 }
 
-
 .goal-card-item {
   flex: 0 0 400px;
   /* 固定宽度 400px，不会收缩 */
@@ -292,7 +311,11 @@ const getCurrentDateString = () => {
   padding: 48px 0;
   color: rgba(var(--v-theme-on-surface), 0.7);
   font-size: 1.1rem;
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.03), rgba(var(--v-theme-secondary), 0.03));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.03),
+    rgba(var(--v-theme-secondary), 0.03)
+  );
   border-radius: 12px;
 }
 

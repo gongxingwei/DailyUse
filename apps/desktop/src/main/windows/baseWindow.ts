@@ -34,7 +34,7 @@ export abstract class BaseWindow extends EventEmitter implements IBaseWindow {
       webPreferences: {
         ...this.config.webPreferences,
         preload: this.getPreloadPath(),
-      }
+      },
     });
 
     // 设置窗口事件
@@ -213,7 +213,7 @@ export abstract class BaseWindow extends EventEmitter implements IBaseWindow {
         responseHeaders: {
           ...details.responseHeaders,
           'Content-Security-Policy': [cspValue],
-        }
+        },
       });
     });
   }
@@ -225,7 +225,7 @@ export abstract class BaseWindow extends EventEmitter implements IBaseWindow {
     if (!this.window) return;
 
     const pageUrl = this.getPageUrl();
-    
+
     if (pageUrl.startsWith('http')) {
       await this.window.loadURL(pageUrl);
     } else {

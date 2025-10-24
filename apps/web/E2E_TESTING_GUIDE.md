@@ -30,6 +30,7 @@ npx tsx src/__tests__/manual/setup-e2e-test-user.ts
 ```
 
 这将创建或验证测试用户：
+
 - **用户名**: `testuser`
 - **密码**: `Test123456!`
 - **Email**: `testuser@example.com`
@@ -87,6 +88,7 @@ pnpm e2e:report
 5. **验证通知** - 验证通过 SSE 收到通知事件
 
 **预期结果**:
+
 - ✅ 用户成功登录
 - ✅ Reminder 创建成功并显示在列表中
 - ✅ 1-2 分钟内收到第一次提醒
@@ -183,6 +185,7 @@ pnpm e2e:debug
 ```
 
 这会打开 Playwright Inspector，可以：
+
 - 逐步执行测试
 - 查看每一步的状态
 - 实时修改代码
@@ -194,6 +197,7 @@ pnpm e2e:ui
 ```
 
 提供图形界面：
+
 - 查看测试列表
 - 观看测试执行
 - 时间旅行调试
@@ -225,22 +229,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
-      
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-      
+
       - name: Start services
         run: |
           pnpm dev:api &
           pnpm dev:web &
           sleep 10
-      
+
       - name: Run E2E tests
         run: pnpm e2e
-      
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3
@@ -266,6 +270,7 @@ jobs:
 ## 📧 支持
 
 如有问题，请查看：
+
 - 测试日志输出
 - `playwright-report/` 中的 HTML 报告
 - 失败时的截图和视频

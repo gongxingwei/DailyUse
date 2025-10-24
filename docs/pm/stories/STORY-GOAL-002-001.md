@@ -29,7 +29,7 @@ Scenario: 定义完整的 KeyResultWeightSnapshot ServerDTO
   Then 应该包含所有必需字段
   And 使用 TypeScript 类型确保类型安全
   And 添加 JSDoc 注释说明每个字段用途
-  
+
   Examples:
   | Field           | Type                | Required | Description           |
   | uuid            | string              | Yes      | 快照唯一标识          |
@@ -72,7 +72,7 @@ Scenario: 使用 Zod 验证 KeyResultWeightSnapshotServerDTO
   And 应该验证 newWeight 在 0-100 范围内
   And 应该验证 snapshotTime 为正整数
   And 应该验证 trigger 在允许值范围内
-  
+
   Examples: 验证失败案例
   | Invalid Data           | Error Message                    |
   | oldWeight: -10         | oldWeight must be between 0-100  |
@@ -92,12 +92,12 @@ Scenario: 创建 KeyResultWeightSnapshot 值对象
   And 实现 weightDelta 计算属性
   And 实现权重范围验证
   And 提供 toServerDTO() 方法转换为 DTO
-  
+
 Scenario: 计算 weightDelta
   Given 一个权重快照实例
   When oldWeight = 30, newWeight = 50
   Then weightDelta 应该等于 20
-  
+
   When oldWeight = 60, newWeight = 40
   Then weightDelta 应该等于 -20
 ```
@@ -123,15 +123,15 @@ Scenario: 测试 KeyResultWeightSnapshot 创建
   Then 应该成功创建实例
   And 所有属性应该正确赋值
   And weightDelta 应该自动计算
-  
+
 Scenario: 测试权重范围验证
   Given 创建快照数据
   When oldWeight = -10
   Then 应该抛出 InvalidWeightError
-  
+
   When newWeight = 150
   Then 应该抛出 InvalidWeightError
-  
+
 Scenario: 测试覆盖率
   Given 所有测试用例已编写
   When 运行 pnpm nx test domain-server
@@ -217,6 +217,7 @@ Scenario: 测试覆盖率
 ### Contracts 层代码示例
 
 **src/goal/types.ts**:
+
 ```typescript
 /**
  * 权重快照触发方式
@@ -225,12 +226,13 @@ export type SnapshotTrigger = 'manual' | 'auto' | 'restore' | 'import';
 ```
 
 **src/goal/KeyResultWeightSnapshotServerDTO.ts**:
+
 ```typescript
 import type { SnapshotTrigger } from './types';
 
 /**
  * KR 权重快照 Server DTO
- * 
+ *
  * 用于记录 KeyResult 权重的历史变更，支持权重调整的完整追溯和审计。
  */
 export interface KeyResultWeightSnapshotServerDTO {
@@ -276,6 +278,7 @@ export interface KeyResultWeightSnapshotServerDTO {
 ```
 
 **src/goal/schemas.ts**:
+
 ```typescript
 import { z } from 'zod';
 
@@ -285,10 +288,12 @@ export const KeyResultWeightSnapshotServerDTOSchema = z.object({
   uuid: z.string().uuid('Invalid UUID format'),
   goalUuid: z.string().uuid('Invalid Goal UUID'),
   keyResultUuid: z.string().uuid('Invalid KeyResult UUID'),
-  oldWeight: z.number()
+  oldWeight: z
+    .number()
     .min(0, 'oldWeight must be at least 0')
     .max(100, 'oldWeight must be at most 100'),
-  newWeight: z.number()
+  newWeight: z
+    .number()
     .min(0, 'newWeight must be at least 0')
     .max(100, 'newWeight must be at most 100'),
   weightDelta: z.number(),
@@ -299,12 +304,15 @@ export const KeyResultWeightSnapshotServerDTOSchema = z.object({
   createdAt: z.number().int().positive('createdAt must be positive'),
 });
 
-export type KeyResultWeightSnapshotServerDTOType = z.infer<typeof KeyResultWeightSnapshotServerDTOSchema>;
+export type KeyResultWeightSnapshotServerDTOType = z.infer<
+  typeof KeyResultWeightSnapshotServerDTOSchema
+>;
 ```
 
 ### Domain 层代码示例
 
 **src/goal/errors/InvalidWeightError.ts**:
+
 ```typescript
 import { DomainError } from '@dailyuse/utils';
 
@@ -314,13 +322,14 @@ export class InvalidWeightError extends DomainError {
       'INVALID_WEIGHT',
       `Invalid ${field}: ${value}. Weight must be between 0 and 100`,
       { field, value },
-      400
+      400,
     );
   }
 }
 ```
 
 **src/goal/errors/KeyResultNotFoundError.ts**:
+
 ```typescript
 import { DomainError } from '@dailyuse/utils';
 
@@ -330,23 +339,21 @@ export class KeyResultNotFoundError extends DomainError {
       'KEY_RESULT_NOT_FOUND',
       `KeyResult ${krUuid} not found in Goal ${goalUuid}`,
       { krUuid, goalUuid },
-      404
+      404,
     );
   }
 }
 ```
 
 **src/goal/valueObjects/KeyResultWeightSnapshot.ts**:
+
 ```typescript
-import type {
-  KeyResultWeightSnapshotServerDTO,
-  SnapshotTrigger,
-} from '@dailyuse/contracts';
+import type { KeyResultWeightSnapshotServerDTO, SnapshotTrigger } from '@dailyuse/contracts';
 import { InvalidWeightError } from '../errors';
 
 /**
  * KR 权重快照值对象
- * 
+ *
  * 不可变对象，用于记录某个时间点的 KR 权重变更。
  * 包含权重变化的完整上下文信息（谁、什么时候、为什么、怎么变的）。
  */
@@ -361,7 +368,7 @@ export class KeyResultWeightSnapshot {
     public readonly trigger: SnapshotTrigger,
     public readonly operatorUuid: string,
     public readonly reason?: string,
-    public readonly createdAt?: number
+    public readonly createdAt?: number,
   ) {
     this.validateWeights();
   }
@@ -420,13 +427,14 @@ export class KeyResultWeightSnapshot {
       dto.trigger,
       dto.operatorUuid,
       dto.reason,
-      dto.createdAt
+      dto.createdAt,
     );
   }
 }
 ```
 
 **src/goal/entities/Goal.ts** (部分代码):
+
 ```typescript
 import { KeyResultWeightSnapshot } from '../valueObjects/KeyResultWeightSnapshot';
 import { KeyResultNotFoundError } from '../errors';
@@ -444,7 +452,7 @@ export class Goal {
 
   /**
    * 记录 KR 权重变更快照
-   * 
+   *
    * @param krUuid - KeyResult UUID
    * @param oldWeight - 调整前权重
    * @param newWeight - 调整后权重
@@ -459,10 +467,10 @@ export class Goal {
     newWeight: number,
     trigger: SnapshotTrigger,
     operatorUuid: string,
-    reason?: string
+    reason?: string,
   ): void {
     // 验证 KR 存在
-    const kr = this._keyResults.find(k => k.uuid === krUuid);
+    const kr = this._keyResults.find((k) => k.uuid === krUuid);
     if (!kr) {
       throw new KeyResultNotFoundError(krUuid, this.uuid);
     }
@@ -477,7 +485,7 @@ export class Goal {
       Date.now(),
       trigger,
       operatorUuid,
-      reason
+      reason,
     );
 
     // 添加到快照数组
@@ -491,6 +499,7 @@ export class Goal {
 ## ✅ Definition of Done
 
 ### 功能完整性
+
 - [ ] KeyResultWeightSnapshotServerDTO 定义完成并导出
 - [ ] SnapshotTrigger 类型定义完成
 - [ ] Zod 验证器覆盖所有字段
@@ -498,12 +507,14 @@ export class Goal {
 - [ ] Goal.recordWeightSnapshot() 方法实现完成
 
 ### 代码质量
+
 - [ ] TypeScript strict 模式无错误
 - [ ] ESLint 无警告
 - [ ] 所有公共方法有 JSDoc 注释
 - [ ] 单元测试覆盖率 ≥ 80%
 
 ### 测试
+
 - [ ] 所有单元测试通过
 - [ ] 测试覆盖成功和失败场景
 - [ ] weightDelta 计算测试通过
@@ -511,10 +522,12 @@ export class Goal {
 - [ ] Goal 快照记录测试通过
 
 ### 文档
+
 - [ ] JSDoc 注释完整
 - [ ] 接口说明清晰
 
 ### Code Review
+
 - [ ] Code Review 完成 (至少 1 人)
 - [ ] Code Review 反馈已解决
 
@@ -522,14 +535,14 @@ export class Goal {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| Contracts 层开发 | 1.5 小时 |
-| Domain 层开发 (值对象) | 2 小时 |
-| Domain 层开发 (Goal 聚合根) | 1 小时 |
-| 单元测试编写 | 2 小时 |
-| Code Review & 修复 | 1 小时 |
-| **总计** | **7.5 小时** |
+| 任务                        | 预估时间     |
+| --------------------------- | ------------ |
+| Contracts 层开发            | 1.5 小时     |
+| Domain 层开发 (值对象)      | 2 小时       |
+| Domain 层开发 (Goal 聚合根) | 1 小时       |
+| 单元测试编写                | 2 小时       |
+| Code Review & 修复          | 1 小时       |
+| **总计**                    | **7.5 小时** |
 
 **Story Points**: 3 SP (对应 7.5 小时工作量)
 
@@ -538,10 +551,12 @@ export class Goal {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - 无 (这是 Sprint 2a 的第一个 Story)
 - 参考 Sprint 1 的 UserSetting 模块架构
 
 ### 下游依赖
+
 - STORY-GOAL-002-002 (Application Service) 依赖此 Story
 - STORY-GOAL-002-003 (Repository) 依赖此 Story
 - 所有其他 Sprint 2a Stories 间接依赖此 Story
@@ -551,12 +566,14 @@ export class Goal {
 ## 🚨 风险与注意事项
 
 ### 技术风险
+
 1. **Goal 聚合根复杂度**: Goal 已有较多业务逻辑，添加快照功能可能增加复杂度
    - 缓解: 使用值对象封装快照逻辑，保持 Goal 聚合根简洁
 2. **权重总和校验**: 快照记录时是否需要校验所有 KR 权重总和 = 100%
    - 决策: 本 Story 只记录快照，不做业务校验（校验在 Application Service）
 
 ### 业务风险
+
 1. **快照数据量**: 长时间运行后快照数据可能很大
    - 缓解: 考虑添加 createdAt 索引，支持按时间范围查询
 
@@ -565,11 +582,13 @@ export class Goal {
 ## 📝 开发笔记
 
 ### 技术决策
+
 - 使用值对象而非实体: KeyResultWeightSnapshot 不可变，适合值对象模式
 - weightDelta 使用计算属性: 避免数据冗余和不一致
 - 快照记录在 Goal 聚合根: 保持领域模型内聚性
 
 ### 待讨论问题
+
 - 是否需要支持批量快照？（当前一次记录一个）
 - 是否需要快照版本号？（支持快照的快照）
 - 快照是否支持软删除？

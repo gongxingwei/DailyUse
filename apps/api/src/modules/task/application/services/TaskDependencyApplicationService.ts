@@ -50,7 +50,7 @@ export class TaskDependencyApplicationService {
     const container = TaskContainer.getInstance();
     const depRepo = dependencyRepository || container.getTaskDependencyRepository();
     const taskRepo = taskRepository || container.getTaskTemplateRepository();
-    
+
     // 创建领域服务实例
     const domainService = dependencyService || container.getTaskDependencyService();
 
@@ -76,9 +76,7 @@ export class TaskDependencyApplicationService {
   /**
    * 创建依赖关系
    */
-  async createDependency(
-    request: CreateTaskDependencyRequest,
-  ): Promise<TaskDependencyServerDTO> {
+  async createDependency(request: CreateTaskDependencyRequest): Promise<TaskDependencyServerDTO> {
     return await this.dependencyService.createDependency(request);
   }
 

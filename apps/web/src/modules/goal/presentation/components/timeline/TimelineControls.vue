@@ -3,10 +3,7 @@
     <!-- 时间线滑块 -->
     <div class="timeline-slider-container">
       <div class="timeline-track">
-        <div 
-          class="timeline-progress" 
-          :style="{ width: progressPercent + '%' }"
-        />
+        <div class="timeline-progress" :style="{ width: progressPercent + '%' }" />
         <input
           v-model="currentIndexModel"
           type="range"
@@ -17,7 +14,7 @@
           @input="handleSliderChange"
         />
       </div>
-      
+
       <!-- 时间标记 -->
       <div class="timeline-marks">
         <div
@@ -25,7 +22,7 @@
           :key="index"
           class="timeline-mark"
           :class="{ active: index === currentIndex }"
-          :style="{ left: (index / maxIndex * 100) + '%' }"
+          :style="{ left: (index / maxIndex) * 100 + '%' }"
           :title="formatTimestamp(snapshot.timestamp)"
         >
           <div class="mark-dot" />
@@ -37,11 +34,7 @@
     <div class="controls-row">
       <!-- 播放控制 -->
       <div class="play-controls">
-        <button
-          class="control-btn"
-          :title="isPlaying ? '暂停' : '播放'"
-          @click="togglePlay"
-        >
+        <button class="control-btn" :title="isPlaying ? '暂停' : '播放'" @click="togglePlay">
           <svg v-if="!isPlaying" viewBox="0 0 24 24" class="icon">
             <path d="M8 5v14l11-7z" fill="currentColor" />
           </svg>
@@ -72,12 +65,7 @@
           </svg>
         </button>
 
-        <button
-          class="control-btn"
-          :class="{ active: loop }"
-          title="循环播放"
-          @click="toggleLoop"
-        >
+        <button class="control-btn" :class="{ active: loop }" title="循环播放" @click="toggleLoop">
           <svg viewBox="0 0 24 24" class="icon">
             <path
               d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
@@ -119,7 +107,7 @@
         </svg>
         <span>{{ currentSnapshot.reason || '无描述' }}</span>
       </div>
-      
+
       <div class="snapshot-stats">
         <div class="stat-item">
           <span class="stat-label">总权重:</span>
@@ -194,7 +182,7 @@ const currentSnapshot = computed(() => props.snapshots[props.currentIndex]);
 function handleSliderChange(event: Event) {
   const target = event.target as HTMLInputElement;
   const newIndex = Number(target.value);
-  
+
   if (newIndex !== props.currentIndex) {
     emit('update:currentIndex', newIndex);
     emit('snapshotChange', props.snapshots[newIndex]);
@@ -241,29 +229,36 @@ function formatTimestamp(timestamp: number | undefined): string {
 // ==================== Watchers ====================
 
 // 播放逻辑
-watch(() => props.isPlaying, (playing) => {
-  if (playing) {
-    startPlayback();
-  } else {
-    stopPlayback();
-  }
-}, { immediate: true });
+watch(
+  () => props.isPlaying,
+  (playing) => {
+    if (playing) {
+      startPlayback();
+    } else {
+      stopPlayback();
+    }
+  },
+  { immediate: true },
+);
 
 // 速度变化时重启播放
-watch(() => props.speed, () => {
-  if (props.isPlaying) {
-    stopPlayback();
-    startPlayback();
-  }
-});
+watch(
+  () => props.speed,
+  () => {
+    if (props.isPlaying) {
+      stopPlayback();
+      startPlayback();
+    }
+  },
+);
 
 function startPlayback() {
   if (playInterval) {
     clearInterval(playInterval);
   }
-  
+
   const interval = 1000 / props.speed; // 基础间隔 1 秒
-  
+
   playInterval = setInterval(() => {
     if (props.currentIndex < maxIndex.value) {
       nextSnapshot();

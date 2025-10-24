@@ -213,17 +213,15 @@ export class AppConfigServer extends AggregateRoot implements IAppConfigServer {
     return {
       uuid: this.uuid,
       version: this._version,
-        app: this._app,
-        features: this._features,
-        limits: this._limits,
-        appVersionText: `${this._app.name} v${this._app.version} (build ${this._app.buildNumber})`,
-        environmentText:
-          this._app.environment === AppEnvironment.PRODUCTION
-            ? '生产环境'
-            : '开发环境',
-        enabledFeaturesCount: Object.values(this._features).filter((v) => v).length,
-        createdAt: this._createdAt,
-        updatedAt: this._updatedAt,
+      app: this._app,
+      features: this._features,
+      limits: this._limits,
+      appVersionText: `${this._app.name} v${this._app.version} (build ${this._app.buildNumber})`,
+      environmentText:
+        this._app.environment === AppEnvironment.PRODUCTION ? '生产环境' : '开发环境',
+      enabledFeaturesCount: Object.values(this._features).filter((v) => v).length,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 

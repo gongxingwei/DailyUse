@@ -67,8 +67,10 @@ export class WeightSnapshotApplicationService {
     snapshotRepository: IWeightSnapshotRepository,
   ): WeightSnapshotApplicationService {
     if (!WeightSnapshotApplicationService.instance) {
-      WeightSnapshotApplicationService.instance =
-        new WeightSnapshotApplicationService(goalRepository, snapshotRepository);
+      WeightSnapshotApplicationService.instance = new WeightSnapshotApplicationService(
+        goalRepository,
+        snapshotRepository,
+      );
     }
     return WeightSnapshotApplicationService.instance;
   }
@@ -159,10 +161,7 @@ export class WeightSnapshotApplicationService {
    * }
    * ```
    */
-  async validateWeightSum(
-    goalUuid: string,
-    weights: Record<string, number>,
-  ): Promise<boolean> {
+  async validateWeightSum(goalUuid: string, weights: Record<string, number>): Promise<boolean> {
     // 验证 Goal 存在
     const goal = await this.goalRepository.findById(goalUuid, { includeChildren: true });
     if (!goal) {
@@ -201,10 +200,7 @@ export class WeightSnapshotApplicationService {
       throw new GoalNotFoundError(goalUuid);
     }
 
-    const total = Object.values(weights).reduce(
-      (sum: number, weight: number) => sum + weight,
-      0,
-    );
+    const total = Object.values(weights).reduce((sum: number, weight: number) => sum + weight, 0);
 
     return { weights, total };
   }

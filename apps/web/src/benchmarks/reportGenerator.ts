@@ -14,7 +14,11 @@ const PERFORMANCE_TARGETS = {
   'Goal CRUD': { target: 100, unit: 'ms', description: 'Average CRUD operation time' },
   'Weight Calculation': { target: 50, unit: 'ms', description: 'Calculate weighted progress' },
   'Rule Evaluation': { target: 10, unit: 'ms', description: 'Single rule evaluation' },
-  'JSON Serialization': { target: 20, unit: 'ms', description: 'Serialize large dataset (100 goals)' },
+  'JSON Serialization': {
+    target: 20,
+    unit: 'ms',
+    description: 'Serialize large dataset (100 goals)',
+  },
   'Array Operations': { target: 10, unit: 'ms', description: 'Filter/Map/Sort operations' },
 };
 
@@ -56,7 +60,7 @@ export function generateMarkdownReport(report: PerformanceReport): string {
   markdown += `|--------|--------|--------|\n`;
 
   Object.entries(PERFORMANCE_TARGETS).forEach(([name, config]) => {
-    const result = results.find(r => r.name.includes(config.description));
+    const result = results.find((r) => r.name.includes(config.description));
     const actual = result ? result.time : 0;
     const status = actual <= config.target ? '✅ Pass' : '❌ Fail';
     markdown += `| ${name} | < ${config.target}${config.unit} | ${status} (${actual.toFixed(2)}${config.unit}) |\n`;
@@ -66,7 +70,7 @@ export function generateMarkdownReport(report: PerformanceReport): string {
   markdown += `| Benchmark | Time (avg) | Iterations | Ops/sec |\n`;
   markdown += `|-----------|-----------|------------|----------|\n`;
 
-  results.forEach(result => {
+  results.forEach((result) => {
     markdown += `| ${result.name} | ${result.time.toFixed(2)}ms | ${result.iterations} | ${result.hz.toFixed(0)} |\n`;
   });
 
@@ -75,7 +79,7 @@ export function generateMarkdownReport(report: PerformanceReport): string {
     markdown += `| Benchmark | Current | Baseline | Change |\n`;
     markdown += `|-----------|---------|----------|--------|\n`;
 
-    results.forEach(result => {
+    results.forEach((result) => {
       const baseline = baselines[result.name];
       if (baseline) {
         const change = ((result.time - baseline) / baseline) * 100;
@@ -89,16 +93,16 @@ export function generateMarkdownReport(report: PerformanceReport): string {
   }
 
   markdown += `\n## 💡 Recommendations\n\n`;
-  const failedTests = results.filter(r => {
-    const targetEntry = Object.values(PERFORMANCE_TARGETS).find(t =>
-      r.name.includes(t.description)
+  const failedTests = results.filter((r) => {
+    const targetEntry = Object.values(PERFORMANCE_TARGETS).find((t) =>
+      r.name.includes(t.description),
     );
     return targetEntry && r.time > targetEntry.target;
   });
 
   if (failedTests.length > 0) {
     markdown += `### ⚠️ Performance Issues Detected\n\n`;
-    failedTests.forEach(test => {
+    failedTests.forEach((test) => {
       markdown += `- **${test.name}**: ${test.time.toFixed(2)}ms (needs optimization)\n`;
     });
   } else {
@@ -220,11 +224,12 @@ export function generateHTMLReport(report: PerformanceReport): string {
         </tr>
       </thead>
       <tbody>
-        ${Object.entries(PERFORMANCE_TARGETS).map(([name, config]) => {
-          const result = results.find(r => r.name.includes(config.description));
-          const actual = result ? result.time : 0;
-          const passed = actual <= config.target;
-          return `
+        ${Object.entries(PERFORMANCE_TARGETS)
+          .map(([name, config]) => {
+            const result = results.find((r) => r.name.includes(config.description));
+            const actual = result ? result.time : 0;
+            const passed = actual <= config.target;
+            return `
             <tr>
               <td><strong>${name}</strong><br><small>${config.description}</small></td>
               <td>&lt; ${config.target}${config.unit}</td>
@@ -232,7 +237,8 @@ export function generateHTMLReport(report: PerformanceReport): string {
               <td><span class="badge ${passed ? 'badge-pass' : 'badge-fail'}">${passed ? '✅ Pass' : '❌ Fail'}</span></td>
             </tr>
           `;
-        }).join('')}
+          })
+          .join('')}
       </tbody>
     </table>
 
@@ -247,14 +253,18 @@ export function generateHTMLReport(report: PerformanceReport): string {
         </tr>
       </thead>
       <tbody>
-        ${results.map(result => `
+        ${results
+          .map(
+            (result) => `
           <tr>
             <td>${result.name}</td>
             <td>${result.time.toFixed(2)}ms</td>
             <td>${result.iterations}</td>
             <td>${result.hz.toFixed(0)}</td>
           </tr>
-        `).join('')}
+        `,
+          )
+          .join('')}
       </tbody>
     </table>
   </div>

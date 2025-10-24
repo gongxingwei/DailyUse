@@ -1,7 +1,7 @@
 # Project.json 配置说明
 
 > 📖 详细解释各个项目的 project.json 配置
-> 
+>
 > 每个项目的配置文件位于：`{project-root}/project.json`
 
 ---
@@ -36,14 +36,15 @@
 }
 ```
 
-| 字段 | 值 | 说明 |
-|-----|---|------|
-| `name` | `"api"` | 项目唯一标识符 |
-| `sourceRoot` | `"apps/api/src"` | 源代码根目录 |
-| `projectType` | `"application"` | 项目类型（应用程序） |
-| `tags` | `["scope:api", "type:app", "platform:node"]` | 项目标签（用于依赖限制） |
+| 字段          | 值                                           | 说明                     |
+| ------------- | -------------------------------------------- | ------------------------ |
+| `name`        | `"api"`                                      | 项目唯一标识符           |
+| `sourceRoot`  | `"apps/api/src"`                             | 源代码根目录             |
+| `projectType` | `"application"`                              | 项目类型（应用程序）     |
+| `tags`        | `["scope:api", "type:app", "platform:node"]` | 项目标签（用于依赖限制） |
 
 **标签说明**：
+
 - `scope:api`：属于后端 API 范围
 - `type:app`：应用程序类型（而非库）
 - `platform:node`：运行在 Node.js 平台
@@ -63,18 +64,20 @@
 }
 ```
 
-| 配置项 | 值 | 说明 |
-|-------|---|------|
-| `executor` | `"nx:run-commands"` | 使用 Nx 的通用命令执行器 |
-| `command` | `"tsx watch apps/api/src/index.ts"` | 使用 tsx 监听模式启动 API 服务器 |
+| 配置项     | 值                                  | 说明                             |
+| ---------- | ----------------------------------- | -------------------------------- |
+| `executor` | `"nx:run-commands"`                 | 使用 Nx 的通用命令执行器         |
+| `command`  | `"tsx watch apps/api/src/index.ts"` | 使用 tsx 监听模式启动 API 服务器 |
 
 **执行命令**：
+
 ```bash
 pnpm nx serve api
 # 等同于：tsx watch apps/api/src/index.ts
 ```
 
 **特点**：
+
 - ✅ 热重载：文件变化时自动重启
 - ✅ 无需编译：tsx 直接执行 TypeScript
 - ✅ 快速启动：跳过构建步骤
@@ -93,12 +96,13 @@ pnpm nx serve api
 }
 ```
 
-| 配置项 | 值 | 说明 |
-|-------|---|------|
-| `outputs` | `["{workspaceRoot}/dist/apps/api"]` | 构建产物输出路径（用于缓存） |
-| `command` | `"tsc -p apps/api/tsconfig.app.json"` | 使用 TypeScript 编译器构建 |
+| 配置项    | 值                                    | 说明                         |
+| --------- | ------------------------------------- | ---------------------------- |
+| `outputs` | `["{workspaceRoot}/dist/apps/api"]`   | 构建产物输出路径（用于缓存） |
+| `command` | `"tsc -p apps/api/tsconfig.app.json"` | 使用 TypeScript 编译器构建   |
 
 **缓存机制**：
+
 - Nx 会缓存 `dist/apps/api` 目录
 - 如果源代码未变化，直接恢复缓存（跳过编译）
 
@@ -117,12 +121,13 @@ pnpm nx serve api
 }
 ```
 
-| 配置项 | 值 | 说明 |
-|-------|---|------|
+| 配置项    | 值                                      | 说明                   |
+| --------- | --------------------------------------- | ---------------------- |
 | `outputs` | `["{workspaceRoot}/coverage/apps/api"]` | 测试覆盖率报告输出路径 |
-| `cwd` | `"apps/api"` | 命令执行的工作目录 |
+| `cwd`     | `"apps/api"`                            | 命令执行的工作目录     |
 
 **执行命令**：
+
 ```bash
 pnpm nx test api
 # 在 apps/api 目录下执行：vitest run
@@ -142,12 +147,13 @@ pnpm nx test api
 }
 ```
 
-| 配置项 | 值 | 说明 |
-|-------|---|------|
-| `executor` | `"@nx/eslint:lint"` | 使用 Nx 的 ESLint 执行器 |
-| `lintFilePatterns` | `["apps/api/**/*.{ts,js}"]` | 要检查的文件模式 |
+| 配置项             | 值                          | 说明                     |
+| ------------------ | --------------------------- | ------------------------ |
+| `executor`         | `"@nx/eslint:lint"`         | 使用 Nx 的 ESLint 执行器 |
+| `lintFilePatterns` | `["apps/api/**/*.{ts,js}"]` | 要检查的文件模式         |
 
 **特点**：
+
 - ✅ 集成 Nx 缓存
 - ✅ 自动并行执行
 - ✅ 支持 `--fix` 参数自动修复
@@ -171,6 +177,7 @@ pnpm nx test api
 ```
 
 **标签说明**：
+
 - `scope:client`：属于前端客户端范围
 - `type:app`：应用程序类型
 - `platform:web`：运行在浏览器平台
@@ -202,20 +209,21 @@ pnpm nx test api
 }
 ```
 
-| 配置项 | 值 | 说明 |
-|-------|---|------|
-| `executor` | `"@nx/vite:build"` | 使用 Nx 的 Vite 构建执行器 |
-| `defaultConfiguration` | `"production"` | 默认使用生产配置 |
-| `outputPath` | `"dist/apps/web"` | 构建产物输出路径 |
+| 配置项                 | 值                 | 说明                       |
+| ---------------------- | ------------------ | -------------------------- |
+| `executor`             | `"@nx/vite:build"` | 使用 Nx 的 Vite 构建执行器 |
+| `defaultConfiguration` | `"production"`     | 默认使用生产配置           |
+| `outputPath`           | `"dist/apps/web"`  | 构建产物输出路径           |
 
 **配置（configurations）**：
 
-| 配置名称 | 用途 | 特点 |
-|---------|------|-----|
-| `development` | 开发构建 | 启用 sourcemap，未压缩 |
-| `production` | 生产构建 | 禁用 sourcemap，压缩代码 |
+| 配置名称      | 用途     | 特点                     |
+| ------------- | -------- | ------------------------ |
+| `development` | 开发构建 | 启用 sourcemap，未压缩   |
+| `production`  | 生产构建 | 禁用 sourcemap，压缩代码 |
 
 **执行命令**：
+
 ```bash
 # 使用默认配置（production）
 pnpm nx build web
@@ -247,13 +255,14 @@ pnpm nx build web -c development
 }
 ```
 
-| 配置项 | 值 | 说明 |
-|-------|---|------|
-| `executor` | `"@nx/vite:dev-server"` | 使用 Nx 的 Vite 开发服务器执行器 |
-| `buildTarget` | `"web:build"` | 关联的构建目标 |
-| `hmr` | `true` | 启用热模块替换（Hot Module Replacement） |
+| 配置项        | 值                      | 说明                                     |
+| ------------- | ----------------------- | ---------------------------------------- |
+| `executor`    | `"@nx/vite:dev-server"` | 使用 Nx 的 Vite 开发服务器执行器         |
+| `buildTarget` | `"web:build"`           | 关联的构建目标                           |
+| `hmr`         | `true`                  | 启用热模块替换（Hot Module Replacement） |
 
 **特点**：
+
 - ✅ 热重载：代码变化立即反映到浏览器
 - ✅ 快速启动：Vite 按需编译
 - ✅ 开发体验：实时错误提示
@@ -273,13 +282,14 @@ pnpm nx build web -c development
 }
 ```
 
-| 配置项 | 值 | 说明 |
-|-------|---|------|
-| `executor` | `"@nx/vite:test"` | 使用 Nx 的 Vitest 执行器 |
-| `passWithNoTests` | `true` | 如果没有测试文件也不报错 |
-| `reportsDirectory` | `"../../coverage/apps/web"` | 测试覆盖率报告目录 |
+| 配置项             | 值                          | 说明                     |
+| ------------------ | --------------------------- | ------------------------ |
+| `executor`         | `"@nx/vite:test"`           | 使用 Nx 的 Vitest 执行器 |
+| `passWithNoTests`  | `true`                      | 如果没有测试文件也不报错 |
+| `reportsDirectory` | `"../../coverage/apps/web"` | 测试覆盖率报告目录       |
 
 **执行命令**：
+
 ```bash
 # 运行所有测试
 pnpm nx test web
@@ -310,6 +320,7 @@ pnpm nx test web -- --ui
 ```
 
 **标签说明**：
+
 - `scope:desktop`：属于桌面应用范围
 - `type:app`：应用程序类型
 - `platform:electron`：运行在 Electron 平台
@@ -341,6 +352,7 @@ pnpm nx test web -- --ui
 ```
 
 **说明**：
+
 - 使用 `pnpm build` 命令（定义在 `apps/desktop/package.json`）
 - 支持 development 和 production 两种配置
 - 输出到 `apps/desktop/dist` 目录
@@ -366,6 +378,7 @@ pnpm nx test web -- --ui
 ```
 
 **特点**：
+
 - ✅ 热重载：渲染进程代码变化时自动刷新
 - ✅ Electron DevTools：内置开发者工具
 - ✅ 实时调试：主进程和渲染进程都支持调试
@@ -385,11 +398,13 @@ pnpm nx test web -- --ui
 ```
 
 **说明**：
+
 - 使用 `electron-builder --dir` 打包应用
 - 不创建安装包，只生成可执行文件（用于测试）
 - 输出到 `apps/desktop/dist` 目录
 
 **执行命令**：
+
 ```bash
 pnpm nx package desktop
 # 生成未打包的应用程序（快速测试）
@@ -410,11 +425,13 @@ pnpm nx package desktop
 ```
 
 **说明**：
+
 - 使用 `electron-builder` 创建安装包
 - 根据 `electron-builder` 配置生成 .exe、.dmg、.AppImage 等
 - 用于生产发布
 
 **执行命令**：
+
 ```bash
 pnpm nx dist desktop
 # 生成完整的安装包（用于分发）
@@ -439,6 +456,7 @@ pnpm nx dist desktop
 ```
 
 **标签说明**：
+
 - `scope:shared`：共享库（可被任何项目使用）
 - `type:lib`：库类型（而非应用）
 - `layer:domain`：领域层（DDD 架构中的核心业务逻辑）
@@ -461,6 +479,7 @@ pnpm nx dist desktop
 ```
 
 **说明**：
+
 - 执行 `pnpm build`（定义在 `packages/domain-core/package.json`）
 - 输出编译后的 JavaScript 和类型定义文件（.d.ts）
 - 其他项目通过 `import { ... } from '@daily-use/domain-core'` 使用
@@ -480,16 +499,19 @@ pnpm nx dist desktop
 ```
 
 **说明**：
+
 - 监听源代码变化，自动重新编译
 - 用于开发时实时更新依赖项目
 
 **执行命令**：
+
 ```bash
 pnpm nx dev domain-core
 # 启动监听模式，文件变化时自动重新编译
 ```
 
 **典型工作流**：
+
 ```bash
 # 终端 1：启动 domain-core 监听模式
 pnpm nx dev domain-core
@@ -519,6 +541,7 @@ pnpm nx serve web
 ```
 
 **标签说明**：
+
 - `scope:client`：客户端专用库（只能被前端项目使用）
 - `type:lib`：库类型
 - `layer:application`：应用层（DDD 架构中的业务编排层）
@@ -532,11 +555,13 @@ pnpm nx serve web
 ```
 
 **说明**：
+
 - `domain-client` 依赖 `domain-core`
 - 构建 `domain-client` 前会自动先构建 `domain-core`
 - 如果 `domain-core` 变化，`domain-client` 会被标记为受影响
 
 **依赖图**：
+
 ```
 domain-core
     ↓
@@ -568,6 +593,7 @@ web, desktop
 ```
 
 **标签说明**：
+
 - `scope:server`：服务端专用库（只能被后端项目使用）
 - `type:lib`：库类型
 - `layer:application`：应用层
@@ -581,6 +607,7 @@ web, desktop
 ```
 
 **依赖图**：
+
 ```
 domain-core
     ↓
@@ -609,6 +636,7 @@ api
 ```
 
 **效果**：
+
 ```typescript
 // ❌ 不允许：客户端依赖服务端代码
 // packages/domain-client/src/index.ts
@@ -641,6 +669,7 @@ import { User } from '@daily-use/domain-core'; // 正常
 ```
 
 **标签说明**：
+
 - `scope:shared`：共享库（前后端都可使用）
 - `type:lib`：库类型
 - `layer:interface`：接口层（定义 API 契约、DTO 等）
@@ -652,6 +681,7 @@ import { User } from '@daily-use/domain-core'; // 正常
 - 定义验证规则（Zod schemas）
 
 **示例**：
+
 ```typescript
 // packages/contracts/src/user.ts
 export interface UserDTO {
@@ -662,7 +692,7 @@ export interface UserDTO {
 
 export const userSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email()
+  email: z.string().email(),
 });
 
 // apps/api/src/controllers/UserController.ts
@@ -690,6 +720,7 @@ import { UserDTO } from '@daily-use/contracts';
 ```
 
 **说明**：
+
 - 编译 TypeScript 并生成类型定义文件
 - 前后端都通过编译后的产物使用类型
 
@@ -708,6 +739,7 @@ import { UserDTO } from '@daily-use/contracts';
 ```
 
 **典型工作流**：
+
 ```bash
 # 终端 1：启动 contracts 监听模式
 pnpm nx dev contracts
@@ -740,6 +772,7 @@ pnpm nx serve web
 ```
 
 **标签说明**：
+
 - `scope:shared`：共享工具库
 - `type:util`：工具类型（纯函数、辅助工具）
 
@@ -750,6 +783,7 @@ pnpm nx serve web
 - 类型工具（TypeScript utility types）
 
 **示例**：
+
 ```typescript
 // packages/utils/src/date.ts
 export function formatDate(date: Date): string {
@@ -776,6 +810,7 @@ import { formatDate, truncate } from '@daily-use/utils';
 ### 9.1 合理使用 outputs
 
 **❌ 不推荐**：不配置 outputs
+
 ```json
 {
   "build": {
@@ -786,9 +821,11 @@ import { formatDate, truncate } from '@daily-use/utils';
   }
 }
 ```
+
 **问题**：Nx 不知道缓存什么，缓存无法生效
 
 **✅ 推荐**：明确指定 outputs
+
 ```json
 {
   "build": {
@@ -808,6 +845,7 @@ import { formatDate, truncate } from '@daily-use/utils';
 **用途**：限制项目依赖关系，防止架构腐化
 
 **示例配置**：
+
 ```json
 // packages/domain-client/project.json
 {
@@ -844,6 +882,7 @@ import { formatDate, truncate } from '@daily-use/utils';
 **适用场景**：需要多种构建配置（开发、生产、测试等）
 
 **示例**：
+
 ```json
 {
   "build": {
@@ -871,6 +910,7 @@ import { formatDate, truncate } from '@daily-use/utils';
 ```
 
 **使用方法**：
+
 ```bash
 pnpm nx build web                      # 使用 production 配置
 pnpm nx build web -c development       # 使用 development 配置
@@ -884,6 +924,7 @@ pnpm nx build web -c staging           # 使用 staging 配置
 **适用场景**：代码中没有 `import` 语句，但存在隐式依赖关系
 
 **示例**：
+
 ```json
 // packages/domain-client/project.json
 {
@@ -892,11 +933,13 @@ pnpm nx build web -c staging           # 使用 staging 配置
 ```
 
 **效果**：
+
 1. 构建 `domain-client` 前会自动先构建 `domain-core`
 2. `domain-core` 变化后，`domain-client` 会被标记为受影响
 3. 受影响分析会包含整个依赖链
 
 **何时使用**：
+
 - ✅ 共享类型定义（通过类型导入）
 - ✅ 运行时依赖（例如配置文件）
 - ❌ 不要滥用（会降低并行度）
@@ -908,25 +951,27 @@ pnpm nx build web -c staging           # 使用 staging 配置
 **问题**：在子目录中执行命令，可能找不到 package.json
 
 **❌ 不推荐**：不指定 cwd
+
 ```json
 {
   "build": {
     "executor": "nx:run-commands",
     "options": {
-      "command": "pnpm build"  // 在哪里执行？
+      "command": "pnpm build" // 在哪里执行？
     }
   }
 }
 ```
 
 **✅ 推荐**：明确指定 cwd
+
 ```json
 {
   "build": {
     "executor": "nx:run-commands",
     "options": {
       "command": "pnpm build",
-      "cwd": "packages/domain-core"  // 在此目录执行
+      "cwd": "packages/domain-core" // 在此目录执行
     }
   }
 }
@@ -939,6 +984,7 @@ pnpm nx build web -c staging           # 使用 staging 配置
 **问题**：新项目或库可能还没有测试文件
 
 **❌ 不推荐**：不配置 passWithNoTests
+
 ```json
 {
   "test": {
@@ -946,9 +992,11 @@ pnpm nx build web -c staging           # 使用 staging 配置
   }
 }
 ```
+
 **结果**：如果没有测试文件，测试会失败
 
 **✅ 推荐**：允许无测试文件的情况
+
 ```json
 {
   "test": {
@@ -979,11 +1027,13 @@ pnpm nx build web -c staging           # 使用 staging 配置
 ```
 
 **说明**：
+
 - `executor`：使用 Nx 的 ESLint 执行器（集成缓存）
 - `outputs`：缓存 lint 结果
 - `lintFilePatterns`：指定要检查的文件模式
 
 **执行命令**：
+
 ```bash
 # 检查单个项目
 pnpm nx lint api
@@ -1001,16 +1051,16 @@ pnpm nx run-many --target=lint --all
 
 ### 项目类型总结
 
-| 项目 | 类型 | 标签 | 用途 |
-|-----|------|-----|------|
-| `api` | application | scope:api, type:app | 后端 API 服务器 |
-| `web` | application | scope:client, type:app | Web 前端应用 |
-| `desktop` | application | scope:desktop, type:app | Electron 桌面应用 |
-| `domain-core` | library | scope:shared, type:lib | 核心领域模型 |
-| `domain-client` | library | scope:client, type:lib | 客户端业务逻辑 |
-| `domain-server` | library | scope:server, type:lib | 服务端业务逻辑 |
-| `contracts` | library | scope:shared, type:lib | 前后端共享契约 |
-| `utils` | library | scope:shared, type:util | 通用工具函数 |
+| 项目            | 类型        | 标签                    | 用途              |
+| --------------- | ----------- | ----------------------- | ----------------- |
+| `api`           | application | scope:api, type:app     | 后端 API 服务器   |
+| `web`           | application | scope:client, type:app  | Web 前端应用      |
+| `desktop`       | application | scope:desktop, type:app | Electron 桌面应用 |
+| `domain-core`   | library     | scope:shared, type:lib  | 核心领域模型      |
+| `domain-client` | library     | scope:client, type:lib  | 客户端业务逻辑    |
+| `domain-server` | library     | scope:server, type:lib  | 服务端业务逻辑    |
+| `contracts`     | library     | scope:shared, type:lib  | 前后端共享契约    |
+| `utils`         | library     | scope:shared, type:util | 通用工具函数      |
 
 ### 依赖关系总结
 
@@ -1027,16 +1077,17 @@ pnpm nx run-many --target=lint --all
 
 ### 常用执行器总结
 
-| 执行器 | 用途 | 项目类型 |
-|-------|------|---------|
-| `nx:run-commands` | 执行任意 shell 命令 | 所有项目 |
-| `@nx/vite:build` | Vite 构建 | web, desktop |
-| `@nx/vite:dev-server` | Vite 开发服务器 | web, desktop |
-| `@nx/vite:test` | Vitest 测试 | 所有项目 |
-| `@nx/eslint:lint` | ESLint 检查 | 所有项目 |
+| 执行器                | 用途                | 项目类型     |
+| --------------------- | ------------------- | ------------ |
+| `nx:run-commands`     | 执行任意 shell 命令 | 所有项目     |
+| `@nx/vite:build`      | Vite 构建           | web, desktop |
+| `@nx/vite:dev-server` | Vite 开发服务器     | web, desktop |
+| `@nx/vite:test`       | Vitest 测试         | 所有项目     |
+| `@nx/eslint:lint`     | ESLint 检查         | 所有项目     |
 
 ---
 
 📚 **相关文档**：
+
 - [NX_CONFIGURATION_GUIDE.md](./NX_CONFIGURATION_GUIDE.md) - Nx 配置详解
 - [NX_USAGE_GUIDE.md](./NX_USAGE_GUIDE.md) - Nx 使用指南

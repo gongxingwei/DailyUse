@@ -53,11 +53,11 @@ POST /api/task-templates/:templateUuid/steps
 ```typescript
 interface AddTaskStepRequest {
   accountUuid: string;
-  title: string;                       // 步骤标题（必填）
-  description?: string | null;         // 步骤描述
-  estimatedMinutes?: number | null;    // 预计时长（分钟）
-  isOptional?: boolean;                // 是否可选（默认false）
-  insertAfter?: string | null;         // 插入到指定步骤之后（stepUuid）
+  title: string; // 步骤标题（必填）
+  description?: string | null; // 步骤描述
+  estimatedMinutes?: number | null; // 预计时长（分钟）
+  isOptional?: boolean; // 是否可选（默认false）
+  insertAfter?: string | null; // 插入到指定步骤之后（stepUuid）
 }
 ```
 
@@ -66,7 +66,7 @@ interface AddTaskStepRequest {
 ```typescript
 interface AddTaskStepResponse {
   step: TaskStepClientDTO;
-  template: TaskTemplateClientDTO;     // 更新后的模板
+  template: TaskTemplateClientDTO; // 更新后的模板
   message: string;
 }
 
@@ -75,7 +75,7 @@ interface TaskStepClientDTO {
   templateUuid: string;
   title: string;
   description: string | null;
-  orderIndex: number;                  // 排序索引
+  orderIndex: number; // 排序索引
   estimatedMinutes: number | null;
   isOptional: boolean;
   createdAt: number;
@@ -198,7 +198,7 @@ interface BatchAddTaskStepsResponse {
 ```typescript
 // TaskTemplate.ts (续)
 export class TaskTemplate extends AggregateRoot {
-  private _steps: TaskStep[];  // 步骤集合
+  private _steps: TaskStep[]; // 步骤集合
 
   // 添加步骤
   public addStep(params: {
@@ -219,14 +219,14 @@ export class TaskTemplate extends AggregateRoot {
     // 2. 计算插入位置
     let orderIndex: number;
     if (params.insertAfter) {
-      const afterStepIndex = this._steps.findIndex(s => s.uuid === params.insertAfter);
+      const afterStepIndex = this._steps.findIndex((s) => s.uuid === params.insertAfter);
       if (afterStepIndex === -1) {
         throw new Error('指定的步骤不存在');
       }
       orderIndex = afterStepIndex + 1;
-      
+
       // 重新排序后面的步骤
-      this._steps.slice(orderIndex).forEach(step => {
+      this._steps.slice(orderIndex).forEach((step) => {
         step.updateOrderIndex(step.orderIndex + 1);
       });
     } else {
@@ -280,10 +280,10 @@ export class TaskTemplate extends AggregateRoot {
       description?: string | null;
       estimatedMinutes?: number | null;
       isOptional?: boolean;
-    }
+    },
   ): TaskStep {
     // 1. 查找步骤
-    const step = this._steps.find(s => s.uuid === stepUuid);
+    const step = this._steps.find((s) => s.uuid === stepUuid);
     if (!step) {
       throw new Error('步骤不存在');
     }
@@ -334,7 +334,7 @@ export class TaskTemplate extends AggregateRoot {
   // 删除步骤
   public removeStep(stepUuid: string): void {
     // 1. 查找步骤
-    const index = this._steps.findIndex(s => s.uuid === stepUuid);
+    const index = this._steps.findIndex((s) => s.uuid === stepUuid);
     if (index === -1) {
       throw new Error('步骤不存在');
     }
@@ -376,7 +376,7 @@ export class TaskTemplate extends AggregateRoot {
   // 重新排序步骤
   public reorderSteps(stepOrders: Array<{ stepUuid: string; newOrderIndex: number }>): void {
     // 1. 验证所有步骤都存在
-    const stepMap = new Map(this._steps.map(s => [s.uuid, s]));
+    const stepMap = new Map(this._steps.map((s) => [s.uuid, s]));
     for (const order of stepOrders) {
       if (!stepMap.has(order.stepUuid)) {
         throw new Error(`步骤 ${order.stepUuid} 不存在`);
@@ -384,7 +384,7 @@ export class TaskTemplate extends AggregateRoot {
     }
 
     // 2. 验证新索引的唯一性和连续性
-    const newIndices = stepOrders.map(o => o.newOrderIndex).sort((a, b) => a - b);
+    const newIndices = stepOrders.map((o) => o.newOrderIndex).sort((a, b) => a - b);
     for (let i = 0; i < newIndices.length; i++) {
       if (newIndices[i] !== i) {
         throw new Error('步骤索引必须从0开始连续');
@@ -428,10 +428,10 @@ export class TaskTemplate extends AggregateRoot {
       description?: string | null;
       estimatedMinutes?: number | null;
       isOptional?: boolean;
-    }>
+    }>,
   ): TaskStep[] {
     const addedSteps: TaskStep[] = [];
-    
+
     for (const params of stepsParams) {
       const step = this.addStep(params);
       addedSteps.push(step);
@@ -449,7 +449,7 @@ export class TaskTemplate extends AggregateRoot {
 
   // 获取必需步骤数量
   public getRequiredStepCount(): number {
-    return this._steps.filter(s => !s.isOptional).length;
+    return this._steps.filter((s) => !s.isOptional).length;
   }
 
   // Getter
@@ -588,13 +588,10 @@ export class TaskStep extends Entity {
 export class TaskStepApplicationService {
   constructor(
     private taskTemplateRepository: ITaskTemplateRepository,
-    private eventBus: IEventBus
+    private eventBus: IEventBus,
   ) {}
 
-  async addStep(
-    templateUuid: string,
-    request: AddTaskStepRequest
-  ): Promise<AddTaskStepResponse> {
+  async addStep(templateUuid: string, request: AddTaskStepRequest): Promise<AddTaskStepResponse> {
     // 1. 加载模板
     const template = await this.taskTemplateRepository.findByUuid(templateUuid);
     if (!template) {
@@ -631,7 +628,7 @@ export class TaskStepApplicationService {
   async updateStep(
     templateUuid: string,
     stepUuid: string,
-    request: UpdateTaskStepRequest
+    request: UpdateTaskStepRequest,
   ): Promise<UpdateTaskStepResponse> {
     // 1. 加载模板
     const template = await this.taskTemplateRepository.findByUuid(templateUuid);
@@ -667,7 +664,7 @@ export class TaskStepApplicationService {
   async deleteStep(
     templateUuid: string,
     stepUuid: string,
-    request: DeleteTaskStepRequest
+    request: DeleteTaskStepRequest,
   ): Promise<DeleteTaskStepResponse> {
     // 1. 加载模板
     const template = await this.taskTemplateRepository.findByUuid(templateUuid);
@@ -696,7 +693,7 @@ export class TaskStepApplicationService {
 
   async reorderSteps(
     templateUuid: string,
-    request: ReorderTaskStepsRequest
+    request: ReorderTaskStepsRequest,
   ): Promise<ReorderTaskStepsResponse> {
     // 1. 加载模板
     const template = await this.taskTemplateRepository.findByUuid(templateUuid);
@@ -719,14 +716,14 @@ export class TaskStepApplicationService {
     this.publishDomainEvents(template);
 
     return {
-      steps: template.steps.map(s => s.toClientDTO()),
+      steps: template.steps.map((s) => s.toClientDTO()),
       message: '步骤顺序已更新',
     };
   }
 
   async batchAddSteps(
     templateUuid: string,
-    request: BatchAddTaskStepsRequest
+    request: BatchAddTaskStepsRequest,
   ): Promise<BatchAddTaskStepsResponse> {
     // 1. 加载模板
     const template = await this.taskTemplateRepository.findByUuid(templateUuid);
@@ -749,7 +746,7 @@ export class TaskStepApplicationService {
     this.publishDomainEvents(template);
 
     return {
-      steps: steps.map(s => s.toClientDTO()),
+      steps: steps.map((s) => s.toClientDTO()),
       template: template.toClientDTO(),
       message: `成功添加 ${steps.length} 个步骤`,
     };
@@ -757,7 +754,7 @@ export class TaskStepApplicationService {
 
   private publishDomainEvents(template: TaskTemplate): void {
     const events = template.getDomainEvents();
-    events.forEach(event => {
+    events.forEach((event) => {
       this.eventBus.publish(event);
     });
     template.clearDomainEvents();
@@ -777,21 +774,14 @@ export class TaskStepApplicationService {
   <div class="task-step-list">
     <div class="header">
       <h4>任务步骤</h4>
-      <el-button 
-        type="primary" 
-        text
-        @click="handleAddStep"
-      >
+      <el-button type="primary" text @click="handleAddStep">
         <el-icon><Plus /></el-icon>
         添加步骤
       </el-button>
     </div>
 
     <!-- 步骤列表（可拖拽排序） -->
-    <el-empty 
-      v-if="steps.length === 0"
-      description="暂无步骤，点击上方按钮添加"
-    />
+    <el-empty v-if="steps.length === 0" description="暂无步骤，点击上方按钮添加" />
 
     <draggable
       v-else
@@ -815,24 +805,12 @@ export class TaskStepApplicationService {
             <div class="step-info">
               <div class="step-title">
                 {{ element.title }}
-                <el-tag 
-                  v-if="element.isOptional" 
-                  size="small" 
-                  type="info"
-                >
-                  可选
-                </el-tag>
+                <el-tag v-if="element.isOptional" size="small" type="info"> 可选 </el-tag>
               </div>
-              <div 
-                v-if="element.description" 
-                class="step-description"
-              >
+              <div v-if="element.description" class="step-description">
                 {{ element.description }}
               </div>
-              <div 
-                v-if="element.estimatedMinutes" 
-                class="step-duration"
-              >
+              <div v-if="element.estimatedMinutes" class="step-duration">
                 <el-icon><Clock /></el-icon>
                 预计 {{ element.estimatedMinutes }} 分钟
               </div>
@@ -840,17 +818,10 @@ export class TaskStepApplicationService {
 
             <!-- 操作按钮 -->
             <div class="step-actions">
-              <el-button 
-                text
-                @click="handleEditStep(element)"
-              >
+              <el-button text @click="handleEditStep(element)">
                 <el-icon><Edit /></el-icon>
               </el-button>
-              <el-button 
-                text
-                type="danger"
-                @click="handleDeleteStep(element)"
-              >
+              <el-button text type="danger" @click="handleDeleteStep(element)">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>
@@ -866,9 +837,7 @@ export class TaskStepApplicationService {
         <span v-if="totalEstimatedMinutes > 0">
           · 预计总时长 {{ totalEstimatedMinutes }} 分钟
         </span>
-        <span v-if="requiredStepCount > 0">
-          · {{ requiredStepCount }} 个必需步骤
-        </span>
+        <span v-if="requiredStepCount > 0"> · {{ requiredStepCount }} 个必需步骤 </span>
       </el-text>
     </div>
 
@@ -878,14 +847,9 @@ export class TaskStepApplicationService {
       :title="editingStep ? '编辑步骤' : '添加步骤'"
       width="500px"
     >
-      <el-form 
-        ref="stepFormRef"
-        :model="stepForm"
-        :rules="stepRules"
-        label-width="100px"
-      >
+      <el-form ref="stepFormRef" :model="stepForm" :rules="stepRules" label-width="100px">
         <el-form-item label="步骤标题" prop="title">
-          <el-input 
+          <el-input
             v-model="stepForm.title"
             placeholder="输入步骤标题"
             maxlength="100"
@@ -894,7 +858,7 @@ export class TaskStepApplicationService {
         </el-form-item>
 
         <el-form-item label="步骤描述">
-          <el-input 
+          <el-input
             v-model="stepForm.description"
             type="textarea"
             :rows="3"
@@ -923,11 +887,7 @@ export class TaskStepApplicationService {
 
       <template #footer>
         <el-button @click="showStepDialog = false">取消</el-button>
-        <el-button 
-          type="primary"
-          @click="handleSaveStep"
-          :loading="isSaving"
-        >
+        <el-button type="primary" @click="handleSaveStep" :loading="isSaving">
           {{ editingStep ? '更新' : '添加' }}
         </el-button>
       </template>
@@ -979,13 +939,17 @@ const totalEstimatedMinutes = computed(() => {
 });
 
 const requiredStepCount = computed(() => {
-  return localSteps.value.filter(s => !s.isOptional).length;
+  return localSteps.value.filter((s) => !s.isOptional).length;
 });
 
 // 监听 props 变化
-watch(() => props.steps, (newSteps) => {
-  localSteps.value = [...newSteps];
-}, { deep: true });
+watch(
+  () => props.steps,
+  (newSteps) => {
+    localSteps.value = [...newSteps];
+  },
+  { deep: true },
+);
 
 function handleAddStep() {
   editingStep.value = null;
@@ -1014,11 +978,7 @@ async function handleSaveStep() {
   try {
     if (editingStep.value) {
       // 更新步骤
-      await taskStore.updateTaskStep(
-        props.templateUuid,
-        editingStep.value.uuid,
-        stepForm.value
-      );
+      await taskStore.updateTaskStep(props.templateUuid, editingStep.value.uuid, stepForm.value);
       ElMessage.success('步骤已更新');
     } else {
       // 添加步骤
@@ -1037,11 +997,9 @@ async function handleSaveStep() {
 
 async function handleDeleteStep(step: any) {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除步骤"${step.title}"吗？`,
-      '确认删除',
-      { type: 'warning' }
-    );
+    await ElMessageBox.confirm(`确定要删除步骤"${step.title}"吗？`, '确认删除', {
+      type: 'warning',
+    });
 
     await taskStore.deleteTaskStep(props.templateUuid, step.uuid);
     ElMessage.success('步骤已删除');

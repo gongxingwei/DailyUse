@@ -1,7 +1,7 @@
-import { Account } from "../aggregates/account";
-import { User } from "../entities/user";
-import { Role } from "../entities/role";
-import { Permission } from "../entities/permission";
+import { Account } from '../aggregates/account';
+import { User } from '../entities/user';
+import { Role } from '../entities/role';
+import { Permission } from '../entities/permission';
 
 /**
  * 账号存储库接口
@@ -14,12 +14,12 @@ export interface IAccountRepository {
   findByEmail(email: string): Promise<Account | null>;
   findByPhone(phone: string): Promise<Account | null>;
   delete(uuid: string): Promise<void>;
-  
+
   // 查询操作
   findAll(): Promise<Account[]>;
   findByStatus(status: string): Promise<Account[]>;
   findByAccountType(accountType: string): Promise<Account[]>;
-  
+
   // 验证操作
   existsByUsername(username: string): Promise<boolean>;
   existsByEmail(email: string): Promise<boolean>;

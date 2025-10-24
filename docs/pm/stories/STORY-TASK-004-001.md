@@ -109,20 +109,20 @@
  * Dependency Type Enum
  */
 export enum DependencyType {
-  FINISH_TO_START = 'finish_to_start',  // FS: B starts after A finishes
-  START_TO_START = 'start_to_start',    // SS: B starts when A starts
+  FINISH_TO_START = 'finish_to_start', // FS: B starts after A finishes
+  START_TO_START = 'start_to_start', // SS: B starts when A starts
   FINISH_TO_FINISH = 'finish_to_finish', // FF: B finishes when A finishes
-  START_TO_FINISH = 'start_to_finish'   // SF: B finishes when A starts
+  START_TO_FINISH = 'start_to_finish', // SF: B finishes when A starts
 }
 
 /**
  * Dependency Status Enum
  */
 export enum DependencyStatus {
-  NONE = 'none',              // No dependencies
-  WAITING = 'waiting',        // Waiting for predecessors
-  READY = 'ready',            // All dependencies met
-  BLOCKED = 'blocked'         // Cannot proceed due to dependencies
+  NONE = 'none', // No dependencies
+  WAITING = 'waiting', // Waiting for predecessors
+  READY = 'ready', // All dependencies met
+  BLOCKED = 'blocked', // Cannot proceed due to dependencies
 }
 
 /**
@@ -130,10 +130,10 @@ export enum DependencyStatus {
  */
 export interface TaskDependencyServerDTO {
   readonly uuid: string;
-  readonly predecessorTaskUuid: string;  // The task that must be done first
-  readonly successorTaskUuid: string;    // The task that depends on predecessor
+  readonly predecessorTaskUuid: string; // The task that must be done first
+  readonly successorTaskUuid: string; // The task that depends on predecessor
   readonly dependencyType: DependencyType;
-  readonly lagDays?: number;             // Optional delay (e.g., +2 days after predecessor)
+  readonly lagDays?: number; // Optional delay (e.g., +2 days after predecessor)
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -142,8 +142,8 @@ export interface TaskDependencyServerDTO {
  * Task with Dependencies Info
  */
 export interface TaskWithDependenciesServerDTO extends TaskServerDTO {
-  readonly dependencies: TaskDependencyServerDTO[];      // Tasks this task depends on
-  readonly dependents: TaskDependencyServerDTO[];        // Tasks that depend on this task
+  readonly dependencies: TaskDependencyServerDTO[]; // Tasks this task depends on
+  readonly dependents: TaskDependencyServerDTO[]; // Tasks that depend on this task
   readonly dependencyStatus: DependencyStatus;
   readonly isBlocked: boolean;
   readonly blockingReason?: string;
@@ -154,7 +154,7 @@ export interface TaskWithDependenciesServerDTO extends TaskServerDTO {
  */
 export interface CircularDependencyValidationResult {
   readonly isValid: boolean;
-  readonly cycle?: string[];  // Array of task UUIDs forming the cycle
+  readonly cycle?: string[]; // Array of task UUIDs forming the cycle
   readonly message?: string;
 }
 ```
@@ -209,11 +209,11 @@ model TaskDependency {
 
 model Task {
   // ... existing fields ...
-  
+
   // Dependency relations
   predecessors TaskDependency[] @relation("TaskSuccessors")
   successors   TaskDependency[] @relation("TaskPredecessors")
-  
+
   // Computed fields
   isBlocked         Boolean @default(false)
   dependencyStatus  String  @default("none")
@@ -222,6 +222,7 @@ model Task {
 ```
 
 **Migration Command**:
+
 ```bash
 cd apps/api
 pnpm prisma migrate dev --name add_task_dependencies
@@ -240,9 +241,7 @@ import { TaskDependencyRepository } from '../infrastructure/TaskDependencyReposi
 
 @Injectable()
 export class TaskDependencyService {
-  constructor(
-    private readonly dependencyRepo: TaskDependencyRepository,
-  ) {}
+  constructor(private readonly dependencyRepo: TaskDependencyRepository) {}
 
   /**
    * Detect if adding a dependency would create a cycle
@@ -256,9 +255,9 @@ export class TaskDependencyService {
     // If adding this dependency, check if there's a path from successor back to predecessor
     const visited = new Set<string>();
     const path: string[] = [];
-    
+
     const hasCycle = await this.dfs(successorUuid, predecessorUuid, visited, path);
-    
+
     if (hasCycle) {
       return {
         isValid: false,
@@ -266,7 +265,7 @@ export class TaskDependencyService {
         message: `Creating this dependency would create a circular dependency: ${path.join(' → ')}`,
       };
     }
-    
+
     return { isValid: true };
   }
 
@@ -282,23 +281,23 @@ export class TaskDependencyService {
     if (current === target) {
       return true; // Found cycle
     }
-    
+
     if (visited.has(current)) {
       return false; // Already visited, no cycle here
     }
-    
+
     visited.add(current);
     path.push(current);
-    
+
     // Get all tasks that depend on current task
     const dependencies = await this.dependencyRepo.findByPredecessor(current);
-    
+
     for (const dep of dependencies) {
       if (await this.dfs(dep.successorTaskUuid, target, visited, path)) {
         return true;
       }
     }
-    
+
     path.pop();
     return false;
   }
@@ -308,76 +307,74 @@ export class TaskDependencyService {
    */
   async calculateDependencyStatus(taskUuid: string): Promise<DependencyStatus> {
     const dependencies = await this.dependencyRepo.findBySuccessor(taskUuid);
-    
+
     if (dependencies.length === 0) {
       return DependencyStatus.NONE;
     }
-    
+
     // Check if all predecessors are completed
     const tasks = await Promise.all(
-      dependencies.map(dep => this.taskRepo.findByUuid(dep.predecessorTaskUuid))
+      dependencies.map((dep) => this.taskRepo.findByUuid(dep.predecessorTaskUuid)),
     );
-    
-    const allCompleted = tasks.every(task => task.status === TaskStatus.COMPLETED);
-    const anyBlocked = tasks.some(task => task.isBlocked);
-    
+
+    const allCompleted = tasks.every((task) => task.status === TaskStatus.COMPLETED);
+    const anyBlocked = tasks.some((task) => task.isBlocked);
+
     if (anyBlocked) {
       return DependencyStatus.BLOCKED;
     }
-    
+
     if (allCompleted) {
       return DependencyStatus.READY;
     }
-    
+
     return DependencyStatus.WAITING;
   }
 
   /**
    * Create a new dependency with validation
    */
-  async createDependency(
-    request: CreateTaskDependencyRequest,
-  ): Promise<TaskDependencyServerDTO> {
+  async createDependency(request: CreateTaskDependencyRequest): Promise<TaskDependencyServerDTO> {
     // 1. Validate tasks exist
     const [predecessor, successor] = await Promise.all([
       this.taskRepo.findByUuid(request.predecessorTaskUuid),
       this.taskRepo.findByUuid(request.successorTaskUuid),
     ]);
-    
+
     if (!predecessor || !successor) {
       throw new Error('One or both tasks not found');
     }
-    
+
     // 2. Check for circular dependency
     const validation = await this.detectCircularDependency(
       request.predecessorTaskUuid,
       request.successorTaskUuid,
     );
-    
+
     if (!validation.isValid) {
       throw new Error(validation.message);
     }
-    
+
     // 3. Check for duplicate
     const existing = await this.dependencyRepo.findByPredecessorAndSuccessor(
       request.predecessorTaskUuid,
       request.successorTaskUuid,
     );
-    
+
     if (existing) {
       throw new Error('Dependency already exists');
     }
-    
+
     // 4. Create dependency
     const dependency = await this.dependencyRepo.create(request);
-    
+
     // 5. Update successor task status
     const newStatus = await this.calculateDependencyStatus(request.successorTaskUuid);
     await this.taskRepo.update(request.successorTaskUuid, {
       dependencyStatus: newStatus,
       isBlocked: newStatus === DependencyStatus.BLOCKED || newStatus === DependencyStatus.WAITING,
     });
-    
+
     return dependency;
   }
 }
@@ -486,10 +483,7 @@ export class TaskDependencyController {
 
   @Delete(':id/dependencies/:depId')
   @HttpCode(204)
-  async deleteDependency(
-    @Param('id') taskUuid: string,
-    @Param('depId') dependencyUuid: string,
-  ) {
+  async deleteDependency(@Param('id') taskUuid: string, @Param('depId') dependencyUuid: string) {
     await this.dependencyService.deleteDependency(dependencyUuid);
   }
 
@@ -514,10 +508,10 @@ export class TaskDependencyController {
 
 ```typescript
 import { HttpClient } from '@/shared/api/core/client';
-import type { 
-  TaskDependencyServerDTO, 
+import type {
+  TaskDependencyServerDTO,
   CreateTaskDependencyRequest,
-  ValidateDependencyResponse 
+  ValidateDependencyResponse,
 } from '@dailyuse/contracts';
 
 export class TaskDependencyClientService {
@@ -527,10 +521,7 @@ export class TaskDependencyClientService {
     taskUuid: string,
     request: Omit<CreateTaskDependencyRequest, 'successorTaskUuid'>,
   ): Promise<TaskDependencyServerDTO> {
-    const response = await this.http.post(
-      `/tasks/${taskUuid}/dependencies`,
-      request,
-    );
+    const response = await this.http.post(`/tasks/${taskUuid}/dependencies`, request);
     return response.data;
   }
 
@@ -552,10 +543,9 @@ export class TaskDependencyClientService {
     taskUuid: string,
     predecessorUuid: string,
   ): Promise<ValidateDependencyResponse> {
-    const response = await this.http.post(
-      `/tasks/${taskUuid}/dependencies/validate`,
-      { predecessorTaskUuid: predecessorUuid },
-    );
+    const response = await this.http.post(`/tasks/${taskUuid}/dependencies/validate`, {
+      predecessorTaskUuid: predecessorUuid,
+    });
     return response.data;
   }
 }
@@ -573,10 +563,10 @@ describe('TaskDependencyService', () => {
     it('should detect direct cycle (A → B → A)', async () => {
       // Given: A depends on B
       await service.createDependency({ predecessorTaskUuid: 'B', successorTaskUuid: 'A' });
-      
+
       // When: Try to create B depends on A
       const result = await service.detectCircularDependency('A', 'B');
-      
+
       // Then
       expect(result.isValid).toBe(false);
       expect(result.cycle).toEqual(['B', 'A', 'B']);
@@ -586,10 +576,10 @@ describe('TaskDependencyService', () => {
       // Given: Chain A → B → C
       await service.createDependency({ predecessorTaskUuid: 'B', successorTaskUuid: 'A' });
       await service.createDependency({ predecessorTaskUuid: 'C', successorTaskUuid: 'B' });
-      
+
       // When: Try to create C → A
       const result = await service.detectCircularDependency('A', 'C');
-      
+
       // Then
       expect(result.isValid).toBe(false);
       expect(result.cycle).toContain('A');
@@ -600,7 +590,7 @@ describe('TaskDependencyService', () => {
     it('should allow valid dependency', async () => {
       // When: Create A → B
       const result = await service.detectCircularDependency('A', 'B');
-      
+
       // Then
       expect(result.isValid).toBe(true);
       expect(result.cycle).toBeUndefined();
@@ -655,11 +645,13 @@ pnpm test:e2e task-dependency
 ## 🔗 Dependencies
 
 **Blocks**:
+
 - STORY-023: Task DAG Visualization (needs data model)
 - STORY-024: Dependency Validation (needs circular detection)
 - STORY-025: Critical Path Analysis (needs dependency graph)
 
 **Requires**:
+
 - None (foundation story)
 
 ---
@@ -683,6 +675,7 @@ pnpm test:e2e task-dependency
 ---
 
 **Story Points Breakdown**:
+
 - Contracts: 0.5 SP
 - Prisma Schema: 0.5 SP
 - Domain Service: 0.8 SP

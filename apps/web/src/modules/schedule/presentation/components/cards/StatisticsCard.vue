@@ -119,12 +119,7 @@
                 <span class="text-subtitle-2">成功率</span>
                 <span class="text-h6 font-weight-bold text-success">{{ successRate }}%</span>
               </div>
-              <v-progress-linear
-                :model-value="successRate"
-                color="success"
-                height="8"
-                rounded
-              />
+              <v-progress-linear :model-value="successRate" color="success" height="8" rounded />
             </v-card-text>
           </v-card>
         </div>

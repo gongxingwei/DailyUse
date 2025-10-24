@@ -1,11 +1,6 @@
 <template>
   <div class="sidebar-more-wrapper">
-    <v-menu
-      v-model="showMenu"
-      :close-on-content-click="false"
-      offset-y
-      location="top"
-    >
+    <v-menu v-model="showMenu" :close-on-content-click="false" offset-y location="top">
       <template #activator="{ props }">
         <v-btn
           v-bind="props"
@@ -43,22 +38,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useLogout } from '@renderer/modules/Authentication/presentation/composables/useLogout'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useLogout } from '@renderer/modules/Authentication/presentation/composables/useLogout';
 
-const showMenu = ref(false)
-const router = useRouter()
-const { handleLogout } = useLogout()
+const showMenu = ref(false);
+const router = useRouter();
+const { handleLogout } = useLogout();
 
 const go = (path: string) => {
-  router.push(path)
-  showMenu.value = false
-}
+  router.push(path);
+  showMenu.value = false;
+};
 const onLogout = async () => {
-  await handleLogout()
-  showMenu.value = false
-}
+  await handleLogout();
+  showMenu.value = false;
+};
 </script>
 
 <style scoped>

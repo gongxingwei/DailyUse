@@ -115,7 +115,7 @@ export class EditorSession extends Entity {
     return this._updatedAt;
   }
 
-    // ===== 实例属性修改方法 =====
+  // ===== 实例属性修改方法 =====
   /**
    * 重命名会话
    */

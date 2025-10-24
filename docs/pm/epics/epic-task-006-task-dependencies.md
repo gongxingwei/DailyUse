@@ -18,11 +18,13 @@
 建立任务前置/后置依赖关系，自动阻塞未满足依赖的任务，通知依赖完成，确保任务按正确顺序执行。
 
 **核心问题**:
+
 - ❌ 无法明确表达任务间的前后依赖
 - ❌ 依赖任务未完成时，后续任务无法被阻止
 - ❌ 缺少依赖完成通知机制
 
 **解决方案**:
+
 - ✅ 定义阻塞型/建议型依赖关系
 - ✅ 自动检测循环依赖
 - ✅ 依赖未满足时阻塞任务开始
@@ -61,25 +63,25 @@ Scenario: 定义依赖关系 Contracts
 
 ```typescript
 export enum DependencyType {
-  BLOCKING = 'blocking',      // 阻塞型：必须完成
-  SUGGESTED = 'suggested'     // 建议型：仅提醒
+  BLOCKING = 'blocking', // 阻塞型：必须完成
+  SUGGESTED = 'suggested', // 建议型：仅提醒
 }
 
 export enum DependencyStatus {
-  ACTIVE = 'active',          // 激活（未满足）
-  SATISFIED = 'satisfied',    // 已满足
-  REMOVED = 'removed'         // 已移除
+  ACTIVE = 'active', // 激活（未满足）
+  SATISFIED = 'satisfied', // 已满足
+  REMOVED = 'removed', // 已移除
 }
 
 export interface TaskDependencyServerDTO {
   readonly uuid: string;
-  readonly dependentTaskUuid: string;      // 此任务
-  readonly dependencyTaskUuid: string;     // 依赖的任务
+  readonly dependentTaskUuid: string; // 此任务
+  readonly dependencyTaskUuid: string; // 依赖的任务
   readonly dependencyType: DependencyType;
   readonly status: DependencyStatus;
   readonly metadata?: {
     reason?: string;
-    estimatedLag?: number;    // 预估间隔时间（ms）
+    estimatedLag?: number; // 预估间隔时间（ms）
   };
   readonly createdBy: string;
   readonly createdAt: number;
@@ -90,7 +92,7 @@ export interface TaskServerDTO {
   readonly dependencies?: TaskDependencyServerDTO[];
   readonly dependents?: TaskDependencyServerDTO[];
   readonly isBlocked: boolean;
-  readonly blockingTasks?: string[];     // 阻塞此任务的任务UUID
+  readonly blockingTasks?: string[]; // 阻塞此任务的任务UUID
 }
 ```
 
@@ -100,22 +102,18 @@ export interface TaskServerDTO {
 export class Task extends AggregateRoot {
   private _dependencies: TaskDependency[] = [];
   private _isBlocked: boolean = false;
-  
-  addDependency(
-    dependencyTaskUuid: string,
-    type: DependencyType,
-    userUuid: string
-  ): void {
+
+  addDependency(dependencyTaskUuid: string, type: DependencyType, userUuid: string): void {
     // 防止重复
     if (this.hasDependency(dependencyTaskUuid)) {
       throw new DuplicateDependencyError();
     }
-    
+
     // 防止自我依赖
     if (dependencyTaskUuid === this.uuid) {
       throw new SelfDependencyError();
     }
-    
+
     const dependency = new TaskDependency({
       uuid: generateUuid(),
       dependentTaskUuid: this.uuid,
@@ -123,55 +121,56 @@ export class Task extends AggregateRoot {
       dependencyType: type,
       status: DependencyStatus.ACTIVE,
       createdBy: userUuid,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
-    
+
     this._dependencies.push(dependency);
     this.updateBlockedStatus();
-    
-    this.addDomainEvent(new TaskDependencyAddedEvent({
-      taskUuid: this.uuid,
-      dependencyTaskUuid,
-      type
-    }));
+
+    this.addDomainEvent(
+      new TaskDependencyAddedEvent({
+        taskUuid: this.uuid,
+        dependencyTaskUuid,
+        type,
+      }),
+    );
   }
-  
+
   removeDependency(dependencyUuid: string): void {
-    this._dependencies = this._dependencies.filter(d => d.uuid !== dependencyUuid);
+    this._dependencies = this._dependencies.filter((d) => d.uuid !== dependencyUuid);
     this.updateBlockedStatus();
   }
-  
+
   satisfyDependency(dependencyTaskUuid: string): void {
-    const dep = this._dependencies.find(
-      d => d.dependencyTaskUuid === dependencyTaskUuid
-    );
-    
+    const dep = this._dependencies.find((d) => d.dependencyTaskUuid === dependencyTaskUuid);
+
     if (dep) {
       dep.status = DependencyStatus.SATISFIED;
       this.updateBlockedStatus();
-      
-      this.addDomainEvent(new TaskDependencySatisfiedEvent({
-        taskUuid: this.uuid,
-        dependencyTaskUuid
-      }));
+
+      this.addDomainEvent(
+        new TaskDependencySatisfiedEvent({
+          taskUuid: this.uuid,
+          dependencyTaskUuid,
+        }),
+      );
     }
   }
-  
+
   private updateBlockedStatus(): void {
     const activeDeps = this._dependencies.filter(
-      d => d.status === DependencyStatus.ACTIVE && 
-           d.dependencyType === DependencyType.BLOCKING
+      (d) => d.status === DependencyStatus.ACTIVE && d.dependencyType === DependencyType.BLOCKING,
     );
-    
+
     this._isBlocked = activeDeps.length > 0;
-    this._blockingTasks = activeDeps.map(d => d.dependencyTaskUuid);
+    this._blockingTasks = activeDeps.map((d) => d.dependencyTaskUuid);
   }
-  
+
   canStart(): { allowed: boolean; reason?: string } {
     if (this._isBlocked) {
       return {
         allowed: false,
-        reason: `被 ${this._blockingTasks.length} 个前置任务阻塞`
+        reason: `被 ${this._blockingTasks.length} 个前置任务阻塞`,
       };
     }
     return { allowed: true };
@@ -209,41 +208,38 @@ export class TaskDependencyService {
     private readonly taskRepo: TaskRepository,
     private readonly depRepo: TaskDependencyRepository,
     private readonly cycleDetector: CycleDetectorService,
-    private readonly eventBus: EventBus
+    private readonly eventBus: EventBus,
   ) {}
 
   async addDependency(command: AddDependencyCommand): Promise<void> {
     const { taskUuid, dependencyTaskUuid, type, userUuid } = command;
-    
+
     // 加载任务
     const task = await this.taskRepo.findByUuid(taskUuid);
     const depTask = await this.taskRepo.findByUuid(dependencyTaskUuid);
-    
+
     if (!task || !depTask) {
       throw new TaskNotFoundException();
     }
-    
+
     // 循环检测
     const allDeps = await this.depRepo.findAll();
-    const cycle = this.cycleDetector.detect(
-      allDeps,
-      { from: dependencyTaskUuid, to: taskUuid }
-    );
-    
+    const cycle = this.cycleDetector.detect(allDeps, { from: dependencyTaskUuid, to: taskUuid });
+
     if (cycle) {
       throw new CircularDependencyError(cycle);
     }
-    
+
     // 添加依赖
     task.addDependency(dependencyTaskUuid, type, userUuid);
     await this.taskRepo.save(task);
-    
+
     await this.eventBus.publish(
       new TaskDependencyAddedEvent({
         taskUuid,
         dependencyTaskUuid,
-        type
-      })
+        type,
+      }),
     );
   }
 
@@ -264,15 +260,13 @@ export class TaskCompletedHandler {
 
   async handle(event: TaskCompletedEvent): Promise<void> {
     // 查找所有依赖此任务的任务
-    const dependentTasks = await this.taskRepo.findByDependency(
-      event.taskUuid
-    );
-    
+    const dependentTasks = await this.taskRepo.findByDependency(event.taskUuid);
+
     for (const task of dependentTasks) {
       // 标记依赖为已满足
       task.satisfyDependency(event.taskUuid);
       await this.taskRepo.save(task);
-      
+
       // 检查是否所有依赖都已满足
       if (!task.isBlocked) {
         // 发送通知
@@ -281,7 +275,7 @@ export class TaskCompletedHandler {
           type: 'task_dependencies_met',
           title: '任务可以开始了',
           content: `"${task.title}" 的所有依赖任务已完成`,
-          actionUrl: `/tasks/${task.uuid}`
+          actionUrl: `/tasks/${task.uuid}`,
         });
       }
     }
@@ -311,10 +305,10 @@ model TaskDependency {
   metadata            Json?    @map("metadata")
   createdBy           String   @map("created_by")
   createdAt           BigInt   @map("created_at")
-  
+
   dependentTask       Task     @relation("DependentTask", fields: [dependentTaskUuid], references: [uuid], onDelete: Cascade)
   dependencyTask      Task     @relation("DependencyTask", fields: [dependencyTaskUuid], references: [uuid], onDelete: Cascade)
-  
+
   @@unique([dependentTaskUuid, dependencyTaskUuid])
   @@index([dependentTaskUuid])
   @@index([dependencyTaskUuid])
@@ -324,7 +318,7 @@ model TaskDependency {
 
 model Task {
   // ...existing fields...
-  
+
   dependencies        TaskDependency[] @relation("DependentTask")
   dependents          TaskDependency[] @relation("DependencyTask")
   isBlocked           Boolean          @default(false) @map("is_blocked")
@@ -337,13 +331,14 @@ model Task {
 ### Story 004: API Endpoints - 依赖接口
 
 **Story ID**: TASK-006-S004  
-**Story Points**: 2 SP  
+**Story Points**: 2 SP
 
 #### Technical Details
 
 ```typescript
 // 添加依赖
-router.post('/:id/dependencies',
+router.post(
+  '/:id/dependencies',
   authenticate,
   validateBody(AddDependencySchema),
   async (req, res) => {
@@ -352,45 +347,36 @@ router.post('/:id/dependencies',
         taskUuid: req.params.id,
         dependencyTaskUuid: req.body.dependencyTaskUuid,
         type: req.body.dependencyType,
-        userUuid: req.user.uuid
+        userUuid: req.user.uuid,
       });
-      
+
       const task = await taskService.getByUuid(req.params.id);
       res.status(201).json(toClientDTO(task));
     } catch (error) {
       if (error instanceof CircularDependencyError) {
         res.status(400).json({
           error: 'Circular dependency detected',
-          cycle: error.cycle
+          cycle: error.cycle,
         });
       } else {
         throw error;
       }
     }
-  }
+  },
 );
 
 // 删除依赖
-router.delete('/:id/dependencies/:depId',
-  authenticate,
-  async (req, res) => {
-    await taskDependencyService.removeDependency(
-      req.params.id,
-      req.params.depId
-    );
-    res.status(204).send();
-  }
-);
+router.delete('/:id/dependencies/:depId', authenticate, async (req, res) => {
+  await taskDependencyService.removeDependency(req.params.id, req.params.depId);
+  res.status(204).send();
+});
 
 // 检查是否可开始
-router.get('/:id/can-start',
-  authenticate,
-  async (req, res) => {
-    const task = await taskService.getByUuid(req.params.id);
-    const check = task.canStart();
-    res.json(check);
-  }
-);
+router.get('/:id/can-start', authenticate, async (req, res) => {
+  const task = await taskService.getByUuid(req.params.id);
+  const check = task.canStart();
+  res.json(check);
+});
 ```
 
 ---
@@ -398,7 +384,7 @@ router.get('/:id/can-start',
 ### Story 005: Client Services
 
 **Story ID**: TASK-006-S005  
-**Story Points**: 2 SP  
+**Story Points**: 2 SP
 
 #### Technical Details
 
@@ -408,8 +394,7 @@ export function useAddDependency() {
   const service = new TaskDependencyService();
 
   return useMutation({
-    mutationFn: (params: AddDependencyParams) => 
-      service.addDependency(params),
+    mutationFn: (params: AddDependencyParams) => service.addDependency(params),
     onSuccess: (_, params) => {
       queryClient.invalidateQueries(['task', params.taskUuid]);
     },
@@ -417,17 +402,17 @@ export function useAddDependency() {
       if (error.code === 'CIRCULAR_DEPENDENCY') {
         ElMessage.error({
           message: '检测到循环依赖',
-          description: `路径: ${error.cycle.join(' → ')}`
+          description: `路径: ${error.cycle.join(' → ')}`,
         });
       }
-    }
+    },
   });
 }
 
 export function useTaskDependencies(taskUuid: string) {
   return useQuery({
     queryKey: ['task-dependencies', taskUuid],
-    queryFn: () => service.getDependencies(taskUuid)
+    queryFn: () => service.getDependencies(taskUuid),
   });
 }
 ```
@@ -465,11 +450,7 @@ Scenario: 配置依赖关系
       <template #header>
         <div class="header">
           <span>📌 依赖关系</span>
-          <el-button
-            size="small"
-            type="primary"
-            @click="showAddDialog = true"
-          >
+          <el-button size="small" type="primary" @click="showAddDialog = true">
             添加依赖
           </el-button>
         </div>
@@ -478,9 +459,7 @@ Scenario: 配置依赖关系
       <!-- 此任务依赖的任务 -->
       <div class="section">
         <h4>此任务依赖以下任务完成：</h4>
-        <div v-if="dependencies.length === 0" class="empty">
-          暂无依赖任务
-        </div>
+        <div v-if="dependencies.length === 0" class="empty">暂无依赖任务</div>
         <div
           v-for="dep in dependencies"
           :key="dep.uuid"
@@ -494,41 +473,25 @@ Scenario: 配置依赖关系
             <el-icon v-else color="#67c23a">
               <Check />
             </el-icon>
-            
+
             <span class="task-name">{{ dep.dependencyTask.title }}</span>
             <el-tag :type="getStatusType(dep.dependencyTask.status)" size="small">
               {{ dep.dependencyTask.status }}
             </el-tag>
           </div>
-          
+
           <div class="actions">
-            <el-button
-              link
-              size="small"
-              @click="viewTask(dep.dependencyTaskUuid)"
-            >
+            <el-button link size="small" @click="viewTask(dep.dependencyTaskUuid)">
               查看任务
             </el-button>
-            <el-button
-              link
-              size="small"
-              type="danger"
-              @click="removeDependency(dep.uuid)"
-            >
+            <el-button link size="small" type="danger" @click="removeDependency(dep.uuid)">
               移除
             </el-button>
           </div>
         </div>
 
-        <el-alert
-          v-if="task.isBlocked"
-          type="warning"
-          :closable="false"
-          class="blocked-alert"
-        >
-          <template #title>
-            ⚠️ 任务被阻塞
-          </template>
+        <el-alert v-if="task.isBlocked" type="warning" :closable="false" class="blocked-alert">
+          <template #title> ⚠️ 任务被阻塞 </template>
           此任务有 {{ blockingCount }} 个未完成的前置任务，无法开始。
         </el-alert>
       </div>
@@ -536,14 +499,8 @@ Scenario: 配置依赖关系
       <!-- 依赖此任务的任务 -->
       <div class="section">
         <h4>以下任务依赖此任务：</h4>
-        <div v-if="dependents.length === 0" class="empty">
-          暂无后续任务
-        </div>
-        <div
-          v-for="dep in dependents"
-          :key="dep.uuid"
-          class="dependency-item"
-        >
+        <div v-if="dependents.length === 0" class="empty">暂无后续任务</div>
+        <div v-for="dep in dependents" :key="dep.uuid" class="dependency-item">
           <span class="task-name">{{ dep.dependentTask.title }}</span>
           <el-button link size="small" @click="viewTask(dep.dependentTaskUuid)">
             查看任务
@@ -553,11 +510,7 @@ Scenario: 配置依赖关系
     </el-card>
 
     <!-- 添加依赖对话框 -->
-    <el-dialog
-      v-model="showAddDialog"
-      title="添加依赖任务"
-      width="600px"
-    >
+    <el-dialog v-model="showAddDialog" title="添加依赖任务" width="600px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="搜索任务">
           <el-select
@@ -585,15 +538,11 @@ Scenario: 配置依赖关系
           <el-radio-group v-model="form.dependencyType">
             <el-radio label="blocking">
               🔴 必须完成（阻塞型）
-              <div class="radio-description">
-                前置任务未完成时，此任务无法开始
-              </div>
+              <div class="radio-description">前置任务未完成时，此任务无法开始</div>
             </el-radio>
             <el-radio label="suggested">
               🟡 建议完成（提醒型）
-              <div class="radio-description">
-                前置任务未完成时，仅提醒但不阻止
-              </div>
+              <div class="radio-description">前置任务未完成时，仅提醒但不阻止</div>
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -621,11 +570,11 @@ const removeDependency = useRemoveDependency();
 const showAddDialog = ref(false);
 const form = ref({
   dependencyTaskUuid: '',
-  dependencyType: 'blocking'
+  dependencyType: 'blocking',
 });
 
-const blockingCount = computed(() => 
-  dependencies.value?.filter(d => d.status === 'active').length || 0
+const blockingCount = computed(
+  () => dependencies.value?.filter((d) => d.status === 'active').length || 0,
 );
 
 async function handleAdd() {
@@ -633,9 +582,9 @@ async function handleAdd() {
     await addDependency.mutateAsync({
       taskUuid: props.taskUuid,
       dependencyTaskUuid: form.value.dependencyTaskUuid,
-      dependencyType: form.value.dependencyType
+      dependencyType: form.value.dependencyType,
     });
-    
+
     ElMessage.success('依赖关系已添加');
     showAddDialog.value = false;
   } catch (error: any) {
@@ -673,22 +622,22 @@ async function handleAdd() {
 ### Story 007: E2E Tests
 
 **Story ID**: TASK-006-S007  
-**Story Points**: 1 SP  
+**Story Points**: 1 SP
 
 ```typescript
 test('添加依赖并验证阻塞', async ({ page }) => {
   await page.goto('/tasks/task-b-uuid');
-  
+
   // 添加依赖
   await page.click('[data-testid="add-dependency"]');
   await page.fill('[data-testid="search-task"]', 'API 开发');
   await page.click('[data-testid="task-result-1"]');
   await page.click('[data-testid="dependency-type-blocking"]');
   await page.click('[data-testid="confirm-add"]');
-  
+
   // 验证阻塞状态
   await expect(page.locator('[data-testid="blocked-alert"]')).toBeVisible();
-  
+
   // 尝试开始任务
   await page.click('[data-testid="start-task"]');
   await expect(page.locator('[data-testid="error-message"]')).toContainText('任务被阻塞');
@@ -702,7 +651,7 @@ test('检测循环依赖', async ({ page }) => {
   await page.fill('[data-testid="search-task"]', '任务 A');
   await page.click('[data-testid="task-result-1"]');
   await page.click('[data-testid="confirm-add"]');
-  
+
   // 验证循环检测
   await expect(page.locator('[data-testid="circular-error"]')).toBeVisible();
   await expect(page.locator('[data-testid="cycle-path"]')).toContainText('A → B → C → A');
@@ -735,10 +684,12 @@ test('检测循环依赖', async ({ page }) => {
 **Sprint 3-4 (Week 5-8)** - 与其他 TASK Epics 并行
 
 **Week 1**:
+
 - Day 1-2: Story 001-002 (Contracts, Domain, Application)
 - Day 3: Story 003 (Infrastructure)
 
 **Week 2**:
+
 - Day 1: Story 004 (API)
 - Day 2-3: Story 005-006 (Client + UI)
 - Day 4: Story 007 (E2E)
@@ -764,5 +715,5 @@ Feature: 任务依赖关系管理
 
 ---
 
-*文档创建: 2025-10-21*  
-*Epic Owner: PM Agent*
+_文档创建: 2025-10-21_  
+_Epic Owner: PM Agent_

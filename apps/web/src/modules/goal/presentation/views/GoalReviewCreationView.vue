@@ -1,9 +1,13 @@
 <template>
-  <div v-if="loading" class="d-flex justify-center align-center" style="height:200px;">
+  <div v-if="loading" class="d-flex justify-center align-center" style="height: 200px">
     <v-progress-circular indeterminate color="primary" />
     <span class="ml-4">加载中...</span>
   </div>
-  <div v-else-if="!goal || !localGoalReview" class="d-flex justify-center align-center" style="height:200px;">
+  <div
+    v-else-if="!goal || !localGoalReview"
+    class="d-flex justify-center align-center"
+    style="height: 200px"
+  >
     <v-alert type="error" variant="tonal">
       <template #title>加载失败</template>
       未获取到目标信息，请重试
@@ -13,9 +17,7 @@
     <!-- header -->
     <header class="goal-review-header d-flex justify-space-between align-center px-4 py-2">
       <div>
-        <v-btn @click="router.back()" variant="tonal" prepend-icon="mdi-arrow-left">
-          返回
-        </v-btn>
+        <v-btn @click="router.back()" variant="tonal" prepend-icon="mdi-arrow-left"> 返回 </v-btn>
       </div>
       <div class="goal-review-header-content d-flex flex-column align-center text-center">
         <span class="text-h4 font-weight-bold mb-2">创建目标复盘</span>
@@ -25,8 +27,14 @@
         </span>
       </div>
       <div>
-        <v-btn color="primary" size="large" prepend-icon="mdi-check" @click="handleSaveReview" :loading="saving"
-          :disabled="!canSave">
+        <v-btn
+          color="primary"
+          size="large"
+          prepend-icon="mdi-check"
+          @click="handleSaveReview"
+          :loading="saving"
+          :disabled="!canSave"
+        >
           完成复盘
         </v-btn>
       </div>
@@ -40,7 +48,9 @@
           <div class="goal-review-card goal-info">
             <div class="card-header pa-4 d-flex flex-column align-start">
               <div class="d-flex align-baseline">
-                <span class="text-h3 font-weight-bold mr-1">{{ localGoalReview.snapshot.weightedProgress }}</span>
+                <span class="text-h3 font-weight-bold mr-1">{{
+                  localGoalReview.snapshot.weightedProgress
+                }}</span>
                 <span class="text-h6 font-weight-light">%</span>
               </div>
               <div>
@@ -48,13 +58,18 @@
               </div>
             </div>
             <div class="card-content d-flex flex-column pa-2">
-              <div v-for="kr in localGoalReview.snapshot.keyResultsSnapshot || []" :key="kr.uuid"
-                class="card-content-item d-flex justify-space-between align-center pa-3 mb-2">
+              <div
+                v-for="kr in localGoalReview.snapshot.keyResultsSnapshot || []"
+                :key="kr.uuid"
+                class="card-content-item d-flex justify-space-between align-center pa-3 mb-2"
+              >
                 <span class="item-name">{{ kr.name }}</span>
                 <span class="item-value">{{ kr.currentValue }}/{{ kr.targetValue }}</span>
               </div>
-              <div v-if="!localGoalReview.snapshot.keyResultsSnapshot?.length"
-                class="pa-4 text-center text-medium-emphasis">
+              <div
+                v-if="!localGoalReview.snapshot.keyResultsSnapshot?.length"
+                class="pa-4 text-center text-medium-emphasis"
+              >
                 暂无关键结果数据
               </div>
             </div>
@@ -64,8 +79,12 @@
           <div class="goal-review-card stats-info">
             <div class="card-header pa-4 d-flex flex-column align-start">
               <div class="d-flex align-baseline">
-                <span class="text-h3 font-weight-bold mr-1">{{ localGoalReview.snapshot.completedKeyResults }}</span>
-                <span class="text-h6 font-weight-light">/{{ localGoalReview.snapshot.totalKeyResults }}</span>
+                <span class="text-h3 font-weight-bold mr-1">{{
+                  localGoalReview.snapshot.completedKeyResults
+                }}</span>
+                <span class="text-h6 font-weight-light"
+                  >/{{ localGoalReview.snapshot.totalKeyResults }}</span
+                >
               </div>
               <div>
                 <span class="text-subtitle-1">已完成关键结果</span>
@@ -77,8 +96,12 @@
                   <span class="text-body-2">整体进度</span>
                   <span class="text-body-2">{{ localGoalReview.snapshot.overallProgress }}%</span>
                 </div>
-                <v-progress-linear :model-value="localGoalReview.snapshot.overallProgress" height="6" rounded
-                  color="white" />
+                <v-progress-linear
+                  :model-value="localGoalReview.snapshot.overallProgress"
+                  height="6"
+                  rounded
+                  color="white"
+                />
               </div>
               <div class="text-body-2 text-medium-emphasis">
                 复盘时间: {{ format(localGoalReview.reviewDate, 'yyyy-MM-dd HH:mm') }}
@@ -97,13 +120,13 @@
           </v-card-title>
           <v-row>
             <v-col cols="12" md="6">
-              <GoalProgressChart :goal="(goal as Goal)" />
+              <GoalProgressChart :goal="goal as Goal" />
             </v-col>
             <v-col cols="12" md="6">
-              <KrProgressChart :goal="(goal as Goal)" />
+              <KrProgressChart :goal="goal as Goal" />
             </v-col>
             <v-col cols="12">
-              <PeriodBarChart :goal="(goal as Goal)" />
+              <PeriodBarChart :goal="goal as Goal" />
             </v-col>
           </v-row>
         </v-card>
@@ -124,8 +147,14 @@
                 <h3 class="text-h6">主要成就</h3>
               </div>
               <div class="diagnosis-card-content pa-4">
-                <v-textarea v-model="localGoalReview.content.achievements" placeholder="列出这段时间的主要成就和突破..."
-                  variant="outlined" rows="4" auto-grow hide-details />
+                <v-textarea
+                  v-model="localGoalReview.content.achievements"
+                  placeholder="列出这段时间的主要成就和突破..."
+                  variant="outlined"
+                  rows="4"
+                  auto-grow
+                  hide-details
+                />
               </div>
             </div>
 
@@ -135,8 +164,14 @@
                 <h3 class="text-h6">遇到的挑战</h3>
               </div>
               <div class="diagnosis-card-content pa-4">
-                <v-textarea v-model="localGoalReview.content.challenges" placeholder="记录遇到的主要挑战和困难..."
-                  variant="outlined" rows="4" auto-grow hide-details />
+                <v-textarea
+                  v-model="localGoalReview.content.challenges"
+                  placeholder="记录遇到的主要挑战和困难..."
+                  variant="outlined"
+                  rows="4"
+                  auto-grow
+                  hide-details
+                />
               </div>
             </div>
 
@@ -146,19 +181,33 @@
                 <h3 class="text-h6">经验总结</h3>
               </div>
               <div class="diagnosis-card-content pa-4">
-                <v-textarea v-model="localGoalReview.content.learnings" placeholder="总结经验教训和心得体会..." variant="outlined"
-                  rows="4" auto-grow hide-details />
+                <v-textarea
+                  v-model="localGoalReview.content.learnings"
+                  placeholder="总结经验教训和心得体会..."
+                  variant="outlined"
+                  rows="4"
+                  auto-grow
+                  hide-details
+                />
               </div>
             </div>
 
             <div class="diagnosis-card">
               <div class="diagnosis-card-header d-flex align-center gap-3 pa-4">
-                <v-icon class="diagnosis-icon" color="primary" size="24">mdi-arrow-right-circle</v-icon>
+                <v-icon class="diagnosis-icon" color="primary" size="24"
+                  >mdi-arrow-right-circle</v-icon
+                >
                 <h3 class="text-h6">下一步计划</h3>
               </div>
               <div class="diagnosis-card-content pa-4">
-                <v-textarea v-model="localGoalReview.content.nextSteps" placeholder="制定下一步行动计划..." variant="outlined"
-                  rows="4" auto-grow hide-details />
+                <v-textarea
+                  v-model="localGoalReview.content.nextSteps"
+                  placeholder="制定下一步行动计划..."
+                  variant="outlined"
+                  rows="4"
+                  auto-grow
+                  hide-details
+                />
               </div>
             </div>
 
@@ -171,16 +220,30 @@
               <div class="diagnosis-card-content pa-4">
                 <div class="mb-4">
                   <div class="text-body-2 mb-2">进度满意度</div>
-                  <v-rating v-model="localGoalReview.rating.progressSatisfaction" color="orange" half-increments
-                    hover />
+                  <v-rating
+                    v-model="localGoalReview.rating.progressSatisfaction"
+                    color="orange"
+                    half-increments
+                    hover
+                  />
                 </div>
                 <div class="mb-4">
                   <div class="text-body-2 mb-2">执行效率</div>
-                  <v-rating v-model="localGoalReview.rating.executionEfficiency" color="orange" half-increments hover />
+                  <v-rating
+                    v-model="localGoalReview.rating.executionEfficiency"
+                    color="orange"
+                    half-increments
+                    hover
+                  />
                 </div>
                 <div>
                   <div class="text-body-2 mb-2">目标合理性</div>
-                  <v-rating v-model="localGoalReview.rating.goalReasonableness" color="orange" half-increments hover />
+                  <v-rating
+                    v-model="localGoalReview.rating.goalReasonableness"
+                    color="orange"
+                    half-increments
+                    hover
+                  />
                 </div>
               </div>
             </div>
@@ -192,8 +255,14 @@
                 <h3 class="text-h6">调整建议</h3>
               </div>
               <div class="diagnosis-card-content pa-4">
-                <v-textarea v-model="localGoalReview.content.adjustments" placeholder="对目标或执行策略的调整建议..."
-                  variant="outlined" rows="4" auto-grow hide-details />
+                <v-textarea
+                  v-model="localGoalReview.content.adjustments"
+                  placeholder="对目标或执行策略的调整建议..."
+                  variant="outlined"
+                  rows="4"
+                  auto-grow
+                  hide-details
+                />
               </div>
             </div>
           </div>
@@ -210,19 +279,39 @@
         </v-card-title>
         <v-card-text>
           <p>您确定要提交这份目标复盘吗？提交后将保存到系统中。</p>
-          <div class="mt-4 pa-3 rounded" style="background: rgba(var(--v-theme-primary), 0.1);">
+          <div class="mt-4 pa-3 rounded" style="background: rgba(var(--v-theme-primary), 0.1)">
             <div class="text-body-2 text-medium-emphasis">复盘摘要:</div>
             <div class="mt-2">
-              <v-chip class="mr-2 mb-1" size="small" color="success" v-if="localGoalReview.content.achievements">
+              <v-chip
+                class="mr-2 mb-1"
+                size="small"
+                color="success"
+                v-if="localGoalReview.content.achievements"
+              >
                 有成就记录
               </v-chip>
-              <v-chip class="mr-2 mb-1" size="small" color="warning" v-if="localGoalReview.content.challenges">
+              <v-chip
+                class="mr-2 mb-1"
+                size="small"
+                color="warning"
+                v-if="localGoalReview.content.challenges"
+              >
                 有挑战记录
               </v-chip>
-              <v-chip class="mr-2 mb-1" size="small" color="info" v-if="localGoalReview.content.learnings">
+              <v-chip
+                class="mr-2 mb-1"
+                size="small"
+                color="info"
+                v-if="localGoalReview.content.learnings"
+              >
                 有经验总结
               </v-chip>
-              <v-chip class="mr-2 mb-1" size="small" color="primary" v-if="localGoalReview.content.nextSteps">
+              <v-chip
+                class="mr-2 mb-1"
+                size="small"
+                color="primary"
+                v-if="localGoalReview.content.nextSteps"
+              >
                 有下步计划
               </v-chip>
             </div>
@@ -303,18 +392,18 @@ const initializeReview = async () => {
         snapshotDate: new Date(),
         overallProgress: goal.value.overallProgress || 0,
         weightedProgress: goal.value.weightedProgress || 0,
-        completedKeyResults: goal.value.keyResults?.filter(kr => kr.progress >= 100).length || 0,
+        completedKeyResults: goal.value.keyResults?.filter((kr) => kr.progress >= 100).length || 0,
         totalKeyResults: goal.value.keyResults?.length || 0,
-        keyResultsSnapshot: goal.value.keyResults?.map(kr => ({
-          uuid: kr.uuid,
-          name: kr.name,
-          progress: kr.progress,
-          currentValue: kr.currentValue,
-          targetValue: kr.targetValue,
-        })) || []
+        keyResultsSnapshot:
+          goal.value.keyResults?.map((kr) => ({
+            uuid: kr.uuid,
+            name: kr.name,
+            progress: kr.progress,
+            currentValue: kr.currentValue,
+            targetValue: kr.targetValue,
+          })) || [],
       };
     }
-
   } catch (error) {
     console.error('初始化复盘失败:', error);
     snackbar.showError('加载目标信息失败，请重试');
@@ -350,9 +439,9 @@ const confirmSaveReview = async () => {
         weightedProgress: localGoalReview.value.snapshot.weightedProgress,
         completedKeyResults: localGoalReview.value.snapshot.completedKeyResults,
         totalKeyResults: localGoalReview.value.snapshot.totalKeyResults,
-        keyResultsSnapshot: localGoalReview.value.snapshot.keyResultsSnapshot
+        keyResultsSnapshot: localGoalReview.value.snapshot.keyResultsSnapshot,
       },
-      rating: localGoalReview.value.rating
+      rating: localGoalReview.value.rating,
     };
 
     // 调用API创建复盘
@@ -363,7 +452,6 @@ const confirmSaveReview = async () => {
 
     // 跳转到目标详情页
     router.push({ name: 'goal-detail', params: { id: goalUuid } });
-
   } catch (error) {
     console.error('保存复盘失败:', error);
     snackbar.showError('保存复盘失败，请重试');
@@ -380,7 +468,11 @@ onMounted(() => {
 
 <style scoped>
 #goal-review {
-  background: linear-gradient(120deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-background), 0.95) 100%);
+  background: linear-gradient(
+    120deg,
+    rgba(var(--v-theme-primary), 0.08) 0%,
+    rgba(var(--v-theme-background), 0.95) 100%
+  );
   overflow: hidden;
 }
 
@@ -404,7 +496,9 @@ onMounted(() => {
   border-radius: 16px;
   margin-bottom: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -417,7 +511,11 @@ onMounted(() => {
 }
 
 .goal-info {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.8), rgba(var(--v-theme-primary), 0.6));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.8),
+    rgba(var(--v-theme-primary), 0.6)
+  );
   color: white;
 }
 
@@ -426,7 +524,11 @@ onMounted(() => {
 }
 
 .stats-info {
-  background: linear-gradient(135deg, rgba(var(--v-theme-secondary), 0.8), rgba(var(--v-theme-secondary), 0.6));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-secondary), 0.8),
+    rgba(var(--v-theme-secondary), 0.6)
+  );
   color: white;
 }
 
@@ -462,7 +564,11 @@ onMounted(() => {
 }
 
 .self-diagnosis {
-  background: linear-gradient(135deg, rgba(var(--v-theme-surface), 0.95), rgba(var(--v-theme-background), 0.98));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-surface), 0.95),
+    rgba(var(--v-theme-background), 0.98)
+  );
   border-radius: 20px;
   margin: 2rem 0;
   box-shadow: 0 4px 32px rgba(0, 0, 0, 0.06);
@@ -503,7 +609,11 @@ onMounted(() => {
 }
 
 .diagnosis-card.rating-card {
-  background: linear-gradient(135deg, rgba(var(--v-theme-warning), 0.05), rgba(var(--v-theme-surface), 1));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-warning), 0.05),
+    rgba(var(--v-theme-surface), 1)
+  );
 }
 
 .diagnosis-card-header {

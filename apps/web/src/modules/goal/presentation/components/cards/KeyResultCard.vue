@@ -1,11 +1,20 @@
 <template>
-  <v-card class="key-result-card" :class="{ 'key-result-card--completed': keyResult.progress >= 100 }"
-    variant="outlined" elevation="0" hover @click="goToKeyResultInfo">
+  <v-card
+    class="key-result-card"
+    :class="{ 'key-result-card--completed': keyResult.progress >= 100 }"
+    variant="outlined"
+    elevation="0"
+    hover
+    @click="goToKeyResultInfo"
+  >
     <!-- 进度背景层 -->
-    <div class="progress-background" :style="{
-      background: `linear-gradient(90deg, ${goal?.color || '#1976D2'} 0%, ${goal?.color || '#1976D2'}88 100%)`,
-      width: `${keyResult.progress}%`,
-    }"></div>
+    <div
+      class="progress-background"
+      :style="{
+        background: `linear-gradient(90deg, ${goal?.color || '#1976D2'} 0%, ${goal?.color || '#1976D2'}88 100%)`,
+        width: `${keyResult.progress}%`,
+      }"
+    ></div>
 
     <!-- 卡片头部 -->
     <v-card-title class="pa-4 pb-2">
@@ -13,18 +22,25 @@
         <div class="key-result-title">
           <h3 class="text-h6 font-weight-bold mb-0">{{ keyResult.name }}</h3>
           <div class="d-flex align-center mt-1">
-            <v-icon :color="keyResult.progress >= 100 ? 'success' : 'medium-emphasis'" size="16" class="mr-1">
+            <v-icon
+              :color="keyResult.progress >= 100 ? 'success' : 'medium-emphasis'"
+              size="16"
+              class="mr-1"
+            >
               {{ keyResult.progress >= 100 ? 'mdi-check-circle' : 'mdi-target' }}
             </v-icon>
-            <span class="text-caption text-medium-emphasis">
-              权重: {{ keyResult.weight }}
-            </span>
+            <span class="text-caption text-medium-emphasis"> 权重: {{ keyResult.weight }} </span>
           </div>
         </div>
 
         <!-- 进度圆环 -->
-        <v-progress-circular :model-value="keyResult.progress" :color="goal?.color || 'primary'" size="48" width="4"
-          class="progress-ring">
+        <v-progress-circular
+          :model-value="keyResult.progress"
+          :color="goal?.color || 'primary'"
+          size="48"
+          width="4"
+          class="progress-ring"
+        >
           <span class="text-caption font-weight-bold">{{ Math.round(keyResult.progress) }}%</span>
         </v-progress-circular>
       </div>
@@ -45,12 +61,16 @@
         </div>
 
         <!-- 添加记录按钮 -->
-        <v-btn :color="goal?.color || 'primary'" icon="mdi-plus" size="small" variant="tonal" class="add-record-btn"
-          @click.stop="goalRecordDialogRef?.openDialog(keyResult.goalUuid, keyResult.uuid)">
+        <v-btn
+          :color="goal?.color || 'primary'"
+          icon="mdi-plus"
+          size="small"
+          variant="tonal"
+          class="add-record-btn"
+          @click.stop="goalRecordDialogRef?.openDialog(keyResult.goalUuid, keyResult.uuid)"
+        >
           <v-icon>mdi-plus</v-icon>
-          <v-tooltip activator="parent" location="bottom">
-            添加进度记录
-          </v-tooltip>
+          <v-tooltip activator="parent" location="bottom"> 添加进度记录 </v-tooltip>
         </v-btn>
       </div>
 
@@ -85,14 +105,12 @@ const props = defineProps<{
   goal?: Goal;
 }>();
 
-
 // components
 const goalRecordDialogRef = ref<InstanceType<typeof GoalRecordDialog> | null>(null);
 
 const goToKeyResultInfo = () => {
-  console.log('好像没必要')
+  console.log('好像没必要');
 };
-
 </script>
 
 <style scoped>

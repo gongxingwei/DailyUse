@@ -1,7 +1,7 @@
-import { Database } from "better-sqlite3";
-import { Token } from "../../domain/valueObjects/token";
-import { ITokenRepository } from "../../domain/repositories/authenticationRepository";
-import { getDatabase } from "../../../../shared/database/index";
+import { Database } from 'better-sqlite3';
+import { Token } from '../../domain/valueObjects/token';
+import { ITokenRepository } from '../../domain/repositories/authenticationRepository';
+import { getDatabase } from '../../../../shared/database/index';
 /**
  * SQLite Token 仓库实现
  * 注意：本实现需与 auth_tokens 表结构字段保持一致
@@ -38,7 +38,7 @@ export class SqliteTokenRepository implements ITokenRepository {
       token.issuedAt.getTime(),
       token.expiresAt.getTime(),
       token.deviceInfo,
-      token.isRevoked ? 1 : 0
+      token.isRevoked ? 1 : 0,
     );
   }
 
@@ -90,10 +90,7 @@ export class SqliteTokenRepository implements ITokenRepository {
   /**
    * 根据账户ID和类型查找令牌
    */
-  async findByAccountUuidAndType(
-    accountUuid: string,
-    type: string
-  ): Promise<Token[]> {
+  async findByAccountUuidAndType(accountUuid: string, type: string): Promise<Token[]> {
     const db = await this.getDb();
     const stmt = db.prepare(`
       SELECT * FROM auth_tokens 
@@ -160,10 +157,7 @@ export class SqliteTokenRepository implements ITokenRepository {
   /**
    * 撤销账户指定类型的所有令牌
    */
-  async revokeAllByAccountUuidAndType(
-    accountUuid: string,
-    type: string
-  ): Promise<void> {
+  async revokeAllByAccountUuidAndType(accountUuid: string, type: string): Promise<void> {
     const db = await this.getDb();
     const stmt = db.prepare(`
       UPDATE auth_tokens 

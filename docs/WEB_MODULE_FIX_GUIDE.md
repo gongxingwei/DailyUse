@@ -7,6 +7,7 @@
 ### 1. ✅ Editor 模块 Web 端重构完成
 
 已重新实现为纯前端组件：
+
 - EditorContainer（主容器）
 - EditorTabBar（标签栏）
 - MarkdownEditor（Markdown 编辑器）
@@ -33,6 +34,7 @@ await scheduleApiClient.createScheduleTask({
 ```
 
 **问题：**
+
 1. **职责错乱**：调度逻辑应该在后端处理
 2. **重复逻辑**：前后端都要处理调度
 3. **一致性问题**：前后端逻辑可能不一致
@@ -41,6 +43,7 @@ await scheduleApiClient.createScheduleTask({
 ### 正确架构（基于事件总线）
 
 **架构原则：**
+
 - Schedule 模块通过**事件总线**监听其他模块的领域事件
 - 业务模块（Task/Goal/Reminder）在创建/更新/删除时发出专门的 Schedule 相关事件
 - Schedule 模块订阅这些事件，自动创建/更新/删除调度任务
@@ -74,17 +77,19 @@ await scheduleApiClient.createScheduleTask({
 class TaskApplicationService {
   async createTaskTemplate(request: CreateTaskTemplateRequest) {
     const template = await this.taskDomainService.createTaskTemplate(request);
-    
+
     // 如果有时间配置，发布 Schedule 相关事件
     if (template.timeConfig) {
-      await this.eventBus.publish(new TaskScheduleRequiredEvent({
-        taskUuid: template.uuid,
-        scheduleType: 'template',
-        timeConfig: template.timeConfig,
-        operation: 'create',
-      }));
+      await this.eventBus.publish(
+        new TaskScheduleRequiredEvent({
+          taskUuid: template.uuid,
+          scheduleType: 'template',
+          timeConfig: template.timeConfig,
+          operation: 'create',
+        }),
+      );
     }
-    
+
     return template.toDTO();
   }
 }
@@ -95,12 +100,12 @@ class ScheduleEventListener {
   async handleTaskScheduleRequired(event: TaskScheduleRequiredEvent) {
     await this.scheduleService.createScheduleTaskForTask(event.data);
   }
-  
+
   @OnEvent('goal.schedule.required')
   async handleGoalScheduleRequired(event: GoalScheduleRequiredEvent) {
     await this.scheduleService.createScheduleTaskForGoal(event.data);
   }
-  
+
   @OnEvent('reminder.schedule.required')
   async handleReminderScheduleRequired(event: ReminderScheduleRequiredEvent) {
     await this.scheduleService.createScheduleTaskForReminder(event.data);
@@ -113,6 +118,7 @@ class ScheduleEventListener {
 #### Step 1: 移除前端 Schedule 调用
 
 **文件位置：**
+
 - `apps/web/src/modules/task/services/taskScheduleIntegrationService.ts`
 - `apps/web/src/modules/reminder/services/reminderScheduleIntegrationService.ts`
 - `apps/web/src/modules/goal/*` （如果有）
@@ -130,7 +136,7 @@ async function createTaskTemplate(request: CreateTaskTemplateRequest) {
   try {
     // ✅ 只调用任务 API，后端会自动处理调度
     const result = await taskApiClient.createTaskTemplate(request);
-    
+
     // ❌ 删除这段
     // if (result.timeConfig) {
     //   await scheduleApiClient.createScheduleTask({
@@ -139,7 +145,7 @@ async function createTaskTemplate(request: CreateTaskTemplateRequest) {
     //     ...
     //   });
     // }
-    
+
     return result;
   } catch (error) {
     throw error;
@@ -163,7 +169,7 @@ export class TaskScheduleRequiredEvent {
       scheduleType: 'template' | 'instance';
       timeConfig: TimeConfig;
       operation: 'create' | 'update' | 'delete';
-    }
+    },
   ) {}
 }
 
@@ -188,45 +194,54 @@ export class TaskApplicationService {
   async createTaskTemplate(request: CreateTaskTemplateRequest): Promise<TaskTemplateDTO> {
     // 1. 创建任务模板
     const template = await this.taskDomainService.createTaskTemplate(request);
-    
+
     // 2. 如果有时间配置，发布 Schedule 事件
     if (template.timeConfig) {
-      await this.eventBus.publish(new TaskScheduleRequiredEvent({
-        taskUuid: template.uuid,
-        scheduleType: 'template',
-        timeConfig: template.timeConfig,
-        operation: 'create',
-      }));
+      await this.eventBus.publish(
+        new TaskScheduleRequiredEvent({
+          taskUuid: template.uuid,
+          scheduleType: 'template',
+          timeConfig: template.timeConfig,
+          operation: 'create',
+        }),
+      );
     }
-    
+
     return template.toDTO();
   }
 
-  async updateTaskTemplate(uuid: string, request: UpdateTaskTemplateRequest): Promise<TaskTemplateDTO> {
+  async updateTaskTemplate(
+    uuid: string,
+    request: UpdateTaskTemplateRequest,
+  ): Promise<TaskTemplateDTO> {
     const template = await this.taskDomainService.updateTaskTemplate(uuid, request);
-    
+
     // 发布更新事件
     if (request.timeConfig) {
-      await this.eventBus.publish(new TaskScheduleRequiredEvent({
-        taskUuid: template.uuid,
-        scheduleType: 'template',
-        timeConfig: template.timeConfig,
-        operation: 'update',
-      }));
+      await this.eventBus.publish(
+        new TaskScheduleRequiredEvent({
+          taskUuid: template.uuid,
+          scheduleType: 'template',
+          timeConfig: template.timeConfig,
+          operation: 'update',
+        }),
+      );
     }
-    
+
     return template.toDTO();
   }
 
   async deleteTaskTemplate(uuid: string): Promise<void> {
     // 1. 发布删除事件（先删除调度任务）
-    await this.eventBus.publish(new TaskScheduleRequiredEvent({
-      taskUuid: uuid,
-      scheduleType: 'template',
-      timeConfig: null as any,
-      operation: 'delete',
-    }));
-    
+    await this.eventBus.publish(
+      new TaskScheduleRequiredEvent({
+        taskUuid: uuid,
+        scheduleType: 'template',
+        timeConfig: null as any,
+        operation: 'delete',
+      }),
+    );
+
     // 2. 删除任务模板
     await this.taskDomainService.deleteTaskTemplate(uuid);
   }
@@ -248,9 +263,7 @@ import {
 
 @Injectable()
 export class ScheduleEventListener {
-  constructor(
-    private readonly scheduleService: ScheduleApplicationService,
-  ) {}
+  constructor(private readonly scheduleService: ScheduleApplicationService) {}
 
   /**
    * 监听 Task 模块的 Schedule 事件
@@ -258,7 +271,7 @@ export class ScheduleEventListener {
   @OnEvent('task.schedule.required')
   async handleTaskScheduleRequired(event: TaskScheduleRequiredEvent) {
     const { taskUuid, scheduleType, timeConfig, operation } = event.data;
-    
+
     switch (operation) {
       case 'create':
         await this.scheduleService.createScheduleTaskForTask({
@@ -268,11 +281,11 @@ export class ScheduleEventListener {
           timeConfig,
         });
         break;
-      
+
       case 'update':
         await this.scheduleService.updateScheduleTaskForTask(taskUuid, timeConfig);
         break;
-      
+
       case 'delete':
         await this.scheduleService.deleteScheduleTaskForSource('task', taskUuid);
         break;
@@ -349,11 +362,13 @@ import { taskApiClient } from '@/modules/task/infrastructure/api/taskApiClient';
 ### 问题分析
 
 当前 Theme 模块过于复杂：
+
 - 有独立的 domain、application、infrastructure 层
 - 有独立的 API、Store、Service
 - 实际上只是简单的前端配置（主题颜色、语言）
 
 **实际需求：**
+
 - 切换 Vuetify 主题（浅色/深色）
 - 切换语言（i18n）
 - 保存用户偏好到 Setting
@@ -539,12 +554,7 @@ export const useSettingStore = defineStore('setting', {
 import { computed } from 'vue';
 import { useTheme } from '../composables/useTheme';
 
-const {
-  themeMode,
-  locale,
-  themes,
-  locales,
-} = useTheme();
+const { themeMode, locale, themes, locales } = useTheme();
 
 const currentThemeIcon = computed(() => {
   return themes.find((t) => t.value === themeMode.value)?.icon || 'mdi-theme-light-dark';
@@ -572,11 +582,11 @@ import { useTheme } from '@/modules/setting/presentation/composables/useTheme';
 
 ## 📊 修复优先级
 
-| 任务 | 优先级 | 预计时间 | 状态 |
-|------|--------|---------|------|
-| Editor 模块重构 | P0 | 2h | ✅ 完成 |
-| Schedule 调用移除 | P1 | 1h | ⏳ 待处理 |
-| Theme 模块简化 | P2 | 1.5h | ⏳ 待处理 |
+| 任务              | 优先级 | 预计时间 | 状态      |
+| ----------------- | ------ | -------- | --------- |
+| Editor 模块重构   | P0     | 2h       | ✅ 完成   |
+| Schedule 调用移除 | P1     | 1h       | ⏳ 待处理 |
+| Theme 模块简化    | P2     | 1.5h     | ⏳ 待处理 |
 
 ---
 

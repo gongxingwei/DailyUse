@@ -19,9 +19,7 @@
           </div>
           <v-btn icon="mdi-close" variant="text" color="medium-emphasis" @click="handleClose">
             <v-icon>mdi-close</v-icon>
-            <v-tooltip activator="parent" location="bottom">
-              关闭
-            </v-tooltip>
+            <v-tooltip activator="parent" location="bottom"> 关闭 </v-tooltip>
           </v-btn>
         </div>
       </v-card-title>
@@ -57,7 +55,12 @@
                         {{ getReviewTypeIcon(review.type) }}
                       </v-icon>
                       <span class="text-h6 font-weight-medium">{{ review.title }}</span>
-                      <v-chip :color="getReviewTypeColor(review.type)" size="small" variant="tonal" class="ml-2">
+                      <v-chip
+                        :color="getReviewTypeColor(review.type)"
+                        size="small"
+                        variant="tonal"
+                        class="ml-2"
+                      >
                         {{ getReviewTypeText(review.type) }}
                       </v-chip>
                     </div>
@@ -98,9 +101,7 @@
                       @click="handleDelete(review.uuid)"
                     >
                       <v-icon>mdi-delete</v-icon>
-                      <v-tooltip activator="parent" location="bottom">
-                        删除记录
-                      </v-tooltip>
+                      <v-tooltip activator="parent" location="bottom"> 删除记录 </v-tooltip>
                     </v-btn>
                   </div>
                 </v-col>
@@ -138,7 +139,7 @@ const getReviewTypeColor = (type: GoalReview['type']): string => {
     monthly: 'secondary',
     midterm: 'warning',
     final: 'success',
-    custom: 'info'
+    custom: 'info',
   };
   return colors[type] || 'primary';
 };
@@ -149,7 +150,7 @@ const getReviewTypeIcon = (type: GoalReview['type']): string => {
     monthly: 'mdi-calendar-month',
     midterm: 'mdi-calendar-check',
     final: 'mdi-trophy',
-    custom: 'mdi-calendar-star'
+    custom: 'mdi-calendar-star',
   };
   return icons[type] || 'mdi-calendar';
 };
@@ -160,7 +161,7 @@ const getReviewTypeText = (type: GoalReview['type']): string => {
     monthly: '月复盘',
     midterm: '中期复盘',
     final: '最终复盘',
-    custom: '自定义复盘'
+    custom: '自定义复盘',
   };
   return texts[type] || '复盘';
 };

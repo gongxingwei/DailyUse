@@ -1,7 +1,7 @@
 /**
  * Performance Benchmark Suite (STORY-014)
  * 性能基准测试套件
- * 
+ *
  * 使用 Vitest Bench API 进行性能测试
  * 文档: https://vitest.dev/guide/features.html#benchmarking
  */
@@ -76,50 +76,66 @@ function generateTestGoalData(count: number): GoalData[] {
 describe('Goal CRUD Performance', () => {
   const testGoals = generateTestGoals(BENCHMARK_CONFIG.GOAL_CRUD.iterations);
 
-  bench('Create Goal', () => {
-    const goal = {
-      uuid: `goal-${Date.now()}`,
-      title: 'Test Goal',
-      description: 'Test Description',
-      status: 'ACTIVE',
-      keyResults: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    // Simulate goal creation
-    JSON.stringify(goal);
-  }, {
-    iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
-  });
+  bench(
+    'Create Goal',
+    () => {
+      const goal = {
+        uuid: `goal-${Date.now()}`,
+        title: 'Test Goal',
+        description: 'Test Description',
+        status: 'ACTIVE',
+        keyResults: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      // Simulate goal creation
+      JSON.stringify(goal);
+    },
+    {
+      iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
+    },
+  );
 
-  bench('Read Goal', () => {
-    const goal = testGoals[Math.floor(Math.random() * testGoals.length)];
-    // Simulate goal read
-    const _ = { ...goal };
-  }, {
-    iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
-  });
+  bench(
+    'Read Goal',
+    () => {
+      const goal = testGoals[Math.floor(Math.random() * testGoals.length)];
+      // Simulate goal read
+      const _ = { ...goal };
+    },
+    {
+      iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
+    },
+  );
 
-  bench('Update Goal', () => {
-    const goal = testGoals[Math.floor(Math.random() * testGoals.length)];
-    // Simulate goal update
-    const updated = {
-      ...goal,
-      title: 'Updated Title',
-      updatedAt: Date.now(),
-    };
-    JSON.stringify(updated);
-  }, {
-    iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
-  });
+  bench(
+    'Update Goal',
+    () => {
+      const goal = testGoals[Math.floor(Math.random() * testGoals.length)];
+      // Simulate goal update
+      const updated = {
+        ...goal,
+        title: 'Updated Title',
+        updatedAt: Date.now(),
+      };
+      JSON.stringify(updated);
+    },
+    {
+      iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
+    },
+  );
 
-  bench('Delete Goal (Filter)', () => {
-    const goalToDelete = testGoals[0].uuid;
-    // Simulate delete by filtering
-    const remaining = testGoals.filter(g => g.uuid !== goalToDelete);
-  }, {
-    iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
-  });
+  bench(
+    'Delete Goal (Filter)',
+    () => {
+      const goalToDelete = testGoals[0].uuid;
+      // Simulate delete by filtering
+      const remaining = testGoals.filter((g) => g.uuid !== goalToDelete);
+    },
+    {
+      iterations: BENCHMARK_CONFIG.GOAL_CRUD.iterations,
+    },
+  );
 });
 
 /**
@@ -143,7 +159,7 @@ describe('Weight Calculation Performance', () => {
   bench('Calculate Weighted Progress', () => {
     const weightedProgress = keyResults.reduce(
       (sum, kr) => sum + (kr.progress * kr.weight) / 100,
-      0
+      0,
     );
   });
 
@@ -171,7 +187,7 @@ describe('Rule Evaluation Performance', () => {
   });
 
   bench('Batch Rule Evaluation (50 goals)', () => {
-    testGoals.forEach(goal => {
+    testGoals.forEach((goal) => {
       statusRuleEngine.evaluate(goal);
     });
   });
@@ -273,19 +289,19 @@ describe('Array Operations Performance', () => {
   const largeArray = generateTestGoals(100);
 
   bench('Filter goals (10 items)', () => {
-    smallArray.filter(g => g.status === 'ACTIVE');
+    smallArray.filter((g) => g.status === 'ACTIVE');
   });
 
   bench('Filter goals (100 items)', () => {
-    largeArray.filter(g => g.status === 'ACTIVE');
+    largeArray.filter((g) => g.status === 'ACTIVE');
   });
 
   bench('Map goals (10 items)', () => {
-    smallArray.map(g => ({ ...g, processed: true }));
+    smallArray.map((g) => ({ ...g, processed: true }));
   });
 
   bench('Map goals (100 items)', () => {
-    largeArray.map(g => ({ ...g, processed: true }));
+    largeArray.map((g) => ({ ...g, processed: true }));
   });
 
   bench('Sort goals (100 items)', () => {
@@ -293,6 +309,6 @@ describe('Array Operations Performance', () => {
   });
 
   bench('Find goal (100 items)', () => {
-    largeArray.find(g => g.uuid === 'test-goal-50');
+    largeArray.find((g) => g.uuid === 'test-goal-50');
   });
 });

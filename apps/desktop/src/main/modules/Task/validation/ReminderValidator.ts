@@ -11,7 +11,7 @@ import { ValidationUtils } from './ValidationUtils';
 export class ReminderValidator implements ITemplateValidator {
   validate(template: ITaskTemplate): ValidationResult {
     const reminder = template.reminderConfig as TaskReminderConfig;
-    
+
     if (!reminder) {
       return ValidationUtils.failure(['提醒规则不能为空']);
     }
@@ -60,7 +60,7 @@ export class ReminderValidator implements ITemplateValidator {
       required: true,
       minLength: 1,
       maxLength: 10, // 最多10个提醒
-      elementValidator: (alert, index) => this.validateAlert(alert, index)
+      elementValidator: (alert, index) => this.validateAlert(alert, index),
     });
 
     if (!arrayResult.isValid) {
@@ -94,21 +94,25 @@ export class ReminderValidator implements ITemplateValidator {
     results.push(ValidationUtils.validateRequired(alert.uuid, `${alertName}ID`));
 
     // 验证提醒类型
-    results.push(ValidationUtils.validateEnum(
-      alert.type,
-      `${alertName}类型`,
-      ['notification', 'email', 'sound'],
-      true
-    ));
+    results.push(
+      ValidationUtils.validateEnum(
+        alert.type,
+        `${alertName}类型`,
+        ['notification', 'email', 'sound'],
+        true,
+      ),
+    );
 
     // 验证时间配置
     results.push(this.validateAlertTiming(alert.timing, alertName));
 
     // 验证消息
     if (alert.message) {
-      results.push(ValidationUtils.validateStringLength(alert.message, `${alertName}消息`, {
-        max: 200
-      }));
+      results.push(
+        ValidationUtils.validateStringLength(alert.message, `${alertName}消息`, {
+          max: 200,
+        }),
+      );
     }
 
     return ValidationUtils.mergeResults(...results);
@@ -125,12 +129,14 @@ export class ReminderValidator implements ITemplateValidator {
     const results: ValidationResult[] = [];
 
     // 验证时间类型
-    results.push(ValidationUtils.validateEnum(
-      timing.type,
-      `${alertName}时机类型`,
-      ['relative', 'absolute'],
-      true
-    ));
+    results.push(
+      ValidationUtils.validateEnum(
+        timing.type,
+        `${alertName}时机类型`,
+        ['relative', 'absolute'],
+        true,
+      ),
+    );
 
     // 根据类型验证具体配置
     switch (timing.type) {
@@ -153,12 +159,16 @@ export class ReminderValidator implements ITemplateValidator {
       return ValidationUtils.failure([`${alertName}缺少提前时间设置`]);
     }
 
-    const numberResult = ValidationUtils.validateNumberRange(timing.minutesBefore, `${alertName}提前时间`, {
-      min: 0,
-      max: 10080, // 最多提前7天
-      required: true,
-      integer: true
-    });
+    const numberResult = ValidationUtils.validateNumberRange(
+      timing.minutesBefore,
+      `${alertName}提前时间`,
+      {
+        min: 0,
+        max: 10080, // 最多提前7天
+        required: true,
+        integer: true,
+      },
+    );
 
     if (!numberResult.isValid) {
       return numberResult;
@@ -170,7 +180,8 @@ export class ReminderValidator implements ITemplateValidator {
     // 给出合理性建议
     if (minutes === 0) {
       warnings.push(`${alertName}设置为任务开始时提醒`);
-    } else if (minutes > 1440) { // 超过1天
+    } else if (minutes > 1440) {
+      // 超过1天
       warnings.push(`${alertName}提前时间超过1天，请确认是否合理`);
     }
 
@@ -192,7 +203,7 @@ export class ReminderValidator implements ITemplateValidator {
 
     // 验证绝对时间格式
     const dateResult = ValidationUtils.validateDate(timing.absoluteTime, `${alertName}绝对时间`, {
-      required: true
+      required: true,
     });
 
     if (!dateResult.isValid) {
@@ -256,20 +267,24 @@ export class ReminderValidator implements ITemplateValidator {
     // 如果启用了稍后提醒，验证相关配置
     if (snooze.enabled) {
       // 验证间隔时间
-      results.push(ValidationUtils.validateNumberRange(snooze.interval, '稍后提醒间隔', {
-        min: 1,
-        max: 60, // 最多1小时
-        required: true,
-        integer: true
-      }));
+      results.push(
+        ValidationUtils.validateNumberRange(snooze.interval, '稍后提醒间隔', {
+          min: 1,
+          max: 60, // 最多1小时
+          required: true,
+          integer: true,
+        }),
+      );
 
       // 验证最大次数
-      results.push(ValidationUtils.validateNumberRange(snooze.maxCount, '稍后提醒最大次数', {
-        min: 1,
-        max: 10,
-        required: true,
-        integer: true
-      }));
+      results.push(
+        ValidationUtils.validateNumberRange(snooze.maxCount, '稍后提醒最大次数', {
+          min: 1,
+          max: 10,
+          required: true,
+          integer: true,
+        }),
+      );
     }
 
     return ValidationUtils.mergeResults(...results);
@@ -278,16 +293,17 @@ export class ReminderValidator implements ITemplateValidator {
   /**
    * 验证业务逻辑
    */
-  private validateBusinessLogic(reminder: TaskReminderConfig, template: ITaskTemplate): ValidationResult {
+  private validateBusinessLogic(
+    reminder: TaskReminderConfig,
+    template: ITaskTemplate,
+  ): ValidationResult {
     const warnings: string[] = [];
     const errors: string[] = [];
 
     // 检查全天任务的绝对时间提醒
     if (template.timeConfig.type === 'allDay') {
-      const hasAbsoluteAlerts = reminder.alerts.some(alert => 
-        alert.timing?.type === 'absolute'
-      );
-      
+      const hasAbsoluteAlerts = reminder.alerts.some((alert) => alert.timing?.type === 'absolute');
+
       if (hasAbsoluteAlerts) {
         warnings.push('全天任务使用绝对时间提醒，建议使用相对时间');
       }
@@ -296,18 +312,18 @@ export class ReminderValidator implements ITemplateValidator {
     // 检查提醒时间与任务时间的逻辑关系
     if (template.timeConfig.type === 'timed' && template.timeConfig.baseTime.start) {
       const taskTime = new Date(template.timeConfig.baseTime.start.getTime());
-      
+
       for (const alert of reminder.alerts) {
         if (alert.timing?.type === 'absolute' && alert.timing.absoluteTime) {
           const reminderTime = new Date(alert.timing.absoluteTime.getTime());
-          
+
           if (reminderTime >= taskTime) {
             errors.push('绝对时间提醒不能晚于或等于任务开始时间');
           }
-          
+
           const timeDiff = taskTime.getTime() - reminderTime.getTime();
           const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
-          
+
           if (daysDiff > 30) {
             warnings.push('绝对时间提醒时间过早，超过30天');
           }
@@ -317,22 +333,20 @@ export class ReminderValidator implements ITemplateValidator {
 
     // 检查重复任务的提醒策略
     if (template.timeConfig.recurrence.type !== 'none') {
-      const hasRelativeAlerts = reminder.alerts.some(alert => 
-        alert.timing?.type === 'relative'
-      );
-      
+      const hasRelativeAlerts = reminder.alerts.some((alert) => alert.timing?.type === 'relative');
+
       if (!hasRelativeAlerts && reminder.alerts.length > 0) {
         warnings.push('重复任务建议使用相对时间提醒，以适应不同的执行时间');
       }
     }
 
     // 检查提醒类型的可用性
-    const emailAlerts = reminder.alerts.filter(alert => alert.type === 'email');
+    const emailAlerts = reminder.alerts.filter((alert) => alert.type === 'email');
     if (emailAlerts.length > 0) {
       warnings.push('邮件提醒功能暂未实现');
     }
 
-    const soundAlerts = reminder.alerts.filter(alert => alert.type === 'sound');
+    const soundAlerts = reminder.alerts.filter((alert) => alert.type === 'sound');
     if (soundAlerts.length > 0) {
       warnings.push('声音提醒功能暂未实现');
     }

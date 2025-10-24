@@ -1,24 +1,21 @@
-import type { ApiResponse } from "@dailyuse/contracts";
-import type {
-  IReminderTemplate,
-  IReminderTemplateGroup,
-} from "@common/modules/reminder";
-import { SYSTEM_GROUP_ID } from "@common/modules/reminder/types/reminder";
-import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
+import type { ApiResponse } from '@dailyuse/contracts';
+import type { IReminderTemplate, IReminderTemplateGroup } from '@common/modules/reminder';
+import { SYSTEM_GROUP_ID } from '@common/modules/reminder/types/reminder';
+import { ReminderTemplate } from '../../domain/entities/reminderTemplate';
 import {
   ReminderTemplateGroup,
   createSystemGroup,
-} from "../../domain/aggregates/reminderTemplateGroup";
-import { reminderContainer } from "../../infrastructure/di/reminderContainer";
-import type { IReminderTemplateRepository } from "../../domain/repositories/iReminderTemplateRepository";
-import type { IReminderTemplateGroupRepository } from "../../domain/repositories/iReminderTemplateGroupRepository";
-import { reminderScheduleService } from "./reminderScheduleService";
-import { reminderDomainService } from "../../domain/services/reminderDomainService";
+} from '../../domain/aggregates/reminderTemplateGroup';
+import { reminderContainer } from '../../infrastructure/di/reminderContainer';
+import type { IReminderTemplateRepository } from '../../domain/repositories/iReminderTemplateRepository';
+import type { IReminderTemplateGroupRepository } from '../../domain/repositories/iReminderTemplateGroupRepository';
+import { reminderScheduleService } from './reminderScheduleService';
+import { reminderDomainService } from '../../domain/services/reminderDomainService';
 
 /**
  * MainReminderApplicationService
  * @description 主进程提醒模板应用服务，负责处理提醒模板相关的业务逻辑和数据库操作。
- * 
+ *
  * 用法示例：
  *   const service = new MainReminderApplicationService();
  *   await service.createReminderGroup(accountUuid, group);
@@ -36,13 +33,12 @@ export class MainReminderApplicationService {
    */
   constructor(
     reminderRepository?: IReminderTemplateRepository,
-    reminderGroupRepository?: IReminderTemplateGroupRepository
+    reminderGroupRepository?: IReminderTemplateGroupRepository,
   ) {
     this.reminderRepository =
       reminderRepository || reminderContainer.getReminderTemplateRepository();
     this.reminderGroupRepository =
-      reminderGroupRepository ||
-      reminderContainer.getReminderTemplateGroupRepository();
+      reminderGroupRepository || reminderContainer.getReminderTemplateGroupRepository();
   }
 
   // ========== 初始化相关 ==========
@@ -55,21 +51,19 @@ export class MainReminderApplicationService {
    * await service.initializeReminderModule(accountUuid);
    * // 返回: { success: true, message: "提醒模块初始化成功" }
    */
-  async initializeReminderModule(
-    accountUuid: string
-  ): Promise<ApiResponse<void>> {
+  async initializeReminderModule(accountUuid: string): Promise<ApiResponse<void>> {
     try {
       const systemGroup = createSystemGroup();
       await this.reminderGroupRepository.create(accountUuid, systemGroup);
       return {
         success: true,
-        message: "提醒模块初始化成功",
+        message: '提醒模块初始化成功',
       };
     } catch (error) {
-      console.error("[主进程] 初始化提醒模块失败:", error);
+      console.error('[主进程] 初始化提醒模块失败:', error);
       return {
         success: false,
-        message: `初始化提醒模块失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `初始化提醒模块失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -82,9 +76,7 @@ export class MainReminderApplicationService {
    * await service.initializeReminderSchedule(accountUuid);
    * // 返回: { success: true, message: "提醒调度服务初始化成功" }
    */
-  async initializeReminderSchedule(
-    accountUuid: string
-  ): Promise<ApiResponse<void>> {
+  async initializeReminderSchedule(accountUuid: string): Promise<ApiResponse<void>> {
     try {
       const groups = await this.reminderGroupRepository.getAll(accountUuid);
       const systemGroup = groups.find((g) => g.uuid === SYSTEM_GROUP_ID);
@@ -92,13 +84,13 @@ export class MainReminderApplicationService {
       if (!systemGroup) {
         return {
           success: false,
-          message: "系统分组不存在，请先初始化提醒模块",
+          message: '系统分组不存在，请先初始化提醒模块',
         };
       }
       if (!systemGroup.enabled) {
         return {
           success: true,
-          message: "系统分组被禁用，提醒调度服务不启动",
+          message: '系统分组被禁用，提醒调度服务不启动',
         };
       }
       for (const group of userGroups) {
@@ -106,13 +98,13 @@ export class MainReminderApplicationService {
       }
       return {
         success: true,
-        message: "提醒调度服务初始化成功",
+        message: '提醒调度服务初始化成功',
       };
     } catch (error) {
-      console.error("[主进程] 初始化提醒调度服务失败:", error);
+      console.error('[主进程] 初始化提醒调度服务失败:', error);
       return {
         success: false,
-        message: `初始化提醒调度服务失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `初始化提醒调度服务失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -130,27 +122,27 @@ export class MainReminderApplicationService {
    */
   async createReminderGroup(
     accountUuid: string,
-    group: ReminderTemplateGroup
+    group: ReminderTemplateGroup,
   ): Promise<ApiResponse<IReminderTemplateGroup>> {
     try {
       const response = await reminderDomainService.createReminderTemplateGroup(
         accountUuid,
         group,
-        this.reminderGroupRepository
+        this.reminderGroupRepository,
       );
       if (response.data) {
         return {
           success: true,
-          message: "提醒组创建成功",
+          message: '提醒组创建成功',
           data: response.data.toDTO(),
         };
       }
       return response;
     } catch (error) {
-      console.error("[主进程] 创建提醒组失败:", error);
+      console.error('[主进程] 创建提醒组失败:', error);
       return {
         success: false,
-        message: `创建提醒组失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `创建提醒组失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -163,21 +155,19 @@ export class MainReminderApplicationService {
    * await service.getAllReminderGroups(accountUuid);
    * // 返回: { success: true, data: [groupDTO, ...] }
    */
-  async getAllReminderGroups(
-    accountUuid: string
-  ): Promise<ApiResponse<IReminderTemplateGroup[]>> {
+  async getAllReminderGroups(accountUuid: string): Promise<ApiResponse<IReminderTemplateGroup[]>> {
     try {
       const groups = await this.reminderGroupRepository.getAll(accountUuid);
       return {
         success: true,
-        message: "获取提醒组成功",
+        message: '获取提醒组成功',
         data: groups.map((g) => g.toDTO()),
       };
     } catch (error) {
-      console.error("[主进程] 获取提醒组失败:", error);
+      console.error('[主进程] 获取提醒组失败:', error);
       return {
         success: false,
-        message: `获取提醒组失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `获取提醒组失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -193,7 +183,7 @@ export class MainReminderApplicationService {
    */
   async getReminderGroupById(
     accountUuid: string,
-    uuid: string
+    uuid: string,
   ): Promise<ApiResponse<IReminderTemplateGroup>> {
     try {
       const group = await this.reminderGroupRepository.getById(accountUuid, uuid);
@@ -205,14 +195,14 @@ export class MainReminderApplicationService {
       }
       return {
         success: true,
-        message: "获取提醒组成功",
+        message: '获取提醒组成功',
         data: group.toDTO(),
       };
     } catch (error) {
-      console.error("[主进程] 获取提醒组失败:", error);
+      console.error('[主进程] 获取提醒组失败:', error);
       return {
         success: false,
-        message: `获取提醒组失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `获取提醒组失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -228,7 +218,7 @@ export class MainReminderApplicationService {
    */
   async updateReminderGroup(
     accountUuid: string,
-    groupData: IReminderTemplateGroup
+    groupData: IReminderTemplateGroup,
   ): Promise<ApiResponse<IReminderTemplateGroup>> {
     try {
       const existing = await this.reminderGroupRepository.getById(accountUuid, groupData.uuid);
@@ -243,19 +233,19 @@ export class MainReminderApplicationService {
       if (!result) {
         return {
           success: false,
-          message: "更新提醒组失败",
+          message: '更新提醒组失败',
         };
       }
       return {
         success: true,
-        message: "提醒组更新成功",
+        message: '提醒组更新成功',
         data: group.toDTO(),
       };
     } catch (error) {
-      console.error("[主进程] 更新提醒组失败:", error);
+      console.error('[主进程] 更新提醒组失败:', error);
       return {
         success: false,
-        message: `更新提醒组失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `更新提醒组失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -269,10 +259,7 @@ export class MainReminderApplicationService {
    * await service.deleteReminderGroup(accountUuid, groupUuid);
    * // 返回: { success: true }
    */
-  async deleteReminderGroup(
-    accountUuid: string,
-    uuid: string
-  ): Promise<ApiResponse<void>> {
+  async deleteReminderGroup(accountUuid: string, uuid: string): Promise<ApiResponse<void>> {
     try {
       const existing = await this.reminderGroupRepository.getById(accountUuid, uuid);
       if (!existing) {
@@ -284,13 +271,13 @@ export class MainReminderApplicationService {
       await this.reminderGroupRepository.delete(accountUuid, uuid);
       return {
         success: true,
-        message: "提醒组删除成功",
+        message: '提醒组删除成功',
       };
     } catch (error) {
-      console.error("[主进程] 删除提醒组失败:", error);
+      console.error('[主进程] 删除提醒组失败:', error);
       return {
         success: false,
-        message: `删除提醒组失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `删除提醒组失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -308,26 +295,26 @@ export class MainReminderApplicationService {
    */
   async createReminderTemplate(
     accountUuid: string,
-    template: ReminderTemplate
+    template: ReminderTemplate,
   ): Promise<ApiResponse<IReminderTemplate>> {
     try {
       const result = await this.reminderRepository.create(accountUuid, template);
       if (!result) {
         return {
           success: false,
-          message: "创建提醒模板失败",
+          message: '创建提醒模板失败',
         };
       }
       return {
         success: true,
-        message: "提醒模板创建成功",
+        message: '提醒模板创建成功',
         data: template.toDTO(),
       };
     } catch (error) {
-      console.error("[主进程] 创建提醒模板失败:", error);
+      console.error('[主进程] 创建提醒模板失败:', error);
       return {
         success: false,
-        message: `创建提醒模板失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `创建提醒模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -340,21 +327,19 @@ export class MainReminderApplicationService {
    * await service.getAllReminderTemplates(accountUuid);
    * // 返回: { success: true, data: [templateDTO, ...] }
    */
-  async getAllReminderTemplates(
-    accountUuid: string
-  ): Promise<ApiResponse<IReminderTemplate[]>> {
+  async getAllReminderTemplates(accountUuid: string): Promise<ApiResponse<IReminderTemplate[]>> {
     try {
       const templates = await this.reminderRepository.getAll(accountUuid);
       return {
         success: true,
-        message: "获取提醒模板成功",
+        message: '获取提醒模板成功',
         data: templates.map((t) => t.toDTO()),
       };
     } catch (error) {
-      console.error("[主进程] 获取提醒模板失败:", error);
+      console.error('[主进程] 获取提醒模板失败:', error);
       return {
         success: false,
-        message: `获取提醒模板失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `获取提醒模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -370,7 +355,7 @@ export class MainReminderApplicationService {
    */
   async getReminderTemplateById(
     accountUuid: string,
-    uuid: string
+    uuid: string,
   ): Promise<ApiResponse<IReminderTemplate>> {
     try {
       const template = await this.reminderRepository.getById(accountUuid, uuid);
@@ -382,14 +367,14 @@ export class MainReminderApplicationService {
       }
       return {
         success: true,
-        message: "获取提醒模板成功",
+        message: '获取提醒模板成功',
         data: template.toDTO(),
       };
     } catch (error) {
-      console.error("[主进程] 获取提醒模板失败:", error);
+      console.error('[主进程] 获取提醒模板失败:', error);
       return {
         success: false,
-        message: `获取提醒模板失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `获取提醒模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -405,7 +390,7 @@ export class MainReminderApplicationService {
    */
   async updateReminderTemplate(
     accountUuid: string,
-    templateData: IReminderTemplate
+    templateData: IReminderTemplate,
   ): Promise<ApiResponse<IReminderTemplate>> {
     try {
       const existing = await this.reminderRepository.getById(accountUuid, templateData.uuid);
@@ -420,19 +405,19 @@ export class MainReminderApplicationService {
       if (!result) {
         return {
           success: false,
-          message: "更新提醒模板失败",
+          message: '更新提醒模板失败',
         };
       }
       return {
         success: true,
-        message: "提醒模板更新成功",
+        message: '提醒模板更新成功',
         data: template.toDTO(),
       };
     } catch (error) {
-      console.error("[主进程] 更新提醒模板失败:", error);
+      console.error('[主进程] 更新提醒模板失败:', error);
       return {
         success: false,
-        message: `更新提醒模板失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `更新提醒模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -446,10 +431,7 @@ export class MainReminderApplicationService {
    * await service.deleteReminderTemplate(accountUuid, templateUuid);
    * // 返回: { success: true }
    */
-  async deleteReminderTemplate(
-    accountUuid: string,
-    uuid: string
-  ): Promise<ApiResponse<void>> {
+  async deleteReminderTemplate(accountUuid: string, uuid: string): Promise<ApiResponse<void>> {
     try {
       const existing = await this.reminderRepository.getById(accountUuid, uuid);
       if (!existing) {
@@ -461,13 +443,13 @@ export class MainReminderApplicationService {
       await this.reminderRepository.delete(accountUuid, uuid);
       return {
         success: true,
-        message: "提醒模板删除成功",
+        message: '提醒模板删除成功',
       };
     } catch (error) {
-      console.error("[主进程] 删除提醒模板失败:", error);
+      console.error('[主进程] 删除提醒模板失败:', error);
       return {
         success: false,
-        message: `删除提醒模板失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        message: `删除提醒模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -486,14 +468,14 @@ export class MainReminderApplicationService {
   async moveTemplateToGroup(
     accountUuid: string,
     templateUuid: string,
-    toGroupUuid: string
+    toGroupUuid: string,
   ): Promise<void> {
-    console.log("[主进程] 移动提醒模板:", templateUuid, "到分组:", toGroupUuid);
+    console.log('[主进程] 移动提醒模板:', templateUuid, '到分组:', toGroupUuid);
     return reminderDomainService.moveTemplateToGroup(
       accountUuid,
       templateUuid,
       toGroupUuid,
-      this.reminderRepository
+      this.reminderRepository,
     );
   }
 
@@ -509,21 +491,21 @@ export class MainReminderApplicationService {
   async setGroupEnableMode(
     accountUuid: string,
     groupUuid: string,
-    mode: "group" | "individual"
+    mode: 'group' | 'individual',
   ): Promise<void> {
     try {
-      if (mode === "group") {
+      if (mode === 'group') {
         await reminderDomainService.switchEnableModeToGroup(
           accountUuid,
           groupUuid,
-          this.reminderGroupRepository
+          this.reminderGroupRepository,
         );
       }
-      if (mode === "individual") {
+      if (mode === 'individual') {
         await reminderDomainService.switchEnableModeToIndividual(
           accountUuid,
           groupUuid,
-          this.reminderGroupRepository
+          this.reminderGroupRepository,
         );
       }
       const newGroup = await this.reminderGroupRepository.getById(accountUuid, groupUuid);
@@ -532,10 +514,8 @@ export class MainReminderApplicationService {
       }
       await this.initializeRemindersInGroup(accountUuid, groupUuid);
     } catch (error) {
-      console.error("[主进程] 设置提醒组模式失败:", error);
-      throw new Error(
-        `设置提醒组模式失败: ${error instanceof Error ? error.message : "未知错误"}`
-      );
+      console.error('[主进程] 设置提醒组模式失败:', error);
+      throw new Error(`设置提醒组模式失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
@@ -548,28 +528,24 @@ export class MainReminderApplicationService {
    * @example
    * await service.setGroupEnabled(accountUuid, groupUuid, true);
    */
-  async setGroupEnabled(
-    accountUuid: string,
-    groupUuid: string,
-    enabled: boolean
-  ): Promise<void> {
+  async setGroupEnabled(accountUuid: string, groupUuid: string, enabled: boolean): Promise<void> {
     try {
       if (enabled) {
         await reminderDomainService.switchGroupEnabledToTrue(
           accountUuid,
           groupUuid,
-          this.reminderGroupRepository
+          this.reminderGroupRepository,
         );
       }
       if (!enabled) {
         await reminderDomainService.switchGroupEnabledToFalse(
           accountUuid,
           groupUuid,
-          this.reminderGroupRepository
+          this.reminderGroupRepository,
         );
       }
     } catch (error) {
-      console.error("[主进程] 设置提醒组启用状态失败:", error);
+      console.error('[主进程] 设置提醒组启用状态失败:', error);
     }
   }
 
@@ -585,37 +561,40 @@ export class MainReminderApplicationService {
   async setTemplateEnabled(
     accountUuid: string,
     templateUuid: string,
-    enabled: boolean
+    enabled: boolean,
   ): Promise<void> {
     try {
       if (enabled) {
         await reminderDomainService.switchReminderTemplateSelfEnabledToTrue(
           accountUuid,
           templateUuid,
-          this.reminderRepository
+          this.reminderRepository,
         );
       }
       if (!enabled) {
         await reminderDomainService.switchReminderTemplateSelfEnabledToFalse(
           accountUuid,
           templateUuid,
-          this.reminderRepository
+          this.reminderRepository,
         );
       }
       const reminderTemplate = await this.reminderRepository.getById(accountUuid, templateUuid);
       if (!reminderTemplate) {
         throw new Error(`提醒模板不存在: ${templateUuid}`);
       }
-      const group = await this.reminderGroupRepository.getById(accountUuid, reminderTemplate.groupUuid);
+      const group = await this.reminderGroupRepository.getById(
+        accountUuid,
+        reminderTemplate.groupUuid,
+      );
       if (!group) {
         throw new Error(`提醒组不存在: ${reminderTemplate.groupUuid}`);
       }
       const newState = group.isTemplateEnabled(reminderTemplate.uuid) ? 'enabled' : 'disabled';
       await this.initializeReminderInTemplate(reminderTemplate, newState);
     } catch (error) {
-      console.error("[主进程] 设置提醒模板启用状态失败:", error);
+      console.error('[主进程] 设置提醒模板启用状态失败:', error);
       throw new Error(
-        `设置提醒模板启用状态失败: ${error instanceof Error ? error.message : "未知错误"}`
+        `设置提醒模板启用状态失败: ${error instanceof Error ? error.message : '未知错误'}`,
       );
     }
   }
@@ -647,10 +626,7 @@ export class MainReminderApplicationService {
    * @example
    * await service.initializeRemindersInGroup(accountUuid, groupUuid);
    */
-  private async initializeRemindersInGroup(
-    accountUuid: string,
-    groupUuid: string
-  ): Promise<void> {
+  private async initializeRemindersInGroup(accountUuid: string, groupUuid: string): Promise<void> {
     try {
       const group = await this.reminderGroupRepository.getById(accountUuid, groupUuid);
       if (!group) {
@@ -668,16 +644,14 @@ export class MainReminderApplicationService {
           {
             uuid: template.uuid,
             title: template.name,
-            body: template.description || "无描述",
+            body: template.description || '无描述',
             importanceLevel: template.importanceLevel,
-          }
+          },
         );
-        console.log("[主进程] 初始化提醒组成功，已创建提醒任务:", template.uuid);
+        console.log('[主进程] 初始化提醒组成功，已创建提醒任务:', template.uuid);
       }
     } catch (error) {
-      throw new Error(
-        `初始化提醒组失败: ${error instanceof Error ? error.message : "未知错误"}`
-      );
+      throw new Error(`初始化提醒组失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
@@ -691,12 +665,12 @@ export class MainReminderApplicationService {
    */
   private async initializeReminderInTemplate(
     template: ReminderTemplate,
-    newState: "enabled" | "disabled"
+    newState: 'enabled' | 'disabled',
   ): Promise<void> {
     try {
-      if (newState === "disabled") {
+      if (newState === 'disabled') {
         await this.reminderScheduleService.cancelReminderSchedule(template.uuid);
-        console.log("[主进程] 提醒模板已禁用，取消提醒任务:", template.uuid);
+        console.log('[主进程] 提醒模板已禁用，取消提醒任务:', template.uuid);
         return;
       } else {
         await this.reminderScheduleService.createReminderScheduleByRule(
@@ -704,16 +678,14 @@ export class MainReminderApplicationService {
           {
             uuid: template.uuid,
             title: template.name,
-            body: template.description || "无描述",
+            body: template.description || '无描述',
             importanceLevel: template.importanceLevel,
-          }
+          },
         );
       }
-      console.log("[主进程] 初始化提醒模板成功，已创建提醒任务:", template.uuid);
+      console.log('[主进程] 初始化提醒模板成功，已创建提醒任务:', template.uuid);
     } catch (error) {
-      throw new Error(
-        `初始化提醒模板失败: ${error instanceof Error ? error.message : "未知错误"}`
-      );
+      throw new Error(`初始化提醒模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 }

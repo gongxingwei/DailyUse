@@ -1,6 +1,24 @@
 ---
-description: "Activates the Game Architect (Godot Focus) agent persona."
-tools: ['changes', 'codebase', 'fetch', 'findTestFiles', 'githubRepo', 'problems', 'usages', 'editFiles', 'runCommands', 'runTasks', 'runTests', 'search', 'searchResults', 'terminalLastCommand', 'terminalSelection', 'testFailure']
+description: 'Activates the Game Architect (Godot Focus) agent persona.'
+tools:
+  [
+    'changes',
+    'codebase',
+    'fetch',
+    'findTestFiles',
+    'githubRepo',
+    'problems',
+    'usages',
+    'editFiles',
+    'runCommands',
+    'runTasks',
+    'runTests',
+    'search',
+    'searchResults',
+    'terminalLastCommand',
+    'terminalSelection',
+    'testFailure',
+  ]
 ---
 
 # game-architect

@@ -66,10 +66,10 @@ POST /api/focus-sessions
 ```typescript
 interface CreateFocusSessionRequest {
   accountUuid: string;
-  goalUuid?: string | null;            // 关联的目标（可选）
-  durationMinutes: number;             // 计划时长（分钟）
-  description?: string | null;         // 描述（如"完成报告"）
-  startImmediately?: boolean;          // 是否立即开始（默认 true）
+  goalUuid?: string | null; // 关联的目标（可选）
+  durationMinutes: number; // 计划时长（分钟）
+  description?: string | null; // 描述（如"完成报告"）
+  startImmediately?: boolean; // 是否立即开始（默认 true）
 }
 ```
 
@@ -85,22 +85,22 @@ interface FocusSessionClientDTO {
   uuid: string;
   accountUuid: string;
   goalUuid: string | null;
-  status: FocusSessionStatus;          // DRAFT | IN_PROGRESS | PAUSED | COMPLETED | CANCELLED
-  durationMinutes: number;             // 计划时长
-  actualDurationMinutes: number;       // 实际时长
+  status: FocusSessionStatus; // DRAFT | IN_PROGRESS | PAUSED | COMPLETED | CANCELLED
+  durationMinutes: number; // 计划时长
+  actualDurationMinutes: number; // 实际时长
   description: string | null;
-  
+
   // 时间记录
-  startedAt: number | null;            // timestamp
+  startedAt: number | null; // timestamp
   pausedAt: number | null;
   resumedAt: number | null;
   completedAt: number | null;
   cancelledAt: number | null;
-  
+
   // 统计
-  pauseCount: number;                  // 暂停次数
-  pausedDurationMinutes: number;       // 累计暂停时长
-  
+  pauseCount: number; // 暂停次数
+  pausedDurationMinutes: number; // 累计暂停时长
+
   createdAt: number;
   updatedAt: number;
 }
@@ -117,16 +117,16 @@ export class FocusSession extends AggregateRoot {
   private _durationMinutes: number;
   private _actualDurationMinutes: number;
   private _description: string | null;
-  
+
   private _startedAt: Date | null;
   private _pausedAt: Date | null;
   private _resumedAt: Date | null;
   private _completedAt: Date | null;
   private _cancelledAt: Date | null;
-  
+
   private _pauseCount: number;
   private _pausedDurationMinutes: number;
-  
+
   private _createdAt: Date;
   private _updatedAt: Date;
 
@@ -152,16 +152,16 @@ export class FocusSession extends AggregateRoot {
     session._durationMinutes = params.durationMinutes;
     session._actualDurationMinutes = 0;
     session._description = params.description || null;
-    
+
     session._startedAt = null;
     session._pausedAt = null;
     session._resumedAt = null;
     session._completedAt = null;
     session._cancelledAt = null;
-    
+
     session._pauseCount = 0;
     session._pausedDurationMinutes = 0;
-    
+
     session._createdAt = new Date();
     session._updatedAt = new Date();
 
@@ -245,11 +245,11 @@ export class FocusSession extends AggregateRoot {
 
     this._status = FocusSessionStatus.COMPLETED;
     this._completedAt = new Date();
-    
+
     // 计算实际时长（排除暂停时间）
     const totalDuration = this._completedAt.getTime() - this._startedAt!.getTime();
     this._actualDurationMinutes = Math.round(totalDuration / 60000) - this._pausedDurationMinutes;
-    
+
     this._updatedAt = new Date();
 
     this.addDomainEvent({
@@ -268,8 +268,10 @@ export class FocusSession extends AggregateRoot {
   }
 
   public cancel(): void {
-    if (this._status === FocusSessionStatus.COMPLETED || 
-        this._status === FocusSessionStatus.CANCELLED) {
+    if (
+      this._status === FocusSessionStatus.COMPLETED ||
+      this._status === FocusSessionStatus.CANCELLED
+    ) {
       throw new Error('不能取消已完成或已取消的专注周期');
     }
 
@@ -294,8 +296,9 @@ export class FocusSession extends AggregateRoot {
   }
 
   public get isActive(): boolean {
-    return this._status === FocusSessionStatus.IN_PROGRESS || 
-           this._status === FocusSessionStatus.PAUSED;
+    return (
+      this._status === FocusSessionStatus.IN_PROGRESS || this._status === FocusSessionStatus.PAUSED
+    );
   }
 
   public getRemainingMinutes(): number {
@@ -316,7 +319,7 @@ export class FocusSession extends AggregateRoot {
 // FocusSessionApplicationService.ts
 export class FocusSessionApplicationService {
   async createAndStartSession(
-    request: CreateFocusSessionRequest
+    request: CreateFocusSessionRequest,
   ): Promise<CreateFocusSessionResponse> {
     // 1. 验证目标存在（如果指定）
     if (request.goalUuid) {
@@ -330,9 +333,7 @@ export class FocusSessionApplicationService {
     }
 
     // 2. 检查是否有进行中的会话
-    const activeSession = await this.sessionRepository.findActiveSession(
-      request.accountUuid
-    );
+    const activeSession = await this.sessionRepository.findActiveSession(request.accountUuid);
     if (activeSession) {
       throw new Error('您有正在进行的专注周期，请先完成或取消');
     }
@@ -363,37 +364,25 @@ export class FocusSessionApplicationService {
     };
   }
 
-  async pauseSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<FocusSessionClientDTO> {
+  async pauseSession(sessionUuid: string, accountUuid: string): Promise<FocusSessionClientDTO> {
     return this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.pause();
     });
   }
 
-  async resumeSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<FocusSessionClientDTO> {
+  async resumeSession(sessionUuid: string, accountUuid: string): Promise<FocusSessionClientDTO> {
     return this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.resume();
     });
   }
 
-  async completeSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<FocusSessionClientDTO> {
+  async completeSession(sessionUuid: string, accountUuid: string): Promise<FocusSessionClientDTO> {
     return this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.complete();
     });
   }
 
-  async cancelSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<void> {
+  async cancelSession(sessionUuid: string, accountUuid: string): Promise<void> {
     await this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.cancel();
     });
@@ -402,7 +391,7 @@ export class FocusSessionApplicationService {
   private async executeSessionAction(
     sessionUuid: string,
     accountUuid: string,
-    action: (session: FocusSession) => void
+    action: (session: FocusSession) => void,
   ): Promise<FocusSessionClientDTO | void> {
     // 1. 加载会话
     const session = await this.sessionRepository.findByUuid(sessionUuid);
@@ -444,14 +433,10 @@ export class FocusSessionApplicationService {
   <div class="focus-timer" :class="{ 'is-active': session?.isActive }">
     <div v-if="!session" class="start-panel">
       <h3>开始专注</h3>
-      
+
       <el-form :model="form" label-width="100px">
         <el-form-item label="关联目标">
-          <el-select 
-            v-model="form.goalUuid" 
-            placeholder="选择目标（可选）"
-            clearable
-          >
+          <el-select v-model="form.goalUuid" placeholder="选择目标（可选）" clearable>
             <el-option
               v-for="goal in activeGoals"
               :key="goal.uuid"
@@ -470,30 +455,22 @@ export class FocusSessionApplicationService {
         </el-form-item>
 
         <el-form-item label="描述">
-          <el-input 
-            v-model="form.description" 
-            placeholder="本次专注要完成什么？"
-          />
+          <el-input v-model="form.description" placeholder="本次专注要完成什么？" />
         </el-form-item>
       </el-form>
 
-      <el-button 
-        type="primary" 
-        size="large"
-        @click="handleStart"
-        :loading="isStarting"
-      >
+      <el-button type="primary" size="large" @click="handleStart" :loading="isStarting">
         开始专注
       </el-button>
     </div>
 
     <div v-else class="timer-panel">
       <h3>{{ goalTitle || '专注中' }}</h3>
-      
+
       <div class="timer-display">
         <span class="time">{{ formattedTime }}</span>
-        <el-progress 
-          type="circle" 
+        <el-progress
+          type="circle"
           :percentage="progressPercent"
           :width="200"
           :stroke-width="12"
@@ -505,13 +482,11 @@ export class FocusSessionApplicationService {
 
       <div class="timer-info">
         <span>计划: {{ session.durationMinutes }} 分钟</span>
-        <span v-if="session.pauseCount > 0">
-          暂停次数: {{ session.pauseCount }}
-        </span>
+        <span v-if="session.pauseCount > 0"> 暂停次数: {{ session.pauseCount }} </span>
       </div>
 
       <div class="timer-actions">
-        <el-button 
+        <el-button
           v-if="session.status === 'IN_PROGRESS'"
           @click="handlePause"
           :loading="isOperating"
@@ -519,7 +494,7 @@ export class FocusSessionApplicationService {
           暂停
         </el-button>
 
-        <el-button 
+        <el-button
           v-if="session.status === 'PAUSED'"
           type="primary"
           @click="handleResume"
@@ -528,21 +503,9 @@ export class FocusSessionApplicationService {
           继续
         </el-button>
 
-        <el-button 
-          type="success"
-          @click="handleComplete"
-          :loading="isOperating"
-        >
-          完成
-        </el-button>
+        <el-button type="success" @click="handleComplete" :loading="isOperating"> 完成 </el-button>
 
-        <el-button 
-          type="danger"
-          @click="handleCancel"
-          :loading="isOperating"
-        >
-          取消
-        </el-button>
+        <el-button type="danger" @click="handleCancel" :loading="isOperating"> 取消 </el-button>
       </div>
     </div>
   </div>
@@ -571,18 +534,18 @@ let timer: number | null = null;
 const session = computed(() => sessionStore.activeSession);
 
 const activeGoals = computed(() => {
-  return goalStore.goals.filter(g => g.status === 'ACTIVE');
+  return goalStore.goals.filter((g) => g.status === 'ACTIVE');
 });
 
 const goalTitle = computed(() => {
   if (!session.value?.goalUuid) return null;
-  const goal = goalStore.goals.find(g => g.uuid === session.value.goalUuid);
+  const goal = goalStore.goals.find((g) => g.uuid === session.value.goalUuid);
   return goal?.title;
 });
 
 const remainingMinutes = computed(() => {
   if (!session.value) return 0;
-  
+
   if (session.value.status === 'PAUSED') {
     return session.value.durationMinutes - session.value.actualDurationMinutes;
   }
@@ -612,11 +575,11 @@ const progressColor = computed(() => {
 onMounted(async () => {
   // 加载活跃会话
   await sessionStore.loadActiveSession();
-  
+
   // 启动计时器
   timer = window.setInterval(() => {
     currentTime.value = Date.now();
-    
+
     // 检查是否到时间
     if (session.value && remainingMinutes.value <= 0) {
       handleTimeUp();
@@ -670,7 +633,7 @@ async function handleComplete() {
   isOperating.value = true;
   try {
     await sessionStore.completeSession();
-    
+
     ElNotification.success({
       title: '专注完成！',
       message: `本次专注 ${session.value?.actualDurationMinutes} 分钟`,
@@ -698,21 +661,21 @@ async function handleCancel() {
 function handleTimeUp() {
   // 播放提示音
   playNotificationSound();
-  
+
   // 显示通知
   ElNotification.success({
     title: '专注时间到！',
     message: '恭喜完成本次专注',
     duration: 0, // 不自动关闭
   });
-  
+
   // 自动完成
   handleComplete();
 }
 
 function playNotificationSound() {
   const audio = new Audio('/sounds/focus-complete.mp3');
-  audio.play().catch(err => console.error('Failed to play sound:', err));
+  audio.play().catch((err) => console.error('Failed to play sound:', err));
 }
 </script>
 
@@ -761,12 +724,12 @@ function playNotificationSound() {
 // GoalStatistics.ts
 export interface GoalFocusStatistics {
   goalUuid: string;
-  totalSessions: number;               // 总专注次数
-  completedSessions: number;           // 完成的次数
-  totalFocusMinutes: number;           // 总专注时长（分钟）
-  averageFocusMinutes: number;         // 平均时长
-  longestFocusMinutes: number;         // 最长单次时长
-  lastFocusedAt: Date | null;          // 最后专注时间
+  totalSessions: number; // 总专注次数
+  completedSessions: number; // 完成的次数
+  totalFocusMinutes: number; // 总专注时长（分钟）
+  averageFocusMinutes: number; // 平均时长
+  longestFocusMinutes: number; // 最长单次时长
+  lastFocusedAt: Date | null; // 最后专注时间
 }
 ```
 
@@ -777,7 +740,7 @@ export interface GoalFocusStatistics {
 
 eventBus.on('FocusSessionCompletedEvent', async (event) => {
   const { goalUuid, actualDurationMinutes } = event.payload;
-  
+
   if (goalUuid) {
     await statisticsService.updateGoalFocusStatistics(goalUuid, {
       incrementSessions: 1,
@@ -785,11 +748,11 @@ eventBus.on('FocusSessionCompletedEvent', async (event) => {
       addFocusMinutes: actualDurationMinutes,
     });
   }
-  
+
   // 更新用户总统计
   await statisticsService.incrementTotalFocusMinutes(
     event.payload.accountUuid,
-    actualDurationMinutes
+    actualDurationMinutes,
   );
 });
 ```
@@ -807,16 +770,16 @@ model FocusSession {
   durationMinutes         Int
   actualDurationMinutes   Int       @default(0)
   description             String?   @db.Text
-  
+
   startedAt               DateTime?
   pausedAt                DateTime?
   resumedAt               DateTime?
   completedAt             DateTime?
   cancelledAt             DateTime?
-  
+
   pauseCount              Int       @default(0)
   pausedDurationMinutes   Int       @default(0)
-  
+
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 

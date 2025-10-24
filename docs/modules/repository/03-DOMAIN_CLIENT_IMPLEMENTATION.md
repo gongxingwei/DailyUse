@@ -34,13 +34,13 @@ category: 实现指南
 
 **与 Server 领域层的区别**：
 
-| 特性 | Server 端 | Client 端 |
-|------|----------|-----------|
-| **复杂度** | 完整业务逻辑 | 简化业务逻辑 |
-| **状态管理** | 内存 + 数据库 | 内存 + Store |
-| **领域事件** | 发布/订阅 | 通常不用 |
-| **验证** | 完整验证 | UI 验证 + 后端确认 |
-| **方法** | 所有业务方法 | 常用业务方法 |
+| 特性         | Server 端     | Client 端          |
+| ------------ | ------------- | ------------------ |
+| **复杂度**   | 完整业务逻辑  | 简化业务逻辑       |
+| **状态管理** | 内存 + 数据库 | 内存 + Store       |
+| **领域事件** | 发布/订阅     | 通常不用           |
+| **验证**     | 完整验证      | UI 验证 + 后端确认 |
+| **方法**     | 所有业务方法  | 常用业务方法       |
 
 ---
 
@@ -66,13 +66,13 @@ import type { RepositoryContracts } from '@dailyuse/contracts';
 /**
  * 仓库聚合根（客户端）
  * Repository Aggregate Root (Client)
- * 
+ *
  * @description
  * 前端领域模型，简化的仓库业务逻辑
  */
 export class RepositoryClient extends AggregateRoot {
   // ============ 公共属性（前端简化模式）============
-  
+
   public accountUuid: string;
   public name: string;
   public path: string;
@@ -88,7 +88,7 @@ export class RepositoryClient extends AggregateRoot {
   public stats: RepositoryContracts.RepositoryStats | null;
 
   // ============ 构造函数（公共）============
-  
+
   /**
    * 前端可以使用 public 构造函数
    * ⚠️ 推荐使用 fromServerDTO 创建实例
@@ -110,7 +110,7 @@ export class RepositoryClient extends AggregateRoot {
     stats: RepositoryContracts.RepositoryStats | null,
     createdAt: Date,
     updatedAt: Date,
-    version: number
+    version: number,
   ) {
     super(uuid, createdAt, updatedAt, version);
     this.accountUuid = accountUuid;
@@ -147,13 +147,13 @@ export class RepositoryClient extends AggregateRoot {
       dto.config,
       dto.gitInfo,
       dto.syncStatus,
-      dto.lastSyncedAt ? new Date(dto.lastSyncedAt) : null,  // ⚠️ Date 转换
+      dto.lastSyncedAt ? new Date(dto.lastSyncedAt) : null, // ⚠️ Date 转换
       [...dto.relatedGoals],
       [...dto.tags],
       dto.stats,
-      new Date(dto.createdAt),  // ⚠️ Date 转换
-      new Date(dto.updatedAt),  // ⚠️ Date 转换
-      dto.version
+      new Date(dto.createdAt), // ⚠️ Date 转换
+      new Date(dto.updatedAt), // ⚠️ Date 转换
+      dto.version,
     );
   }
 
@@ -178,7 +178,7 @@ export class RepositoryClient extends AggregateRoot {
       dto.stats,
       new Date(dto.createdAt),
       new Date(dto.updatedAt),
-      dto.version
+      dto.version,
     );
   }
 
@@ -368,7 +368,7 @@ export class RepositoryClient extends AggregateRoot {
       this.stats ? { ...this.stats } : null,
       this.createdAt,
       this.updatedAt,
-      this.version
+      this.version,
     );
   }
 }
@@ -377,6 +377,7 @@ export class RepositoryClient extends AggregateRoot {
 ### ⚠️ 易错点
 
 ❌ **错误 1**：忘记处理日期类型转换
+
 ```typescript
 // 错误示例
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
@@ -389,6 +390,7 @@ static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
 ```
 
 ✅ **正确**：显式转换日期
+
 ```typescript
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
   return new RepositoryClient(
@@ -400,6 +402,7 @@ static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
 ```
 
 ❌ **错误 2**：直接引用数组/对象
+
 ```typescript
 // 错误示例
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
@@ -412,6 +415,7 @@ static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
 ```
 
 ✅ **正确**：创建副本
+
 ```typescript
 static fromServerDTO(dto: RepositoryServerDTO): RepositoryClient {
   return new RepositoryClient(
@@ -440,7 +444,7 @@ import type { RepositoryContracts } from '@dailyuse/contracts';
  */
 export class ResourceClient extends Entity {
   // ============ 公共属性 ============
-  
+
   public repositoryUuid: string;
   public accountUuid: string;
   public name: string;
@@ -456,7 +460,7 @@ export class ResourceClient extends Entity {
   public metadata: Record<string, any> | null;
 
   // ============ 构造函数 ============
-  
+
   constructor(
     uuid: string,
     repositoryUuid: string,
@@ -474,7 +478,7 @@ export class ResourceClient extends Entity {
     metadata: Record<string, any> | null,
     createdAt: Date,
     updatedAt: Date,
-    version: number
+    version: number,
   ) {
     super(uuid, createdAt, updatedAt, version);
     this.repositoryUuid = repositoryUuid;
@@ -515,7 +519,7 @@ export class ResourceClient extends Entity {
       dto.metadata,
       new Date(dto.createdAt),
       new Date(dto.updatedAt),
-      dto.version
+      dto.version,
     );
   }
 
@@ -540,7 +544,7 @@ export class ResourceClient extends Entity {
       dto.metadata,
       new Date(dto.createdAt),
       new Date(dto.updatedAt),
-      dto.version
+      dto.version,
     );
   }
 
@@ -714,7 +718,7 @@ export class ResourceClient extends Entity {
       this.metadata ? { ...this.metadata } : null,
       this.createdAt,
       this.updatedAt,
-      this.version
+      this.version,
     );
   }
 }
@@ -742,36 +746,36 @@ import { ResourceClient } from '../entities/ResourceClient';
  * Server DTO 列表转 Client 实体列表
  */
 export function convertRepositoryListFromServer(
-  dtos: RepositoryContracts.RepositoryServerDTO[]
+  dtos: RepositoryContracts.RepositoryServerDTO[],
 ): RepositoryClient[] {
-  return dtos.map(dto => RepositoryClient.fromServerDTO(dto));
+  return dtos.map((dto) => RepositoryClient.fromServerDTO(dto));
 }
 
 /**
  * Client 实体列表转 Client DTO 列表
  */
 export function convertRepositoryListToClient(
-  repositories: RepositoryClient[]
+  repositories: RepositoryClient[],
 ): RepositoryContracts.RepositoryDTO[] {
-  return repositories.map(repo => repo.toClientDTO());
+  return repositories.map((repo) => repo.toClientDTO());
 }
 
 /**
  * Server DTO 列表转 Resource Client 列表
  */
 export function convertResourceListFromServer(
-  dtos: RepositoryContracts.ResourceServerDTO[]
+  dtos: RepositoryContracts.ResourceServerDTO[],
 ): ResourceClient[] {
-  return dtos.map(dto => ResourceClient.fromServerDTO(dto));
+  return dtos.map((dto) => ResourceClient.fromServerDTO(dto));
 }
 
 /**
  * Resource Client 列表转 Client DTO 列表
  */
 export function convertResourceListToClient(
-  resources: ResourceClient[]
+  resources: ResourceClient[],
 ): RepositoryContracts.ResourceDTO[] {
-  return resources.map(res => res.toClientDTO());
+  return resources.map((res) => res.toClientDTO());
 }
 ```
 

@@ -29,7 +29,7 @@ Scenario: 实现更新 KR 权重方法
   Then 应该调用 POST /api/goals/:goalUuid/key-results/:krUuid/weight
   And 返回更新结果
   And 如果成功则触发 WEIGHT_UPDATED 事件
-  
+
 Scenario: 实现查询 Goal 快照方法
   Given 需要查询 Goal 的权重快照
   When 调用 service.getGoalSnapshots(goalUuid, page, pageSize)
@@ -46,7 +46,7 @@ Scenario: 使用 useQuery 查询快照列表
   Then 应该自动请求 API
   And 提供 data, isLoading, error 状态
   And 支持自动缓存和刷新
-  
+
 Scenario: 使用 useMutation 更新权重
   Given 用户想要更新权重
   When 组件使用 useUpdateKRWeight() hook
@@ -118,18 +118,18 @@ import type { KeyResultWeightSnapshotServerDTO } from '@dailyuse/contracts';
 export class WeightSnapshotClientApplicationService {
   constructor(
     private readonly apiClient: AxiosInstance,
-    private readonly eventBus: CrossPlatformEventBus
+    private readonly eventBus: CrossPlatformEventBus,
   ) {}
 
   async updateKRWeight(
     goalUuid: string,
     krUuid: string,
     newWeight: number,
-    reason?: string
+    reason?: string,
   ): Promise<void> {
     const response = await this.apiClient.post(
       `/api/goals/${goalUuid}/key-results/${krUuid}/weight`,
-      { newWeight, reason }
+      { newWeight, reason },
     );
 
     // 触发事件
@@ -146,27 +146,21 @@ export class WeightSnapshotClientApplicationService {
   async getGoalSnapshots(
     goalUuid: string,
     page: number = 1,
-    pageSize: number = 20
+    pageSize: number = 20,
   ): Promise<{
     snapshots: KeyResultWeightSnapshotServerDTO[];
     total: number;
   }> {
-    const response = await this.apiClient.get(
-      `/api/goals/${goalUuid}/weight-snapshots`,
-      { params: { page, pageSize } }
-    );
+    const response = await this.apiClient.get(`/api/goals/${goalUuid}/weight-snapshots`, {
+      params: { page, pageSize },
+    });
     return response.data.data;
   }
 
-  async getWeightTrend(
-    goalUuid: string,
-    startTime: number,
-    endTime: number
-  ): Promise<any> {
-    const response = await this.apiClient.get(
-      `/api/goals/${goalUuid}/weight-trend`,
-      { params: { startTime, endTime } }
-    );
+  async getWeightTrend(goalUuid: string, startTime: number, endTime: number): Promise<any> {
+    const response = await this.apiClient.get(`/api/goals/${goalUuid}/weight-trend`, {
+      params: { startTime, endTime },
+    });
     return response.data.data;
   }
 }
@@ -178,13 +172,9 @@ export class WeightSnapshotClientApplicationService {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWeightSnapshotService } from './useWeightSnapshotService';
 
-export function useGoalSnapshots(
-  goalUuid: string,
-  page: number = 1,
-  pageSize: number = 20
-) {
+export function useGoalSnapshots(goalUuid: string, page: number = 1, pageSize: number = 20) {
   const service = useWeightSnapshotService();
-  
+
   return useQuery({
     queryKey: ['goal-snapshots', goalUuid, page, pageSize],
     queryFn: () => service.getGoalSnapshots(goalUuid, page, pageSize),
@@ -208,7 +198,7 @@ export function useUpdateKRWeight() {
       newWeight: number;
       reason?: string;
     }) => service.updateKRWeight(goalUuid, krUuid, newWeight, reason),
-    
+
     onSuccess: (_, variables) => {
       // Invalidate 相关查询
       queryClient.invalidateQueries({
@@ -239,14 +229,14 @@ export function useUpdateKRWeight() {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| Service 实现 | 2 小时 |
-| React Query Hooks | 2.5 小时 |
-| 事件系统集成 | 1 小时 |
-| 单元测试 | 1.5 小时 |
-| Code Review | 1 小时 |
-| **总计** | **8 小时** |
+| 任务              | 预估时间   |
+| ----------------- | ---------- |
+| Service 实现      | 2 小时     |
+| React Query Hooks | 2.5 小时   |
+| 事件系统集成      | 1 小时     |
+| 单元测试          | 1.5 小时   |
+| Code Review       | 1 小时     |
+| **总计**          | **8 小时** |
 
 **Story Points**: 3 SP
 
@@ -255,9 +245,11 @@ export function useUpdateKRWeight() {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - STORY-GOAL-002-004 (API Endpoints) - 必须完成
 
 ### 下游依赖
+
 - STORY-GOAL-002-006, 007, 008 (所有 UI Stories) 依赖此 Story
 
 ---

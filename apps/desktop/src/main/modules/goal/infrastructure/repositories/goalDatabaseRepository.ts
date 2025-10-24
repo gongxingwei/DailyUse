@@ -1,10 +1,10 @@
-import type { Database } from "better-sqlite3";
-import type { IGoalRepository } from "../../domain/repositories/iGoalRepository";
-import { Goal } from "../../domain/aggregates/goal";
-import { GoalDir } from "../../domain/aggregates/goalDir";
-import { GoalRecord } from "../../domain/entities/record";
-import { KeyResult } from "../../domain/entities/keyResult";
-import { GoalReview } from "../../domain/entities/goalReview";
+import type { Database } from 'better-sqlite3';
+import type { IGoalRepository } from '../../domain/repositories/iGoalRepository';
+import { Goal } from '../../domain/aggregates/goal';
+import { GoalDir } from '../../domain/aggregates/goalDir';
+import { GoalRecord } from '../../domain/entities/record';
+import { KeyResult } from '../../domain/entities/keyResult';
+import { GoalReview } from '../../domain/entities/goalReview';
 
 /**
  * 目标模块数据库仓储实现
@@ -39,14 +39,14 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.color,
       row.parentUuid || null,
       row.categoryUuid || null,
-      row.sortKey || "default",
+      row.sortKey || 'default',
       row.sortOrder || 0,
-      row.status || "active",
+      row.status || 'active',
       row.createdAt?.getTime?.() || Date.now(),
-      row.updatedAt?.getTime?.() || Date.now()
+      row.updatedAt?.getTime?.() || Date.now(),
     );
     const createdGoalDir = await this.getGoalDirectoryByUuid(accountUuid, goalDir.uuid);
-    if (!createdGoalDir) throw new Error("Failed to create goal directory");
+    if (!createdGoalDir) throw new Error('Failed to create goal directory');
     return createdGoalDir;
     // 返回示例: GoalDir 实例
   }
@@ -58,7 +58,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @returns GoalDir 实体或 null
    */
   async getGoalDirectoryByUuid(accountUuid: string, uuid: string): Promise<GoalDir | null> {
-    const stmt = this.db.prepare(`SELECT * FROM goal_directories WHERE account_uuid = ? AND uuid = ?`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM goal_directories WHERE account_uuid = ? AND uuid = ?`,
+    );
     const row = stmt.get(accountUuid, uuid);
     if (!row) return null;
     return await this.mapRowToGoalDir(row);
@@ -71,7 +73,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @returns 目录数组 GoalDir[]
    */
   async getAllGoalDirectories(accountUuid: string): Promise<GoalDir[]> {
-    const stmt = this.db.prepare(`SELECT * FROM goal_directories WHERE account_uuid = ? ORDER BY created_at DESC`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM goal_directories WHERE account_uuid = ? ORDER BY created_at DESC`,
+    );
     const rows = stmt.all(accountUuid);
     const goalDirs: GoalDir[] = [];
     for (const row of rows) {
@@ -103,15 +107,15 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.color,
       row.parent_uuid || null,
       row.category_uuid || null,
-      row.sort_key || "default",
+      row.sort_key || 'default',
       row.sort_order || 0,
-      row.status || "active",
+      row.status || 'active',
       row.updated_at,
       accountUuid,
-      row.uuid
+      row.uuid,
     );
     const updatedGoalDir = await this.getGoalDirectoryByUuid(accountUuid, goalDir.uuid);
-    if (!updatedGoalDir) throw new Error("Failed to update goal directory");
+    if (!updatedGoalDir) throw new Error('Failed to update goal directory');
     return updatedGoalDir;
   }
 
@@ -121,7 +125,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @param uuid 目录uuid
    */
   async deleteGoalDirectory(accountUuid: string, uuid: string): Promise<void> {
-    const stmt = this.db.prepare(`DELETE FROM goal_directories WHERE account_uuid = ? AND uuid = ?`);
+    const stmt = this.db.prepare(
+      `DELETE FROM goal_directories WHERE account_uuid = ? AND uuid = ?`,
+    );
     stmt.run(accountUuid, uuid);
   }
 
@@ -166,14 +172,14 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.status,
       row.version,
       row.created_at,
-      row.updated_at
+      row.updated_at,
     );
     // 创建关键结果
     for (const kr of goal.keyResults) {
       await this.createKeyResult(accountUuid, goal.uuid, kr);
     }
     const createdGoal = await this.getGoalByUuid(accountUuid, goal.uuid);
-    if (!createdGoal) throw new Error("Failed to create goal");
+    if (!createdGoal) throw new Error('Failed to create goal');
     return createdGoal;
     // 返回示例: Goal 实例
   }
@@ -202,7 +208,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @returns 目标数组 Goal[]
    */
   async getAllGoals(accountUuid: string): Promise<Goal[]> {
-    const stmt = this.db.prepare(`SELECT * FROM goals WHERE account_uuid = ? ORDER BY created_at DESC`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM goals WHERE account_uuid = ? ORDER BY created_at DESC`,
+    );
     const rows: any[] = stmt.all(accountUuid);
     const goals: Goal[] = [];
     for (const row of rows) {
@@ -223,7 +231,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @returns 目标数组 Goal[]
    */
   async getGoalsByDirectory(accountUuid: string, directoryId: string): Promise<Goal[]> {
-    const stmt = this.db.prepare(`SELECT * FROM goals WHERE account_uuid = ? AND directory_uuid = ? ORDER BY created_at DESC`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM goals WHERE account_uuid = ? AND directory_uuid = ? ORDER BY created_at DESC`,
+    );
     const rows: any[] = stmt.all(accountUuid, directoryId);
     const goals: Goal[] = [];
     for (const row of rows) {
@@ -272,12 +282,12 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.version,
       row.updated_at,
       accountUuid,
-      row.uuid
+      row.uuid,
     );
     // 更新关键结果（增量同步）
     await this.updateKeyResultsForGoal(accountUuid, goal.uuid, goal.keyResults);
     const updatedGoal = await this.getGoalByUuid(accountUuid, goal.uuid);
-    if (!updatedGoal) throw new Error("Failed to update goal");
+    if (!updatedGoal) throw new Error('Failed to update goal');
     return updatedGoal;
   }
 
@@ -301,12 +311,18 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @example
    * await repo.updateKeyResultsForGoal('acc-uuid', 'goal-uuid', [KeyResult, ...])
    */
-  private async updateKeyResultsForGoal(accountUuid: string, goalUuid: string, keyResults: KeyResult[]) {
+  private async updateKeyResultsForGoal(
+    accountUuid: string,
+    goalUuid: string,
+    keyResults: KeyResult[],
+  ) {
     // 1. 查询数据库中现有的 keyResult uuid
-    const stmt: any = this.db.prepare(`SELECT uuid FROM key_results WHERE goal_uuid = ? AND account_uuid = ?`);
+    const stmt: any = this.db.prepare(
+      `SELECT uuid FROM key_results WHERE goal_uuid = ? AND account_uuid = ?`,
+    );
     const dbKRs: { uuid: string }[] = stmt.all(goalUuid, accountUuid);
-    const dbKRUuidSet = new Set(dbKRs.map(kr => kr.uuid));
-    const inputKRUuidSet = new Set(keyResults.map(kr => kr.uuid));
+    const dbKRUuidSet = new Set(dbKRs.map((kr) => kr.uuid));
+    const inputKRUuidSet = new Set(keyResults.map((kr) => kr.uuid));
 
     // 2. 更新和新增
     for (const kr of keyResults) {
@@ -334,7 +350,11 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @param keyResult 关键结果实体
    * @returns 新关键结果uuid
    */
-  async createKeyResult(accountUuid: string, goalUuid: string, keyResult: KeyResult): Promise<string> {
+  async createKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResult: KeyResult,
+  ): Promise<string> {
     const row = await this.mapKeyResultToRow(accountUuid, goalUuid, keyResult);
     const stmt = this.db.prepare(`
       INSERT INTO key_results (
@@ -364,7 +384,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.tags,
       row.notes,
       row.created_at,
-      row.updated_at
+      row.updated_at,
     );
     return keyResult.uuid;
     // 返回示例: "key-result-uuid"
@@ -376,8 +396,14 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @param goalUuid 目标uuid
    * @param keyResultUuid 关键结果uuid
    */
-  async deleteKeyResult(accountUuid: string, goalUuid: string, keyResultUuid: string): Promise<void> {
-    const stmt = this.db.prepare(`DELETE FROM key_results WHERE account_uuid = ? AND goal_uuid = ? AND uuid = ?`);
+  async deleteKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResultUuid: string,
+  ): Promise<void> {
+    const stmt = this.db.prepare(
+      `DELETE FROM key_results WHERE account_uuid = ? AND goal_uuid = ? AND uuid = ?`,
+    );
     stmt.run(accountUuid, goalUuid, keyResultUuid);
   }
 
@@ -388,7 +414,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @returns KeyResult[]
    */
   async getKeyResultsByGoalUuid(accountUuid: string, goalUuid: string): Promise<KeyResult[]> {
-    const stmt = this.db.prepare(`SELECT * FROM key_results WHERE account_uuid = ? AND goal_uuid = ? ORDER BY created_at ASC`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM key_results WHERE account_uuid = ? AND goal_uuid = ? ORDER BY created_at ASC`,
+    );
     const rows = stmt.all(accountUuid, goalUuid);
     const keyResults: KeyResult[] = [];
     for (const row of rows) {
@@ -406,7 +434,11 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @param keyResult 关键结果实体
    * @returns 更新后的 KeyResult 实体
    */
-  async updateKeyResult(accountUuid: string, goalUuid: string, keyResult: KeyResult): Promise<KeyResult> {
+  async updateKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResult: KeyResult,
+  ): Promise<KeyResult> {
     const row = await this.mapKeyResultToRow(accountUuid, goalUuid, keyResult);
     const stmt = this.db.prepare(`
       UPDATE key_results 
@@ -434,11 +466,11 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.notes,
       row.updated_at,
       accountUuid,
-      row.uuid
+      row.uuid,
     );
     // 返回更新后的 KeyResult
     const updatedKeyResult = await this.getKeyResultsByGoalUuid(accountUuid, goalUuid);
-    if (!updatedKeyResult) throw new Error("Failed to update key result");
+    if (!updatedKeyResult) throw new Error('Failed to update key result');
     return updatedKeyResult[0];
   }
 
@@ -470,7 +502,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.verified_by,
       row.verified_at,
       row.created_at,
-      row.updated_at
+      row.updated_at,
     );
     return record;
     // 返回示例: GoalRecord 实例
@@ -496,7 +528,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @returns GoalRecord[]
    */
   async getGoalRecordsByGoal(accountUuid: string, goalUuid: string): Promise<GoalRecord[]> {
-    const stmt = this.db.prepare(`SELECT * FROM goal_records WHERE account_uuid = ? AND goal_uuid = ? ORDER BY created_at DESC`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM goal_records WHERE account_uuid = ? AND goal_uuid = ? ORDER BY created_at DESC`,
+    );
     const rows = stmt.all(accountUuid, goalUuid);
     const records: GoalRecord[] = [];
     for (const row of rows) {
@@ -530,7 +564,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.verified_at,
       row.updated_at,
       accountUuid,
-      row.uuid
+      row.uuid,
     );
     return record;
   }
@@ -581,7 +615,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.snapshot,
       row.metadata,
       row.created_at,
-      row.updated_at
+      row.updated_at,
     );
     return review;
     // 返回示例: GoalReview 实例
@@ -617,7 +651,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @returns GoalReview[]
    */
   async getGoalReviewsByGoal(accountUuid: string, goalUuid: string): Promise<GoalReview[]> {
-    const stmt = this.db.prepare(`SELECT * FROM goal_reviews WHERE account_uuid = ? AND goal_uuid = ? ORDER BY review_date DESC`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM goal_reviews WHERE account_uuid = ? AND goal_uuid = ? ORDER BY review_date DESC`,
+    );
     const rows = stmt.all(accountUuid, goalUuid);
     const reviews: GoalReview[] = [];
     for (const row of rows) {
@@ -660,10 +696,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.metadata,
       row.updated_at,
       accountUuid,
-      row.uuid
+      row.uuid,
     );
     const updatedReview = await this.getGoalReviewByUuid(accountUuid, review.uuid);
-    if (!updatedReview) throw new Error("Failed to update goal review");
+    if (!updatedReview) throw new Error('Failed to update goal review');
     return updatedReview;
   }
 
@@ -722,10 +758,14 @@ export class GoalDatabaseRepository implements IGoalRepository {
       icon: null, // Not in DTO
       feasibility_analysis: JSON.stringify(dto.analysis.feasibility),
       motive_analysis: JSON.stringify(dto.analysis.motive),
-      start_time: typeof dto.startTime === "string" ? new Date(dto.startTime).getTime() : dto.startTime.getTime(),
-      end_time: typeof dto.endTime === "string" ? new Date(dto.endTime).getTime() : dto.endTime.getTime(),
+      start_time:
+        typeof dto.startTime === 'string'
+          ? new Date(dto.startTime).getTime()
+          : dto.startTime.getTime(),
+      end_time:
+        typeof dto.endTime === 'string' ? new Date(dto.endTime).getTime() : dto.endTime.getTime(),
       priority: 3, // Default value
-      goal_type: "personal", // Default value
+      goal_type: 'personal', // Default value
       tags: null, // Not in DTO
       notes: dto.note || null,
       attachments: null, // Not in DTO
@@ -752,10 +792,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
       name: dto.name,
       description: dto.description || null,
       icon: dto.icon,
-      color: dto.color || "default-color",
+      color: dto.color || 'default-color',
       parent_uuid: dto.parentUuid || null,
       category_uuid: null, // Not in DTO
-      sort_key: dto.sortConfig?.sortKey || "default",
+      sort_key: dto.sortConfig?.sortKey || 'default',
       sort_order: dto.sortConfig?.sortOrder || 0,
       status: dto.lifecycle.status,
       created_at: dto.lifecycle.createdAt?.getTime() || Date.now(),
@@ -796,7 +836,11 @@ export class GoalDatabaseRepository implements IGoalRepository {
    * @param keyResult KeyResult 实体
    * @returns 数据库行对象
    */
-  private async mapKeyResultToRow(accountUuid: string, goalUuid: string, keyResult: KeyResult): Promise<any> {
+  private async mapKeyResultToRow(
+    accountUuid: string,
+    goalUuid: string,
+    keyResult: KeyResult,
+  ): Promise<any> {
     const dto = keyResult.toDTO();
     const row = {
       uuid: dto.uuid,
@@ -866,7 +910,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
     row: any,
     keyResults: KeyResult[],
     records: GoalRecord[],
-    reviews: GoalReview[]
+    reviews: GoalReview[],
   ): Promise<Goal> {
     const goalDTO = {
       uuid: row.uuid,
@@ -906,16 +950,16 @@ export class GoalDatabaseRepository implements IGoalRepository {
       name: row.name,
       description: row.description || undefined,
       icon: row.icon,
-      color: row.color || "default-color",
+      color: row.color || 'default-color',
       sortConfig: {
-        sortKey: row.sort_key || "default",
+        sortKey: row.sort_key || 'default',
         sortOrder: row.sort_order || 0,
       },
       parentUuid: row.parent_uuid,
       lifecycle: {
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
-        status: row.status || "active",
+        status: row.status || 'active',
       },
     };
     return GoalDir.fromDTO(goalDirDTO);
@@ -938,7 +982,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       lifecycle: {
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
-        status: row.status || "active",
+        status: row.status || 'active',
       },
     };
     return KeyResult.fromDTO(keyResultDTO);
@@ -981,10 +1025,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
         challenges: row.challenges,
         learnings: row.learnings,
         nextSteps: row.next_steps,
-        adjustments: row.adjustment_recommendations || "",
+        adjustments: row.adjustment_recommendations || '',
       },
       snapshot: JSON.parse(row.snapshot),
-      metadata: JSON.parse(row.metadata || "{}"),
+      metadata: JSON.parse(row.metadata || '{}'),
       rating: {
         progressSatisfaction: row.progress_rating,
         executionEfficiency: row.executive_rating,

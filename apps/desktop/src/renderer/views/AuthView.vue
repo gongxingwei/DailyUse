@@ -79,15 +79,9 @@
             </v-tabs>
 
             <v-window v-model="remoteTab">
-              <v-window-item value="quick-login">
-
-              </v-window-item>
-              <v-window-item value="login">
-
-              </v-window-item>
-              <v-window-item value="register">
-
-              </v-window-item>
+              <v-window-item value="quick-login"> </v-window-item>
+              <v-window-item value="login"> </v-window-item>
+              <v-window-item value="register"> </v-window-item>
             </v-window>
           </v-window-item>
         </v-window>
@@ -120,13 +114,12 @@ const toLocalLogin = () => {
   height: 100vh;
 }
 
-
 .auth-view-card {
   width: 100%;
   height: 100%;
   margin: auto;
   background: transparent;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(8px);
   -webkit-app-region: no-drag;
 }

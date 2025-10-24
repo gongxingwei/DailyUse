@@ -14,17 +14,33 @@
       </v-alert>
 
       <!-- 显示重复规则描述 -->
-      <v-alert v-if="isValid && recurrenceRule.type !== 'none'" type="info" variant="tonal" class="mb-4">
+      <v-alert
+        v-if="isValid && recurrenceRule.type !== 'none'"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+      >
         当前设置：{{ getRecurrenceDescription }}
       </v-alert>
       <v-row>
         <v-col cols="12" md="6">
-          <v-select v-model="recurrenceType" label="重复类型" :items="recurrenceTypes" variant="outlined" />
+          <v-select
+            v-model="recurrenceType"
+            label="重复类型"
+            :items="recurrenceTypes"
+            variant="outlined"
+          />
         </v-col>
 
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.recurrence.type !== 'none'">
-          <v-text-field v-model.number="recurrenceInterval" label="间隔" type="number" variant="outlined" min="1"
-            max="365" />
+          <v-text-field
+            v-model.number="recurrenceInterval"
+            label="间隔"
+            type="number"
+            variant="outlined"
+            min="1"
+            max="365"
+          />
         </v-col>
 
         <!-- 每周重复的星期选择 -->
@@ -33,8 +49,13 @@
         </v-col>
 
         <!-- 结束条件 -->
-        <v-col cols="12"
-          v-if="props.modelValue.timeConfig.recurrence.type !== 'none' && props.modelValue.timeConfig.recurrence.endCondition">
+        <v-col
+          cols="12"
+          v-if="
+            props.modelValue.timeConfig.recurrence.type !== 'none' &&
+            props.modelValue.timeConfig.recurrence.endCondition
+          "
+        >
           <v-radio-group v-model="recurrenceEndConditionType" label="结束条件">
             <v-radio label="永不结束" value="never" />
             <v-radio label="指定日期结束" value="date" />
@@ -42,15 +63,38 @@
           </v-radio-group>
         </v-col>
 
-        <v-col cols="12" md="6"
-          v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'date'">
-          <v-text-field v-model="endConditionDateInput" label="结束日期" type="date" variant="outlined" />
+        <v-col
+          cols="12"
+          md="6"
+          v-if="
+            props.modelValue.timeConfig.recurrence.endCondition &&
+            props.modelValue.timeConfig.recurrence.endCondition.type === 'date'
+          "
+        >
+          <v-text-field
+            v-model="endConditionDateInput"
+            label="结束日期"
+            type="date"
+            variant="outlined"
+          />
         </v-col>
 
-        <v-col cols="12" md="6"
-          v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'count'">
-          <v-text-field v-model.number="recurrenceEndConditionCount" label="重复次数" type="number" variant="outlined"
-            min="1" max="999" />
+        <v-col
+          cols="12"
+          md="6"
+          v-if="
+            props.modelValue.timeConfig.recurrence.endCondition &&
+            props.modelValue.timeConfig.recurrence.endCondition.type === 'count'
+          "
+        >
+          <v-text-field
+            v-model.number="recurrenceEndConditionCount"
+            label="重复次数"
+            type="number"
+            variant="outlined"
+            min="1"
+            max="999"
+          />
         </v-col>
       </v-row>
     </v-card-text>
@@ -94,14 +138,13 @@ const recurrenceType = computed({
           type: value as any,
           interval: 1,
           endCondition: {
-            type: 'never'
-          }
-        }
+            type: 'never',
+          },
+        },
       });
     });
-  }
+  },
 });
-
 
 const recurrenceInterval = computed({
   get: () => props.modelValue.timeConfig.recurrence.interval,
@@ -111,18 +154,18 @@ const recurrenceInterval = computed({
         ...template.timeConfig,
         recurrence: {
           ...template.timeConfig.recurrence,
-          interval: value
-        }
+          interval: value,
+        },
       });
     });
-  }
+  },
 });
 
 const recurrenceEndConditionType = computed({
   get: () => props.modelValue.timeConfig.recurrence.endCondition?.type,
   set: (value: string | null) => {
     handleEndConditionChange(value);
-  }
+  },
 });
 
 const recurrenceEndConditionCount = computed({
@@ -136,12 +179,12 @@ const recurrenceEndConditionCount = computed({
           endCondition: {
             type: template.timeConfig.recurrence.endCondition?.type || 'count',
             endDate: template.timeConfig.recurrence.endCondition?.endDate,
-            count: value
-          }
-        }
+            count: value,
+          },
+        },
       });
     });
-  }
+  },
 });
 
 const endConditionDateInput = computed({
@@ -151,19 +194,15 @@ const endConditionDateInput = computed({
   },
   set: (value: string) => {
     updateEndConditionDate(value);
-  }
+  },
 });
 
 const recurrenceRule = computed(() => {
   return props.modelValue.timeConfig.recurrence;
 });
 
-const {
-  isValid,
-  validationErrors,
-  validateRecurrence,
-  getRecurrenceDescription
-} = useRecurrenceValidation(recurrenceRule);
+const { isValid, validationErrors, validateRecurrence, getRecurrenceDescription } =
+  useRecurrenceValidation(recurrenceRule);
 
 const selectedWeekdays = ref<number[]>([]);
 
@@ -173,9 +212,8 @@ const recurrenceTypes = [
   { title: '每日', value: 'daily' },
   { title: '每周', value: 'weekly' },
   { title: '每月', value: 'monthly' },
-  { title: '每年', value: 'yearly' }
+  { title: '每年', value: 'yearly' },
 ];
-
 
 // 处理结束条件变化
 const handleEndConditionChange = (type: string | null) => {
@@ -186,9 +224,9 @@ const handleEndConditionChange = (type: string | null) => {
         recurrence: {
           ...template.timeConfig.recurrence,
           endCondition: {
-            type: 'never'
-          }
-        }
+            type: 'never',
+          },
+        },
       });
     } else {
       template.updateTimeConfig({
@@ -196,11 +234,11 @@ const handleEndConditionChange = (type: string | null) => {
         recurrence: {
           ...template.timeConfig.recurrence,
           endCondition: {
-            type: type as "never" | "date" | "count",
+            type: type as 'never' | 'date' | 'count',
             ...(type === 'count' && { count: 1 }),
-            ...(type === 'date' && { endDate: new Date() })
-          }
-        }
+            ...(type === 'date' && { endDate: new Date() }),
+          },
+        },
       });
     }
   });
@@ -229,21 +267,28 @@ const updateEndConditionDate = (date: string) => {
       endCondition: {
         type: updatedTemplate.timeConfig.recurrence.endCondition?.type || 'date',
         count: updatedTemplate.timeConfig.recurrence.endCondition?.count || undefined,
-        endDate: endDate
-      }
-    }
+        endDate: endDate,
+      },
+    },
   });
   emit('update:modelValue', updatedTemplate);
 };
 
-watch(isValid, (newValue) => {
-  emit('update:validation', newValue);
-}, { immediate: true });
+watch(
+  isValid,
+  (newValue) => {
+    emit('update:validation', newValue);
+  },
+  { immediate: true },
+);
 
-watch(props.modelValue, () => {
-  validateRecurrence();
-}, { deep: true });
-
+watch(
+  props.modelValue,
+  () => {
+    validateRecurrence();
+  },
+  { deep: true },
+);
 </script>
 
 <style scoped>

@@ -1,17 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { TaskPage } from '../page-objects/TaskPage';
 import { TaskDAGPage } from '../page-objects/TaskDAGPage';
-import { login, navigateToTasks, createTestTask, cleanupTask, TEST_USER } from '../helpers/testHelpers';
+import {
+  login,
+  navigateToTasks,
+  createTestTask,
+  cleanupTask,
+  TEST_USER,
+} from '../helpers/testHelpers';
 
 /**
  * Task Critical Path Analysis E2E Tests
- * 
+ *
  * Tests the critical path calculation and visualization:
  * - Calculating longest path through task dependencies
  * - Highlighting critical tasks in the DAG
  * - Updating critical path when dependencies change
  * - Displaying critical path duration
- * 
+ *
  * Covers: STORY-025 (Critical Path Analysis)
  */
 test.describe('Task Critical Path Analysis', () => {
@@ -28,10 +34,10 @@ test.describe('Task Critical Path Analysis', () => {
 
     // Login
     await login(page, TEST_USER.username, TEST_USER.password);
-    
+
     // Navigate to Tasks page
     await navigateToTasks(page);
-    
+
     console.log('✅ Setup complete\n');
   });
 
@@ -61,7 +67,7 @@ test.describe('Task Critical Path Analysis', () => {
 
   /**
    * Scenario 3.1: Calculate Critical Path
-   * 
+   *
    * Given: Multiple parallel paths exist in task dependencies
    * When: System calculates critical path
    * Then: Longest path is identified correctly
@@ -73,13 +79,13 @@ test.describe('Task Critical Path Analysis', () => {
 
     // Arrange: Create complex task structure with multiple paths
     console.log('Step 1: Creating tasks with multiple paths...');
-    
+
     // Create tasks with different durations
     await taskPage.createTask(createTestTask('E2E CP - Task A', { duration: 120 })); // 2h
     await taskPage.createTask(createTestTask('E2E CP - Task B', { duration: 180 })); // 3h
     await taskPage.createTask(createTestTask('E2E CP - Task C', { duration: 240 })); // 4h
-    await taskPage.createTask(createTestTask('E2E CP - Task D', { duration: 60 }));  // 1h
-    await taskPage.createTask(createTestTask('E2E CP - Task E', { duration: 90 }));  // 1.5h
+    await taskPage.createTask(createTestTask('E2E CP - Task D', { duration: 60 })); // 1h
+    await taskPage.createTask(createTestTask('E2E CP - Task E', { duration: 90 })); // 1.5h
     await taskPage.createTask(createTestTask('E2E CP - Task F', { duration: 150 })); // 2.5h
 
     console.log('✅ Tasks created:\n');
@@ -94,27 +100,27 @@ test.describe('Task Critical Path Analysis', () => {
     // Path 1: A -> B -> C -> F (2 + 3 + 4 + 2.5 = 11.5h) - CRITICAL
     // Path 2: A -> D -> F (2 + 1 + 2.5 = 5.5h)
     // Path 3: A -> E -> F (2 + 1.5 + 2.5 = 6h)
-    
+
     console.log('Step 2: Creating dependency structure...');
-    
+
     await taskPage.createDependency('E2E CP - Task B', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task C', 'E2E CP - Task B', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task F', 'E2E CP - Task C', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task D', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task F', 'E2E CP - Task D', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task E', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task F', 'E2E CP - Task E', 'finish-to-start');
     await page.waitForTimeout(500);
 
@@ -141,7 +147,7 @@ test.describe('Task Critical Path Analysis', () => {
 
     // Assert: Verify critical path is displayed
     console.log('Step 4: Verifying critical path calculation...');
-    
+
     const isActive = await dagPage.isCriticalPathActive();
     expect(isActive).toBe(true);
     console.log('✅ Critical path is active\n');
@@ -154,13 +160,15 @@ test.describe('Task Critical Path Analysis', () => {
     const duration = await dagPage.getCriticalPathDuration();
     expect(duration).toBeTruthy();
     expect(duration).toBeGreaterThanOrEqual(690); // 11.5h = 690 minutes
-    
-    console.log(`✅ Critical path duration: ${duration} minutes (${(duration! / 60).toFixed(1)}h)\n`);
+
+    console.log(
+      `✅ Critical path duration: ${duration} minutes (${(duration! / 60).toFixed(1)}h)\n`,
+    );
 
     // Assert: Expected critical path is A -> B -> C -> F
     // Note: We can't easily verify which specific tasks are highlighted in the canvas,
     // but we can verify the total duration matches our expectation
-    
+
     const expectedDuration = 120 + 180 + 240 + 150; // A + B + C + F = 690 minutes
     expect(Math.abs(duration! - expectedDuration)).toBeLessThanOrEqual(5); // Allow 5 min tolerance
 
@@ -176,7 +184,7 @@ test.describe('Task Critical Path Analysis', () => {
 
   /**
    * Scenario 3.2: Update Critical Path on Dependency Change
-   * 
+   *
    * Given: Critical path is A -> B -> C (9h)
    * When: User adds new dependency D -> C where D is 10h
    * Then: Critical path changes to A -> D -> C (12h)
@@ -187,7 +195,7 @@ test.describe('Task Critical Path Analysis', () => {
 
     // Arrange: Create initial task structure
     console.log('Step 1: Creating initial task structure...');
-    
+
     await taskPage.createTask(createTestTask('E2E CP - Task A', { duration: 120 })); // 2h
     await taskPage.createTask(createTestTask('E2E CP - Task B', { duration: 180 })); // 3h
     await taskPage.createTask(createTestTask('E2E CP - Task C', { duration: 240 })); // 4h
@@ -196,7 +204,7 @@ test.describe('Task Critical Path Analysis', () => {
     // Create initial path: A -> B -> C (2 + 3 + 4 = 9h)
     await taskPage.createDependency('E2E CP - Task B', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task C', 'E2E CP - Task B', 'finish-to-start');
     await page.waitForTimeout(500);
 
@@ -217,7 +225,7 @@ test.describe('Task Critical Path Analysis', () => {
     let duration = await dagPage.getCriticalPathDuration();
     expect(duration).toBeTruthy();
     expect(duration).toBeGreaterThanOrEqual(540); // 9h = 540 minutes
-    
+
     console.log(`✅ Initial critical path: ${duration} minutes (9h)\n`);
 
     // Act: Close DAG and add new dependency
@@ -230,7 +238,7 @@ test.describe('Task Critical Path Analysis', () => {
     // Actually, we need D to depend on A for it to be in the same chain
     await taskPage.createDependency('E2E CP - Task D', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task C', 'E2E CP - Task D', 'finish-to-start');
     await page.waitForTimeout(500);
 
@@ -254,7 +262,7 @@ test.describe('Task Critical Path Analysis', () => {
     duration = await dagPage.getCriticalPathDuration();
     expect(duration).toBeTruthy();
     expect(duration).toBeGreaterThanOrEqual(960); // 16h = 960 minutes
-    
+
     console.log(`✅ Updated critical path: ${duration} minutes (16h)\n`);
 
     // Assert: New critical path should be longer than initial
@@ -273,7 +281,7 @@ test.describe('Task Critical Path Analysis', () => {
 
   /**
    * Scenario 3.3: Critical Path with Parallel Tasks
-   * 
+   *
    * Given: Multiple parallel tasks with same start and end
    * When: Critical path is calculated
    * Then: Longest parallel path is identified
@@ -284,37 +292,37 @@ test.describe('Task Critical Path Analysis', () => {
 
     // Arrange: Create parallel task structure
     console.log('Step 1: Creating parallel task structure...');
-    
-    await taskPage.createTask(createTestTask('E2E CP - Task A', { duration: 60 }));  // Start
+
+    await taskPage.createTask(createTestTask('E2E CP - Task A', { duration: 60 })); // Start
     await taskPage.createTask(createTestTask('E2E CP - Task B', { duration: 180 })); // Parallel 1 (3h)
     await taskPage.createTask(createTestTask('E2E CP - Task C', { duration: 120 })); // Parallel 2 (2h)
-    await taskPage.createTask(createTestTask('E2E CP - Task D', { duration: 90 }));  // Parallel 3 (1.5h)
-    await taskPage.createTask(createTestTask('E2E CP - Task E', { duration: 60 }));  // End
+    await taskPage.createTask(createTestTask('E2E CP - Task D', { duration: 90 })); // Parallel 3 (1.5h)
+    await taskPage.createTask(createTestTask('E2E CP - Task E', { duration: 60 })); // End
 
     // Create parallel structure:
     //       -> B (3h) ->
     // A -> -> C (2h) -> -> E
     //       -> D (1.5h) ->
-    
+
     console.log('Step 2: Creating parallel dependencies...');
-    
+
     // All parallel tasks depend on A
     await taskPage.createDependency('E2E CP - Task B', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task C', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task D', 'E2E CP - Task A', 'finish-to-start');
     await page.waitForTimeout(500);
 
     // E depends on all parallel tasks
     await taskPage.createDependency('E2E CP - Task E', 'E2E CP - Task B', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task E', 'E2E CP - Task C', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E CP - Task E', 'E2E CP - Task D', 'finish-to-start');
     await page.waitForTimeout(500);
 
@@ -342,7 +350,7 @@ test.describe('Task Critical Path Analysis', () => {
     // Assert: Verify critical path is the longest parallel path
     const duration = await dagPage.getCriticalPathDuration();
     expect(duration).toBeTruthy();
-    
+
     const expectedDuration = 60 + 180 + 60; // A + B + E = 300 minutes (5h)
     expect(Math.abs(duration! - expectedDuration)).toBeLessThanOrEqual(5);
 

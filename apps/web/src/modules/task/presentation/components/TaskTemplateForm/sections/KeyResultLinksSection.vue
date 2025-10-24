@@ -6,12 +6,8 @@
     </v-card-title>
     <v-card-text>
       <div class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1" class="mb-3">
-          mdi-link-off
-        </v-icon>
-        <div class="text-body-2 text-grey">
-          关键结果链接功能正在开发中
-        </div>
+        <v-icon size="48" color="grey-lighten-1" class="mb-3"> mdi-link-off </v-icon>
+        <div class="text-body-2 text-grey">关键结果链接功能正在开发中</div>
       </div>
     </v-card-text>
   </v-card>
@@ -39,7 +35,7 @@ watch(
   () => {
     emit('update:validation', true);
   },
-  { deep: true, immediate: true }
+  { deep: true, immediate: true },
 );
 </script>
 

@@ -148,12 +148,12 @@ export class TaskWebApplicationService {
 
       const response = await taskTemplateApiClient.getTemplates(params);
       const { data: templates, total, page, limit, hasMore } = response;
-    
+
       // 将DTO转换为实体对象
       const entityTemplates = templates.map((dto: TaskContracts.TaskTemplateDTO) =>
         TaskTemplate.fromDTO(dto),
       );
-      
+
       // 批量同步到 store
       this.taskStore.setTaskTemplates(entityTemplates);
 
@@ -748,9 +748,12 @@ export class TaskWebApplicationService {
       // 从模板的实例数组中提取所有实例
       const instances: TaskInstance[] = [];
       EntityTemplates.forEach((template: TaskTemplate) => {
-        
         if (template.instances && template.instances.length > 0) {
-          console.log('=======================Extracted instances from template:', template.uuid, template.instances);
+          console.log(
+            '=======================Extracted instances from template:',
+            template.uuid,
+            template.instances,
+          );
           instances.push(...template.instances);
         }
       });

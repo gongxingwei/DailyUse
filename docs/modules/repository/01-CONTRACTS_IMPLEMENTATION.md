@@ -140,19 +140,21 @@ export enum SyncStatus {
 ### ⚠️ 易错点
 
 ❌ **错误**：使用小写或数字值
+
 ```typescript
 // 错误示例
 export enum RepositoryType {
-  local = 'local',      // ❌ 应该大写
-  git = 1,              // ❌ 应该字符串
+  local = 'local', // ❌ 应该大写
+  git = 1, // ❌ 应该字符串
 }
 ```
 
 ✅ **正确**：使用大写字符串值
+
 ```typescript
 export enum RepositoryType {
-  LOCAL = 'LOCAL',      // ✅
-  GIT = 'GIT',          // ✅
+  LOCAL = 'LOCAL', // ✅
+  GIT = 'GIT', // ✅
 }
 ```
 
@@ -306,18 +308,20 @@ export interface RepositoryStats {
 ### ⚠️ 易错点
 
 ❌ **错误**：值对象属性可变
+
 ```typescript
 // 错误示例
 export interface RepositoryConfig {
-  autoSync: boolean;        // ❌ 缺少 readonly
+  autoSync: boolean; // ❌ 缺少 readonly
   ignoredPatterns: string[]; // ❌ 数组应该是 readonly
 }
 ```
 
 ✅ **正确**：所有属性都是只读的
+
 ```typescript
 export interface RepositoryConfig {
-  readonly autoSync: boolean;           // ✅
+  readonly autoSync: boolean; // ✅
   readonly ignoredPatterns: readonly string[]; // ✅
 }
 ```
@@ -526,7 +530,7 @@ import type { RepositoryServerDTO } from './RepositoryServer';
 /**
  * 仓库聚合根 - 客户端版本
  * Repository Aggregate Root - Client DTO
- * 
+ *
  * @description
  * 客户端版本是服务端版本的子集
  * 去除了敏感信息和内部字段
@@ -555,20 +559,22 @@ export interface RepositoryListItemDTO {
 ### ⚠️ 易错点
 
 ❌ **错误**：Client DTO 包含服务端专用字段
+
 ```typescript
 // 错误示例
 export interface RepositoryClientDTO {
   uuid: string;
-  accountUuid: string;  // ❌ 可能暴露敏感信息
-  version: number;      // ❌ 版本号应该只在服务端使用
+  accountUuid: string; // ❌ 可能暴露敏感信息
+  version: number; // ❌ 版本号应该只在服务端使用
 }
 ```
 
 ✅ **正确**：Client DTO 是 Server DTO 的安全子集
+
 ```typescript
 export type RepositoryClientDTO = Omit<
   RepositoryServerDTO,
-  'version'  // ✅ 排除内部字段
+  'version' // ✅ 排除内部字段
 >;
 ```
 
@@ -702,6 +708,7 @@ export type ResourceClientDTO = Omit<
 ### ⚠️ 易错点
 
 ❌ **错误**：实体缺少聚合根外键
+
 ```typescript
 // 错误示例
 export interface ResourceServerDTO {
@@ -712,10 +719,11 @@ export interface ResourceServerDTO {
 ```
 
 ✅ **正确**：实体包含聚合根外键
+
 ```typescript
 export interface ResourceServerDTO {
   uuid: string;
-  repositoryUuid: string;  // ✅ 聚合根外键
+  repositoryUuid: string; // ✅ 聚合根外键
   name: string;
 }
 ```
@@ -792,7 +800,7 @@ export interface RepositoryListResponseDTO {
  * 创建资源请求
  */
 export interface CreateResourceRequestDTO {
-  readonly repositoryUuid: string;  // ⚠️ 必填
+  readonly repositoryUuid: string; // ⚠️ 必填
   readonly name: string;
   readonly path: string;
   readonly type: ResourceType;
@@ -847,6 +855,7 @@ export interface ResourceListResponseDTO {
 ### ⚠️ 易错点
 
 ❌ **错误**：请求 DTO 使用 Client DTO 直接暴露
+
 ```typescript
 // 错误示例
 export type CreateRepositoryRequestDTO = RepositoryClientDTO;
@@ -854,12 +863,13 @@ export type CreateRepositoryRequestDTO = RepositoryClientDTO;
 ```
 
 ✅ **正确**：请求 DTO 只包含创建/更新所需字段
+
 ```typescript
 export interface CreateRepositoryRequestDTO {
-  readonly name: string;     // ✅ 只包含必要字段
+  readonly name: string; // ✅ 只包含必要字段
   readonly path: string;
   readonly type: RepositoryType;
-  readonly description?: string;  // ✅ 可选字段
+  readonly description?: string; // ✅ 可选字段
 }
 ```
 
@@ -921,6 +931,7 @@ export * from './api-requests';
 ## 📚 下一步
 
 完成 Contracts 层后，进入：
+
 - [[02-DOMAIN_SERVER_IMPLEMENTATION|Domain Server 实现]]
 
 ---

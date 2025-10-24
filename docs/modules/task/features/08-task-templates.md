@@ -21,6 +21,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 20+ 常用任务模板
 - ✅ 一键应用并自定义
 - ✅ 团队模板共享
@@ -64,13 +65,13 @@ export interface TaskTemplateServerDTO {
   readonly name: string;
   readonly description?: string;
   readonly category: 'work' | 'personal' | 'team';
-  
+
   // 模板内容
   readonly titleTemplate: string;
   readonly checklist?: ChecklistItem[];
   readonly tags?: string[];
   readonly estimatedDuration?: number;
-  
+
   readonly usageCount: number;
   readonly createdBy: string;
   readonly visibility: 'private' | 'team';
@@ -82,13 +83,13 @@ export interface TaskTemplateServerDTO {
 
 ## 3. 内置模板
 
-| 模板名称 | 检查项 | 适用场景 |
-|---------|-------|---------|
-| 周报撰写 | 5 项 | 工作总结 |
-| Bug 修复 | 6 项 | 问题排查 |
-| 代码评审 | 8 项 | 质量保证 |
-| 新功能开发 | 10 项 | 功能迭代 |
-| 会议准备 | 4 项 | 会议管理 |
+| 模板名称   | 检查项 | 适用场景 |
+| ---------- | ------ | -------- |
+| 周报撰写   | 5 项   | 工作总结 |
+| Bug 修复   | 6 项   | 问题排查 |
+| 代码评审   | 8 项   | 质量保证 |
+| 新功能开发 | 10 项  | 功能迭代 |
+| 会议准备   | 4 项   | 会议管理 |
 
 ---
 
@@ -102,4 +103,3 @@ export interface TaskTemplateServerDTO {
 ---
 
 **文档状态**: ✅ Ready
-

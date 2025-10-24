@@ -21,8 +21,16 @@
               <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
               仓库位置
             </h3>
-            <v-text-field v-model="localRepo.path" label="仓库路径" placeholder="点击右侧按钮选择文件夹" readonly
-              :rules="[v => !!v || '请选择仓库路径']" required variant="outlined" prepend-inner-icon="mdi-folder">
+            <v-text-field
+              v-model="localRepo.path"
+              label="仓库路径"
+              placeholder="点击右侧按钮选择文件夹"
+              readonly
+              :rules="[(v) => !!v || '请选择仓库路径']"
+              required
+              variant="outlined"
+              prepend-inner-icon="mdi-folder"
+            >
               <template v-slot:append>
                 <v-btn color="primary" variant="tonal" @click="selectFolder" class="select-btn">
                   选择文件夹
@@ -30,8 +38,15 @@
               </template>
             </v-text-field>
 
-            <v-text-field v-model="localRepo.name" label="仓库名称" placeholder="自动从文件夹名称获取" variant="outlined"
-              prepend-inner-icon="mdi-format-title" :rules="[v => !!v || '请输入仓库名称']" required />
+            <v-text-field
+              v-model="localRepo.name"
+              label="仓库名称"
+              placeholder="自动从文件夹名称获取"
+              variant="outlined"
+              prepend-inner-icon="mdi-format-title"
+              :rules="[(v) => !!v || '请输入仓库名称']"
+              required
+            />
           </div>
 
           <!-- 基本信息 -->
@@ -40,10 +55,16 @@
               <v-icon class="mr-2" color="success">mdi-information</v-icon>
               基本信息
             </h3>
-            <v-textarea v-model="localRepo.description" label="仓库描述" placeholder="描述这个仓库的用途和内容（可选）" rows="3"
-              variant="outlined" prepend-inner-icon="mdi-text" counter="200" />
+            <v-textarea
+              v-model="localRepo.description"
+              label="仓库描述"
+              placeholder="描述这个仓库的用途和内容（可选）"
+              rows="3"
+              variant="outlined"
+              prepend-inner-icon="mdi-text"
+              counter="200"
+            />
           </div>
-
         </v-form>
       </v-card-text>
 
@@ -51,10 +72,14 @@
 
       <v-card-actions class="dialog-actions">
         <v-spacer />
-        <v-btn variant="text" @click="closeDialog" class="cancel-btn">
-          取消
-        </v-btn>
-        <v-btn color="primary" variant="elevated" @click="handleSubmit" :loading="creating" class="create-btn">
+        <v-btn variant="text" @click="closeDialog" class="cancel-btn"> 取消 </v-btn>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          @click="handleSubmit"
+          :loading="creating"
+          class="create-btn"
+        >
           <v-icon start>mdi-plus</v-icon>
           {{ isEditing ? '更新仓库' : '创建仓库' }}
         </v-btn>
@@ -64,47 +89,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue';
 import { fileSystem } from '@renderer/shared/utils/fileUtils';
-import { Repository } from '@renderer/modules/Repository/domain/aggregates/repository'
-
+import { Repository } from '@renderer/modules/Repository/domain/aggregates/repository';
 
 const props = defineProps<{
-  modelValue: boolean
-  repository: Repository | null
-}>()
+  modelValue: boolean;
+  repository: Repository | null;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'create-repo', repo: Repository): void
-  (e: 'edit-repo', repo: Repository): void
-}>()
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'create-repo', repo: Repository): void;
+  (e: 'edit-repo', repo: Repository): void;
+}>();
 
-const form = ref()
-const creating = ref(false)
-const localRepo = ref<Repository>(props.repository ? props.repository.clone() : Repository.forCreate())
+const form = ref();
+const creating = ref(false);
+const localRepo = ref<Repository>(
+  props.repository ? props.repository.clone() : Repository.forCreate(),
+);
 
-const isEditing = computed(() => !!props.repository)
+const isEditing = computed(() => !!props.repository);
 
 const selectFolder = async () => {
   try {
     const response = await fileSystem.selectFolder();
     if (response.success) {
       if (!response.data) {
-        throw new Error('未选择文件夹')
+        throw new Error('未选择文件夹');
       }
-      localRepo.value.path = response.data.folderPath
+      localRepo.value.path = response.data.folderPath;
     }
   } catch (error) {
-    console.error('选择文件夹失败:', error)
+    console.error('选择文件夹失败:', error);
   }
-}
+};
 
 const closeDialog = () => {
-  emit('update:modelValue', false)
-  localRepo.value = Repository.forCreate() // 重置为新仓库
-
-}
+  emit('update:modelValue', false);
+  localRepo.value = Repository.forCreate(); // 重置为新仓库
+};
 
 const handleSubmit = () => {
   if (localRepo.value) {
@@ -115,18 +140,14 @@ const handleSubmit = () => {
     }
   }
 
-  closeDialog()
-}
+  closeDialog();
+};
 
-watch(
-  [() => props.repository, () => props.modelValue],
-  ([repository, modelValue]) => {
-    if (modelValue) {
-      localRepo.value = repository ? repository.clone() : Repository.forCreate()
-    }
+watch([() => props.repository, () => props.modelValue], ([repository, modelValue]) => {
+  if (modelValue) {
+    localRepo.value = repository ? repository.clone() : Repository.forCreate();
   }
-)
-
+});
 </script>
 
 <style scoped>
@@ -136,7 +157,11 @@ watch(
 }
 
 .dialog-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05), rgba(var(--v-theme-secondary), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05),
+    rgba(var(--v-theme-secondary), 0.05)
+  );
   padding: 1.5rem 2rem;
 }
 

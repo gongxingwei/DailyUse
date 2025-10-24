@@ -22,13 +22,13 @@ import { getScheduleInitializationManager } from '@dailyuse/domain-core';
 
 async function initializeApplication() {
   const scheduleManager = getScheduleInitializationManager();
-  
+
   // 应用启动初始化
   const appInitResult = await scheduleManager.initializeOnAppStartup();
   if (!appInitResult.success) {
     console.error('Schedule模块应用启动初始化失败:', appInitResult.message);
   }
-  
+
   // 如果是服务器重启，恢复状态
   const recoverResult = await scheduleManager.recoverAfterServerRestart();
   console.log(`恢复了 ${recoverResult.recoveredTasks} 个调度任务`);
@@ -43,7 +43,7 @@ import { getScheduleInitializationManager } from '@dailyuse/domain-core';
 
 async function onUserLogin(accountUuid: string) {
   const scheduleManager = getScheduleInitializationManager();
-  
+
   // 用户登录初始化
   const userInitResult = await scheduleManager.initializeOnUserLogin(accountUuid);
   if (userInitResult.success) {
@@ -103,7 +103,7 @@ async function updateTaskWithReminders() {
           uuid: 'alert-1',
           alertTime: '2025-01-10T13:45:00Z', // 会议前15分钟提醒
           alertMethods: [AlertMethod.POPUP, AlertMethod.SOUND],
-        }
+        },
       ],
     },
   };
@@ -171,7 +171,7 @@ function createGoalWithReminders() {
         {
           date: '2025-02-15T09:00:00Z',
           message: '目标进度检查',
-        }
+        },
       ],
     },
   };
@@ -195,7 +195,7 @@ import { ScheduleTaskType, SchedulePriority, AlertMethod } from '@dailyuse/contr
 
 async function createGeneralReminder() {
   const scheduleService = new ScheduleApplicationService();
-  
+
   const result = await scheduleService.createQuickReminder({
     title: '喝水提醒',
     message: '记得多喝水保持健康',
@@ -379,7 +379,7 @@ async function onAppShutdown() {
 function getScheduleStatus() {
   const scheduleManager = getScheduleInitializationManager();
   const status = scheduleManager.getStatus();
-  
+
   console.log('Schedule模块状态:', {
     initialized: status.initialized,
     activeTasks: status.serviceStatus.totalTasks,
@@ -395,7 +395,7 @@ function getScheduleStatus() {
 function getDebugInfo() {
   const scheduleManager = getScheduleInitializationManager();
   const debugInfo = scheduleManager.getDebugInfo();
-  
+
   console.log('调试信息:', {
     activeTasks: debugInfo.activeTasks.length,
     persistedTasks: Object.keys(debugInfo.persistedTasks).length,
@@ -415,15 +415,19 @@ function getDebugInfo() {
 ## 常见问题
 
 ### Q: 如何确保提醒不会重复触发？
+
 A: Schedule模块内置了去重机制，相同taskId的提醒会自动合并或替换。
 
 ### Q: 如何处理用户关闭浏览器后的提醒？
+
 A: 使用Service Worker或Electron的后台进程来处理浏览器关闭后的提醒。
 
 ### Q: 如何自定义提醒声音？
+
 A: 在AlertConfig中指定soundFile路径，确保音频文件可访问。
 
 ### Q: 如何处理时区问题？
+
 A: 所有时间都使用ISO字符串格式，在显示时根据用户时区进行转换。
 
 ## 结论

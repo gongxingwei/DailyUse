@@ -33,11 +33,7 @@
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
-  background: linear-gradient(
-    180deg, 
-    #1a2a30 0%, 
-    #2d2f30 100%
-  );
+  background: linear-gradient(180deg, #1a2a30 0%, #2d2f30 100%);
 }
 .train {
   position: absolute;
@@ -99,12 +95,12 @@
   position: absolute;
   width: 15px;
   height: 15px;
-  background: #FFD700;
+  background: #ffd700;
   border-radius: 50%;
   right: 0;
   top: 70%;
   transform: translateY(-50%);
-  box-shadow: 0 0 10px #FFD700;
+  box-shadow: 0 0 10px #ffd700;
   animation: glowLight 1s ease-in-out infinite alternate;
 }
 .wheels {
@@ -115,7 +111,7 @@
 .wheel {
   width: 30px;
   height: 30px;
-  background: #9C27B0;
+  background: #9c27b0;
   border-radius: 50%;
   position: relative;
   animation: rotateWheel 2s linear infinite;
@@ -153,9 +149,9 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #FFF176, #FFD700);
-  box-shadow: 
-    0 0 30px #FFD700,
+  background: radial-gradient(circle at 30% 30%, #fff176, #ffd700);
+  box-shadow:
+    0 0 30px #ffd700,
     0 0 60px rgba(255, 215, 0, 0.4);
   z-index: 0;
   animation: sunMove 10s linear infinite;
@@ -199,13 +195,13 @@
 }
 @keyframes sunGlow {
   from {
-    box-shadow: 
-      0 0 30px #FFD700,
+    box-shadow:
+      0 0 30px #ffd700,
       0 0 60px rgba(255, 215, 0, 0.4);
   }
   to {
-    box-shadow: 
-      0 0 40px #FFD700,
+    box-shadow:
+      0 0 40px #ffd700,
       0 0 80px rgba(255, 215, 0, 0.6);
   }
 }

@@ -22,6 +22,7 @@ import { LoggerFactory, ConsoleTransport, FileTransport, LogLevel } from '@daily
 ```
 
 **特性**:
+
 - ✅ 开发环境：彩色控制台输出
 - ✅ 生产环境：文件日志（combined.log + error.log）
 - ✅ 环境变量配置支持（LOG_LEVEL, ENABLE_FILE_LOGS）
@@ -70,9 +71,9 @@ const logger = createLogger('AccountService');
 
 // 在方法中使用
 logger.info('Account saved to database', { uuid: account.uuid });
-logger.warn('Authentication credential creation failed', { 
+logger.warn('Authentication credential creation failed', {
   uuid: account.uuid,
-  message: result.message 
+  message: result.message,
 });
 logger.error('Failed to create account', error);
 ```
@@ -129,21 +130,23 @@ const logger = createLogger('ModuleName');
 
 ### 步骤 2: 替换 console.log
 
-| 原始代码 | 替换为 |
-|---------|--------|
-| `console.log('message')` | `logger.info('message')` |
+| 原始代码                       | 替换为                       |
+| ------------------------------ | ---------------------------- |
+| `console.log('message')`       | `logger.info('message')`     |
 | `console.error('error:', err)` | `logger.error('error', err)` |
-| `console.warn('warning')` | `logger.warn('warning')` |
-| `console.debug('debug')` | `logger.debug('debug')` |
+| `console.warn('warning')`      | `logger.warn('warning')`     |
+| `console.debug('debug')`       | `logger.debug('debug')`      |
 
 ### 步骤 3: 添加结构化元数据
 
 **之前**:
+
 ```typescript
 console.log(`User ${username} logged in with ID ${userId}`);
 ```
 
 **之后**:
+
 ```typescript
 logger.info('User logged in', { username, userId });
 ```
@@ -151,15 +154,17 @@ logger.info('User logged in', { username, userId });
 ### 步骤 4: 错误日志最佳实践
 
 **之前**:
+
 ```typescript
 console.error('Failed to create account:', error);
 ```
 
 **之后**:
+
 ```typescript
-logger.error('Failed to create account', error, { 
+logger.error('Failed to create account', error, {
   accountData: dto,
-  timestamp: new Date().toISOString() 
+  timestamp: new Date().toISOString(),
 });
 ```
 
@@ -203,11 +208,11 @@ const logger = createLogger('WebApp');
 
 async function startApp() {
   logger.info('Starting Vue application...');
-  
+
   try {
     await AppInitializationManager.initializeApp();
     logger.info('Application modules initialized');
-    
+
     app.mount('#app');
     logger.info('Application mounted successfully');
   } catch (error) {
@@ -246,27 +251,28 @@ async function startApp() {
 
 ### 1. 上下文命名规范
 
-| 模块类型 | 上下文名称示例 |
-|---------|-------------|
-| 应用服务 | `AccountService`, `GoalService` |
-| 领域服务 | `GoalDomainService` |
-| 仓储层 | `AccountRepository`, `GoalRepository` |
+| 模块类型 | 上下文名称示例                            |
+| -------- | ----------------------------------------- |
+| 应用服务 | `AccountService`, `GoalService`           |
+| 领域服务 | `GoalDomainService`                       |
+| 仓储层   | `AccountRepository`, `GoalRepository`     |
 | 基础设施 | `EventSystem`, `Initializer`, `Scheduler` |
-| HTTP/API | `Express`, `API` |
-| 控制器 | `AccountController`, `GoalController` |
+| HTTP/API | `Express`, `API`                          |
+| 控制器   | `AccountController`, `GoalController`     |
 
 ### 2. 日志级别使用指南
 
-| 级别 | 使用场景 | 示例 |
-|------|---------|------|
-| DEBUG | 调试信息、详细的流程跟踪 | `logger.debug('Processing step 1', { data })` |
-| INFO | 正常业务流程、重要操作 | `logger.info('User logged in', { userId })` |
-| WARN | 警告信息、非致命错误 | `logger.warn('API response slow', { duration })` |
-| ERROR | 错误信息、异常 | `logger.error('Database failed', error)` |
+| 级别  | 使用场景                 | 示例                                             |
+| ----- | ------------------------ | ------------------------------------------------ |
+| DEBUG | 调试信息、详细的流程跟踪 | `logger.debug('Processing step 1', { data })`    |
+| INFO  | 正常业务流程、重要操作   | `logger.info('User logged in', { userId })`      |
+| WARN  | 警告信息、非致命错误     | `logger.warn('API response slow', { duration })` |
+| ERROR | 错误信息、异常           | `logger.error('Database failed', error)`         |
 
 ### 3. 结构化日志最佳实践
 
 **✅ 推荐**:
+
 ```typescript
 logger.info('Account created', {
   accountUuid: account.uuid,
@@ -277,6 +283,7 @@ logger.info('Account created', {
 ```
 
 **❌ 不推荐**:
+
 ```typescript
 logger.info(`Account created: ${account.uuid}, username: ${account.username}`);
 ```
@@ -290,8 +297,8 @@ logger.info(`Account created: ${account.uuid}, username: ${account.username}`);
 ```typescript
 // 仅在 DEBUG 级别时执行
 if (logger.level === LogLevel.DEBUG) {
-  logger.debug('High frequency operation', { 
-    data: expensiveSerializationOperation() 
+  logger.debug('High frequency operation', {
+    data: expensiveSerializationOperation(),
   });
 }
 ```
@@ -355,10 +362,12 @@ ENABLE_FILE_LOGS=true
 ### 立即行动
 
 1. **测试 API 服务器启动**
+
    ```bash
    cd apps/api
    pnpm dev
    ```
+
    验证日志输出格式正确
 
 2. **逐步迁移核心模块**
@@ -369,12 +378,15 @@ ENABLE_FILE_LOGS=true
 ### 渐进式迁移策略
 
 **阶段 1**: 核心业务模块（本周）
+
 - Account, Authentication, Goal
 
 **阶段 2**: 基础设施模块（下周）
+
 - EventSystem, Initializer, Scheduler
 
 **阶段 3**: 其他模块（两周内）
+
 - Reminder, Repository, Editor
 
 **阶段 4**: Web 和 Desktop（三周内）

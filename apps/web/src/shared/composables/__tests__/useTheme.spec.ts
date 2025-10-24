@@ -59,7 +59,7 @@ describe('useTheme', () => {
 
   it('should initialize with default preference (auto mode)', () => {
     const { themeMode, isDark } = useTheme();
-    
+
     expect(themeMode.value).toBe('auto');
     // In auto mode with matchMedia returning dark
     expect(isDark.value).toBe(true);
@@ -67,9 +67,9 @@ describe('useTheme', () => {
 
   it('should save preference to localStorage', () => {
     const { setThemeMode } = useTheme();
-    
+
     setThemeMode('light');
-    
+
     const saved = localStorageMock.getItem('dailyuse-theme-preference');
     expect(saved).toBeDefined();
     const parsed = JSON.parse(saved!);
@@ -79,26 +79,26 @@ describe('useTheme', () => {
   it('should load preference from localStorage', () => {
     localStorageMock.setItem(
       'dailyuse-theme-preference',
-      JSON.stringify({ mode: 'dark', lightTheme: 'light', darkTheme: 'dark' })
+      JSON.stringify({ mode: 'dark', lightTheme: 'light', darkTheme: 'dark' }),
     );
-    
+
     const { themeMode, isDark } = useTheme();
-    
+
     expect(themeMode.value).toBe('dark');
     expect(isDark.value).toBe(true);
   });
 
   it('should toggle between light and dark', () => {
     const { toggleTheme, themeMode, isDark } = useTheme();
-    
+
     // Start in auto mode (dark)
     expect(isDark.value).toBe(true);
-    
+
     // Toggle should switch to light
     toggleTheme();
     expect(themeMode.value).toBe('light');
     expect(isDark.value).toBe(false);
-    
+
     // Toggle again should switch to dark
     toggleTheme();
     expect(themeMode.value).toBe('dark');
@@ -107,18 +107,18 @@ describe('useTheme', () => {
 
   it('should respect system preference in auto mode', () => {
     const { setThemeMode, isDark } = useTheme();
-    
+
     setThemeMode('auto');
-    
+
     // matchMedia mock returns dark by default
     expect(isDark.value).toBe(true);
   });
 
   it('should return available themes for light mode', () => {
     const { getAvailableThemes } = useTheme();
-    
+
     const lightThemes = getAvailableThemes('light');
-    
+
     expect(lightThemes).toContain('light');
     expect(lightThemes).toContain('lightBlue');
     expect(lightThemes).toContain('warmPaper');
@@ -127,9 +127,9 @@ describe('useTheme', () => {
 
   it('should return available themes for dark mode', () => {
     const { getAvailableThemes } = useTheme();
-    
+
     const darkThemes = getAvailableThemes('dark');
-    
+
     expect(darkThemes).toContain('dark');
     expect(darkThemes).toContain('darkBlue');
     expect(darkThemes).toContain('blueGreen');
@@ -138,17 +138,17 @@ describe('useTheme', () => {
 
   it('should set specific theme for light or dark mode', () => {
     const { setSpecificTheme, setThemeMode, currentTheme } = useTheme();
-    
+
     // Set light mode and change to lightBlue theme
     setThemeMode('light');
     setSpecificTheme('light', 'lightBlue');
-    
+
     expect(currentTheme.value).toBe('lightBlue');
-    
+
     // Switch to dark mode and change to darkBlue theme
     setThemeMode('dark');
     setSpecificTheme('dark', 'darkBlue');
-    
+
     expect(currentTheme.value).toBe('darkBlue');
   });
 });

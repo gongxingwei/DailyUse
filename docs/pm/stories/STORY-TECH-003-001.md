@@ -52,9 +52,11 @@
 ### Current Issues
 
 #### Issue 1: Vitest + PNPM Workspace Incompatibility
+
 **Error**: `Error: No test suite found in file`
 
 **Root Cause**:
+
 - Vitest 3.2.4 has compatibility issues with PNPM monorepo structure
 - Test collection completes but test suite recognition fails
 - Related to module resolution in workspaces
@@ -62,11 +64,13 @@
 **Impact**: 29 unit tests cannot execute
 
 #### Issue 2: CSS Module Loading
+
 **Error**: `Unknown file extension ".css"`
 
 **Status**: ✅ Partially fixed (added CSS config, but test suite issue blocks testing)
 
 #### Issue 3: Playwright Path Resolution
+
 **Error**: `Cannot find module '@playwright/test/cli.js'`
 
 **Root Cause**: PNPM hoists dependencies to root, breaking relative paths
@@ -82,11 +86,13 @@
 **Implementation Steps**:
 
 1. Install Jest dependencies:
+
 ```bash
 pnpm add -D jest @vue/test-utils @vue/vue3-jest ts-jest jest-environment-jsdom
 ```
 
 2. Create `jest.config.js`:
+
 ```javascript
 export default {
   preset: 'ts-jest',
@@ -101,11 +107,7 @@ export default {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   setupFilesAfterEnv: ['<rootDir>/src/test/jest.setup.ts'],
-  collectCoverageFrom: [
-    'src/**/*.{js,ts,vue}',
-    '!src/**/*.spec.ts',
-    '!src/test/**',
-  ],
+  collectCoverageFrom: ['src/**/*.{js,ts,vue}', '!src/**/*.spec.ts', '!src/test/**'],
   coverageThreshold: {
     global: {
       branches: 80,
@@ -118,6 +120,7 @@ export default {
 ```
 
 3. Update test files:
+
 ```typescript
 // Minimal changes needed - mostly compatible
 import { describe, it, expect } from '@jest/globals';
@@ -126,12 +129,14 @@ import { mount } from '@vue/test-utils';
 ```
 
 **Pros**:
+
 - ✅ Mature and stable
 - ✅ Excellent PNPM support
 - ✅ Large ecosystem
 - ✅ Vue official recommendation
 
 **Cons**:
+
 - ⚠️ Slower than Vitest
 - ⚠️ 1 day migration time
 
@@ -142,15 +147,18 @@ import { mount } from '@vue/test-utils';
 ### Option B: Downgrade Test Stack
 
 Downgrade to known-stable versions:
+
 - Vitest 1.x
 - Vite 5.x
 - @vitejs/plugin-vue 4.x
 
 **Pros**:
+
 - ✅ Quick to test (0.25 day)
 - ✅ Minimal code changes
 
 **Cons**:
+
 - ❌ Lose new features
 - ❌ May not solve PNPM issue
 
@@ -163,9 +171,11 @@ Downgrade to known-stable versions:
 Leverage Nx's testing infrastructure
 
 **Pros**:
+
 - ✅ Better Nx integration
 
 **Cons**:
+
 - ❌ Learning curve
 - ❌ Less community support
 
@@ -176,24 +186,28 @@ Leverage Nx's testing infrastructure
 ## 📝 Subtasks
 
 ### Phase 1: Decision & Setup (0.5 SP)
+
 - [x] Research and document all three options
 - [ ] **DECISION NEEDED**: Choose migration strategy
 - [ ] Install dependencies
 - [ ] Create initial configuration
 
 ### Phase 2: Configuration (1 SP)
+
 - [ ] Configure test framework
 - [ ] Setup coverage reporting
 - [ ] Configure CI/CD integration
 - [ ] Update package.json scripts
 
 ### Phase 3: Migration & Testing (1 SP)
+
 - [ ] Migrate existing tests
 - [ ] Fix GoalDAGVisualization tests
 - [ ] Verify all 425 tests pass
 - [ ] Achieve ≥85% coverage
 
 ### Phase 4: Playwright Setup (0.5 SP)
+
 - [ ] Create root playwright.config.ts
 - [ ] Add E2E scripts to package.json
 - [ ] Verify 16 E2E scenarios
@@ -204,6 +218,7 @@ Leverage Nx's testing infrastructure
 ## 🚀 Testing Plan
 
 ### Unit Tests
+
 ```bash
 # Run all tests
 pnpm test
@@ -219,6 +234,7 @@ pnpm test:watch
 ```
 
 ### E2E Tests
+
 ```bash
 # Run all E2E tests
 pnpm test:e2e
@@ -262,6 +278,7 @@ pnpm test:e2e:debug
 ## 💬 Discussion Notes
 
 ### 2024-10-22: Initial Investigation
+
 - Discovered Vitest 3.2.4 is latest stable (no 4.x yet)
 - Fixed CSS loading issue
 - Fixed setup.ts beforeEach bug
@@ -269,5 +286,6 @@ pnpm test:e2e:debug
 - **Conclusion**: Vitest + PNPM workspace incompatibility confirmed
 
 ### Next Steps
+
 - **Awaiting user decision** on migration strategy
 - Recommend Option A (Jest) for stability and long-term maintainability

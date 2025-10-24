@@ -15,6 +15,7 @@
 **文件:** `apps/api/src/modules/goal/tests/goal-creation.integration.test.ts`
 
 #### 测试覆盖：
+
 1. **基础目标创建** (3 测试)
    - ✅ 成功创建简单目标
    - ✅ 正确设置默认值
@@ -87,14 +88,16 @@
 **问题:** `goal.archived` 事件处理时缺少 `accountUuid`
 
 **错误信息:**
+
 ```
-❌ [GoalEventPublisher] Error handling goal.archived: 
+❌ [GoalEventPublisher] Error handling goal.archived:
 Error: Account UUID is required
   at Function.createDefault GoalStatistics.ts:164:13
   at GoalStatisticsDomainService.getOrCreateStatistics
 ```
 
 **影响测试:**
+
 1. "应该更新统计数据（archivedGoals +1）"
 2. "完整流程应该正确更新所有统计字段"
 
@@ -133,6 +136,7 @@ public archive(): void {
 ```
 
 **影响:**
+
 - ✅ 归档目标现在正确设置状态为 `ARCHIVED`
 - ✅ `goal.status === 'ARCHIVED'` 验证通过
 - ✅ 状态转换链测试通过
@@ -151,6 +155,7 @@ await new Promise((resolve) => setTimeout(resolve, 50));
 ```
 
 **影响:**
+
 - ✅ `completedAt` 时间戳验证通过
 - ✅ `archivedAt` 时间戳验证通过
 
@@ -159,6 +164,7 @@ await new Promise((resolve) => setTimeout(resolve, 50));
 ### 3. 调整完成目标进度验证
 
 **原测试:**
+
 ```typescript
 expect(completed.overallProgress).toBe(100);
 ```
@@ -166,6 +172,7 @@ expect(completed.overallProgress).toBe(100);
 **问题:** 目标没有关键结果时，`overallProgress` 为 0
 
 **修复:** 改为检查完成状态
+
 ```typescript
 expect(completed.isCompleted).toBe(true);
 expect(completed.status).toBe('COMPLETED');
@@ -180,6 +187,7 @@ expect(completed.status).toBe('COMPLETED');
 **核心原则:** 在事件驱动架构中，不直接查询数据库验证副作用，而是监听事件。
 
 **模式示例:**
+
 ```typescript
 // ❌ 错误：直接查询数据库
 const credential = await prisma.credential.findFirst(...);
@@ -202,6 +210,7 @@ await eventPromise;
 ```
 
 **优势:**
+
 - 测试真实的事件流
 - 不依赖数据库状态
 - 验证事件发布是否正确
@@ -212,6 +221,7 @@ await eventPromise;
 ### 2. **ApplicationService 测试模式**
 
 **服务初始化:**
+
 ```typescript
 let goalService: GoalApplicationService;
 let statisticsService: GoalStatisticsApplicationService;
@@ -239,6 +249,7 @@ beforeEach(async () => {
 ### 3. **DDD 模式验证**
 
 **测试流程:**
+
 1. **创建聚合** → 验证状态
 2. **调用领域方法** → 验证状态变化
 3. **发布事件** → 验证事件数据
@@ -304,6 +315,7 @@ beforeEach(async () => {
 ## 📈 测试运行结果
 
 ### Goal 创建测试
+
 ```bash
 pnpm test apps/api/src/modules/goal/tests/goal-creation.integration.test.ts
 
@@ -322,6 +334,7 @@ Duration  ~450ms
 ```
 
 ### Goal 状态转换测试
+
 ```bash
 pnpm test apps/api/src/modules/goal/tests/goal-status-transition.integration.test.ts
 
@@ -344,17 +357,20 @@ Duration  ~670ms
 ## 🎨 架构亮点
 
 ### 1. **事件驱动架构**
+
 - 所有状态变化都发布领域事件
 - 统计更新通过事件监听器自动处理
 - 测试使用事件验证而非数据库查询
 
 ### 2. **DDD 分层清晰**
+
 - **ApplicationService:** 用例编排
 - **DomainService:** 纯业务逻辑
 - **Repository:** 数据访问
 - **Aggregate:** 聚合根封装
 
 ### 3. **DTO 转换分离**
+
 - ServerDTO (服务端)
 - ClientDTO (客户端)
 - PersistenceDTO (持久化)

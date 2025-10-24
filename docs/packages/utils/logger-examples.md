@@ -18,7 +18,7 @@ LoggerFactory.configure({
       colorize: true,
       timestamp: true,
     }),
-    
+
     // 文件输出（仅生产环境）
     ...(process.env.NODE_ENV === 'production'
       ? [
@@ -47,16 +47,16 @@ export class GoalApplicationService {
 
   async createGoal(dto: CreateGoalDto) {
     this.logger.info('Creating goal', { title: dto.title, accountUuid: dto.accountUuid });
-    
+
     try {
       const entity = GoalMapper.toDomain(dto);
       const goal = await this.goalDomainService.createGoal(entity);
-      
-      this.logger.info('Goal created successfully', { 
-        goalId: goal.id, 
-        directoryId: goal.directoryId 
+
+      this.logger.info('Goal created successfully', {
+        goalId: goal.id,
+        directoryId: goal.directoryId,
       });
-      
+
       return ApiResponse.success(goal);
     } catch (error) {
       this.logger.error('Failed to create goal', error, { dto });
@@ -88,8 +88,8 @@ LoggerFactory.configure({
 });
 
 const logger = createLogger('WebApp');
-logger.info('Vue application mounted', { 
-  version: import.meta.env.VITE_APP_VERSION 
+logger.info('Vue application mounted', {
+  version: import.meta.env.VITE_APP_VERSION,
 });
 ```
 
@@ -102,10 +102,10 @@ const logger = createLogger('GoalActions');
 export function useGoalActions() {
   const createGoal = async (data: CreateGoalInput) => {
     logger.debug('User creating goal', { title: data.title });
-    
+
     try {
       const response = await goalApi.create(data);
-      
+
       if (response.success) {
         logger.info('Goal created successfully', { goalId: response.data.id });
         return response.data;
@@ -145,7 +145,7 @@ LoggerFactory.configure({
       colorize: true,
       timestamp: true,
     }),
-    
+
     new FileTransport({
       filename: path.join(app.getPath('logs'), 'main.log'),
       level: LogLevel.INFO,
@@ -371,10 +371,7 @@ import { createLogger } from '@dailyuse/utils';
 
 const logger = createLogger('Performance');
 
-export function measureAsync<T>(
-  operationName: string,
-  fn: () => Promise<T>
-): Promise<T> {
+export function measureAsync<T>(operationName: string, fn: () => Promise<T>): Promise<T> {
   return new Promise(async (resolve, reject) => {
     const start = Date.now();
     logger.debug(`[${operationName}] Started`);
@@ -382,7 +379,7 @@ export function measureAsync<T>(
     try {
       const result = await fn();
       const duration = Date.now() - start;
-      
+
       logger.info(`[${operationName}] Completed`, { duration });
       resolve(result);
     } catch (error) {
@@ -394,9 +391,7 @@ export function measureAsync<T>(
 }
 
 // 使用
-const result = await measureAsync('CreateGoal', () => 
-  goalService.createGoal(dto)
-);
+const result = await measureAsync('CreateGoal', () => goalService.createGoal(dto));
 ```
 
 ---

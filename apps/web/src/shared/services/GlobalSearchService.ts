@@ -1,9 +1,9 @@
 /**
  * Global Search Service
- * 
+ *
  * Provides unified search across Goals, Tasks, and Reminders
  * with fuzzy matching and recent items tracking.
- * 
+ *
  * @module GlobalSearchService
  */
 
@@ -110,7 +110,7 @@ export interface Command {
 
 /**
  * Global Search Service
- * 
+ *
  * Singleton service for searching across all modules
  */
 export class GlobalSearchService {
@@ -141,7 +141,7 @@ export class GlobalSearchService {
 
   /**
    * Search across all modules
-   * 
+   *
    * @param query Search query
    * @param goals Array of goals
    * @param tasks Array of task templates
@@ -154,14 +154,9 @@ export class GlobalSearchService {
     goals: GoalClientDTO[],
     tasks: TaskTemplateClientDTO[],
     reminders: SearchableItem[],
-    options: SearchOptions = {}
+    options: SearchOptions = {},
   ): Promise<SearchResult[]> {
-    const {
-      type,
-      threshold = 60,
-      limit = 50,
-      includeCompleted = true,
-    } = options;
+    const { type, threshold = 60, limit = 50, includeCompleted = true } = options;
 
     // Trim query
     const trimmedQuery = query.trim();
@@ -199,7 +194,7 @@ export class GlobalSearchService {
   private searchGoals(
     goals: GoalClientDTO[],
     query: string,
-    includeCompleted: boolean
+    includeCompleted: boolean,
   ): SearchResult[] {
     return goals
       .filter((goal) => includeCompleted || goal.status !== GoalContracts.GoalStatus.COMPLETED)
@@ -214,7 +209,7 @@ export class GlobalSearchService {
           {
             title: 1.0,
             description: 0.5,
-          }
+          },
         );
 
         return {
@@ -242,10 +237,12 @@ export class GlobalSearchService {
   private searchTasks(
     tasks: TaskTemplateClientDTO[],
     query: string,
-    includeCompleted: boolean
+    includeCompleted: boolean,
   ): SearchResult[] {
     return tasks
-      .filter((task) => includeCompleted || task.status !== TaskContracts.TaskTemplateStatus.ARCHIVED)
+      .filter(
+        (task) => includeCompleted || task.status !== TaskContracts.TaskTemplateStatus.ARCHIVED,
+      )
       .map((task) => {
         // Search in multiple fields
         const result = fuzzyMatchMultiField(
@@ -257,7 +254,7 @@ export class GlobalSearchService {
           {
             title: 1.0,
             description: 0.5,
-          }
+          },
         );
 
         return {
@@ -278,10 +275,7 @@ export class GlobalSearchService {
   /**
    * Search in reminders (generic searchable items)
    */
-  private searchReminders(
-    reminders: SearchableItem[],
-    query: string
-  ): SearchResult[] {
+  private searchReminders(reminders: SearchableItem[], query: string): SearchResult[] {
     return reminders
       .map((reminder) => {
         const result = fuzzyMatchMultiField(
@@ -293,7 +287,7 @@ export class GlobalSearchService {
           {
             title: 1.0,
             description: 0.5,
-          }
+          },
         );
 
         return {
@@ -313,7 +307,7 @@ export class GlobalSearchService {
 
   /**
    * Search commands
-   * 
+   *
    * @param query Search query
    * @returns Matching commands
    */
@@ -326,9 +320,7 @@ export class GlobalSearchService {
       .map((command) => {
         // Search in label, description, and keywords
         const labelResult = fuzzyMatch(query, command.label);
-        const keywordResults = command.keywords.map((kw) =>
-          fuzzyMatch(query, kw)
-        );
+        const keywordResults = command.keywords.map((kw) => fuzzyMatch(query, kw));
         const bestKeywordScore = Math.max(...keywordResults.map((r) => r.score), 0);
 
         const score = Math.max(labelResult.score, bestKeywordScore);
@@ -341,7 +333,7 @@ export class GlobalSearchService {
 
   /**
    * Get recent items
-   * 
+   *
    * @param limit Maximum items to return
    * @returns Array of recent items sorted by access time
    */
@@ -352,14 +344,12 @@ export class GlobalSearchService {
       ...this.recentItems.reminders,
     ];
 
-    return allItems
-      .sort((a, b) => b.accessedAt - a.accessedAt)
-      .slice(0, limit);
+    return allItems.sort((a, b) => b.accessedAt - a.accessedAt).slice(0, limit);
   }
 
   /**
    * Add item to recent history
-   * 
+   *
    * @param item Recent item to add
    */
   public addRecentItem(item: RecentItem): void {
@@ -385,7 +375,7 @@ export class GlobalSearchService {
 
   /**
    * Clear recent items
-   * 
+   *
    * @param type Optional type to clear (clears all if not specified)
    */
   public clearRecentItems(type?: SearchResultType): void {
@@ -405,7 +395,7 @@ export class GlobalSearchService {
 
   /**
    * Register a custom command
-   * 
+   *
    * @param command Command to register
    */
   public registerCommand(command: Command): void {
@@ -418,7 +408,7 @@ export class GlobalSearchService {
 
   /**
    * Unregister a command
-   * 
+   *
    * @param commandId Command ID to remove
    */
   public unregisterCommand(commandId: string): void {
@@ -531,10 +521,7 @@ export class GlobalSearchService {
    */
   private saveRecentItems(): void {
     try {
-      localStorage.setItem(
-        this.RECENT_ITEMS_KEY,
-        JSON.stringify(this.recentItems)
-      );
+      localStorage.setItem(this.RECENT_ITEMS_KEY, JSON.stringify(this.recentItems));
     } catch (error) {
       console.error('Failed to save recent items:', error);
     }

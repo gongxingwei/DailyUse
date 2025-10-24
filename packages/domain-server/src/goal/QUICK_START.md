@@ -5,6 +5,7 @@
 我已经为 goal 模块的 domain-server 包创建了完整的结构框架和实现指南，严格参考 repository 模块的实现模式。
 
 ### 1. 目录结构 ✅
+
 ```
 packages/domain-server/src/goal/
 ├── aggregates/              # 聚合根（待实现）
@@ -28,19 +29,21 @@ packages/domain-server/src/goal/
 ### 2. 核心文件
 
 #### 仓储接口（Repository Interfaces）
+
 - ✅ `IGoalRepository.ts` - 完整的 Goal 仓储接口
   - save(), findById(), findByAccountUuid()
   - delete(), softDelete(), exists()
   - batchUpdateStatus(), batchMoveToFolder()
-  
 - ✅ `IGoalFolderRepository.ts` - GoalFolder 仓储接口
 - ✅ `IGoalStatisticsRepository.ts` - GoalStatistics 仓储接口
 
 #### 值对象（Value Objects）
+
 - ✅ `GoalMetadata.ts` - 目标元数据（已创建，需要根据 contracts 修正）
 - ✅ `GoalTimeRange.ts` - 时间范围（已创建，需要根据 contracts 修正）
 
 #### 文档
+
 - ✅ `README.md` - 项目结构和待办事项
 - ✅ `IMPLEMENTATION_GUIDE.md` - 完整的实现指南，包括：
   - 每个组件的详细代码模板
@@ -49,11 +52,13 @@ packages/domain-server/src/goal/
   - 参考资源链接
 
 ### 3. 主导出文件
+
 - ✅ `index.ts` - 定义了所有导出（虽然大部分组件还未实现）
 
 ## 项目结构对比
 
 ### Repository 模块（参考）
+
 ```
 repository/
 ├── aggregates/
@@ -76,6 +81,7 @@ repository/
 ```
 
 ### Goal 模块（对应结构）
+
 ```
 goal/
 ├── aggregates/
@@ -124,7 +130,7 @@ Goal (聚合根)
    - [ ] 修正 GoalMetadata
    - [ ] 修正 GoalTimeRange
    - [ ] 创建 KeyResultProgress
-   - [ ] 创建 KeyResultSnapshot  
+   - [ ] 创建 KeyResultSnapshot
    - [ ] 创建 GoalReminderConfig
    - [ ] 创建 GoalRecord 实体
    - [ ] 创建 GoalReview 实体
@@ -238,11 +244,13 @@ type UrgencyLevel = GoalContracts.UrgencyLevel;
 ## 注意事项
 
 ⚠️ **当前存在的问题**：
+
 - GoalMetadata 和 GoalTimeRange 值对象需要根据最新的 contracts 定义进行修正
 - 存在类型不匹配问题（ImportanceLevel, UrgencyLevel）
 - 需要检查 contracts 包是否最新
 
 ✅ **已解决的问题**：
+
 - 目录结构完整
 - 仓储接口设计合理
 - 导出文件结构清晰
@@ -251,6 +259,7 @@ type UrgencyLevel = GoalContracts.UrgencyLevel;
 ## 总结
 
 Goal 模块的 domain-server 包框架已经搭建完成，包含：
+
 - ✅ 完整的目录结构
 - ✅ 仓储接口定义
 - ✅ 部分值对象实现

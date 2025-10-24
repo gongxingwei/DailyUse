@@ -9,13 +9,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "packages/domain-client/**/*.{ts,js}"
-                ]
+                "lintFilePatterns": ["packages/domain-client/**/*.{ts,js}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -32,9 +28,7 @@
                 "script": "test"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Run Vite tests",
                 "help": {
                   "command": "pnpm exec vitest --help",
@@ -50,11 +44,7 @@
               },
               "configurations": {},
               "parallelism": true,
-              "inputs": [
-                "default",
-                "^production",
-                "{workspaceRoot}/jest.preset.js"
-              ],
+              "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
               "cache": true
             },
             "typecheck": {
@@ -63,9 +53,7 @@
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "typescript"
-                  ]
+                  "externalDependencies": ["typescript"]
                 }
               ],
               "options": {
@@ -74,9 +62,7 @@
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript"
-                ],
+                "technologies": ["typescript"],
                 "help": {
                   "command": "pnpm exec tsc -p tsconfig.json --help",
                   "example": {
@@ -91,9 +77,7 @@
               "parallelism": true
             },
             "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
+              "dependsOn": ["^build"],
               "configurations": {},
               "options": {},
               "parallelism": true,
@@ -101,9 +85,7 @@
             },
             "watch-deps": {
               "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
+              "dependsOn": ["build-deps"],
               "executor": "nx:run-commands",
               "options": {
                 "command": "pnpm exec nx watch --projects domain-client --includeDependentProjects -- pnpm exec nx build-deps domain-client"
@@ -161,31 +143,22 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/packages/domain-client/dist"
-              ],
+              "outputs": ["{workspaceRoot}/packages/domain-client/dist"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "packages/domain-client"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "dev": {
@@ -201,13 +174,7 @@
           },
           "metadata": {
             "targetGroups": {
-              "NPM Scripts": [
-                "test",
-                "test:run",
-                "test:coverage",
-                "test:watch",
-                "test:ui"
-              ]
+              "NPM Scripts": ["test", "test:run", "test:coverage", "test:watch", "test:ui"]
             },
             "description": "Client-side domain models with UI-focused methods",
             "js": {
@@ -224,18 +191,11 @@
             }
           },
           "name": "domain-client",
-          "tags": [
-            "npm:public",
-            "scope:shared",
-            "type:lib"
-          ],
+          "tags": ["npm:public", "scope:shared", "type:lib"],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "projectType": "library",
           "sourceRoot": "packages/domain-client/src",
-          "implicitDependencies": [
-            "contracts",
-            "domain-core"
-          ]
+          "implicitDependencies": ["contracts", "domain-core"]
         }
       },
       "domain-server": {
@@ -246,13 +206,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "packages/domain-server/**/*.{ts,js}"
-                ]
+                "lintFilePatterns": ["packages/domain-server/**/*.{ts,js}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -269,9 +225,7 @@
                 "script": "test"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Run Vite tests",
                 "help": {
                   "command": "pnpm exec vitest --help",
@@ -287,11 +241,7 @@
               },
               "configurations": {},
               "parallelism": true,
-              "inputs": [
-                "default",
-                "^production",
-                "{workspaceRoot}/jest.preset.js"
-              ],
+              "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
               "cache": true
             },
             "typecheck": {
@@ -300,9 +250,7 @@
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "typescript"
-                  ]
+                  "externalDependencies": ["typescript"]
                 }
               ],
               "options": {
@@ -311,9 +259,7 @@
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript"
-                ],
+                "technologies": ["typescript"],
                 "help": {
                   "command": "pnpm exec tsc -p tsconfig.json --help",
                   "example": {
@@ -328,9 +274,7 @@
               "parallelism": true
             },
             "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
+              "dependsOn": ["^build"],
               "configurations": {},
               "options": {},
               "parallelism": true,
@@ -338,9 +282,7 @@
             },
             "watch-deps": {
               "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
+              "dependsOn": ["build-deps"],
               "executor": "nx:run-commands",
               "options": {
                 "command": "pnpm exec nx watch --projects domain-server --includeDependentProjects -- pnpm exec nx build-deps domain-server"
@@ -398,31 +340,22 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/packages/domain-server/dist"
-              ],
+              "outputs": ["{workspaceRoot}/packages/domain-server/dist"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "packages/domain-server"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "dev": {
@@ -438,13 +371,7 @@
           },
           "metadata": {
             "targetGroups": {
-              "NPM Scripts": [
-                "test",
-                "test:run",
-                "test:coverage",
-                "test:watch",
-                "test:ui"
-              ]
+              "NPM Scripts": ["test", "test:run", "test:coverage", "test:watch", "test:ui"]
             },
             "description": "Server-side domain models with business logic",
             "js": {
@@ -460,18 +387,11 @@
             }
           },
           "name": "domain-server",
-          "tags": [
-            "npm:public",
-            "scope:shared",
-            "type:lib"
-          ],
+          "tags": ["npm:public", "scope:shared", "type:lib"],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "projectType": "library",
           "sourceRoot": "packages/domain-server/src",
-          "implicitDependencies": [
-            "contracts",
-            "domain-core"
-          ]
+          "implicitDependencies": ["contracts", "domain-core"]
         }
       },
       "domain-core": {
@@ -482,13 +402,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "packages/domain-core/**/*.{ts,js}"
-                ]
+                "lintFilePatterns": ["packages/domain-core/**/*.{ts,js}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -501,31 +417,22 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/packages/domain-core/dist"
-              ],
+              "outputs": ["{workspaceRoot}/packages/domain-core/dist"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "packages/domain-core"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "dev": {
@@ -540,11 +447,7 @@
             }
           },
           "name": "domain-core",
-          "tags": [
-            "npm:public",
-            "scope:shared",
-            "type:lib"
-          ],
+          "tags": ["npm:public", "scope:shared", "type:lib"],
           "metadata": {
             "targetGroups": {},
             "description": "Core domain models shared between frontend and backend",
@@ -564,9 +467,7 @@
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "projectType": "library",
           "sourceRoot": "packages/domain-core/src",
-          "implicitDependencies": [
-            "contracts"
-          ]
+          "implicitDependencies": ["contracts"]
         }
       },
       "contracts": {
@@ -577,13 +478,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "packages/contracts/**/*.{ts,js}"
-                ]
+                "lintFilePatterns": ["packages/contracts/**/*.{ts,js}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -608,31 +505,22 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/packages/contracts/dist"
-              ],
+              "outputs": ["{workspaceRoot}/packages/contracts/dist"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "packages/contracts"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "dev": {
@@ -647,16 +535,10 @@
             }
           },
           "name": "contracts",
-          "tags": [
-            "npm:public",
-            "scope:shared",
-            "type:lib"
-          ],
+          "tags": ["npm:public", "scope:shared", "type:lib"],
           "metadata": {
             "targetGroups": {
-              "NPM Scripts": [
-                "clean"
-              ]
+              "NPM Scripts": ["clean"]
             },
             "js": {
               "packageName": "@dailyuse/contracts",
@@ -697,13 +579,9 @@
                 "{workspaceRoot}/.eslintrc.json",
                 "{workspaceRoot}/eslint.config.js"
               ],
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "metadata": {
-                "technologies": [
-                  "eslint"
-                ],
+                "technologies": ["eslint"],
                 "description": "Runs ESLint on project",
                 "help": {
                   "command": "pnpm exec eslint --help",
@@ -720,9 +598,7 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
@@ -766,13 +642,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "packages/utils/**/*.{ts,js}"
-                ]
+                "lintFilePatterns": ["packages/utils/**/*.{ts,js}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -797,31 +669,22 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/packages/utils/dist"
-              ],
+              "outputs": ["{workspaceRoot}/packages/utils/dist"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "packages/utils"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "dev": {
@@ -836,16 +699,10 @@
             }
           },
           "name": "utils",
-          "tags": [
-            "npm:public",
-            "scope:shared",
-            "type:lib"
-          ],
+          "tags": ["npm:public", "scope:shared", "type:lib"],
           "metadata": {
             "targetGroups": {
-              "NPM Scripts": [
-                "clean"
-              ]
+              "NPM Scripts": ["clean"]
             },
             "js": {
               "packageName": "@dailyuse/utils",
@@ -873,13 +730,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "apps/desktop/**/*.{ts,tsx,js,jsx,vue}"
-                ]
+                "lintFilePatterns": ["apps/desktop/**/*.{ts,tsx,js,jsx,vue}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -892,20 +745,14 @@
             },
             "test": {
               "executor": "@nx/vite:test",
-              "outputs": [
-                "{options.reportsDirectory}"
-              ],
+              "outputs": ["{options.reportsDirectory}"],
               "options": {
                 "passWithNoTests": true,
                 "reportsDirectory": "../../coverage/apps/desktop"
               },
               "configurations": {},
               "parallelism": true,
-              "inputs": [
-                "default",
-                "^production",
-                "{workspaceRoot}/jest.preset.js"
-              ],
+              "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
               "cache": true
             },
             "vite:build": {
@@ -914,25 +761,17 @@
                 "command": "vite build"
               },
               "cache": true,
-              "dependsOn": [
-                "^vite:build"
-              ],
+              "dependsOn": ["^vite:build"],
               "inputs": [
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "vite"
-                  ]
+                  "externalDependencies": ["vite"]
                 }
               ],
-              "outputs": [
-                "{projectRoot}\\dist"
-              ],
+              "outputs": ["{projectRoot}\\dist"],
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Run Vite build",
                 "help": {
                   "command": "pnpm exec vite build --help",
@@ -974,9 +813,7 @@
                 "command": "vite"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Starts Vite dev server",
                 "help": {
                   "command": "pnpm exec vite --help",
@@ -993,17 +830,13 @@
             },
             "vite:preview": {
               "continuous": true,
-              "dependsOn": [
-                "vite:build"
-              ],
+              "dependsOn": ["vite:build"],
               "options": {
                 "cwd": "apps/desktop",
                 "command": "vite preview"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Locally preview Vite production build",
                 "help": {
                   "command": "pnpm exec vite preview --help",
@@ -1034,10 +867,7 @@
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "vue-tsc",
-                    "typescript"
-                  ]
+                  "externalDependencies": ["vue-tsc", "typescript"]
                 }
               ],
               "options": {
@@ -1046,10 +876,7 @@
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript",
-                  "vue"
-                ],
+                "technologies": ["typescript", "vue"],
                 "help": {
                   "command": "pnpm exec vue-tsc -p tsconfig.json --help",
                   "example": {
@@ -1064,9 +891,7 @@
               "parallelism": true
             },
             "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
+              "dependsOn": ["^build"],
               "configurations": {},
               "options": {},
               "parallelism": true,
@@ -1074,9 +899,7 @@
             },
             "watch-deps": {
               "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
+              "dependsOn": ["build-deps"],
               "executor": "nx:run-commands",
               "options": {
                 "command": "pnpm exec nx watch --projects desktop --includeDependentProjects -- pnpm exec nx build-deps desktop"
@@ -1171,18 +994,14 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/apps/desktop/dist"
-              ],
+              "outputs": ["{workspaceRoot}/apps/desktop/dist"],
               "defaultConfiguration": "production",
               "options": {
                 "command": "pnpm build",
@@ -1197,13 +1016,8 @@
                 }
               },
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "package": {
@@ -1246,12 +1060,7 @@
             }
           },
           "name": "desktop",
-          "tags": [
-            "npm:public",
-            "scope:desktop",
-            "type:app",
-            "platform:electron"
-          ],
+          "tags": ["npm:public", "scope:desktop", "type:app", "platform:electron"],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "sourceRoot": "apps/desktop/src",
           "implicitDependencies": []
@@ -1265,13 +1074,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "packages/ui/**/*.{ts,js,vue}"
-                ]
+                "lintFilePatterns": ["packages/ui/**/*.{ts,js,vue}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -1288,25 +1093,17 @@
                 "command": "vite build"
               },
               "cache": true,
-              "dependsOn": [
-                "^vite:build"
-              ],
+              "dependsOn": ["^vite:build"],
               "inputs": [
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "vite"
-                  ]
+                  "externalDependencies": ["vite"]
                 }
               ],
-              "outputs": [
-                "{projectRoot}\\dist"
-              ],
+              "outputs": ["{projectRoot}\\dist"],
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Run Vite build",
                 "help": {
                   "command": "pnpm exec vite build --help",
@@ -1329,9 +1126,7 @@
                 "command": "vite"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Starts Vite dev server",
                 "help": {
                   "command": "pnpm exec vite --help",
@@ -1354,9 +1149,7 @@
                 "command": "vite"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Starts Vite dev server",
                 "help": {
                   "command": "pnpm exec vite --help",
@@ -1373,17 +1166,13 @@
             },
             "vite:preview": {
               "continuous": true,
-              "dependsOn": [
-                "vite:build"
-              ],
+              "dependsOn": ["vite:build"],
               "options": {
                 "cwd": "packages/ui",
                 "command": "vite preview"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Locally preview Vite production build",
                 "help": {
                   "command": "pnpm exec vite preview --help",
@@ -1414,10 +1203,7 @@
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "vue-tsc",
-                    "typescript"
-                  ]
+                  "externalDependencies": ["vue-tsc", "typescript"]
                 }
               ],
               "options": {
@@ -1426,10 +1212,7 @@
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript",
-                  "vue"
-                ],
+                "technologies": ["typescript", "vue"],
                 "help": {
                   "command": "pnpm exec vue-tsc -p tsconfig.json --help",
                   "example": {
@@ -1444,9 +1227,7 @@
               "parallelism": true
             },
             "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
+              "dependsOn": ["^build"],
               "configurations": {},
               "options": {},
               "parallelism": true,
@@ -1454,9 +1235,7 @@
             },
             "watch-deps": {
               "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
+              "dependsOn": ["build-deps"],
               "executor": "nx:run-commands",
               "options": {
                 "command": "pnpm exec nx watch --projects ui --includeDependentProjects -- pnpm exec nx build-deps ui"
@@ -1490,31 +1269,22 @@
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
+              "dependsOn": ["^nx-release-publish"],
               "options": {},
               "configurations": {},
               "parallelism": true
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/packages/ui/dist"
-              ],
+              "outputs": ["{workspaceRoot}/packages/ui/dist"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "packages/ui"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "dev": {
@@ -1531,10 +1301,7 @@
           "projectType": "library",
           "metadata": {
             "targetGroups": {
-              "NPM Scripts": [
-                "clean",
-                "type-check"
-              ]
+              "NPM Scripts": ["clean", "type-check"]
             },
             "description": "Reusable Vue 3 + Vuetify UI components for DailyUse applications",
             "js": {
@@ -1551,16 +1318,10 @@
             }
           },
           "name": "ui",
-          "tags": [
-            "npm:public",
-            "scope:shared",
-            "type:lib"
-          ],
+          "tags": ["npm:public", "scope:shared", "type:lib"],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "sourceRoot": "packages/ui/src",
-          "implicitDependencies": [
-            "contracts"
-          ]
+          "implicitDependencies": ["contracts"]
         }
       },
       "api": {
@@ -1571,13 +1332,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "apps/api/**/*.{ts,js}"
-                ]
+                "lintFilePatterns": ["apps/api/**/*.{ts,js}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -1596,11 +1353,7 @@
               },
               "configurations": {},
               "parallelism": true,
-              "inputs": [
-                "default",
-                "^production",
-                "{workspaceRoot}/jest.preset.js"
-              ],
+              "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
               "cache": true
             },
             "typecheck": {
@@ -1609,9 +1362,7 @@
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "typescript"
-                  ]
+                  "externalDependencies": ["typescript"]
                 }
               ],
               "options": {
@@ -1620,9 +1371,7 @@
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript"
-                ],
+                "technologies": ["typescript"],
                 "help": {
                   "command": "pnpm exec tsc -p tsconfig.json --help",
                   "example": {
@@ -1637,9 +1386,7 @@
               "parallelism": true
             },
             "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
+              "dependsOn": ["^build"],
               "configurations": {},
               "options": {},
               "parallelism": true,
@@ -1647,9 +1394,7 @@
             },
             "watch-deps": {
               "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
+              "dependsOn": ["build-deps"],
               "executor": "nx:run-commands",
               "options": {
                 "command": "pnpm exec nx watch --projects api --includeDependentProjects -- pnpm exec nx build-deps api"
@@ -1810,22 +1555,15 @@
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/dist/apps/api"
-              ],
+              "outputs": ["{workspaceRoot}/dist/apps/api"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "apps/api"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "start": {
@@ -1834,9 +1572,7 @@
                 "command": "pnpm start",
                 "cwd": "apps/api"
               },
-              "dependsOn": [
-                "build"
-              ],
+              "dependsOn": ["build"],
               "configurations": {},
               "parallelism": true
             }
@@ -1863,11 +1599,7 @@
             }
           },
           "name": "api",
-          "tags": [
-            "npm:private",
-            "scope:api",
-            "type:app"
-          ],
+          "tags": ["npm:private", "scope:api", "type:app"],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "projectType": "application",
           "sourceRoot": "apps/api/src",
@@ -1882,13 +1614,9 @@
           "targets": {
             "lint": {
               "executor": "@nx/eslint:lint",
-              "outputs": [
-                "{options.outputFile}"
-              ],
+              "outputs": ["{options.outputFile}"],
               "options": {
-                "lintFilePatterns": [
-                  "apps/web/**/*.{ts,tsx,js,jsx,vue}"
-                ]
+                "lintFilePatterns": ["apps/web/**/*.{ts,tsx,js,jsx,vue}"]
               },
               "configurations": {},
               "parallelism": true,
@@ -1901,20 +1629,14 @@
             },
             "test": {
               "executor": "@nx/vite:test",
-              "outputs": [
-                "{options.reportsDirectory}"
-              ],
+              "outputs": ["{options.reportsDirectory}"],
               "options": {
                 "passWithNoTests": true,
                 "reportsDirectory": "../../coverage/apps/web"
               },
               "configurations": {},
               "parallelism": true,
-              "inputs": [
-                "default",
-                "^production",
-                "{workspaceRoot}/jest.preset.js"
-              ],
+              "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
               "cache": true
             },
             "vite:build": {
@@ -1923,25 +1645,17 @@
                 "command": "vite build"
               },
               "cache": true,
-              "dependsOn": [
-                "^vite:build"
-              ],
+              "dependsOn": ["^vite:build"],
               "inputs": [
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "vite"
-                  ]
+                  "externalDependencies": ["vite"]
                 }
               ],
-              "outputs": [
-                "{projectRoot}\\dist"
-              ],
+              "outputs": ["{projectRoot}\\dist"],
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Run Vite build",
                 "help": {
                   "command": "pnpm exec vite build --help",
@@ -1964,9 +1678,7 @@
                 "command": "vite"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Starts Vite dev server",
                 "help": {
                   "command": "pnpm exec vite --help",
@@ -1989,9 +1701,7 @@
                 "command": "vite"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Starts Vite dev server",
                 "help": {
                   "command": "pnpm exec vite --help",
@@ -2008,17 +1718,13 @@
             },
             "vite:preview": {
               "continuous": true,
-              "dependsOn": [
-                "vite:build"
-              ],
+              "dependsOn": ["vite:build"],
               "options": {
                 "cwd": "apps/web",
                 "command": "vite preview"
               },
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Locally preview Vite production build",
                 "help": {
                   "command": "pnpm exec vite preview --help",
@@ -2049,10 +1755,7 @@
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "vue-tsc",
-                    "typescript"
-                  ]
+                  "externalDependencies": ["vue-tsc", "typescript"]
                 }
               ],
               "options": {
@@ -2061,10 +1764,7 @@
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript",
-                  "vue"
-                ],
+                "technologies": ["typescript", "vue"],
                 "help": {
                   "command": "pnpm exec vue-tsc -p tsconfig.json --help",
                   "example": {
@@ -2079,9 +1779,7 @@
               "parallelism": true
             },
             "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
+              "dependsOn": ["^build"],
               "configurations": {},
               "options": {},
               "parallelism": true,
@@ -2089,9 +1787,7 @@
             },
             "watch-deps": {
               "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
+              "dependsOn": ["build-deps"],
               "executor": "nx:run-commands",
               "options": {
                 "command": "pnpm exec nx watch --projects web --includeDependentProjects -- pnpm exec nx build-deps web"
@@ -2183,22 +1879,15 @@
             },
             "build": {
               "executor": "nx:run-commands",
-              "outputs": [
-                "{workspaceRoot}/dist/apps/web"
-              ],
+              "outputs": ["{workspaceRoot}/dist/apps/web"],
               "options": {
                 "command": "pnpm build",
                 "cwd": "apps/web"
               },
               "configurations": {},
               "parallelism": true,
-              "dependsOn": [
-                "^build"
-              ],
-              "inputs": [
-                "production",
-                "^production"
-              ],
+              "dependsOn": ["^build"],
+              "inputs": ["production", "^production"],
               "cache": true
             },
             "preview": {
@@ -2229,11 +1918,7 @@
             }
           },
           "name": "web",
-          "tags": [
-            "npm:private",
-            "scope:web",
-            "type:app"
-          ],
+          "tags": ["npm:private", "scope:web", "type:app"],
           "$schema": "../../node_modules/nx/schemas/project-schema.json",
           "sourceRoot": "apps/web/src",
           "implicitDependencies": []
@@ -2252,18 +1937,10 @@
                 "command": "vitest"
               },
               "cache": true,
-              "inputs": [
-                "default",
-                "^production",
-                "{workspaceRoot}/jest.preset.js"
-              ],
-              "outputs": [
-                "{projectRoot}\\coverage"
-              ],
+              "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
+              "outputs": ["{projectRoot}\\coverage"],
               "metadata": {
-                "technologies": [
-                  "vite"
-                ],
+                "technologies": ["vite"],
                 "description": "Run Vite tests",
                 "help": {
                   "command": "pnpm exec vitest --help",
@@ -2285,9 +1962,7 @@
                 "production",
                 "^production",
                 {
-                  "externalDependencies": [
-                    "typescript"
-                  ]
+                  "externalDependencies": ["typescript"]
                 }
               ],
               "options": {
@@ -2296,9 +1971,7 @@
               },
               "metadata": {
                 "description": "Runs type-checking for the project.",
-                "technologies": [
-                  "typescript"
-                ],
+                "technologies": ["typescript"],
                 "help": {
                   "command": "pnpm exec tsc -p tsconfig.json --help",
                   "example": {
@@ -2313,9 +1986,7 @@
               "parallelism": true
             },
             "build-deps": {
-              "dependsOn": [
-                "^build"
-              ],
+              "dependsOn": ["^build"],
               "configurations": {},
               "options": {},
               "parallelism": true,
@@ -2323,9 +1994,7 @@
             },
             "watch-deps": {
               "continuous": true,
-              "dependsOn": [
-                "build-deps"
-              ],
+              "dependsOn": ["build-deps"],
               "executor": "nx:run-commands",
               "options": {
                 "command": "pnpm exec nx watch --projects daily-use --includeDependentProjects -- pnpm exec nx build-deps daily-use"

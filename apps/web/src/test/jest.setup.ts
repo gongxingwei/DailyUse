@@ -1,6 +1,6 @@
 /**
  * Jest Setup File
- * 
+ *
  * 在每个测试文件运行前执行的全局配置
  */
 
@@ -112,8 +112,7 @@ beforeAll(() => {
     // 忽略 Vue 的某些开发警告
     if (
       typeof message === 'string' &&
-      (message.includes('[Vue warn]') ||
-       message.includes('Download the Vue Devtools'))
+      (message.includes('[Vue warn]') || message.includes('Download the Vue Devtools'))
     ) {
       return;
     }
@@ -142,10 +141,10 @@ afterAll(() => {
 beforeEach(() => {
   // 清理 DOM
   document.body.innerHTML = '';
-  
+
   // 清理 localStorage
   localStorage.clear();
-  
+
   // 清理 sessionStorage
   sessionStorage.clear();
 });
@@ -153,7 +152,7 @@ beforeEach(() => {
 afterEach(() => {
   // 清理所有 timers
   jest.clearAllTimers();
-  
+
   // 清理所有 mocks
   jest.clearAllMocks();
 });

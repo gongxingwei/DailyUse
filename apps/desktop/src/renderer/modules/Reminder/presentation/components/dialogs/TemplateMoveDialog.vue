@@ -11,8 +11,16 @@
       <v-divider />
       <v-card-text>
         <v-form ref="formRef" v-model="isFormValid">
-          <v-select v-model="groupUuidProxy" :items="groupOptions" label="选择目标分组" item-title="title" item-value="value"
-            :item-disabled="(item: any) => item.disabled" :rules="[v => !!v || '请选择分组']" required />
+          <v-select
+            v-model="groupUuidProxy"
+            :items="groupOptions"
+            label="选择目标分组"
+            item-title="title"
+            item-value="value"
+            :item-disabled="(item: any) => item.disabled"
+            :rules="[(v) => !!v || '请选择分组']"
+            required
+          />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -42,7 +50,7 @@ const emit = defineEmits<{
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: v => emit('update:modelValue', v)
+  set: (v) => emit('update:modelValue', v),
 });
 
 const formRef = ref();
@@ -52,14 +60,16 @@ const isFormValid = ref(false);
 const reminderStore = useReminderStore();
 
 const groupOptions = computed(() =>
-  reminderStore.getReminderGroups.map(g => {
-    if (!g || !props.template) return null;
-    return {
-      title: g.uuid === props.template.groupUuid ? `${g.name}（当前所在组）` : g.name,
-      value: g.uuid,
-      disabled: g.uuid === props.template.groupUuid
-    };
-  }).filter(Boolean)
+  reminderStore.getReminderGroups
+    .map((g) => {
+      if (!g || !props.template) return null;
+      return {
+        title: g.uuid === props.template.groupUuid ? `${g.name}（当前所在组）` : g.name,
+        value: g.uuid,
+        disabled: g.uuid === props.template.groupUuid,
+      };
+    })
+    .filter(Boolean),
 );
 
 // 双向绑定 groupUuid

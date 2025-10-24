@@ -1,4 +1,4 @@
-import { AuthInfo } from "../../domain/types";
+import { AuthInfo } from '../../domain/types';
 
 export class AuthSessionStore {
   private static instance: AuthSessionStore;

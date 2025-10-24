@@ -5,14 +5,14 @@ created: 2025-10-02T23:46:33
 updated: 2025-10-02T23:47:12
 ---
 
-# contracts-in-dailyuse 
+# contracts-in-dailyuse
 
 ## 前置知识
 
 - contract first
 - DDD
 
-*以[[「Goal」模块]]为例*
+_以[[「Goal」模块]]为例_
 
 ```
 src
@@ -39,6 +39,7 @@ modules
 ### types.ts
 
 该文件是一个模块的开始：
+
 1. 实体的接口定义（服务端的+客户端的，是不是可以加个 core？）
 2. 实体属性类型定义
 3. 常量定义
@@ -111,6 +112,7 @@ export enum GoalStatus {
 #### persistence-dto.ts
 
 仓储层的类型定义，将实体对象存储到数据库中（toPersistence）使用
+
 - 扁平化
 - 类型转换
 
@@ -155,12 +157,11 @@ export interface GoalPersistenceDTO {
 
 - 实体（服务端）的DTO形态（感觉也可以提取出去）
 - 前后端请求响应的类型定义
-	crud 接口中也一般是和实体DTO相关，直接扩展
+  crud 接口中也一般是和实体DTO相关，直接扩展
 - 实体（客户端）的DTO形态
-	一般是服务端DTO加几个计算属性，所以直接扩展
+  一般是服务端DTO加几个计算属性，所以直接扩展
 
 ```ts
-
 /** 实体（服务端）的DTO形态（感觉也可以提取出去）
  * 目标 DTO - 服务端数据传输对象
  * 用于服务端内部传输（Repository <-> Application <-> Domain）

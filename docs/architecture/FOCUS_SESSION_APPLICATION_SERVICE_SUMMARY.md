@@ -66,6 +66,7 @@ ApplicationService                  DomainService                   Aggregate
 创建并开始新的专注周期。
 
 **业务流程**：
+
 ```typescript
 // 1. 查询已有活跃会话（验证单个活跃会话规则）
 const existingSessions = await this.sessionRepository.findByAccountUuid(accountUuid, {
@@ -81,12 +82,15 @@ if (request.goalUuid) {
 }
 
 // 3. 调用 DomainService 创建聚合根
-const session = this.domainService.createFocusSession({
-  accountUuid,
-  goalUuid: request.goalUuid,
-  durationMinutes: request.durationMinutes,
-  description: request.description,
-}, goal);
+const session = this.domainService.createFocusSession(
+  {
+    accountUuid,
+    goalUuid: request.goalUuid,
+    durationMinutes: request.durationMinutes,
+    description: request.description,
+  },
+  goal,
+);
 
 // 4. 立即开始（如果指定）
 if (request.startImmediately !== false) {
@@ -101,6 +105,7 @@ return session.toClientDTO();
 ```
 
 **参数**：
+
 - `accountUuid: string` - 账户 UUID
 - `request.goalUuid?: string | null` - 关联目标 UUID（可选）
 - `request.durationMinutes: number` - 计划时长（1-240 分钟）
@@ -114,6 +119,7 @@ return session.toClientDTO();
 暂停正在进行的专注周期。
 
 **业务流程**：
+
 - 验证状态转换（必须是 IN_PROGRESS）
 - 调用聚合根的 `pause()` 方法
 - 记录暂停时间和暂停次数
@@ -125,6 +131,7 @@ return session.toClientDTO();
 恢复已暂停的专注周期。
 
 **业务流程**：
+
 - 验证状态转换（必须是 PAUSED）
 - 调用聚合根的 `resume()` 方法
 - 累加暂停时长
@@ -136,6 +143,7 @@ return session.toClientDTO();
 完成专注周期。
 
 **业务流程**：
+
 - 验证状态转换（必须是 IN_PROGRESS 或 PAUSED）
 - 调用聚合根的 `complete()` 方法
 - 计算实际专注时长（总时长 - 暂停时长）
@@ -147,6 +155,7 @@ return session.toClientDTO();
 取消专注周期。
 
 **业务流程**：
+
 - 验证状态转换（不能是 COMPLETED 或 CANCELLED）
 - 调用聚合根的 `cancel()` 方法
 
@@ -157,6 +166,7 @@ return session.toClientDTO();
 获取用户当前的活跃会话。
 
 **业务流程**：
+
 - 查询 IN_PROGRESS 或 PAUSED 状态的会话
 - 返回 ClientDTO 或 null
 
@@ -167,6 +177,7 @@ return session.toClientDTO();
 获取会话历史记录。
 
 **参数**：
+
 ```typescript
 {
   goalUuid?: string;                      // 筛选关联目标
@@ -185,6 +196,7 @@ return session.toClientDTO();
 获取单个会话详情。
 
 **业务流程**：
+
 - 加载会话
 - 验证所有权
 - 返回 ClientDTO
@@ -198,6 +210,7 @@ return session.toClientDTO();
 **业务规则**：只能删除已完成或已取消的会话
 
 **业务流程**：
+
 - 加载会话
 - 验证所有权
 - 验证是否可以删除（通过 DomainService）
@@ -210,6 +223,7 @@ return session.toClientDTO();
 获取会话统计信息。
 
 **参数**：
+
 ```typescript
 {
   startDate?: number;   // Unix 时间戳（毫秒）
@@ -219,15 +233,16 @@ return session.toClientDTO();
 ```
 
 **返回**：
+
 ```typescript
 {
-  totalSessions: number;        // 总会话数
-  completedSessions: number;    // 已完成会话数
-  cancelledSessions: number;    // 已取消会话数
-  totalFocusMinutes: number;    // 总专注时长
-  totalPauseMinutes: number;    // 总暂停时长
-  averageFocusMinutes: number;  // 平均专注时长
-  completionRate: number;       // 完成率（0-1）
+  totalSessions: number; // 总会话数
+  completedSessions: number; // 已完成会话数
+  cancelledSessions: number; // 已取消会话数
+  totalFocusMinutes: number; // 总专注时长
+  totalPauseMinutes: number; // 总暂停时长
+  averageFocusMinutes: number; // 平均专注时长
+  completionRate: number; // 完成率（0-1）
 }
 ```
 
@@ -238,6 +253,7 @@ return session.toClientDTO();
 **私有模板方法**，实现 DRY 原则。
 
 **职责**：
+
 - 加载会话
 - 验证所有权
 - 执行操作（由调用方提供回调）
@@ -246,6 +262,7 @@ return session.toClientDTO();
 - 返回 ClientDTO
 
 **使用示例**：
+
 ```typescript
 async pauseSession(sessionUuid: string, accountUuid: string) {
   return this.executeSessionAction(sessionUuid, accountUuid, (session) => {
@@ -266,10 +283,7 @@ export class FocusSessionApplicationService {
   private sessionRepository: IFocusSessionRepository;
   private goalRepository: IGoalRepository;
 
-  private constructor(
-    sessionRepository: IFocusSessionRepository,
-    goalRepository: IGoalRepository,
-  ) {
+  private constructor(sessionRepository: IFocusSessionRepository, goalRepository: IGoalRepository) {
     this.domainService = new FocusSessionDomainService(); // 无参数
     this.sessionRepository = sessionRepository;
     this.goalRepository = goalRepository;
@@ -326,6 +340,7 @@ setFocusSessionRepository(repository: IFocusSessionRepository): void {
 **使用场景**：
 
 1. **生产环境**：自动从 GoalContainer 获取 Repository
+
    ```typescript
    const service = await FocusSessionApplicationService.getInstance();
    ```
@@ -376,18 +391,18 @@ setFocusSessionRepository(repository: IFocusSessionRepository): void {
 async someBusinessUseCase(params) {
   // 1. Query - 查询必要的聚合根
   const existingData = await this.repository.findXXX();
-  
+
   // 2. Domain - 委托给 DomainService 或聚合根
   this.domainService.validateXXX(existingData);
   const aggregate = this.domainService.createXXX(params);
   aggregate.doSomething();
-  
+
   // 3. Persist - 持久化变更
   await this.repository.save(aggregate);
-  
+
   // 4. Publish Events (未来)
   await this.eventBus.publish(aggregate.getDomainEvents());
-  
+
   // 5. Return DTO
   return aggregate.toClientDTO();
 }
@@ -396,10 +411,11 @@ async someBusinessUseCase(params) {
 ### 3. DomainService 无依赖原则
 
 **错误示例** ❌：
+
 ```typescript
 class FocusSessionDomainService {
   constructor(private repository: IFocusSessionRepository) {} // ❌ 错误！
-  
+
   async validateSingleActiveSession(accountUuid: string) {
     const sessions = await this.repository.findByAccountUuid(accountUuid); // ❌
     // ...
@@ -408,10 +424,11 @@ class FocusSessionDomainService {
 ```
 
 **正确示例** ✅：
+
 ```typescript
 class FocusSessionDomainService {
   constructor() {} // ✅ 无依赖
-  
+
   validateSingleActiveSession(sessions: FocusSession[], accountUuid: string) {
     // ✅ 接受查询结果作为参数
     // ✅ 纯业务逻辑，同步方法
@@ -482,18 +499,19 @@ async resumeSession(uuid: string, accountUuid: string) {
 ```typescript
 async createAndStartSession(accountUuid: string, request: any) {
   // ... 业务逻辑 ...
-  
+
   await this.sessionRepository.save(session);
-  
+
   // TODO: 发布领域事件
   // const events = session.getDomainEvents();
   // await this.eventBus.publish(events);
-  
+
   return session.toClientDTO();
 }
 ```
 
 **事件类型**：
+
 - `FocusSessionCreatedEvent` - 会话创建
 - `FocusSessionStartedEvent` - 会话开始
 - `FocusSessionPausedEvent` - 会话暂停
@@ -515,26 +533,26 @@ model FocusSession {
   durationMinutes          Int
   actualDurationMinutes    Int       @default(0)
   description              String?   @db.Text
-  
+
   // 时间戳
   startedAt                DateTime?
   pausedAt                 DateTime?
   resumedAt                DateTime?
   completedAt              DateTime?
   cancelledAt              DateTime?
-  
+
   // 暂停追踪
   pauseCount               Int       @default(0)
   pausedDurationMinutes    Int       @default(0)
-  
+
   // 审计字段
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
-  
+
   // 关系
   account                  Account   @relation(fields: [accountUuid], references: [uuid])
   goal                     Goal?     @relation(fields: [goalUuid], references: [uuid])
-  
+
   @@index([accountUuid])
   @@index([goalUuid])
   @@index([status])
@@ -638,10 +656,10 @@ export class FocusSessionController {
   async createAndStart(req: Request, res: Response) {
     const accountUuid = req.user.accountUuid;
     const request = req.body; // { goalUuid?, durationMinutes, description?, startImmediately? }
-    
+
     const service = await FocusSessionApplicationService.getInstance();
     const session = await service.createAndStartSession(accountUuid, request);
-    
+
     return ResponseBuilder.success(res, session, '专注周期已创建');
   }
 
@@ -649,29 +667,35 @@ export class FocusSessionController {
   async pause(req: Request, res: Response) {
     const { uuid } = req.params;
     const accountUuid = req.user.accountUuid;
-    
+
     const service = await FocusSessionApplicationService.getInstance();
     const session = await service.pauseSession(uuid, accountUuid);
-    
+
     return ResponseBuilder.success(res, session, '专注周期已暂停');
   }
 
   // POST /api/focus-sessions/:uuid/resume
-  async resume(req: Request, res: Response) { /* ... */ }
+  async resume(req: Request, res: Response) {
+    /* ... */
+  }
 
   // POST /api/focus-sessions/:uuid/complete
-  async complete(req: Request, res: Response) { /* ... */ }
+  async complete(req: Request, res: Response) {
+    /* ... */
+  }
 
   // POST /api/focus-sessions/:uuid/cancel
-  async cancel(req: Request, res: Response) { /* ... */ }
+  async cancel(req: Request, res: Response) {
+    /* ... */
+  }
 
   // GET /api/focus-sessions/active
   async getActive(req: Request, res: Response) {
     const accountUuid = req.user.accountUuid;
-    
+
     const service = await FocusSessionApplicationService.getInstance();
     const session = await service.getActiveSession(accountUuid);
-    
+
     return ResponseBuilder.success(res, session);
   }
 
@@ -683,13 +707,13 @@ export class FocusSessionController {
       status: req.query.status ? (req.query.status as string).split(',') : undefined,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
       offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
-      orderBy: req.query.orderBy as any || 'createdAt',
-      orderDirection: req.query.orderDirection as any || 'desc',
+      orderBy: (req.query.orderBy as any) || 'createdAt',
+      orderDirection: (req.query.orderDirection as any) || 'desc',
     };
-    
+
     const service = await FocusSessionApplicationService.getInstance();
     const sessions = await service.getSessionHistory(accountUuid, filters);
-    
+
     return ResponseBuilder.success(res, sessions);
   }
 
@@ -701,18 +725,22 @@ export class FocusSessionController {
       endDate: req.query.endDate ? parseInt(req.query.endDate as string) : undefined,
       goalUuid: req.query.goalUuid as string,
     };
-    
+
     const service = await FocusSessionApplicationService.getInstance();
     const statistics = await service.getSessionStatistics(accountUuid, options);
-    
+
     return ResponseBuilder.success(res, statistics);
   }
 
   // GET /api/focus-sessions/:uuid
-  async getById(req: Request, res: Response) { /* ... */ }
+  async getById(req: Request, res: Response) {
+    /* ... */
+  }
 
   // DELETE /api/focus-sessions/:uuid
-  async delete(req: Request, res: Response) { /* ... */ }
+  async delete(req: Request, res: Response) {
+    /* ... */
+  }
 }
 ```
 
@@ -767,14 +795,14 @@ app.use('/api', focusSessionRoutes);
 ```typescript
 async createAndStartSession(accountUuid: string, request: any) {
   // ... 业务逻辑 ...
-  
+
   await this.sessionRepository.save(session);
-  
+
   // 发布领域事件
   const events = session.getDomainEvents();
   await this.eventBus.publish(events);
   session.clearDomainEvents();
-  
+
   return session.toClientDTO();
 }
 ```

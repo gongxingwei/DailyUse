@@ -9,6 +9,7 @@
 ### Account 模块 (4 个文件，约 550 行代码)
 
 #### 1. AccountApplicationService.ts (197 行)
+
 - **路径**: `apps/api/src/modules/account/application/services/`
 - **功能**: 账户应用服务，处理账户相关业务逻辑
 - **方法数量**: 11 个方法
@@ -30,6 +31,7 @@
   - ✅ 单例模式 + 依赖注入
 
 #### 2. AccountController.ts (235 行)
+
 - **路径**: `apps/api/src/modules/account/interface/http/`
 - **功能**: Account HTTP 控制器
 - **端点数量**: 7 个 RESTful 端点
@@ -49,6 +51,7 @@
   - ✅ 懒加载 ApplicationService
 
 #### 3. accountRoutes.ts (204 行)
+
 - **路径**: `apps/api/src/modules/account/interface/http/`
 - **功能**: Account 路由定义
 - **特点**:
@@ -57,6 +60,7 @@
   - ✅ 路由分组清晰（账户管理、验证、管理员）
 
 #### 4. AccountContainer.ts (41 行)
+
 - **路径**: `apps/api/src/modules/account/infrastructure/di/`
 - **功能**: DI 容器
 - **特点**:
@@ -65,6 +69,7 @@
   - ✅ 支持测试（setRepository, reset）
 
 #### 5. PrismaAccountRepository.ts (64 行)
+
 - **路径**: `apps/api/src/modules/account/infrastructure/repositories/`
 - **功能**: Prisma 仓储实现（临时 stub）
 - **方法数量**: 9 个方法（实现 `IAccountRepository` 接口）
@@ -77,6 +82,7 @@
 ### Authentication 模块 (5 个文件，约 1,050 行代码)
 
 #### 1. AuthenticationApplicationService.ts (332 行)
+
 - **路径**: `apps/api/src/modules/authentication/application/services/`
 - **功能**: 认证应用服务，处理认证相关业务逻辑
 - **方法数量**: 26 个方法
@@ -88,22 +94,18 @@
     - `changePassword` - 修改密码
     - `recordFailedLogin` / `resetFailedAttempts` - 失败登录管理
     - `isCredentialLocked` - 检查凭证锁定状态
-  
   - **记住我令牌** (4 个方法):
     - `generateRememberMeToken` - 生成记住我令牌
     - `verifyRememberMeToken` - 验证记住我令牌
     - `refreshRememberMeToken` - 刷新记住我令牌
     - `revokeRememberMeToken` / `revokeAllRememberMeTokens` - 撤销令牌
-  
   - **API 密钥** (2 个方法):
     - `generateApiKey` - 生成 API 密钥
     - `revokeApiKey` - 撤销 API 密钥
-  
   - **双因素认证** (3 个方法):
     - `enableTwoFactor` - 启用双因素认证
     - `disableTwoFactor` - 禁用双因素认证
     - `verifyTwoFactorCode` - 验证双因素代码
-  
   - **会话管理** (8 个方法):
     - `createSession` - 创建会话
     - `getSession` / `getSessionByAccessToken` / `getSessionByRefreshToken` - 获取会话
@@ -112,7 +114,6 @@
     - `recordActivity` - 记录活动
     - `revokeSession` / `revokeAllSessions` - 撤销会话
     - `getActiveSessions` - 获取活跃会话
-  
   - **清理** (2 个方法):
     - `cleanupExpiredSessions` - 清理过期会话
     - `cleanupExpiredCredentials` - 清理过期凭证
@@ -124,6 +125,7 @@
   - ✅ 单例模式 + 双 Repository（Credential + Session）
 
 #### 2. AuthenticationController.ts (230 行)
+
 - **路径**: `apps/api/src/modules/authentication/interface/http/`
 - **功能**: Authentication HTTP 控制器
 - **端点数量**: 8 个核心端点
@@ -144,6 +146,7 @@
   - ✅ 简化版本（覆盖核心功能）
 
 #### 3. authenticationRoutes.ts (238 行)
+
 - **路径**: `apps/api/src/modules/authentication/interface/http/`
 - **功能**: Authentication 路由定义
 - **特点**:
@@ -152,6 +155,7 @@
   - ✅ 路由分组：凭证管理、会话管理、双因素认证、API 密钥
 
 #### 4. AuthenticationContainer.ts (40 行)
+
 - **路径**: `apps/api/src/modules/authentication/infrastructure/di/`
 - **功能**: DI 容器
 - **特点**:
@@ -160,6 +164,7 @@
   - ✅ 支持测试
 
 #### 5. PrismaAuthCredentialRepository.ts (77 行)
+
 - **路径**: `apps/api/src/modules/authentication/infrastructure/repositories/`
 - **功能**: AuthCredential 仓储实现（临时 stub）
 - **方法数量**: 10 个方法（实现 `IAuthCredentialRepository` 接口）
@@ -169,6 +174,7 @@
   - `delete`, `deleteExpired`
 
 #### 6. PrismaAuthSessionRepository.ts (82 行)
+
 - **路径**: `apps/api/src/modules/authentication/infrastructure/repositories/`
 - **功能**: AuthSession 仓储实现（临时 stub）
 - **方法数量**: 12 个方法（实现 `IAuthSessionRepository` 接口）
@@ -202,6 +208,7 @@
 ### ✅ 代码规范
 
 1. **类型使用**:
+
    ```typescript
    // ✅ 类型别名统一在顶部
    type AccountClientDTO = AccountContracts.AccountClientDTO;
@@ -209,6 +216,7 @@
    ```
 
 2. **ClientDTO 返回**:
+
    ```typescript
    // ✅ 所有 API 方法返回 ClientDTO
    const account = await this.domainService.createAccount(...);
@@ -216,6 +224,7 @@
    ```
 
 3. **命名空间导入**:
+
    ```typescript
    // ✅ 使用命名空间避免冲突
    import { AccountContracts } from '@dailyuse/contracts';
@@ -259,15 +268,15 @@
 
 ### 参考模块: Goal & Reminder
 
-| 对比项 | Goal/Reminder | Account/Authentication | 说明 |
-|--------|---------------|------------------------|------|
-| 类型别名位置 | ✅ 顶部 | ✅ 顶部 | 完全一致 |
-| ClientDTO 返回 | ✅ 所有方法 | ✅ 所有方法 | 完全一致 |
-| Controller 模式 | ✅ 静态方法 | ✅ 静态方法 | 完全一致 |
-| 错误处理 | ✅ try-catch + logger | ✅ try-catch + logger | 完全一致 |
-| Swagger 文档 | ✅ 完整 | ✅ 完整 | 完全一致 |
-| DI Container | ✅ 懒加载 | ✅ 懒加载 | 完全一致 |
-| Repository Stub | ✅ 所有方法抛异常 | ✅ 所有方法抛异常 | 完全一致 |
+| 对比项          | Goal/Reminder         | Account/Authentication | 说明     |
+| --------------- | --------------------- | ---------------------- | -------- |
+| 类型别名位置    | ✅ 顶部               | ✅ 顶部                | 完全一致 |
+| ClientDTO 返回  | ✅ 所有方法           | ✅ 所有方法            | 完全一致 |
+| Controller 模式 | ✅ 静态方法           | ✅ 静态方法            | 完全一致 |
+| 错误处理        | ✅ try-catch + logger | ✅ try-catch + logger  | 完全一致 |
+| Swagger 文档    | ✅ 完整               | ✅ 完整                | 完全一致 |
+| DI Container    | ✅ 懒加载             | ✅ 懒加载              | 完全一致 |
+| Repository Stub | ✅ 所有方法抛异常     | ✅ 所有方法抛异常      | 完全一致 |
 
 **结论**: Account 和 Authentication 模块与 Goal/Reminder 模块保持 100% 一致的代码风格和架构模式。
 
@@ -278,12 +287,14 @@
 ### 1. Gender 类型问题 ✅ 已修复
 
 **问题**:
+
 ```typescript
 // ❌ 错误
 gender?: string;  // DomainService 期望 Gender 枚举
 ```
 
 **修复**:
+
 ```typescript
 // ✅ 正确
 type Gender = AccountContracts.Gender;  // 在顶部添加类型别名
@@ -295,9 +306,10 @@ gender?: Gender;  // 使用枚举类型
 **问题**: `DeviceInfo` 在 domain-server 中是值对象（有 `equals` 方法），在 contracts 中是普通接口。
 
 **修复**:
+
 ```typescript
 // ✅ 使用 any 类型避免类型冲突
-device: any;  // DeviceInfo from domain
+device: any; // DeviceInfo from domain
 ```
 
 ### 3. AuthContracts 导入问题 ✅ 已修复
@@ -305,6 +317,7 @@ device: any;  // DeviceInfo from domain
 **问题**: 直接从 `@dailyuse/contracts` 导入 `AuthCredentialClientDTO` 失败。
 
 **修复**:
+
 ```typescript
 // ✅ 使用命名空间导入
 import { AuthenticationContracts } from '@dailyuse/contracts';
@@ -316,6 +329,7 @@ type AuthCredentialClientDTO = AuthenticationContracts.AuthCredentialClientDTO;
 **问题**: Container 方法返回 `Repository | null` 但声明为 `Repository`。
 
 **修复**:
+
 ```typescript
 // ✅ 静态导入 Repository（不使用 require）
 import { PrismaAccountRepository } from '../repositories/PrismaAccountRepository';
@@ -333,6 +347,7 @@ static getAccountRepository(): IAccountRepository {
 ## 统计数据
 
 ### Account 模块
+
 - **文件数**: 5 个
 - **总代码行数**: ~550 行
 - **ApplicationService**: 11 个方法
@@ -341,6 +356,7 @@ static getAccountRepository(): IAccountRepository {
 - **类型错误**: 0 个 ✅
 
 ### Authentication 模块
+
 - **文件数**: 6 个
 - **总代码行数**: ~1,050 行
 - **ApplicationService**: 26 个方法（凭证 9 + 令牌 4 + 密钥 2 + 2FA 3 + 会话 8）
@@ -349,6 +365,7 @@ static getAccountRepository(): IAccountRepository {
 - **类型错误**: 0 个 ✅
 
 ### 总计
+
 - **总文件数**: 11 个
 - **总代码行数**: ~1,600 行
 - **总方法数**: 37 个（ApplicationService）
@@ -373,11 +390,12 @@ static getAccountRepository(): IAccountRepository {
    - 实现 `PrismaAuthSessionRepository` 的 12 个方法
 
 3. **路由注册**:
+
    ```typescript
    // apps/api/src/app.ts
    import accountRoutes from './modules/account/interface/http/accountRoutes';
    import authenticationRoutes from './modules/authentication/interface/http/authenticationRoutes';
-   
+
    app.use('/api/accounts', accountRoutes);
    app.use('/api/auth', authenticationRoutes);
    ```

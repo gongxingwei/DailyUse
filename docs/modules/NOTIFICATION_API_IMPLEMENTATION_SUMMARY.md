@@ -9,6 +9,7 @@
 ### Notification 模块 (6 个文件，约 850 行代码)
 
 #### 1. NotificationApplicationService.ts (268 行)
+
 - **路径**: `apps/api/src/modules/notification/application/services/`
 - **功能**: 通知应用服务，处理通知相关业务逻辑
 - **方法数量**: 21 个方法
@@ -18,7 +19,7 @@
   - `createNotification` - 创建并发送通知
   - `createNotificationFromTemplate` - 从模板创建通知
   - `sendBulkNotifications` - 批量发送通知
-  
+
   **通知查询** (6 个方法):
   - `getNotification` - 获取通知详情
   - `getUserNotifications` - 获取用户的通知列表
@@ -26,7 +27,7 @@
   - `getUnreadCount` - 获取未读通知数量
   - `getCategoryStats` - 获取分类统计
   - `getNotificationsByRelatedEntity` - 获取相关实体的通知
-  
+
   **通知状态管理** (6 个方法):
   - `markAsRead` - 标记通知为已读
   - `markManyAsRead` - 批量标记为已读
@@ -34,11 +35,11 @@
   - `deleteNotification` - 删除通知（支持软删除）
   - `deleteManyNotifications` - 批量删除通知
   - `executeNotificationAction` - 执行通知操作
-  
+
   **清理与维护** (2 个方法):
   - `cleanupExpiredNotifications` - 清理过期通知
   - `cleanupDeletedNotifications` - 清理已删除通知
-  
+
   **用户偏好设置** (4 个方法):
   - `getPreference` - 获取用户偏好设置
   - `getOrCreatePreference` - 获取或创建用户偏好设置
@@ -51,6 +52,7 @@
   - ✅ 单例模式 + 依赖注入
 
 #### 2. NotificationController.ts (475 行)
+
 - **路径**: `apps/api/src/modules/notification/interface/http/`
 - **功能**: Notification HTTP 控制器
 - **端点数量**: 17 个 RESTful 端点
@@ -78,6 +80,7 @@
   - ✅ 懒加载 ApplicationService
 
 #### 3. notificationRoutes.ts (438 行)
+
 - **路径**: `apps/api/src/modules/notification/interface/http/`
 - **功能**: Notification 路由定义
 - **特点**:
@@ -87,6 +90,7 @@
   - ✅ 类型注解：`Router: ExpressRouter`
 
 #### 4. NotificationContainer.ts (58 行)
+
 - **路径**: `apps/api/src/modules/notification/infrastructure/di/`
 - **功能**: DI 容器
 - **特点**:
@@ -95,6 +99,7 @@
   - ✅ 支持测试（setRepository, reset）
 
 #### 5. PrismaNotificationRepository.ts (145 行)
+
 - **路径**: `apps/api/src/modules/notification/infrastructure/repositories/`
 - **功能**: Notification 仓储实现（临时 stub）
 - **方法数量**: 18 个方法（实现 `INotificationRepository` 接口）
@@ -106,6 +111,7 @@
   - `cleanupExpired`, `cleanupDeleted`
 
 #### 6. PrismaNotificationTemplateRepository.ts (88 行)
+
 - **路径**: `apps/api/src/modules/notification/infrastructure/repositories/`
 - **功能**: NotificationTemplate 仓储实现（临时 stub）
 - **方法数量**: 11 个方法（实现 `INotificationTemplateRepository` 接口）
@@ -115,6 +121,7 @@
   - `delete`, `exists`, `isNameUsed`, `count`
 
 #### 7. PrismaNotificationPreferenceRepository.ts (51 行)
+
 - **路径**: `apps/api/src/modules/notification/infrastructure/repositories/`
 - **功能**: NotificationPreference 仓储实现（临时 stub）
 - **方法数量**: 7 个方法（实现 `INotificationPreferenceRepository` 接口）
@@ -146,6 +153,7 @@
 ### ✅ 代码规范
 
 1. **类型使用**:
+
    ```typescript
    // ✅ 类型别名统一在顶部
    type NotificationClientDTO = NotificationContracts.NotificationClientDTO;
@@ -153,6 +161,7 @@
    ```
 
 2. **ClientDTO 返回**:
+
    ```typescript
    // ✅ 所有 API 方法返回 ClientDTO
    const notification = await this.domainService.createNotification(...);
@@ -160,6 +169,7 @@
    ```
 
 3. **命名空间导入**:
+
    ```typescript
    // ✅ 使用命名空间避免冲突
    import { NotificationContracts } from '@dailyuse/contracts';
@@ -202,15 +212,15 @@
 
 ### 参考模块: Account & Authentication
 
-| 对比项 | Account/Authentication | Notification | 说明 |
-|--------|------------------------|--------------|------|
-| 类型别名位置 | ✅ 顶部 | ✅ 顶部 | 完全一致 |
-| ClientDTO 返回 | ✅ 所有方法 | ✅ 所有方法 | 完全一致 |
-| Controller 模式 | ✅ 静态方法 | ✅ 静态方法 | 完全一致 |
-| 错误处理 | ✅ try-catch + logger | ✅ try-catch + logger | 完全一致 |
-| Swagger 文档 | ✅ 完整 | ✅ 完整 | 完全一致 |
-| DI Container | ✅ 懒加载 | ✅ 懒加载 | 完全一致 |
-| Repository Stub | ✅ 所有方法抛异常 | ✅ 所有方法抛异常 | 完全一致 |
+| 对比项          | Account/Authentication | Notification          | 说明     |
+| --------------- | ---------------------- | --------------------- | -------- |
+| 类型别名位置    | ✅ 顶部                | ✅ 顶部               | 完全一致 |
+| ClientDTO 返回  | ✅ 所有方法            | ✅ 所有方法           | 完全一致 |
+| Controller 模式 | ✅ 静态方法            | ✅ 静态方法           | 完全一致 |
+| 错误处理        | ✅ try-catch + logger  | ✅ try-catch + logger | 完全一致 |
+| Swagger 文档    | ✅ 完整                | ✅ 完整               | 完全一致 |
+| DI Container    | ✅ 懒加载              | ✅ 懒加载             | 完全一致 |
+| Repository Stub | ✅ 所有方法抛异常      | ✅ 所有方法抛异常     | 完全一致 |
 
 **结论**: Notification 模块与 Account/Authentication 模块保持 100% 一致的代码风格和架构模式。
 
@@ -226,8 +236,12 @@ export * from './notification';
 ```
 
 这样使得 API 层可以直接导入：
+
 ```typescript
-import { NotificationDomainService, NotificationPreferenceDomainService } from '@dailyuse/domain-server';
+import {
+  NotificationDomainService,
+  NotificationPreferenceDomainService,
+} from '@dailyuse/domain-server';
 ```
 
 ---
@@ -235,6 +249,7 @@ import { NotificationDomainService, NotificationPreferenceDomainService } from '
 ## 统计数据
 
 ### Notification 模块
+
 - **文件数**: 7 个
 - **总代码行数**: ~1,523 行
 - **ApplicationService**: 21 个方法（通知创建 3 + 查询 6 + 状态管理 6 + 清理 2 + 偏好设置 4）
@@ -243,6 +258,7 @@ import { NotificationDomainService, NotificationPreferenceDomainService } from '
 - **类型错误**: 0 个 ✅
 
 ### 详细统计
+
 - NotificationApplicationService: 268 行，21 个方法
 - NotificationController: 475 行，17 个端点
 - notificationRoutes: 438 行，完整 Swagger 文档
@@ -271,10 +287,11 @@ import { NotificationDomainService, NotificationPreferenceDomainService } from '
    - 实现 `PrismaNotificationPreferenceRepository` 的 7 个方法
 
 3. **路由注册**:
+
    ```typescript
    // apps/api/src/app.ts
    import notificationRoutes from './modules/notification/interface/http/notificationRoutes';
-   
+
    app.use('/api/notifications', notificationRoutes);
    ```
 
@@ -327,6 +344,7 @@ import { NotificationDomainService, NotificationPreferenceDomainService } from '
 ## API 端点清单
 
 ### 通知管理
+
 - `POST /api/notifications` - 创建通知
 - `POST /api/notifications/from-template` - 从模板创建通知
 - `POST /api/notifications/bulk` - 批量发送通知
@@ -335,17 +353,20 @@ import { NotificationDomainService, NotificationPreferenceDomainService } from '
 - `DELETE /api/notifications/many` - 批量删除通知
 
 ### 通知查询
+
 - `GET /api/notifications/user/:accountUuid` - 获取用户的通知列表
 - `GET /api/notifications/user/:accountUuid/unread` - 获取未读通知
 - `GET /api/notifications/user/:accountUuid/unread-count` - 获取未读通知数量
 - `GET /api/notifications/user/:accountUuid/stats` - 获取分类统计
 
 ### 状态管理
+
 - `PATCH /api/notifications/:uuid/read` - 标记通知为已读
 - `PATCH /api/notifications/read/many` - 批量标记为已读
 - `PATCH /api/notifications/user/:accountUuid/read-all` - 标记所有通知为已读
 
 ### 偏好设置
+
 - `GET /api/notifications/preferences/:accountUuid` - 获取用户偏好设置
 - `PUT /api/notifications/preferences/:accountUuid` - 更新用户偏好设置
 
@@ -359,12 +380,12 @@ Notification 模块的 API 层已完整实现，代码质量达到生产级别�
 
 ### 模块完成度对比
 
-| 模块 | ApplicationService | Controller | Routes | Container | Repository Stubs | 总代码行数 | 状态 |
-|------|-------------------|------------|--------|-----------|------------------|-----------|------|
-| Goal | ✅ 11 方法 | ✅ 11 端点 | ✅ 完整 | ✅ | ✅ 11 方法 | ~1,081 | ✅ 完成 |
-| Reminder | ✅ 8 方法 | ✅ 8 端点 | ✅ 完整 | ✅ | ✅ 27 方法 | ~840 | ✅ 完成 |
-| Account | ✅ 11 方法 | ✅ 7 端点 | ✅ 完整 | ✅ | ✅ 9 方法 | ~550 | ✅ 完成 |
-| Authentication | ✅ 26 方法 | ✅ 8 端点 | ✅ 完整 | ✅ | ✅ 22 方法 | ~1,050 | ✅ 完成 |
-| **Notification** | ✅ 21 方法 | ✅ 17 端点 | ✅ 完整 | ✅ | ✅ 36 方法 | **~1,523** | ✅ 完成 |
+| 模块             | ApplicationService | Controller | Routes  | Container | Repository Stubs | 总代码行数 | 状态    |
+| ---------------- | ------------------ | ---------- | ------- | --------- | ---------------- | ---------- | ------- |
+| Goal             | ✅ 11 方法         | ✅ 11 端点 | ✅ 完整 | ✅        | ✅ 11 方法       | ~1,081     | ✅ 完成 |
+| Reminder         | ✅ 8 方法          | ✅ 8 端点  | ✅ 完整 | ✅        | ✅ 27 方法       | ~840       | ✅ 完成 |
+| Account          | ✅ 11 方法         | ✅ 7 端点  | ✅ 完整 | ✅        | ✅ 9 方法        | ~550       | ✅ 完成 |
+| Authentication   | ✅ 26 方法         | ✅ 8 端点  | ✅ 完整 | ✅        | ✅ 22 方法       | ~1,050     | ✅ 完成 |
+| **Notification** | ✅ 21 方法         | ✅ 17 端点 | ✅ 完整 | ✅        | ✅ 36 方法       | **~1,523** | ✅ 完成 |
 
 **总计**: 5 个模块，77 个 ApplicationService 方法，51 个 API 端点，~5,044 行代码，**0 个类型错误** ✅

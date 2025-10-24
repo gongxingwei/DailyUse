@@ -69,6 +69,7 @@ onMounted(async () => {
 ### 方法说明
 
 #### 任务管理
+
 ```typescript
 // 获取所有任务
 await fetchTasks();
@@ -100,6 +101,7 @@ await deleteTask('task-uuid');
 ```
 
 #### 统计信息
+
 ```typescript
 // 获取统计信息
 await fetchStatistics();
@@ -135,9 +137,7 @@ import { useSchedule } from '@/modules/schedule';
 
 const { tasks, isLoading, error, pauseTask, resumeTask, deleteTask } = useSchedule();
 
-const reminderTasks = computed(() => 
-  tasks.value.filter(t => t.sourceModule === 'reminder')
-);
+const reminderTasks = computed(() => tasks.value.filter((t) => t.sourceModule === 'reminder'));
 
 async function handlePauseTask(taskUuid: string) {
   await pauseTask(taskUuid);
@@ -173,9 +173,7 @@ import { useSchedule } from '@/modules/schedule';
 
 const { tasks, pauseTask, resumeTask, deleteTask } = useSchedule();
 
-const taskModuleTasks = computed(() => 
-  tasks.value.filter(t => t.sourceModule === 'task')
-);
+const taskModuleTasks = computed(() => tasks.value.filter((t) => t.sourceModule === 'task'));
 </script>
 ```
 
@@ -199,9 +197,7 @@ import { useSchedule } from '@/modules/schedule';
 
 const { tasks } = useSchedule();
 
-const goalTasks = computed(() => 
-  tasks.value.filter(t => t.sourceModule === 'goal')
-);
+const goalTasks = computed(() => tasks.value.filter((t) => t.sourceModule === 'goal'));
 </script>
 ```
 
@@ -232,10 +228,7 @@ const {
 } = useSchedule();
 
 async function handleRefresh() {
-  await Promise.all([
-    fetchStatistics(),
-    fetchAllModuleStatistics(),
-  ]);
+  await Promise.all([fetchStatistics(), fetchAllModuleStatistics()]);
 }
 </script>
 ```
@@ -342,33 +335,33 @@ interface ScheduleTaskServerDTO {
   sourceModule: 'reminder' | 'task' | 'goal' | 'notification';
   sourceEntityId: string;
   status: 'active' | 'paused' | 'completed' | 'failed' | 'cancelled';
-  
+
   // Schedule Config
   cronExpression?: string;
   timezone: string;
   startDate?: number;
   endDate?: number;
   maxExecutions?: number;
-  
+
   // Execution Info
   executionCount: number;
   lastExecutionTime?: number;
   nextExecutionTime?: number;
   lastExecutionStatus?: string;
-  
+
   // Retry Policy
   retryEnabled: boolean;
   maxRetries: number;
   retryDelay: number;
   backoffMultiplier: number;
   maxRetryDelay: number;
-  
+
   // Metadata
   payload?: any;
   tags: string[];
   priority: string;
   timeout: number;
-  
+
   createdAt: number;
   updatedAt: number;
 }
@@ -380,22 +373,22 @@ interface ScheduleTaskServerDTO {
 interface ScheduleStatisticsServerDTO {
   uuid: string;
   accountUuid: string;
-  
+
   // 任务统计
   totalTasks: number;
   activeTasks: number;
   pausedTasks: number;
   completedTasks: number;
   failedTasks: number;
-  
+
   // 执行统计
   totalExecutions: number;
   successfulExecutions: number;
   failedExecutions: number;
-  
+
   // 模块统计
   moduleStatistics: Record<string, ModuleStatisticsServerDTO>;
-  
+
   lastRecalculatedAt?: number;
   createdAt: number;
   updatedAt: number;
@@ -454,7 +447,7 @@ const { error, clearError } = useSchedule();
 // 检查错误
 if (error.value) {
   console.error('Schedule error:', error.value);
-  
+
   // 清除错误
   clearError();
 }
@@ -491,7 +484,7 @@ const tasks = ref([]);
         <task-module-tasks-card :tasks="taskModuleTasks" />
         <goal-tasks-card :tasks="goalTasks" />
       </v-col>
-      
+
       <!-- 右侧：统计 -->
       <v-col cols="12" md="4">
         <statistics-card :statistics="statistics" />
@@ -543,7 +536,7 @@ async function handleAction() {
           @delete-task="handleDelete"
         />
       </v-col>
-      
+
       <v-col cols="12" md="4">
         <task-module-tasks-card
           :tasks="taskModuleTasks"
@@ -553,7 +546,7 @@ async function handleAction() {
           @delete-task="handleDelete"
         />
       </v-col>
-      
+
       <v-col cols="12" md="4">
         <goal-tasks-card
           :tasks="goalTasks"
@@ -600,27 +593,18 @@ const {
   deleteTask,
 } = useSchedule();
 
-const reminderTasks = computed(() => 
-  tasks.value.filter(t => t.sourceModule === 'reminder')
-);
+const reminderTasks = computed(() => tasks.value.filter((t) => t.sourceModule === 'reminder'));
 
-const taskModuleTasks = computed(() => 
-  tasks.value.filter(t => t.sourceModule === 'task')
-);
+const taskModuleTasks = computed(() => tasks.value.filter((t) => t.sourceModule === 'task'));
 
-const goalTasks = computed(() => 
-  tasks.value.filter(t => t.sourceModule === 'goal')
-);
+const goalTasks = computed(() => tasks.value.filter((t) => t.sourceModule === 'goal'));
 
 async function handleRefresh() {
   await fetchTasks();
 }
 
 async function handleRefreshStats() {
-  await Promise.all([
-    fetchStatistics(),
-    fetchAllModuleStatistics(),
-  ]);
+  await Promise.all([fetchStatistics(), fetchAllModuleStatistics()]);
 }
 
 async function handlePause(taskUuid: string) {
@@ -638,11 +622,7 @@ async function handleDelete(taskUuid: string) {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    fetchTasks(),
-    fetchStatistics(),
-    fetchAllModuleStatistics(),
-  ]);
+  await Promise.all([fetchTasks(), fetchStatistics(), fetchAllModuleStatistics()]);
 });
 </script>
 ```

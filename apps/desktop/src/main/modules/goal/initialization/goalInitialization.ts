@@ -1,15 +1,18 @@
-import { InitializationTask, InitializationPhase, InitializationManager } from '../../../shared/initialization/initializationManager';
+import {
+  InitializationTask,
+  InitializationPhase,
+  InitializationManager,
+} from '../../../shared/initialization/initializationManager';
 import { GoalEventHandlers } from '../application/events/goalEventHandlers';
 import { MainGoalApplicationService } from '../application/services/mainGoalApplicationService';
 import { registerGoalIpcHandlers } from '../infrastructure/ipcs/goalIpcHandlers';
-
 
 const goalSystemGoalDirsInitializationTask: InitializationTask = {
   name: 'goal-system-goal-dirs',
   phase: InitializationPhase.USER_LOGIN,
   priority: 10,
   dependencies: [],
-  initialize: async (context: { accountUuid: string }) => { 
+  initialize: async (context: { accountUuid: string }) => {
     const service = await MainGoalApplicationService.getInstance();
     await service.initializeSystemGoalDirs(context.accountUuid);
   },
@@ -31,7 +34,7 @@ const goalEventHandlersInitializationTask: InitializationTask = {
   cleanup: async () => {
     GoalEventHandlers.cleanup();
     console.log('✓ Goal event handlers cleaned up');
-  }
+  },
 };
 
 /**
@@ -48,7 +51,7 @@ const registerGoalIpcHandlersTask: InitializationTask = {
   cleanup: async () => {
     // 如果需要，可以在这里添加清理逻辑
     console.log('✓ Goal IPC handlers cleanup (if needed)');
-  }
+  },
 };
 
 /**
@@ -56,10 +59,10 @@ const registerGoalIpcHandlersTask: InitializationTask = {
  */
 export function registerGoalInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
-  
+
   manager.registerTask(goalEventHandlersInitializationTask);
   manager.registerTask(registerGoalIpcHandlersTask);
   manager.registerTask(goalSystemGoalDirsInitializationTask);
-  
+
   console.log('🚀【主进程::Goal 模块】初始化任务注册完成');
 }

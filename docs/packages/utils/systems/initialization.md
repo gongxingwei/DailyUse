@@ -52,11 +52,11 @@ Initialize 系统提供统一的应用初始化流程管理,确保各个模块�
 ```typescript
 // 初始化器接口
 interface Initializer {
-  name: string;                     // 模块名称
-  priority?: number;                // 优先级（数字越小越先执行）
-  dependencies?: string[];          // 依赖的模块
-  initialize: () => Promise<void>;  // 初始化函数
-  cleanup?: () => Promise<void>;    // 清理函数
+  name: string; // 模块名称
+  priority?: number; // 优先级（数字越小越先执行）
+  dependencies?: string[]; // 依赖的模块
+  initialize: () => Promise<void>; // 初始化函数
+  cleanup?: () => Promise<void>; // 清理函数
 }
 
 // 初始化管理器
@@ -172,7 +172,7 @@ export class ApiInitializationManager {
       logger.info('✅ Scheduler started');
 
       // 3. 其他初始化...
-      
+
       logger.info('✅ API server initialization complete');
     } catch (error) {
       logger.error('❌ API server initialization failed', error);
@@ -182,12 +182,12 @@ export class ApiInitializationManager {
 
   static async cleanup(): Promise<void> {
     logger.info('Shutting down API server...');
-    
+
     // 清理资源
     // - 关闭数据库连接
     // - 停止调度器
     // - 清理临时文件
-    
+
     logger.info('✅ API server shutdown complete');
   }
 }
@@ -209,7 +209,7 @@ async function bootstrap() {
   // 3. 启动 Express 服务器
   const app = createApp();
   const PORT = process.env.PORT || 3888;
-  
+
   app.listen(PORT, () => {
     console.log(`API server listening on http://localhost:${PORT}`);
   });
@@ -253,7 +253,7 @@ export class InitializationManager {
 
   async initialize(): Promise<void> {
     const sorted = this.topologicalSort();
-    
+
     for (const name of sorted) {
       const initializer = this.initializers.get(name)!;
       await initializer.initialize();
@@ -263,14 +263,14 @@ export class InitializationManager {
 
   async cleanup(): Promise<void> {
     const sorted = this.topologicalSort().reverse();
-    
+
     for (const name of sorted) {
       const initializer = this.initializers.get(name)!;
       if (initializer.cleanup) {
         await initializer.cleanup();
       }
     }
-    
+
     this.initialized.clear();
   }
 
@@ -291,7 +291,7 @@ const manager = new InitializationManager();
 // 注册初始化器
 manager.register({
   name: 'logger',
-  priority: 0,  // 最先执行
+  priority: 0, // 最先执行
   initialize: async () => {
     initializeLogger();
   },
@@ -300,7 +300,7 @@ manager.register({
 manager.register({
   name: 'database',
   priority: 1,
-  dependencies: ['logger'],  // 依赖 logger
+  dependencies: ['logger'], // 依赖 logger
   initialize: async () => {
     await connectDatabase();
   },
@@ -347,14 +347,14 @@ process.on('SIGINT', async () => {
 // ✅ 推荐：使用优先级或依赖关系
 manager.register({
   name: 'logger',
-  priority: 0,  // 最先执行
+  priority: 0, // 最先执行
   initialize: async () => initializeLogger(),
 });
 
 manager.register({
   name: 'database',
   priority: 1,
-  dependencies: ['logger'],  // 明确依赖
+  dependencies: ['logger'], // 明确依赖
   initialize: async () => connectDatabase(),
 });
 ```
@@ -368,10 +368,10 @@ export class AppInitializationManager {
       await this.doInitialize();
     } catch (error) {
       logger.error('Initialization failed', error);
-      
+
       // 尝试清理已初始化的资源
       await this.cleanup();
-      
+
       // 重新抛出错误
       throw error;
     }
@@ -433,9 +433,9 @@ export async function initializeGoalModule(): Promise<void> {
 
 export async function cleanupGoalModule(): Promise<void> {
   logger.info('Cleaning up Goal module...');
-  
+
   // 清理资源
-  
+
   logger.info('✅ Goal module cleaned up');
 }
 ```
@@ -446,21 +446,21 @@ export async function cleanupGoalModule(): Promise<void> {
 
 ### InitializationManager
 
-| 方法 | 签名 | 说明 |
-|------|------|------|
-| `register()` | `register(initializer: Initializer): void` | 注册初始化器 |
-| `initialize()` | `initialize(): Promise<void>` | 执行初始化 |
-| `cleanup()` | `cleanup(): Promise<void>` | 清理资源 |
+| 方法           | 签名                                       | 说明         |
+| -------------- | ------------------------------------------ | ------------ |
+| `register()`   | `register(initializer: Initializer): void` | 注册初始化器 |
+| `initialize()` | `initialize(): Promise<void>`              | 执行初始化   |
+| `cleanup()`    | `cleanup(): Promise<void>`                 | 清理资源     |
 
 ### Initializer 接口
 
 ```typescript
 interface Initializer {
-  name: string;                     // 模块名称
-  priority?: number;                // 优先级（默认100）
-  dependencies?: string[];          // 依赖的模块
-  initialize: () => Promise<void>;  // 初始化函数
-  cleanup?: () => Promise<void>;    // 清理函数（可选）
+  name: string; // 模块名称
+  priority?: number; // 优先级（默认100）
+  dependencies?: string[]; // 依赖的模块
+  initialize: () => Promise<void>; // 初始化函数
+  cleanup?: () => Promise<void>; // 清理函数（可选）
 }
 ```
 

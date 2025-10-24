@@ -1,19 +1,19 @@
-import type { Database } from "better-sqlite3";
-import type { IReminderTemplateRepository } from "../../domain/repositories/iReminderTemplateRepository";
-import type { IReminderTemplate } from "@common/modules/reminder/types/reminder";
-import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
-import { getDatabase } from "../../../../shared/database/index";
+import type { Database } from 'better-sqlite3';
+import type { IReminderTemplateRepository } from '../../domain/repositories/iReminderTemplateRepository';
+import type { IReminderTemplate } from '@common/modules/reminder/types/reminder';
+import { ReminderTemplate } from '../../domain/entities/reminderTemplate';
+import { getDatabase } from '../../../../shared/database/index';
 
 /**
  * SqliteReminderRepository
- * 
+ *
  * 提供 ReminderTemplate 的数据库持久化实现（CRUD 操作）。
  * 负责与 SQLite 数据库交互，将领域实体与数据库行进行映射。
- * 
+ *
  * 主要职责：
  * - 创建、更新、删除、查询提醒模板
  * - 将数据库行映射为 ReminderTemplate 实体
- * 
+ *
  * 使用方式：
  * ```ts
  * const repo = new SqliteReminderRepository();
@@ -70,11 +70,11 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
         data.notificationSettings.popup ? 1 : 0,
         JSON.stringify(data.timeConfig),
         Date.now(),
-        Date.now()
+        Date.now(),
       );
       return true;
     } catch (error) {
-      console.error("Error creating reminder template:", error);
+      console.error('Error creating reminder template:', error);
       return false;
     }
   }
@@ -120,11 +120,11 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
         JSON.stringify(template.timeConfig),
         Date.now(),
         accountUuid,
-        template.uuid
+        template.uuid,
       );
       return true;
     } catch (error) {
-      console.error("Error updating reminder template:", error);
+      console.error('Error updating reminder template:', error);
       throw error;
     }
   }
@@ -147,7 +147,7 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
       `);
       stmt.run(accountUuid, uuid);
     } catch (error) {
-      console.error("Error deleting reminder template:", error);
+      console.error('Error deleting reminder template:', error);
       throw error;
     }
   }
@@ -170,7 +170,7 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
       const rows = stmt.all(accountUuid);
       return rows.map((row: any) => this.mapRowToReminderTemplate(row));
     } catch (error) {
-      console.error("Error getting all reminder templates:", error);
+      console.error('Error getting all reminder templates:', error);
       throw error;
     }
   }
@@ -194,12 +194,12 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
       const row = stmt.get(accountUuid, uuid);
       return row ? this.mapRowToReminderTemplate(row) : null;
     } catch (error) {
-      console.error("Error getting reminder template by uuid:", error);
+      console.error('Error getting reminder template by uuid:', error);
       throw error;
     }
   }
 
-    /**
+  /**
    * 根据分组 groupUuid 获取该分组下所有提醒模板
    * @param accountUuid 用户账号ID
    * @param groupUuid 分组唯一ID
@@ -231,7 +231,7 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
       const rows = stmt.all(accountUuid, groupUuid);
       return rows.map((row: any) => this.mapRowToReminderTemplate(row));
     } catch (error) {
-      console.error("Error getting reminder templates by groupUuid:", error);
+      console.error('Error getting reminder templates by groupUuid:', error);
       throw error;
     }
   }

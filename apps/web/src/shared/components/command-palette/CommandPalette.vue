@@ -42,7 +42,11 @@
         </v-text-field>
 
         <!-- Search Stats -->
-        <div v-if="searchQuery && !isCommandMode" class="text-caption text-medium-emphasis mt-2" data-testid="search-stats">
+        <div
+          v-if="searchQuery && !isCommandMode"
+          class="text-caption text-medium-emphasis mt-2"
+          data-testid="search-stats"
+        >
           Found {{ filteredResults.length }} result{{ filteredResults.length !== 1 ? 's' : '' }}
           <span v-if="searchTime > 0">({{ searchTime }}ms)</span>
         </div>
@@ -140,7 +144,11 @@
         <!-- Search Results -->
         <div v-else-if="searchQuery" data-testid="search-results">
           <!-- No Results -->
-          <div v-if="filteredResults.length === 0" class="text-center pa-8" data-testid="no-results">
+          <div
+            v-if="filteredResults.length === 0"
+            class="text-center pa-8"
+            data-testid="no-results"
+          >
             <v-icon size="64" color="grey-lighten-1">mdi-magnify-close</v-icon>
             <div class="text-h6 text-medium-emphasis mt-2">No results found</div>
             <div class="text-caption text-medium-emphasis">
@@ -181,11 +189,7 @@
                       >
                         {{ result.metadata.progress }}%
                       </v-chip>
-                      <v-chip
-                        size="x-small"
-                        :color="getStatusColor(result.status)"
-                        variant="flat"
-                      >
+                      <v-chip size="x-small" :color="getStatusColor(result.status)" variant="flat">
                         {{ result.status }}
                       </v-chip>
                     </div>
@@ -216,11 +220,7 @@
                     {{ truncate(result.description, 60) }}
                   </v-list-item-subtitle>
                   <template #append>
-                    <v-chip
-                      size="x-small"
-                      :color="getStatusColor(result.status)"
-                      variant="flat"
-                    >
+                    <v-chip size="x-small" :color="getStatusColor(result.status)" variant="flat">
                       {{ result.status }}
                     </v-chip>
                   </template>
@@ -238,7 +238,9 @@
                 <v-list-item
                   v-for="(result, index) in reminderResults"
                   :key="result.id"
-                  :class="{ 'bg-grey-lighten-4': selectedIndex === getGlobalIndex('reminder', index) }"
+                  :class="{
+                    'bg-grey-lighten-4': selectedIndex === getGlobalIndex('reminder', index),
+                  }"
                   @click="handleSelectResult(result)"
                   @mouseenter="selectedIndex = getGlobalIndex('reminder', index)"
                 >
@@ -250,11 +252,7 @@
                     {{ truncate(result.description, 60) }}
                   </v-list-item-subtitle>
                   <template #append>
-                    <v-chip
-                      size="x-small"
-                      :color="getStatusColor(result.status)"
-                      variant="flat"
-                    >
+                    <v-chip size="x-small" :color="getStatusColor(result.status)" variant="flat">
                       {{ result.status }}
                     </v-chip>
                   </template>
@@ -329,7 +327,7 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
-  'navigate': [url: string];
+  navigate: [url: string];
 }>();
 
 // Router
@@ -359,10 +357,10 @@ const isCommandMode = computed(() => {
 // Filtered commands
 const filteredCommands = computed(() => {
   if (!isCommandMode.value) return [];
-  
+
   const query = searchQuery.value.slice(1).trim();
   if (!query) return commands.value;
-  
+
   return globalSearchService.searchCommands(query);
 });
 
@@ -391,12 +389,15 @@ const totalResults = computed(() => {
 });
 
 // Watch model value
-watch(() => props.modelValue, (newVal) => {
-  isOpen.value = newVal;
-  if (newVal) {
-    handleOpen();
-  }
-});
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    isOpen.value = newVal;
+    if (newVal) {
+      handleOpen();
+    }
+  },
+);
 
 watch(isOpen, (newVal) => {
   emit('update:modelValue', newVal);
@@ -426,20 +427,20 @@ watch(searchQuery, (newQuery) => {
 // Methods
 async function performSearch(query: string) {
   const startTime = performance.now();
-  
+
   try {
     searchResults.value = await globalSearchService.search(
       query,
       props.goals,
       props.tasks,
       props.reminders,
-      { limit: 50 }
+      { limit: 50 },
     );
   } catch (error) {
     console.error('Search error:', error);
     searchResults.value = [];
   }
-  
+
   const endTime = performance.now();
   searchTime.value = Math.round(endTime - startTime);
 }
@@ -447,7 +448,7 @@ async function performSearch(query: string) {
 function handleOpen() {
   // Load recent items
   recentItems.value = globalSearchService.getRecentItems(10);
-  
+
   // Load commands
   commands.value = [
     {
@@ -455,7 +456,9 @@ function handleOpen() {
       label: 'Create New Goal',
       description: 'Create a new goal',
       icon: 'mdi-target',
-      handler: async () => { await router.push('/goals/new'); },
+      handler: async () => {
+        await router.push('/goals/new');
+      },
       keywords: ['new', 'goal', 'create', 'add'],
       category: 'create',
     },
@@ -464,7 +467,9 @@ function handleOpen() {
       label: 'Create New Task',
       description: 'Create a new task',
       icon: 'mdi-checkbox-marked-outline',
-      handler: async () => { await router.push('/tasks/new'); },
+      handler: async () => {
+        await router.push('/tasks/new');
+      },
       keywords: ['new', 'task', 'create', 'add', 'todo'],
       category: 'create',
     },
@@ -473,7 +478,9 @@ function handleOpen() {
       label: 'Create New Reminder',
       description: 'Create a new reminder',
       icon: 'mdi-bell-outline',
-      handler: async () => { await router.push('/reminders/new'); },
+      handler: async () => {
+        await router.push('/reminders/new');
+      },
       keywords: ['new', 'reminder', 'create', 'add'],
       category: 'create',
     },
@@ -482,7 +489,9 @@ function handleOpen() {
       label: 'Go to Dashboard',
       description: 'Navigate to dashboard',
       icon: 'mdi-view-dashboard',
-      handler: async () => { await router.push('/dashboard'); },
+      handler: async () => {
+        await router.push('/dashboard');
+      },
       keywords: ['dashboard', 'home', 'main'],
       category: 'navigate',
     },
@@ -491,7 +500,9 @@ function handleOpen() {
       label: 'Go to Goals',
       description: 'Navigate to goals page',
       icon: 'mdi-target',
-      handler: async () => { await router.push('/goals'); },
+      handler: async () => {
+        await router.push('/goals');
+      },
       keywords: ['goals', 'objectives'],
       category: 'navigate',
     },
@@ -500,12 +511,14 @@ function handleOpen() {
       label: 'Go to Tasks',
       description: 'Navigate to tasks page',
       icon: 'mdi-format-list-checks',
-      handler: async () => { await router.push('/tasks'); },
+      handler: async () => {
+        await router.push('/tasks');
+      },
       keywords: ['tasks', 'todos'],
       category: 'navigate',
     },
   ];
-  
+
   // Focus search input
   nextTick(() => {
     searchInputRef.value?.focus();
@@ -548,11 +561,7 @@ function handleEnter() {
 }
 
 function getResultAtIndex(index: number): SearchResult | null {
-  const allResults = [
-    ...goalResults.value,
-    ...taskResults.value,
-    ...reminderResults.value,
-  ];
+  const allResults = [...goalResults.value, ...taskResults.value, ...reminderResults.value];
   return allResults[index] || null;
 }
 
@@ -572,11 +581,11 @@ function handleSelectResult(result: SearchResult) {
     accessedAt: Date.now(),
     url: result.url,
   });
-  
+
   // Navigate
   router.push(result.url);
   emit('navigate', result.url);
-  
+
   handleClose();
 }
 
@@ -586,11 +595,11 @@ function handleSelectRecentItem(item: RecentItem) {
     ...item,
     accessedAt: Date.now(),
   });
-  
+
   // Navigate
   router.push(item.url);
   emit('navigate', item.url);
-  
+
   handleClose();
 }
 
@@ -608,29 +617,42 @@ function handleClearHistory() {
 
 function getTypeIcon(type: string): string {
   switch (type) {
-    case 'goal': return 'mdi-target';
-    case 'task': return 'mdi-checkbox-marked-outline';
-    case 'reminder': return 'mdi-bell-outline';
-    default: return 'mdi-file-outline';
+    case 'goal':
+      return 'mdi-target';
+    case 'task':
+      return 'mdi-checkbox-marked-outline';
+    case 'reminder':
+      return 'mdi-bell-outline';
+    default:
+      return 'mdi-file-outline';
   }
 }
 
 function getTypeColor(type: string): string {
   switch (type) {
-    case 'goal': return 'primary';
-    case 'task': return 'info';
-    case 'reminder': return 'warning';
-    default: return 'grey';
+    case 'goal':
+      return 'primary';
+    case 'task':
+      return 'info';
+    case 'reminder':
+      return 'warning';
+    default:
+      return 'grey';
   }
 }
 
 function getCategoryColor(category: string): string {
   switch (category) {
-    case 'create': return 'success';
-    case 'navigate': return 'info';
-    case 'action': return 'warning';
-    case 'settings': return 'grey';
-    default: return 'grey';
+    case 'create':
+      return 'success';
+    case 'navigate':
+      return 'info';
+    case 'action':
+      return 'warning';
+    case 'settings':
+      return 'grey';
+    default:
+      return 'grey';
   }
 }
 
@@ -655,12 +677,12 @@ function truncate(text: string, maxLength: number): string {
 function formatAccessTime(timestamp: number): string {
   const now = Date.now();
   const diff = now - timestamp;
-  
+
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  
+
   if (days > 0) return `${days}d ago`;
   if (hours > 0) return `${hours}h ago`;
   if (minutes > 0) return `${minutes}m ago`;

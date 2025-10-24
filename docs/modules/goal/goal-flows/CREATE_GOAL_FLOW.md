@@ -57,35 +57,36 @@
 **聚合根**: `Goal`
 
 **核心属性**:
+
 ```typescript
 class Goal extends AggregateRoot {
   // 基本信息
   private _accountUuid: string;
-  private _title: string;                    // 目标标题（Objective）
-  private _description: string | null;       // 详细描述
-  private _color: string | null;             // 主题色（hex 格式，如 #FF5733）
+  private _title: string; // 目标标题（Objective）
+  private _description: string | null; // 详细描述
+  private _color: string | null; // 主题色（hex 格式，如 #FF5733）
   private _feasibilityAnalysis: string | null; // 可行性分析
-  private _motivation: string | null;        // 实现动机
-  
+  private _motivation: string | null; // 实现动机
+
   // 时间管理
-  private _startDate: Date | null;           // 开始日期
-  private _endDate: Date | null;             // 结束日期
-  private _reminderDays: number[];           // 提醒天数（例如 [7, 3, 1]）
-  
+  private _startDate: Date | null; // 开始日期
+  private _endDate: Date | null; // 结束日期
+  private _reminderDays: number[]; // 提醒天数（例如 [7, 3, 1]）
+
   // 关键结果
-  private _keyResults: KeyResult[];          // 关键结果集合
-  
+  private _keyResults: KeyResult[]; // 关键结果集合
+
   // 元数据
-  private _importance: ImportanceLevel;      // 重要性等级
-  private _urgency: UrgencyLevel;            // 紧急性等级
-  private _tags: string[];                   // 标签
-  private _customFields: Map<string, any>;   // 自定义字段
-  
+  private _importance: ImportanceLevel; // 重要性等级
+  private _urgency: UrgencyLevel; // 紧急性等级
+  private _tags: string[]; // 标签
+  private _customFields: Map<string, any>; // 自定义字段
+
   // 组织结构
-  private _folderUuid: string | null;        // 所属文件夹
-  
+  private _folderUuid: string | null; // 所属文件夹
+
   // 生命周期
-  private _status: GoalStatus;               // 状态（DRAFT|ACTIVE|COMPLETED|ARCHIVED）
+  private _status: GoalStatus; // 状态（DRAFT|ACTIVE|COMPLETED|ARCHIVED）
   private _createdAt: Date;
   private _updatedAt: Date;
   private _completedAt: Date | null;
@@ -94,6 +95,7 @@ class Goal extends AggregateRoot {
 ```
 
 **工厂方法**: `Goal.create()`
+
 ```typescript
 public static create(params: {
   accountUuid: string;
@@ -114,6 +116,7 @@ public static create(params: {
 ```
 
 **业务方法**:
+
 - `addKeyResult(params: CreateKeyResultParams): KeyResult` - 添加关键结果
 - `activate(): void` - 激活目标（DRAFT -> ACTIVE）
 - `updateTitle(title: string): void` - 更新标题
@@ -126,22 +129,24 @@ public static create(params: {
 - `getRemainingDays(): number | null` - 获取剩余天数
 
 **实体**: `KeyResult`
+
 ```typescript
 class KeyResult extends Entity {
-  private _title: string;                    // 关键结果标题
-  private _description: string | null;       // 描述
-  private _valueType: KeyResultValueType;    // 值类型（INCREMENTAL|ABSOLUTE|PERCENTAGE|BINARY）
-  private _targetValue: number;              // 目标值
-  private _currentValue: number;             // 当前值
-  private _unit: string | null;              // 单位（如 "次"、"小时"、"%" 等）
+  private _title: string; // 关键结果标题
+  private _description: string | null; // 描述
+  private _valueType: KeyResultValueType; // 值类型（INCREMENTAL|ABSOLUTE|PERCENTAGE|BINARY）
+  private _targetValue: number; // 目标值
+  private _currentValue: number; // 当前值
+  private _unit: string | null; // 单位（如 "次"、"小时"、"%" 等）
   private _aggregationMethod: AggregationMethod; // 聚合方式（SUM|AVERAGE|MAX|MIN|LAST）
-  private _endDate: Date | null;             // 关键结果截止日期
+  private _endDate: Date | null; // 关键结果截止日期
   private _completedAt: Date | null;
-  private _order: number;                    // 排序
+  private _order: number; // 排序
 }
 ```
 
 **领域服务**: `GoalDomainService`
+
 - 职责:
   - 验证目标标题合法性
   - 验证时间范围合理性（endDate >= startDate）
@@ -150,6 +155,7 @@ class KeyResult extends Entity {
   - 判断目标是否过期
 
 **仓储接口**: `IGoalRepository`
+
 ```typescript
 interface IGoalRepository {
   save(goal: Goal): Promise<void>;
@@ -172,21 +178,23 @@ interface IGoalRepository {
 **核心用例**: `createGoal()`
 
 **输入 DTO**:
+
 ```typescript
 interface CreateGoalRequest {
-  title: string;                            // 必填，1-256 字符
-  description?: string | null;              // 可选
-  color?: string | null;                    // 可选，hex 格式如 #FF5733
-  feasibilityAnalysis?: string | null;      // 可选，可行性分析
-  motivation?: string | null;               // 可选，实现动机
-  startDate?: string | null;                // 可选，ISO 8601 格式
-  endDate?: string | null;                  // 可选，ISO 8601 格式
-  reminderDays?: number[];                  // 可选，例如 [7, 3, 1]
-  importance?: ImportanceLevel;             // 可选，默认 MODERATE
-  urgency?: UrgencyLevel;                   // 可选，默认 MEDIUM
-  tags?: string[];                          // 可选
-  folderUuid?: string | null;               // 可选
-  keyResults?: Array<{                      // 可选，关键结果列表
+  title: string; // 必填，1-256 字符
+  description?: string | null; // 可选
+  color?: string | null; // 可选，hex 格式如 #FF5733
+  feasibilityAnalysis?: string | null; // 可选，可行性分析
+  motivation?: string | null; // 可选，实现动机
+  startDate?: string | null; // 可选，ISO 8601 格式
+  endDate?: string | null; // 可选，ISO 8601 格式
+  reminderDays?: number[]; // 可选，例如 [7, 3, 1]
+  importance?: ImportanceLevel; // 可选，默认 MODERATE
+  urgency?: UrgencyLevel; // 可选，默认 MEDIUM
+  tags?: string[]; // 可选
+  folderUuid?: string | null; // 可选
+  keyResults?: Array<{
+    // 可选，关键结果列表
     title: string;
     description?: string | null;
     valueType: KeyResultValueType;
@@ -199,6 +207,7 @@ interface CreateGoalRequest {
 ```
 
 **输出 DTO**:
+
 ```typescript
 interface CreateGoalResponse {
   goal: GoalClientDTO;
@@ -213,8 +222,8 @@ interface GoalClientDTO {
   color: string | null;
   feasibilityAnalysis: string | null;
   motivation: string | null;
-  startDate: number | null;                 // timestamp
-  endDate: number | null;                   // timestamp
+  startDate: number | null; // timestamp
+  endDate: number | null; // timestamp
   reminderDays: number[];
   importance: ImportanceLevel;
   urgency: UrgencyLevel;
@@ -222,14 +231,15 @@ interface GoalClientDTO {
   folderUuid: string | null;
   status: GoalStatus;
   keyResults: KeyResultClientDTO[];
-  overallProgress: number;                  // 0-100
+  overallProgress: number; // 0-100
   remainingDays: number | null;
-  createdAt: number;                        // timestamp
-  updatedAt: number;                        // timestamp
+  createdAt: number; // timestamp
+  updatedAt: number; // timestamp
 }
 ```
 
 **职责**:
+
 1. 参数验证（格式、长度、必填项）
 2. 业务规则验证（时间范围、颜色格式）
 3. 调用领域服务创建 Goal 聚合根
@@ -247,6 +257,7 @@ interface GoalClientDTO {
 **文件**: `apps/web/src/modules/goal/presentation/components/GoalCreateForm.vue`
 
 **用户交互**:
+
 1. 用户点击"创建目标"按钮
 2. 打开目标创建表单模态框
 3. 填写必填信息（标题）
@@ -256,23 +267,25 @@ interface GoalClientDTO {
 7. 点击"创建"按钮
 
 **表单验证**:
+
 ```typescript
 const validationRules = {
   title: [
     { required: true, message: '请输入目标标题' },
-    { min: 1, max: 256, message: '标题长度应在 1-256 字符之间' }
+    { min: 1, max: 256, message: '标题长度应在 1-256 字符之间' },
   ],
-  color: [
-    { pattern: /^#[0-9A-Fa-f]{6}$/, message: '请输入有效的颜色值（如 #FF5733）' }
-  ],
+  color: [{ pattern: /^#[0-9A-Fa-f]{6}$/, message: '请输入有效的颜色值（如 #FF5733）' }],
   endDate: [
-    { validator: (value) => !startDate || !value || new Date(value) >= new Date(startDate), 
-      message: '结束日期必须晚于开始日期' }
-  ]
+    {
+      validator: (value) => !startDate || !value || new Date(value) >= new Date(startDate),
+      message: '结束日期必须晚于开始日期',
+    },
+  ],
 };
 ```
 
 **Composable**: `useGoalCreate()`
+
 ```typescript
 // apps/web/src/modules/goal/presentation/composables/useGoalCreate.ts
 export function useGoalCreate() {
@@ -296,7 +309,7 @@ export function useGoalCreate() {
         overallProgress: 0,
         remainingDays: null,
       };
-      
+
       goalStore.addGoalOptimistic(tempGoal);
 
       // 调用 API
@@ -339,10 +352,7 @@ export const goalApiClient = {
    * 创建新目标
    */
   async createGoal(data: CreateGoalRequest): Promise<CreateGoalResponse> {
-    const response = await apiClient.post<CreateGoalResponse>(
-      '/api/goals',
-      data
-    );
+    const response = await apiClient.post<CreateGoalResponse>('/api/goals', data);
     return response.data;
   },
 
@@ -350,9 +360,7 @@ export const goalApiClient = {
    * 获取用户所有目标
    */
   async getGoals(accountUuid: string): Promise<GoalClientDTO[]> {
-    const response = await apiClient.get<GoalClientDTO[]>(
-      `/api/goals?accountUuid=${accountUuid}`
-    );
+    const response = await apiClient.get<GoalClientDTO[]>(`/api/goals?accountUuid=${accountUuid}`);
     return response.data;
   },
 };
@@ -373,18 +381,10 @@ const router = Router();
 const goalController = new GoalController();
 
 // 创建目标
-router.post(
-  '/goals',
-  authenticateToken,
-  goalController.createGoal.bind(goalController)
-);
+router.post('/goals', authenticateToken, goalController.createGoal.bind(goalController));
 
 // 获取用户目标列表
-router.get(
-  '/goals',
-  authenticateToken,
-  goalController.getGoals.bind(goalController)
-);
+router.get('/goals', authenticateToken, goalController.getGoals.bind(goalController));
 
 export { router as goalRoutes };
 ```
@@ -462,9 +462,7 @@ export class GoalApplicationService {
     this.goalRepository = goalRepository;
   }
 
-  static async createInstance(
-    goalRepository?: IGoalRepository
-  ): Promise<GoalApplicationService> {
+  static async createInstance(goalRepository?: IGoalRepository): Promise<GoalApplicationService> {
     const container = GoalContainer.getInstance();
     const repo = goalRepository || container.getGoalRepository();
     GoalApplicationService.instance = new GoalApplicationService(repo);
@@ -486,10 +484,7 @@ export class GoalApplicationService {
     this.validateCreateGoalRequest(request);
 
     // 2. 检查标题唯一性（可选，根据业务需求）
-    const exists = await this.goalRepository.existsByTitle(
-      request.accountUuid,
-      request.title
-    );
+    const exists = await this.goalRepository.existsByTitle(request.accountUuid, request.title);
     if (exists) {
       throw new Error(`目标标题"${request.title}"已存在`);
     }
@@ -638,7 +633,7 @@ export class GoalRepository implements IGoalRepository {
       updatedAt: record.updatedAt.getTime(),
       completedAt: record.completedAt?.getTime() || null,
       archivedAt: record.archivedAt?.getTime() || null,
-      keyResults: record.keyResults.map(kr => ({
+      keyResults: record.keyResults.map((kr) => ({
         ...kr,
         endDate: kr.endDate?.getTime() || null,
         completedAt: kr.completedAt?.getTime() || null,
@@ -655,22 +650,24 @@ export class GoalRepository implements IGoalRepository {
       orderBy: { createdAt: 'desc' },
     });
 
-    return records.map(record => Goal.fromPersistenceDTO({
-      ...record,
-      startDate: record.startDate?.getTime() || null,
-      endDate: record.endDate?.getTime() || null,
-      createdAt: record.createdAt.getTime(),
-      updatedAt: record.updatedAt.getTime(),
-      completedAt: record.completedAt?.getTime() || null,
-      archivedAt: record.archivedAt?.getTime() || null,
-      keyResults: record.keyResults.map(kr => ({
-        ...kr,
-        endDate: kr.endDate?.getTime() || null,
-        completedAt: kr.completedAt?.getTime() || null,
-        createdAt: kr.createdAt.getTime(),
-        updatedAt: kr.updatedAt.getTime(),
-      })),
-    }));
+    return records.map((record) =>
+      Goal.fromPersistenceDTO({
+        ...record,
+        startDate: record.startDate?.getTime() || null,
+        endDate: record.endDate?.getTime() || null,
+        createdAt: record.createdAt.getTime(),
+        updatedAt: record.updatedAt.getTime(),
+        completedAt: record.completedAt?.getTime() || null,
+        archivedAt: record.archivedAt?.getTime() || null,
+        keyResults: record.keyResults.map((kr) => ({
+          ...kr,
+          endDate: kr.endDate?.getTime() || null,
+          completedAt: kr.completedAt?.getTime() || null,
+          createdAt: kr.createdAt.getTime(),
+          updatedAt: kr.updatedAt.getTime(),
+        })),
+      }),
+    );
   }
 
   async existsByTitle(accountUuid: string, title: string): Promise<boolean> {
@@ -703,10 +700,11 @@ export class GoalRepository implements IGoalRepository {
 ### 4.1 GoalCreatedEvent
 
 **事件定义**:
+
 ```typescript
 interface GoalCreatedEvent {
   eventType: 'GoalCreatedEvent';
-  aggregateId: string;           // goalUuid
+  aggregateId: string; // goalUuid
   aggregateName: 'Goal';
   occurredOn: Date;
   payload: {
@@ -722,16 +720,17 @@ interface GoalCreatedEvent {
 **事件订阅者**:
 
 1. **Reminder 模块**（创建提醒任务）
+
 ```typescript
 // apps/api/src/modules/reminder/initialization/eventHandlers.ts
 eventBus.on('GoalCreatedEvent', async (event: GoalCreatedEvent) => {
   const { goalUuid, endDate, reminderDays } = event.payload;
-  
+
   if (endDate && reminderDays.length > 0) {
     for (const days of reminderDays) {
       const triggerDate = new Date(endDate);
       triggerDate.setDate(triggerDate.getDate() - days);
-      
+
       await reminderService.createReminder({
         entityType: 'Goal',
         entityUuid: goalUuid,
@@ -744,6 +743,7 @@ eventBus.on('GoalCreatedEvent', async (event: GoalCreatedEvent) => {
 ```
 
 2. **Statistics 模块**（更新统计数据）
+
 ```typescript
 eventBus.on('GoalCreatedEvent', async (event: GoalCreatedEvent) => {
   await statisticsService.incrementGoalCount(event.payload.accountUuid);
@@ -835,16 +835,16 @@ model KeyResult {
 try {
   const tempGoal = createTempGoal(data);
   goalStore.addGoalOptimistic(tempGoal);
-  
+
   const response = await goalApiClient.createGoal(data);
   goalStore.replaceGoal(tempGoal.uuid, response.goal);
 } catch (error) {
   // 回滚乐观更新
   goalStore.removeGoal(tempGoal.uuid);
-  
+
   // 显示错误提示
   ElMessage.error(error.message || '创建失败');
-  
+
   // 记录错误日志
   console.error('[CreateGoal] Error:', error);
 }
@@ -930,7 +930,7 @@ describe('GoalApplicationService.createGoal()', () => {
     expect(response.goal.title).toBe('Test Goal');
     expect(response.goal.color).toBe('#FF5733');
     expect(eventBus.events).toContainEqual(
-      expect.objectContaining({ eventType: 'GoalCreatedEvent' })
+      expect.objectContaining({ eventType: 'GoalCreatedEvent' }),
     );
   });
 });

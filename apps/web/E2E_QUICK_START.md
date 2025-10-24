@@ -15,6 +15,7 @@ pnpm dev
 ```
 
 验证服务：
+
 - API: http://localhost:3888/api-docs
 - Web: http://localhost:5173
 
@@ -26,6 +27,7 @@ npx tsx src/__tests__/manual/setup-e2e-test-user.ts
 ```
 
 输出示例：
+
 ```
 ✅ 测试用户已存在: testuser
    Account UUID: 5e41f716-c0f1-46f0-b1b2-a0dc61703c54
@@ -112,6 +114,7 @@ Running 2 tests using 1 worker
 **错误**: `登录失败 - 用户名或密码错误`
 
 **解决**:
+
 ```bash
 cd apps/api
 npx tsx src/__tests__/manual/setup-e2e-test-user.ts
@@ -122,6 +125,7 @@ npx tsx src/__tests__/manual/setup-e2e-test-user.ts
 **错误**: `page.goto: net::ERR_CONNECTION_REFUSED`
 
 **解决**: 确保 API 和 Web 服务都在运行
+
 ```bash
 # 检查端口
 netstat -ano | findstr :3888  # API
@@ -131,11 +135,13 @@ netstat -ano | findstr :5173  # Web
 ### 问题 3: 超时未收到通知
 
 **可能原因**:
+
 - Reminder 创建失败
 - 调度器未运行
 - SSE 连接断开
 
 **调试步骤**:
+
 1. 检查 API 日志中的调度器启动信息
 2. 手动在 Web UI 中创建 Reminder 验证
 3. 使用 `pnpm e2e:debug` 逐步执行
@@ -145,6 +151,7 @@ netstat -ano | findstr :5173  # Web
 **错误**: `Executable doesn't exist at C:\Users\...\chromium-1194\chrome.exe`
 
 **解决**:
+
 ```bash
 cd apps/web
 npx playwright install chromium

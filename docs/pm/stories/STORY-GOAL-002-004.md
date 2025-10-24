@@ -22,7 +22,7 @@
 
 ### API 1: POST /api/goals/:goalUuid/key-results/:krUuid/weight
 
-```gherkin
+````gherkin
 Scenario: 更新 KR 权重并自动创建快照
   Given 用户已登录且有权限
   When POST /api/goals/{goalUuid}/key-results/{krUuid}/weight
@@ -37,13 +37,13 @@ Scenario: 更新 KR 权重并自动创建快照
   And 应该创建权重快照
   And 应该更新 KR 权重
   And Response Body 包含更新后的 KR 信息
-  
+
 Scenario: 权重总和校验失败
   When 更新权重导致总和 ≠ 100
   Then 应该返回 400 Bad Request
   And Error Code 为 INVALID_WEIGHT_SUM
   And Error Message 包含详细权重信息
-```
+````
 
 ### API 2: GET /api/goals/:goalUuid/weight-snapshots
 
@@ -57,12 +57,12 @@ Scenario: 查询 Goal 的所有权重快照
     - total: 总数
     - page: 当前页
     - pageSize: 每页数量
-  
+
 Scenario: 支持分页查询
   Given Goal 有 50 个快照
   When GET /api/goals/{goalUuid}/weight-snapshots?page=2&pageSize=20
   Then 应该返回第 21-40 条记录
-  
+
 Scenario: 未授权访问
   Given 用户未登录
   When GET /api/goals/{goalUuid}/weight-snapshots
@@ -90,7 +90,7 @@ Scenario: 查询权重趋势数据
     - timePoints: 时间点数组
     - krTrends: 每个 KR 的权重趋势数据
   And 数据按时间升序排列（用于绘制趋势图）
-  
+
 Scenario: 支持时间范围筛选
   When 指定 startTime 和 endTime
   Then 只返回该时间范围内的快照
@@ -107,7 +107,7 @@ Scenario: 对比多个时间点的权重分配
     - keyResults: KR 列表
     - comparisons: 每个 KR 在各时间点的权重
     - deltas: 权重变化量
-  
+
 Scenario: 最多支持 5 个时间点对比
   When timePoints 参数超过 5 个
   Then 应该返回 400 Bad Request
@@ -192,6 +192,7 @@ Scenario: 最多支持 5 个时间点对比
 ### API 1: 更新 KR 权重
 
 **apps/api/src/presentation/controllers/goal/updateKeyResultWeight.ts**:
+
 ```typescript
 import { Request, Response } from 'express';
 import { z } from 'zod';
@@ -203,10 +204,7 @@ const UpdateWeightRequestSchema = z.object({
   reason: z.string().optional(),
 });
 
-export async function updateKeyResultWeight(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function updateKeyResultWeight(req: Request, res: Response): Promise<void> {
   try {
     // 1. 参数验证
     const { goalUuid, krUuid } = req.params;
@@ -215,12 +213,7 @@ export async function updateKeyResultWeight(
 
     // 2. 调用 Service
     const service = req.container.resolve(UpdateKeyResultService);
-    await service.updateWeight(
-      krUuid,
-      body.newWeight,
-      operatorUuid,
-      body.reason
-    );
+    await service.updateWeight(krUuid, body.newWeight, operatorUuid, body.reason);
 
     // 3. 返回成功
     res.status(200).json({
@@ -247,6 +240,7 @@ export async function updateKeyResultWeight(
 ### API 2: 查询 Goal 快照
 
 **apps/api/src/presentation/controllers/goal/getGoalSnapshots.ts**:
+
 ```typescript
 import { Request, Response } from 'express';
 import { z } from 'zod';
@@ -257,10 +251,7 @@ const SnapshotQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-export async function getGoalSnapshots(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function getGoalSnapshots(req: Request, res: Response): Promise<void> {
   // 1. 参数验证
   const { goalUuid } = req.params;
   const query = SnapshotQuerySchema.parse(req.query);
@@ -276,7 +267,7 @@ export async function getGoalSnapshots(
   res.status(200).json({
     success: true,
     data: {
-      snapshots: result.snapshots.map(s => s.toServerDTO()),
+      snapshots: result.snapshots.map((s) => s.toServerDTO()),
       pagination: {
         total: result.total,
         page: query.page,
@@ -291,6 +282,7 @@ export async function getGoalSnapshots(
 ### API 4: 权重趋势图数据
 
 **apps/api/src/presentation/controllers/goal/getWeightTrend.ts**:
+
 ```typescript
 import { Request, Response } from 'express';
 import { z } from 'zod';
@@ -302,10 +294,7 @@ const WeightTrendQuerySchema = z.object({
   endTime: z.coerce.number().int().positive(),
 });
 
-export async function getWeightTrend(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function getWeightTrend(req: Request, res: Response): Promise<void> {
   // 1. 参数验证
   const { goalUuid } = req.params;
   const query = WeightTrendQuerySchema.parse(req.query);
@@ -315,19 +304,19 @@ export async function getWeightTrend(
   const { snapshots } = await service.getSnapshotsByTimeRange(
     query.startTime,
     query.endTime,
-    { page: 1, pageSize: 1000 } // 最多取 1000 个点
+    { page: 1, pageSize: 1000 }, // 最多取 1000 个点
   );
 
   // 3. 聚合数据（按 KR 分组）
   const goalRepo = req.container.resolve(GoalRepository);
   const goal = await goalRepo.findByUuid(goalUuid);
-  
+
   const krTrends: Record<string, Array<{ time: number; weight: number }>> = {};
-  goal.keyResults.forEach(kr => {
+  goal.keyResults.forEach((kr) => {
     krTrends[kr.uuid] = [];
   });
 
-  snapshots.forEach(snapshot => {
+  snapshots.forEach((snapshot) => {
     if (krTrends[snapshot.keyResultUuid]) {
       krTrends[snapshot.keyResultUuid].push({
         time: snapshot.snapshotTime,
@@ -340,8 +329,8 @@ export async function getWeightTrend(
   res.status(200).json({
     success: true,
     data: {
-      timePoints: snapshots.map(s => s.snapshotTime),
-      keyResults: goal.keyResults.map(kr => ({
+      timePoints: snapshots.map((s) => s.snapshotTime),
+      keyResults: goal.keyResults.map((kr) => ({
         uuid: kr.uuid,
         title: kr.title,
         data: krTrends[kr.uuid],
@@ -354,6 +343,7 @@ export async function getWeightTrend(
 ### API 5: 权重对比
 
 **apps/api/src/presentation/controllers/goal/getWeightComparison.ts**:
+
 ```typescript
 import { Request, Response } from 'express';
 import { z } from 'zod';
@@ -363,16 +353,13 @@ import { GoalRepository } from '../../../domain/goal/repositories/GoalRepository
 const WeightComparisonQuerySchema = z.object({
   timePoints: z
     .string()
-    .transform(str => str.split(',').map(Number))
-    .refine(arr => arr.length >= 2 && arr.length <= 5, {
+    .transform((str) => str.split(',').map(Number))
+    .refine((arr) => arr.length >= 2 && arr.length <= 5, {
       message: 'Must provide 2-5 time points',
     }),
 });
 
-export async function getWeightComparison(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function getWeightComparison(req: Request, res: Response): Promise<void> {
   // 1. 参数验证
   const { goalUuid } = req.params;
   const query = WeightComparisonQuerySchema.parse(req.query);
@@ -392,20 +379,15 @@ export async function getWeightComparison(
 
   for (const kr of goal.keyResults) {
     const weights: number[] = [];
-    
+
     for (const timePoint of query.timePoints) {
       // 查询该时间点之前最近的快照
-      const { snapshots } = await snapshotRepo.findByTimeRange(
-        0,
-        timePoint,
-        1,
-        1
-      );
+      const { snapshots } = await snapshotRepo.findByTimeRange(0, timePoint, 1, 1);
       weights.push(snapshots[0]?.newWeight ?? kr.weight);
     }
 
     // 计算 delta (相对于第一个时间点)
-    const deltas = weights.map(w => w - weights[0]);
+    const deltas = weights.map((w) => w - weights[0]);
 
     comparisons.push({
       krUuid: kr.uuid,
@@ -429,6 +411,7 @@ export async function getWeightComparison(
 ### 路由注册
 
 **apps/api/src/presentation/routes/goalRoutes.ts** (新增部分):
+
 ```typescript
 import { Router } from 'express';
 import { authenticate } from '../middlewares/authenticate';
@@ -446,7 +429,7 @@ router.post(
   '/goals/:goalUuid/key-results/:krUuid/weight',
   authenticate,
   authorizeGoalAccess('write'),
-  updateKeyResultWeight
+  updateKeyResultWeight,
 );
 
 // 查询 Goal 快照
@@ -454,22 +437,18 @@ router.get(
   '/goals/:goalUuid/weight-snapshots',
   authenticate,
   authorizeGoalAccess('read'),
-  getGoalSnapshots
+  getGoalSnapshots,
 );
 
 // 查询 KR 快照
-router.get(
-  '/key-results/:krUuid/weight-snapshots',
-  authenticate,
-  getKeyResultSnapshots
-);
+router.get('/key-results/:krUuid/weight-snapshots', authenticate, getKeyResultSnapshots);
 
 // 权重趋势图
 router.get(
   '/goals/:goalUuid/weight-trend',
   authenticate,
   authorizeGoalAccess('read'),
-  getWeightTrend
+  getWeightTrend,
 );
 
 // 权重对比
@@ -477,7 +456,7 @@ router.get(
   '/goals/:goalUuid/weight-comparison',
   authenticate,
   authorizeGoalAccess('read'),
-  getWeightComparison
+  getWeightComparison,
 );
 
 export default router;
@@ -488,28 +467,33 @@ export default router;
 ## ✅ Definition of Done
 
 ### 功能完整性
+
 - [ ] 所有 5 个 API 端点实现完成
 - [ ] 请求参数验证完成 (Zod schemas)
 - [ ] 响应格式统一且正确
 - [ ] 错误处理完整
 
 ### 代码质量
+
 - [ ] TypeScript strict 模式无错误
 - [ ] ESLint 无警告
 - [ ] 所有 API 有 JSDoc 注释
 - [ ] 路由正确注册
 
 ### 测试
+
 - [ ] 所有集成测试通过
 - [ ] 测试覆盖成功和失败场景
 - [ ] 测试覆盖权限控制
 - [ ] 性能测试通过 (P95 < 500ms)
 
 ### 文档
+
 - [ ] API 文档更新 (Swagger/OpenAPI)
 - [ ] 示例请求和响应
 
 ### Code Review
+
 - [ ] Code Review 完成
 - [ ] Code Review 反馈已解决
 
@@ -517,17 +501,17 @@ export default router;
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| API 1-3 实现 | 3 小时 |
-| API 4-5 实现（数据聚合）| 2 小时 |
-| 请求验证 Schemas | 1 小时 |
-| 路由注册和中间件 | 0.5 小时 |
-| 集成测试编写 | 2.5 小时 |
-| 性能测试 | 1 小时 |
-| API 文档更新 | 1 小时 |
-| Code Review & 修复 | 1 小时 |
-| **总计** | **12 小时** |
+| 任务                     | 预估时间    |
+| ------------------------ | ----------- |
+| API 1-3 实现             | 3 小时      |
+| API 4-5 实现（数据聚合） | 2 小时      |
+| 请求验证 Schemas         | 1 小时      |
+| 路由注册和中间件         | 0.5 小时    |
+| 集成测试编写             | 2.5 小时    |
+| 性能测试                 | 1 小时      |
+| API 文档更新             | 1 小时      |
+| Code Review & 修复       | 1 小时      |
+| **总计**                 | **12 小时** |
 
 **Story Points**: 4 SP
 
@@ -536,10 +520,12 @@ export default router;
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - STORY-GOAL-002-002 (Application Service) - 必须完成
 - STORY-GOAL-002-003 (Repository) - 必须完成
 
 ### 下游依赖
+
 - STORY-GOAL-002-005 (客户端服务) 依赖此 Story 提供 API
 
 ---
@@ -547,12 +533,14 @@ export default router;
 ## 🚨 风险与注意事项
 
 ### 技术风险
+
 1. **大数据量性能**: 权重趋势图可能涉及大量快照
    - 缓解: 实现数据采样算法，限制返回点数
 2. **并发更新冲突**: 多用户同时更新权重
    - 缓解: 使用乐观锁或数据库事务
 
 ### API 设计风险
+
 1. **分页性能**: 大偏移量分页性能差
    - 缓解: 考虑使用游标分页（后续优化）
 

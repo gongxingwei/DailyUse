@@ -1,4 +1,4 @@
-import { DomainEvent } from "@dailyuse/utils";
+import { DomainEvent } from '@dailyuse/utils';
 
 /**
  * 通过 accountUuid 获取账号信息的请求事件载荷
@@ -12,7 +12,8 @@ export interface AccountInfoGetterRequestedEventPayload {
 /**
  * 通过 accountUuid 获取账号信息的请求事件
  */
-export interface AccountInfoGetterRequestedEvent extends DomainEvent<AccountInfoGetterRequestedEventPayload> {
+export interface AccountInfoGetterRequestedEvent
+  extends DomainEvent<AccountInfoGetterRequestedEventPayload> {
   eventType: 'AccountInfoGetterRequested';
   payload: AccountInfoGetterRequestedEventPayload;
 }
@@ -29,7 +30,8 @@ export interface AccountUuidGetterRequestedEventPayload {
 /**
  * username对应account_uuid请求事件
  */
-export interface AccountUuidGetterRequestedEvent extends DomainEvent<AccountUuidGetterRequestedEventPayload> {
+export interface AccountUuidGetterRequestedEvent
+  extends DomainEvent<AccountUuidGetterRequestedEventPayload> {
   eventType: 'AccountUuidGetterRequested';
   payload: AccountUuidGetterRequestedEventPayload;
 }
@@ -47,7 +49,8 @@ export interface AccountStatusVerificationRequestedEventPayload {
 /**
  * 账号状态验证请求事件
  */
-export interface AccountStatusVerificationRequestedEvent extends DomainEvent<AccountStatusVerificationRequestedEventPayload> {
+export interface AccountStatusVerificationRequestedEvent
+  extends DomainEvent<AccountStatusVerificationRequestedEventPayload> {
   eventType: 'AccountStatusVerificationRequested';
   payload: AccountStatusVerificationRequestedEventPayload;
 }
@@ -72,7 +75,8 @@ export interface LoginCredentialVerificationEventPayload {
 /**
  * 登录凭证验证事件
  */
-export interface LoginCredentialVerificationEvent extends DomainEvent<LoginCredentialVerificationEventPayload> {
+export interface LoginCredentialVerificationEvent
+  extends DomainEvent<LoginCredentialVerificationEventPayload> {
   eventType: 'LoginCredentialVerification';
   payload: LoginCredentialVerificationEventPayload;
 }
@@ -83,7 +87,13 @@ export interface LoginCredentialVerificationEvent extends DomainEvent<LoginCrede
 export interface LoginAttemptEventPayload {
   username: string;
   accountUuid?: string;
-  result: 'success' | 'failed' | 'account_not_found' | 'invalid_credentials' | 'account_locked' | 'account_inactive';
+  result:
+    | 'success'
+    | 'failed'
+    | 'account_not_found'
+    | 'invalid_credentials'
+    | 'account_locked'
+    | 'account_inactive';
   failureReason?: string;
   attemptedAt: Date;
   clientInfo?: {
@@ -145,7 +155,8 @@ export interface AccountDeactivationVerificationRequestedEventPayload {
 /**
  * 账号注销验证请求事件
  */
-export interface AccountDeactivationVerificationRequestedEvent extends DomainEvent<AccountDeactivationVerificationRequestedEventPayload> {
+export interface AccountDeactivationVerificationRequestedEvent
+  extends DomainEvent<AccountDeactivationVerificationRequestedEventPayload> {
   eventType: 'AccountDeactivationVerificationRequested';
   payload: AccountDeactivationVerificationRequestedEventPayload;
 }
@@ -171,7 +182,8 @@ export interface AccountDeactivationVerificationResponseEventPayload {
 /**
  * 账号注销验证响应事件
  */
-export interface AccountDeactivationVerificationResponseEvent extends DomainEvent<AccountDeactivationVerificationResponseEventPayload> {
+export interface AccountDeactivationVerificationResponseEvent
+  extends DomainEvent<AccountDeactivationVerificationResponseEventPayload> {
   eventType: 'AccountDeactivationVerificationResponse';
   payload: AccountDeactivationVerificationResponseEventPayload;
 }
@@ -192,7 +204,8 @@ export interface AccountDeactivationConfirmedEventPayload {
 /**
  * 账号注销确认事件
  */
-export interface AccountDeactivationConfirmedEvent extends DomainEvent<AccountDeactivationConfirmedEventPayload> {
+export interface AccountDeactivationConfirmedEvent
+  extends DomainEvent<AccountDeactivationConfirmedEventPayload> {
   eventType: 'AccountDeactivationConfirmed';
   payload: AccountDeactivationConfirmedEventPayload;
 }

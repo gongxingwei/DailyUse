@@ -1,7 +1,7 @@
-import { UserSession, SessionStatus, SessionData } from "../domain/types";
-import { ISessionRepository } from "../domain/repositories/sessionRepository";
-import type { ApiResponse } from "@dailyuse/contracts";
-import { addDays, isBefore } from "date-fns";
+import { UserSession, SessionStatus, SessionData } from '../domain/types';
+import { ISessionRepository } from '../domain/repositories/sessionRepository';
+import type { ApiResponse } from '@dailyuse/contracts';
+import { addDays, isBefore } from 'date-fns';
 /**
  * 会话管理服务
  * 负责用户会话的创建、维护、验证和销毁
@@ -30,12 +30,12 @@ export class SessionManagementService {
       autoLogin?: boolean;
       ipAddress?: string;
       userAgent?: string;
-    } = {}
+    } = {},
   ): Promise<ApiResponse<UserSession>> {
     try {
       const sessionId = this.generateSessionId();
       const now = new Date();
-      
+
       // 计算过期时间
       let expiresAt;
       if (options.rememberMe) {
@@ -60,7 +60,7 @@ export class SessionManagementService {
         lastAccessAt: now,
         expiresAt,
         ipAddress: options.ipAddress,
-        userAgent: options.userAgent
+        userAgent: options.userAgent,
       };
 
       await this.sessionRepository.save(session);
@@ -68,15 +68,14 @@ export class SessionManagementService {
       return {
         success: true,
         message: '会话创建成功',
-        data: session
+        data: session,
       };
-
     } catch (error) {
       console.error('创建会话失败:', error);
       return {
         success: false,
         message: '创建会话失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -87,12 +86,12 @@ export class SessionManagementService {
   async validateSession(token: string): Promise<ApiResponse<UserSession>> {
     try {
       const session = await this.sessionRepository.findByToken(token);
-      
+
       if (!session) {
         return {
           success: false,
           message: '会话不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -101,7 +100,7 @@ export class SessionManagementService {
         return {
           success: false,
           message: '会话已失效',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -109,11 +108,11 @@ export class SessionManagementService {
       if (session.expiresAt && isBefore(session.expiresAt, new Date())) {
         session.status = SessionStatus.EXPIRED;
         await this.sessionRepository.save(session);
-        
+
         return {
           success: false,
           message: '会话已过期',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -124,15 +123,14 @@ export class SessionManagementService {
       return {
         success: true,
         message: '会话有效',
-        data: session
+        data: session,
       };
-
     } catch (error) {
       console.error('验证会话失败:', error);
       return {
         success: false,
         message: '验证会话失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -144,13 +142,13 @@ export class SessionManagementService {
     try {
       // 找到使用此刷新令牌的会话
       const sessions = await this.sessionRepository.findActiveSessions();
-      const session = sessions.find(s => s.refreshToken === refreshToken);
-      
+      const session = sessions.find((s) => s.refreshToken === refreshToken);
+
       if (!session) {
         return {
           success: false,
           message: '刷新令牌无效',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -158,7 +156,7 @@ export class SessionManagementService {
       session.token = this.generateToken();
       session.refreshToken = this.generateToken();
       session.lastAccessAt = new Date();
-      
+
       // 更新过期时间
       if (session.rememberMe) {
         session.expiresAt = addDays(new Date(), 30);
@@ -171,15 +169,14 @@ export class SessionManagementService {
       return {
         success: true,
         message: '会话刷新成功',
-        data: session
+        data: session,
       };
-
     } catch (error) {
       console.error('刷新会话失败:', error);
       return {
         success: false,
         message: '刷新会话失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -190,12 +187,12 @@ export class SessionManagementService {
   async destroySession(token: string): Promise<ApiResponse> {
     try {
       const session = await this.sessionRepository.findByToken(token);
-      
+
       if (!session) {
         return {
           success: false,
           message: '会话不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -205,15 +202,14 @@ export class SessionManagementService {
       return {
         success: true,
         message: '登出成功',
-        data: undefined
+        data: undefined,
       };
-
     } catch (error) {
       console.error('销毁会话失败:', error);
       return {
         success: false,
         message: '登出失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -224,7 +220,7 @@ export class SessionManagementService {
   async destroyAllUserSessions(accountUuid: string): Promise<ApiResponse> {
     try {
       const sessions = await this.sessionRepository.findByAccountUuid(accountUuid);
-      
+
       for (const session of sessions) {
         session.status = SessionStatus.REVOKED;
         await this.sessionRepository.save(session);
@@ -233,15 +229,14 @@ export class SessionManagementService {
       return {
         success: true,
         message: '所有会话已销毁',
-        data: undefined
+        data: undefined,
       };
-
     } catch (error) {
       console.error('销毁所有会话失败:', error);
       return {
         success: false,
         message: '销毁会话失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -252,20 +247,19 @@ export class SessionManagementService {
   async getUserActiveSessions(accountUuid: string): Promise<ApiResponse<UserSession[]>> {
     try {
       const sessions = await this.sessionRepository.findByAccountUuid(accountUuid);
-      const activeSessions = sessions.filter(s => s.status === SessionStatus.ACTIVE);
+      const activeSessions = sessions.filter((s) => s.status === SessionStatus.ACTIVE);
 
       return {
         success: true,
         message: '获取成功',
-        data: activeSessions
+        data: activeSessions,
       };
-
     } catch (error) {
       console.error('获取用户会话失败:', error);
       return {
         success: false,
         message: '获取会话失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -287,7 +281,7 @@ export class SessionManagementService {
   convertLegacySessionData(sessionData: SessionData): UserSession {
     const now = new Date();
     const lastLoginTime = new Date(sessionData.lastLoginTime);
-    
+
     return {
       uuid: this.generateSessionId(),
       accountUuid: sessionData.username, // 临时使用用户名作为ID
@@ -299,9 +293,8 @@ export class SessionManagementService {
       status: sessionData.isActive === 1 ? SessionStatus.ACTIVE : SessionStatus.EXPIRED,
       createdAt: lastLoginTime,
       lastAccessAt: now,
-      expiresAt: sessionData.rememberMe === 1 
-        ? addDays(lastLoginTime, 30)
-        : addDays(lastLoginTime, 1)
+      expiresAt:
+        sessionData.rememberMe === 1 ? addDays(lastLoginTime, 30) : addDays(lastLoginTime, 1),
     };
   }
 
@@ -316,8 +309,10 @@ export class SessionManagementService {
    * 生成令牌
    */
   private generateToken(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15) + 
-           Date.now().toString();
+    return (
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15) +
+      Date.now().toString()
+    );
   }
 }

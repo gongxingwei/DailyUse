@@ -17,6 +17,7 @@
 #### 关键变更
 
 **之前（反模式）**：
+
 ```typescript
 export class GoalDomainService {
   constructor(private readonly goalRepository: IGoalRepository) {} // ❌ 注入仓储
@@ -26,20 +27,21 @@ export class GoalDomainService {
     if (params.parentGoalUuid) {
       const parentGoal = await this.goalRepository.findById(params.parentGoalUuid);
     }
-    
+
     const goal = Goal.create(params);
-    
+
     // ❌ 直接持久化
     await this.goalRepository.save(goal);
-    
+
     return goal;
   }
-  
+
   // ❌ 更多查询和持久化方法...
 }
 ```
 
 **现在（正确）**：
+
 ```typescript
 export class GoalDomainService {
   constructor() {
@@ -52,7 +54,9 @@ export class GoalDomainService {
    * @returns 未持久化的聚合根
    */
   public createGoal(
-    params: { /* ... */ },
+    params: {
+      /* ... */
+    },
     parentGoal?: Goal, // ✅ 由 ApplicationService 传入
   ): Goal {
     // 1. 验证标题
@@ -79,7 +83,12 @@ export class GoalDomainService {
    * 更新目标基本信息
    * @param goal 由 ApplicationService 查询后传入
    */
-  public updateGoalBasicInfo(goal: Goal, params: { /* ... */ }): void {
+  public updateGoalBasicInfo(
+    goal: Goal,
+    params: {
+      /* ... */
+    },
+  ): void {
     // 验证状态
     if (goal.deletedAt !== null && goal.deletedAt !== undefined) {
       throw new Error('Cannot update a deleted goal');
@@ -119,6 +128,7 @@ export class GoalDomainService {
 #### 关键变更
 
 **之前（紧耦合）**：
+
 ```typescript
 export class GoalApplicationService {
   constructor(goalRepository: IGoalRepository) {
@@ -135,6 +145,7 @@ export class GoalApplicationService {
 ```
 
 **现在（正确分离）**：
+
 ```typescript
 export class GoalApplicationService {
   constructor(goalRepository: IGoalRepository) {
@@ -188,6 +199,7 @@ export class GoalApplicationService {
 #### 新增/优化方法
 
 **CRUD 操作**:
+
 - `createGoal()`: 创建目标（查询父目标 → 领域服务 → 持久化）
 - `getGoal()`: 获取单个目标
 - `getUserGoals()`: 获取用户所有目标
@@ -198,14 +210,17 @@ export class GoalApplicationService {
 - `completeGoal()`: 完成目标
 
 **KeyResult 管理**:
+
 - `addKeyResult()`: 添加关键结果
 - `updateKeyResultProgress()`: 更新关键结果进度
 - `deleteKeyResult()`: 删除关键结果 ✨ 新增
 
 **GoalReview 管理**:
+
 - `addReview()`: 添加目标回顾
 
 **查询操作**:
+
 - `searchGoals()`: 搜索目标
 - `getGoalStatistics()`: 获取统计数据
 
@@ -238,6 +253,7 @@ export class GoalApplicationService {
 ```
 
 **问题**:
+
 1. 领域服务依赖基础设施层（仓储）
 2. 业务逻辑和持久化混在一起
 3. 违反 DDD 分层原则
@@ -276,6 +292,7 @@ export class GoalApplicationService {
 ```
 
 **优点**:
+
 1. ✅ 领域服务纯粹，不依赖基础设施
 2. ✅ 职责清晰分离
 3. ✅ 符合 DDD 分层原则
@@ -344,6 +361,7 @@ return goal.toClientDTO()
 当前 `GoalController` 的方法签名可能需要调整以匹配新的 ApplicationService API。
 
 **需要检查的方法**:
+
 - `createGoal()` - 确保参数映射正确
 - `updateGoal()` - 确保 `name` → `title` 字段映射
 - `updateGoalStatus()` - 可能已废弃，改用 `activateGoal()`, `archiveGoal()`, `completeGoal()`
@@ -353,6 +371,7 @@ return goal.toClientDTO()
 `getGoalStatistics()` 方法返回模拟数据。
 
 **建议实现方式**:
+
 1. 创建 `GoalStatisticsDomainService`（类似 RepositoryStatisticsDomainService）
 2. 在 Repository 添加聚合查询方法（如 `countByStatus()`, `countByImportance()`）
 3. 使用 Prisma 聚合查询优化性能
@@ -362,6 +381,7 @@ return goal.toClientDTO()
 代码中预留了事件发布位置（注释掉）。
 
 **未来需要**:
+
 1. 实现 EventBus（可以使用现有的 `@dailyuse/utils` 的 EventManager）
 2. 在 ApplicationService 中发布领域事件
 3. 注册事件监听器（如发送通知、更新统计等）

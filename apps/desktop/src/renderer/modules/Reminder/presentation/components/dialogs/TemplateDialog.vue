@@ -15,42 +15,73 @@
       <v-card-text class="pa-6 scroll-area">
         <v-form ref="formRef" v-model="isFormValid">
           <!-- 模板名称 -->
-          <v-text-field v-model="templateName" label="模板名称" :rules="nameRules" required class="mb-4" />
+          <v-text-field
+            v-model="templateName"
+            label="模板名称"
+            :rules="nameRules"
+            required
+            class="mb-4"
+          />
 
           <!-- 描述 -->
           <v-textarea v-model="templateDescription" label="描述" rows="3" class="mb-4" />
 
           <!-- 优先级选择 -->
-          <v-select v-model="templateImportanceLevel" :items="priorityOptions" label="优先级" class="mb-4" />
+          <v-select
+            v-model="templateImportanceLevel"
+            :items="priorityOptions"
+            label="优先级"
+            class="mb-4"
+          />
 
           <!-- 启用开关 -->
           <v-switch v-model="templateSelfEnabled" label="启用模板" color="primary" class="mb-4" />
 
           <!-- 通知设置 -->
           <v-switch v-model="templateNotificationSound" label="声音" color="primary" class="mb-2" />
-          <v-switch v-model="templateNotificationVibration" label="震动" color="primary" class="mb-2" />
+          <v-switch
+            v-model="templateNotificationVibration"
+            label="震动"
+            color="primary"
+            class="mb-2"
+          />
           <v-switch v-model="templateNotificationPopup" label="弹窗" color="primary" class="mb-4" />
 
           <!-- 时间配置 -->
           <div class="mb-4">
             <v-label class="mb-2">提醒时间</v-label>
             <div class="d-flex align-center gap-2 mb-3">
-              <v-select v-model="timeHour" :items="hourOptions" label="小时" density="compact" style="width: 100px;" />
+              <v-select
+                v-model="timeHour"
+                :items="hourOptions"
+                label="小时"
+                density="compact"
+                style="width: 100px"
+              />
               <span>时</span>
-              <v-select v-model="timeMinute" :items="minuteOptions" label="分钟" density="compact"
-                style="width: 100px;" />
+              <v-select
+                v-model="timeMinute"
+                :items="minuteOptions"
+                label="分钟"
+                density="compact"
+                style="width: 100px"
+              />
               <span>分</span>
             </div>
-            <div class="text-caption text-medium-emphasis">
-              已选时间：{{ selectedTime }}
-            </div>
+            <div class="text-caption text-medium-emphasis">已选时间：{{ selectedTime }}</div>
           </div>
 
           <!-- 星期选择器 -->
           <div class="mb-4">
             <v-label class="mb-2">星期</v-label>
             <v-chip-group v-model="timeDaysOfWeek" multiple column>
-              <v-chip v-for="day in weekDayOptions" :key="day.value" :value="day.value" variant="outlined" filter>
+              <v-chip
+                v-for="day in weekDayOptions"
+                :key="day.value"
+                :value="day.value"
+                variant="outlined"
+                filter
+              >
                 {{ day.title }}
               </v-chip>
             </v-chip-group>
@@ -63,9 +94,7 @@
 
       <v-card-actions class="pa-6 pt-0">
         <v-spacer />
-        <v-btn variant="text" @click="closeDialog">
-          取消
-        </v-btn>
+        <v-btn variant="text" @click="closeDialog"> 取消 </v-btn>
         <v-btn color="primary" :disabled="!isFormValid" @click="handleSubmit">
           {{ isEditing ? '更新' : '创建' }}
         </v-btn>
@@ -88,7 +117,7 @@ interface Props {
   template?: ReminderTemplate | null;
 }
 const props = withDefaults(defineProps<Props>(), {
-  template: null
+  template: null,
 });
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
@@ -101,7 +130,7 @@ const emit = defineEmits<{
 // =====================
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => emit('update:modelValue', value),
 });
 const isEditing = computed(() => !!props.template);
 
@@ -111,37 +140,37 @@ const isEditing = computed(() => !!props.template);
 
 // 当前编辑的模板数据（编辑时 clone，新增时 forCreate）
 const templateModel = ref<ReminderTemplate>(
-  props.template ? props.template.clone() : ReminderTemplate.forCreate()
+  props.template ? props.template.clone() : ReminderTemplate.forCreate(),
 );
 
 // 表单字段的 computed 绑定
 const templateName = computed({
   get: () => templateModel.value.name,
-  set: (val: string) => (templateModel.value.name = val)
+  set: (val: string) => (templateModel.value.name = val),
 });
 const templateDescription = computed({
   get: () => templateModel.value.description,
-  set: (val: string) => (templateModel.value.description = val)
+  set: (val: string) => (templateModel.value.description = val),
 });
 const templateImportanceLevel = computed({
   get: () => templateModel.value.importanceLevel,
-  set: (val: ImportanceLevel) => (templateModel.value.importanceLevel = val)
+  set: (val: ImportanceLevel) => (templateModel.value.importanceLevel = val),
 });
 const templateSelfEnabled = computed({
   get: () => templateModel.value.selfEnabled,
-  set: (val: boolean) => (templateModel.value.selfEnabled = val)
+  set: (val: boolean) => (templateModel.value.selfEnabled = val),
 });
 const templateNotificationSound = computed({
   get: () => templateModel.value.notificationSettings?.sound ?? false,
-  set: (val: boolean) => (templateModel.value.notificationSettings.sound = val)
+  set: (val: boolean) => (templateModel.value.notificationSettings.sound = val),
 });
 const templateNotificationVibration = computed({
   get: () => templateModel.value.notificationSettings?.vibration ?? false,
-  set: (val: boolean) => (templateModel.value.notificationSettings.vibration = val)
+  set: (val: boolean) => (templateModel.value.notificationSettings.vibration = val),
 });
 const templateNotificationPopup = computed({
   get: () => templateModel.value.notificationSettings?.popup ?? false,
-  set: (val: boolean) => (templateModel.value.notificationSettings.popup = val)
+  set: (val: boolean) => (templateModel.value.notificationSettings.popup = val),
 });
 
 // =====================
@@ -151,11 +180,11 @@ const templateNotificationPopup = computed({
 // 小时、分钟、星期选项
 const hourOptions = Array.from({ length: 24 }, (_, i) => ({
   title: `${i.toString().padStart(2, '0')} 时`,
-  value: i
+  value: i,
 }));
 const minuteOptions = Array.from({ length: 60 }, (_, i) => ({
   title: `${i.toString().padStart(2, '0')} 分`,
-  value: i
+  value: i,
 }));
 const weekDayOptions = [
   { title: '周日', value: 0 },
@@ -164,7 +193,7 @@ const weekDayOptions = [
   { title: '周三', value: 3 },
   { title: '周四', value: 4 },
   { title: '周五', value: 5 },
-  { title: '周六', value: 6 }
+  { title: '周六', value: 6 },
 ];
 
 // 选中的时间和星期
@@ -182,7 +211,7 @@ const selectedDaysText = computed(() => {
   return timeDaysOfWeek.value
     .slice()
     .sort()
-    .map(day => weekDayOptions.find(opt => opt.value === day)?.title)
+    .map((day) => weekDayOptions.find((opt) => opt.value === day)?.title)
     .join('、');
 });
 
@@ -203,30 +232,34 @@ const convertToRecurrenceRule = () => {
   return RecurrenceRuleHelper.fromUISelectors(
     timeHour.value,
     timeMinute.value,
-    timeDaysOfWeek.value
+    timeDaysOfWeek.value,
   );
 };
 
 // 监听时间相关 UI 变化，实时同步到 model
-watch([timeHour, timeMinute, timeDaysOfWeek], () => {
-  if (templateModel.value.timeConfig) {
-    templateModel.value.timeConfig.schedule = convertToRecurrenceRule();
-  }
-}, { deep: true });
+watch(
+  [timeHour, timeMinute, timeDaysOfWeek],
+  () => {
+    if (templateModel.value.timeConfig) {
+      templateModel.value.timeConfig.schedule = convertToRecurrenceRule();
+    }
+  },
+  { deep: true },
+);
 
 // =====================
 // 校验规则与选项
 // =====================
 const nameRules = [
   (v: string) => !!v || '名称不能为空',
-  (v: string) => v.length >= 2 || '名称至少2个字符'
+  (v: string) => v.length >= 2 || '名称至少2个字符',
 ];
 const priorityOptions = [
   { title: '琐事', value: ImportanceLevel.Trivial },
   { title: '次要', value: ImportanceLevel.Minor },
   { title: '一般', value: ImportanceLevel.Moderate },
   { title: '重要', value: ImportanceLevel.Important },
-  { title: '关键', value: ImportanceLevel.Vital }
+  { title: '关键', value: ImportanceLevel.Vital },
 ];
 
 // =====================
@@ -291,9 +324,8 @@ watch(
       formRef.value?.resetValidation?.();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
-
 </script>
 
 <style scoped>

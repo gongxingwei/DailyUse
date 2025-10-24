@@ -42,15 +42,23 @@
           <!-- 时间刻度 -->
           <div class="date-scale">
             <div class="month-row">
-              <div v-for="month in months" :key="month.name" :style="{ width: `${month.daysCount * dayWidth}px` }"
-                class="month-label">
+              <div
+                v-for="month in months"
+                :key="month.name"
+                :style="{ width: `${month.daysCount * dayWidth}px` }"
+                class="month-label"
+              >
                 {{ month.name }}月
               </div>
             </div>
             <div class="days-row">
-              <div v-for="day in days" :key="day.date"
-                :class="{ 'today': day.isToday, 'weekend': isWeekend(day.fullDate) }" class="day-label"
-                :style="{ width: `${dayWidth}px` }">
+              <div
+                v-for="day in days"
+                :key="day.date"
+                :class="{ today: day.isToday, weekend: isWeekend(day.fullDate) }"
+                class="day-label"
+                :style="{ width: `${dayWidth}px` }"
+              >
                 {{ day.date }}
               </div>
             </div>
@@ -59,8 +67,12 @@
 
         <!-- 目标时间线 -->
         <div class="goals-container">
-          <div v-for="(goal, index) in sortedGoals" :key="goal.uuid" class="gantt-row"
-            :style="{ '--goal-index': index }">
+          <div
+            v-for="(goal, index) in sortedGoals"
+            :key="goal.uuid"
+            class="gantt-row"
+            :style="{ '--goal-index': index }"
+          >
             <!-- 目标信息固定列 -->
             <div class="goal-info">
               <div class="goal-info-card">
@@ -70,9 +82,7 @@
                   </v-avatar>
                   <div class="goal-text">
                     <span class="goal-title">{{ goal.name }}</span>
-                    <div class="goal-progress">
-                      {{ goal.progress }}%
-                    </div>
+                    <div class="goal-progress">{{ goal.progress }}%</div>
                   </div>
                 </div>
               </div>
@@ -139,14 +149,14 @@ const { days, months } = computed(() => {
     days.push({
       date: currentDate.getDate(),
       isToday: currentDate.toDateString() === new Date().toDateString(),
-      fullDate: new Date(currentDate)
+      fullDate: new Date(currentDate),
     });
 
     const monthKey = currentDate.getMonth();
     if (!months.has(monthKey)) {
       months.set(monthKey, {
         name: currentDate.getMonth() + 1,
-        daysCount: 0
+        daysCount: 0,
       });
     }
     months.get(monthKey).daysCount++;
@@ -156,7 +166,7 @@ const { days, months } = computed(() => {
 
   return {
     days,
-    months: Array.from(months.values())
+    months: Array.from(months.values()),
   };
 }).value;
 
@@ -164,7 +174,7 @@ const { days, months } = computed(() => {
 const sortedGoals = computed(() => {
   const today = new Date();
   return [...goalStore.getAllGoals]
-    .filter(goal => {
+    .filter((goal) => {
       if (goal.dirUuid === 'delete' || goal.dirUuid === 'archive') return false;
       const endDate = new Date(goal.endTime);
       return endDate >= today;
@@ -187,23 +197,20 @@ const getGoalBarStyle = (goal: Goal, isFill: boolean) => {
   const rangeStart = new Date(dateRange.value.start);
   rangeStart.setHours(0, 0, 0, 0);
 
-  const startOffset = Math.max(0,
-    (startDate.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000)
+  const startOffset = Math.max(
+    0,
+    (startDate.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000),
   );
-  const duration = Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)
-  ) + 1;
+  const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
 
-  const width = isFill ?
-    (duration * dayWidth * (goal.weightedProgress / 100)) :
-    (duration * dayWidth);
+  const width = isFill ? duration * dayWidth * (goal.weightedProgress / 100) : duration * dayWidth;
 
   return {
     left: `${startOffset * dayWidth}px`,
     width: `${width}px`,
     backgroundColor: isFill ? goal.color : `${goal.color}33`,
     borderRadius: '6px',
-    boxShadow: isFill ? `0 2px 8px ${goal.color}44` : 'none'
+    boxShadow: isFill ? `0 2px 8px ${goal.color}44` : 'none',
   };
 };
 
@@ -211,15 +218,16 @@ const getGoalBarStyle = (goal: Goal, isFill: boolean) => {
 const getGoalLabelPosition = (goal: Goal) => {
   const startDate = new Date(goal.startTime);
   const rangeStart = new Date(dateRange.value.start);
-  const startOffset = Math.max(0,
-    (startDate.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000)
+  const startOffset = Math.max(
+    0,
+    (startDate.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000),
   );
-  return (startOffset * dayWidth) + 8;
+  return startOffset * dayWidth + 8;
 };
 
 // 计算今日指示器位置 - 修正偏移
 const getTodayIndicatorPosition = () => {
-  return goalInfoWidth + (10 * dayWidth) + 16; // 加上目标信息列的宽度
+  return goalInfoWidth + 10 * dayWidth + 16; // 加上目标信息列的宽度
 };
 </script>
 
@@ -232,7 +240,11 @@ const getTodayIndicatorPosition = () => {
 }
 
 .gantt-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-primary), 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05) 0%,
+    rgba(var(--v-theme-primary), 0.02) 100%
+  );
 }
 
 .legend-dot {
@@ -416,9 +428,11 @@ const getTodayIndicatorPosition = () => {
   top: 0;
   bottom: 0;
   width: 100%;
-  background: linear-gradient(to bottom,
-      rgba(var(--v-theme-error), 0.8),
-      rgba(var(--v-theme-error), 0.4));
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--v-theme-error), 0.8),
+    rgba(var(--v-theme-error), 0.4)
+  );
 }
 
 .indicator-label {
@@ -464,7 +478,6 @@ const getTodayIndicatorPosition = () => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-
   .goal-info,
   .goal-info-header {
     width: 150px;

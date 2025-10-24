@@ -1,4 +1,4 @@
-import type { Database } from "better-sqlite3";
+import type { Database } from 'better-sqlite3';
 
 /**
  * 会话记录模块数据表管理
@@ -9,7 +9,7 @@ export class SessionLoggingTables {
    * 创建会话记录相关表
    */
   static createTables(db: Database): void {
-     db.exec(`
+    db.exec(`
       DROP TABLE IF EXISTS session_logs;
 
     `);

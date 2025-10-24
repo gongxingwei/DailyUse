@@ -103,73 +103,82 @@ apps/web/src/modules/schedule/
 ## 📊 文件统计
 
 ### 按类型统计
-| 类型 | 数量 | 说明 |
-|-----|------|------|
-| TypeScript 文件 | 9 个 | .ts 文件 |
-| Vue 组件 | 5 个 | .vue 文件（4 卡片 + 1 页面） |
-| **总计** | **14 个** | |
+
+| 类型            | 数量      | 说明                         |
+| --------------- | --------- | ---------------------------- |
+| TypeScript 文件 | 9 个      | .ts 文件                     |
+| Vue 组件        | 5 个      | .vue 文件（4 卡片 + 1 页面） |
+| **总计**        | **14 个** |                              |
 
 ### 按层级统计
-| 层级 | 文件数 | 说明 |
-|-----|--------|------|
-| Infrastructure | 2 个 | API 客户端 |
-| Application/Services | 1 个 | Web 应用服务 |
-| Presentation | 7 个 | 组件 + Composable + 视图 |
-| Router | 1 个 | 路由配置 |
-| Module | 1 个 | 模块导出 |
-| Other | 2 个 | application/index.ts + initialization |
-| **总计** | **14 个** | |
+
+| 层级                 | 文件数    | 说明                                  |
+| -------------------- | --------- | ------------------------------------- |
+| Infrastructure       | 2 个      | API 客户端                            |
+| Application/Services | 1 个      | Web 应用服务                          |
+| Presentation         | 7 个      | 组件 + Composable + 视图              |
+| Router               | 1 个      | 路由配置                              |
+| Module               | 1 个      | 模块导出                              |
+| Other                | 2 个      | application/index.ts + initialization |
+| **总计**             | **14 个** |                                       |
 
 ---
 
 ## 📝 文件详细说明
 
 ### 1. infrastructure/api/scheduleApiClient.ts
+
 **职责**: 封装所有 HTTP API 请求
 
 **导出**:
+
 - `class ScheduleApiClient` - API 客户端类
 - `scheduleApiClient` - 单例实例
 
 **方法列表**（18 个）:
+
 ```typescript
 // 任务管理（12 个）
-createTask()
-createTasksBatch()
-getTasks()
-getTaskById()
-getDueTasks()
-getTaskBySource()
-pauseTask()
-resumeTask()
-completeTask()
-cancelTask()
-deleteTask()
-deleteTasksBatch()
-updateTaskMetadata()
+createTask();
+createTasksBatch();
+getTasks();
+getTaskById();
+getDueTasks();
+getTaskBySource();
+pauseTask();
+resumeTask();
+completeTask();
+cancelTask();
+deleteTask();
+deleteTasksBatch();
+updateTaskMetadata();
 
 // 统计管理（6 个）
-getStatistics()
-getModuleStatistics()
-getAllModuleStatistics()
-recalculateStatistics()
-resetStatistics()
-deleteStatistics()
+getStatistics();
+getModuleStatistics();
+getAllModuleStatistics();
+recalculateStatistics();
+resetStatistics();
+deleteStatistics();
 ```
 
 **特点**:
+
 - 使用 `apiClient` 实例（统一的 HTTP 客户端）
 - 完整的 TypeScript 类型定义
 - 基于 `ScheduleContracts` 类型
 
 ### 2. services/ScheduleWebApplicationService.ts
+
 **职责**: 业务逻辑封装和错误处理
 
 **导出**:
+
 - `class ScheduleWebApplicationService` - 应用服务类
 - `scheduleWebApplicationService` - 单例实例
 
 **方法列表**（18 个）:
+
 - 对应 API 客户端的 18 个方法
 - 每个方法包含：
   - 日志记录（logger.info/error）
@@ -177,62 +186,71 @@ deleteStatistics()
   - 业务逻辑封装
 
 **特点**:
+
 - 使用 `createLogger('ScheduleWebApplicationService')`
 - 统一的错误处理模式
 - 调用 `scheduleApiClient` 方法
 
 ### 3. presentation/composables/useSchedule.ts
+
 **职责**: Vue 组合函数，提供状态管理和业务方法
 
 **导出**:
+
 - `function useSchedule()` - 组合函数
 
 **状态**（5 个）:
+
 ```typescript
-tasks: Ref<ScheduleTaskServerDTO[]>
-statistics: Ref<ScheduleStatisticsServerDTO | null>
-moduleStatistics: Ref<Record<SourceModule, ModuleStatisticsServerDTO> | null>
-isLoading: Ref<boolean>
-isLoadingStats: Ref<boolean>
-error: Ref<string | null>
+tasks: Ref<ScheduleTaskServerDTO[]>;
+statistics: Ref<ScheduleStatisticsServerDTO | null>;
+moduleStatistics: Ref<Record<SourceModule, ModuleStatisticsServerDTO> | null>;
+isLoading: Ref<boolean>;
+isLoadingStats: Ref<boolean>;
+error: Ref<string | null>;
 ```
 
 **方法**（12 个）:
+
 ```typescript
 // 任务方法（6 个）
-fetchTasks()
-fetchTasksByModule()
-createTask()
-pauseTask()
-resumeTask()
-deleteTask()
+fetchTasks();
+fetchTasksByModule();
+createTask();
+pauseTask();
+resumeTask();
+deleteTask();
 
 // 统计方法（3 个）
-fetchStatistics()
-fetchAllModuleStatistics()
-recalculateStatistics()
+fetchStatistics();
+fetchAllModuleStatistics();
+recalculateStatistics();
 
 // 工具方法（3 个）
-initialize()
-refresh()
-clearError()
+initialize();
+refresh();
+clearError();
 ```
 
 **特点**:
+
 - 响应式状态管理
 - 自动错误处理
 - 调用 `scheduleWebApplicationService` 方法
 
-### 4. presentation/components/cards/*.vue
+### 4. presentation/components/cards/\*.vue
+
 **职责**: 可复用的任务队列卡片组件
 
 **组件列表**:
+
 1. **ReminderTasksCard.vue** - 提醒模块
 2. **TaskModuleTasksCard.vue** - 任务模块
 3. **GoalTasksCard.vue** - 目标模块
 4. **StatisticsCard.vue** - 统计信息
 
 **共同特点**（前 3 个任务卡片）:
+
 - Props: `tasks`, `isLoading`, `error`
 - Emits: `pause-task`, `resume-task`, `delete-task`
 - 显示任务列表
@@ -240,6 +258,7 @@ clearError()
 - 操作菜单（暂停/恢复/删除）
 
 **StatisticsCard 特点**:
+
 - Props: `statistics`, `moduleStatistics`, `isLoading`, `error`
 - Emits: `refresh`
 - 总体概览（4 个统计卡片）
@@ -247,9 +266,11 @@ clearError()
 - 模块分布（动态模块卡片）
 
 ### 5. presentation/views/ScheduleDashboardView.vue
+
 **职责**: 调度控制台主页面
 
 **功能**:
+
 - 使用 `useSchedule` composable
 - 渲染 4 个卡片组件
 - 响应式布局（左侧 8 列 + 右侧 4 列）
@@ -258,6 +279,7 @@ clearError()
 - 错误处理和数据刷新
 
 **布局**:
+
 ```vue
 <v-container>
   <v-card> <!-- 页面头部 --> </v-card>
@@ -275,12 +297,15 @@ clearError()
 ```
 
 ### 6. router/index.ts
+
 **职责**: 路由配置
 
 **导出**:
+
 - `export const scheduleRoutes: RouteRecordRaw[]`
 
 **路由结构**:
+
 ```typescript
 /schedule
   └── /dashboard (ScheduleDashboardView)
@@ -291,24 +316,26 @@ clearError()
 ```
 
 ### 7. index.ts (模块导出)
+
 **职责**: 模块统一导出
 
 **导出内容**:
+
 ```typescript
 // 应用服务
-export { ScheduleWebApplicationService, scheduleWebApplicationService }
+export { ScheduleWebApplicationService, scheduleWebApplicationService };
 
 // API 客户端
-export * from './infrastructure/api/index'
+export * from './infrastructure/api/index';
 
 // 路由
-export { scheduleRoutes }
+export { scheduleRoutes };
 
 // 组件
-export * from './presentation/components'
+export * from './presentation/components';
 
 // Composables
-export { useSchedule }
+export { useSchedule };
 ```
 
 ---
@@ -346,15 +373,18 @@ index.ts (模块导出)
 ## 📦 外部依赖
 
 ### Vue 生态
+
 - `vue` - Vue 3 核心
 - `vue-router` - 路由管理
 - `vuetify` - UI 组件库
 
 ### DailyUse 内部包
+
 - `@dailyuse/contracts` - 类型契约
 - `@dailyuse/utils` - 工具函数（createLogger）
 
 ### 共享模块
+
 - `@/shared/api/instances` - API 客户端实例
 
 ---
@@ -362,6 +392,7 @@ index.ts (模块导出)
 ## 🎯 使用流程
 
 ### 1. 用户访问页面
+
 ```
 用户访问 /schedule/dashboard
 ↓
@@ -371,6 +402,7 @@ router/index.ts 匹配路由
 ```
 
 ### 2. 页面初始化
+
 ```
 ScheduleDashboardView.vue
 ↓
@@ -384,6 +416,7 @@ fetchTasks() + fetchStatistics() + fetchAllModuleStatistics()
 ```
 
 ### 3. 数据获取
+
 ```
 useSchedule.fetchTasks()
 ↓
@@ -397,6 +430,7 @@ API Backend
 ```
 
 ### 4. 用户操作
+
 ```
 用户点击"暂停任务"
 ↓

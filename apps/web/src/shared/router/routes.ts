@@ -113,7 +113,8 @@ export const appRoutes: RouteRecordRaw[] = [
           {
             path: 'dependency-validation-demo',
             name: 'task-dependency-demo',
-            component: () => import('@/modules/task/presentation/views/DependencyValidationDemoView.vue'),
+            component: () =>
+              import('@/modules/task/presentation/views/DependencyValidationDemoView.vue'),
             meta: {
               title: '依赖验证演示 (STORY-024)',
               requiresAuth: true,
@@ -167,7 +168,8 @@ export const appRoutes: RouteRecordRaw[] = [
           {
             path: 'compare',
             name: 'goal-comparison',
-            component: () => import('@/modules/goal/presentation/views/MultiGoalComparisonView.vue'),
+            component: () =>
+              import('@/modules/goal/presentation/views/MultiGoalComparisonView.vue'),
             meta: {
               title: '多目标对比',
               requiresAuth: true,

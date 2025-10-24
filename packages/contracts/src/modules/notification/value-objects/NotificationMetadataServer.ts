@@ -50,7 +50,6 @@ export interface NotificationMetadataServerDTO {
   data?: any;
 }
 
-
 /**
  * NotificationMetadata Persistence DTO
  */

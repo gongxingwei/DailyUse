@@ -1,6 +1,6 @@
 /**
  * SearchDataProvider Integration Tests
- * 
+ *
  * Tests the data integration between SearchDataProvider and actual services
  */
 
@@ -23,7 +23,7 @@ describe('SearchDataProvider Integration', () => {
     it('should return the same instance', () => {
       const instance1 = searchDataProvider;
       const instance2 = searchDataProvider;
-      
+
       expect(instance1).toBe(instance2);
     });
   });
@@ -31,7 +31,7 @@ describe('SearchDataProvider Integration', () => {
   describe('Cache Management', () => {
     it('should start with empty cache', () => {
       const status = searchDataProvider.getCacheStatus();
-      
+
       expect(status.isValid).toBe(false);
       expect(status.lastUpdated).toBeNull();
       expect(status.itemCounts).toEqual({
@@ -44,7 +44,7 @@ describe('SearchDataProvider Integration', () => {
     it('should clear cache', () => {
       searchDataProvider.clearCache();
       const status = searchDataProvider.getCacheStatus();
-      
+
       expect(status.isValid).toBe(false);
       expect(status.lastUpdated).toBeNull();
     });
@@ -55,7 +55,7 @@ describe('SearchDataProvider Integration', () => {
       const goals = searchDataProvider.getGoals();
       const tasks = searchDataProvider.getTasks();
       const reminders = searchDataProvider.getReminders();
-      
+
       expect(goals).toEqual([]);
       expect(tasks).toEqual([]);
       expect(reminders).toEqual([]);
@@ -69,7 +69,7 @@ describe('SearchDataProvider Integration', () => {
   describe('Cache Status', () => {
     it('should provide detailed cache status', () => {
       const status = searchDataProvider.getCacheStatus();
-      
+
       expect(status).toHaveProperty('isValid');
       expect(status).toHaveProperty('lastUpdated');
       expect(status).toHaveProperty('itemCounts');

@@ -11,12 +11,14 @@
 ## 🚀 技术栈
 
 ### 核心框架
+
 - **前端**: Vue 3 + Vuetify + TypeScript
 - **桌面**: Electron 30.x
 - **后端**: Node.js + Prisma + SQLite
 - **构建**: Nx + Vite + pnpm
 
 ### 开发工具
+
 - **包管理**: pnpm (比 npm 快 3x，节省 70% 磁盘空间)
 - **构建系统**: Nx Monorepo
 - **代码质量**: ESLint + Prettier + TypeScript
@@ -46,6 +48,7 @@ DailyUse/                    # 根目录
 ## 🛠️ 快速开始
 
 ### 环境要求
+
 - Node.js 18+
 - pnpm 8+ (推荐使用 pnpm 而非 npm)
 - VS Code (推荐，已配置 AI 辅助开发)
@@ -93,12 +96,12 @@ pnpm build:desktop    # 构建桌面应用
 
 相比 npm，pnpm 为 DailyUse 项目带来显著优势：
 
-| 特性 | npm | pnpm | 提升 |
-|-----|-----|------|------|
-| 安装速度 | 45s | 15s | **3x 更快** |
-| 磁盘占用 | 1.5GB | 450MB | **节省 70%** |
-| Monorepo 支持 | 基础 | 原生 | **完美集成** |
-| 依赖安全 | 允许幽灵依赖 | 严格管理 | **更安全** |
+| 特性          | npm          | pnpm     | 提升         |
+| ------------- | ------------ | -------- | ------------ |
+| 安装速度      | 45s          | 15s      | **3x 更快**  |
+| 磁盘占用      | 1.5GB        | 450MB    | **节省 70%** |
+| Monorepo 支持 | 基础         | 原生     | **完美集成** |
+| 依赖安全      | 允许幽灵依赖 | 严格管理 | **更安全**   |
 
 详见：[pnpm + MCP 最佳实践指南](docs/pnpm-MCP-Best-Practices.md)
 
@@ -107,6 +110,7 @@ pnpm build:desktop    # 构建桌面应用
 ### 已实现功能
 
 #### 🏠 核心功能
+
 - **用户管理**: 账户管理、数据管理
 - **知识仓库**: Markdown 文档存储、资源管理、文档/图片仓库
 - **待办任务**: 任务 CRUD、桌面提醒、任务归档
@@ -117,6 +121,7 @@ pnpm build:desktop    # 构建桌面应用
 - **应用设置**: 主题切换、国际化、编辑器配置
 
 #### 🔧 技术特性
+
 - **跨平台**: Windows/macOS/Linux 支持
 - **离线优先**: 本地 SQLite 数据库
 - **模块化**: Nx Monorepo 架构
@@ -124,6 +129,7 @@ pnpm build:desktop    # 构建桌面应用
 - **现代 UI**: Vuetify Material Design
 
 ### 🚧 开发中功能
+
 - 学习内容推荐系统
 - 社交媒体集成 (B站订阅等)
 - 收藏与书签管理
@@ -145,16 +151,19 @@ pnpm build:desktop    # 构建桌面应用
 ## 📖 开发文档
 
 ### Nx Monorepo 指南 (新增)
+
 - [Nx 配置完整指南](docs/NX_CONFIGURATION_GUIDE.md) - nx.json 和 project.json 详解
 - [Nx 使用指南](docs/NX_USAGE_GUIDE.md) - 常用命令、优势、工作流
 - [Project.json 配置说明](docs/PROJECT_JSON_GUIDE.md) - 各项目配置详解
 
 ### AI 辅助开发
+
 - [MCP 配置指南](docs/MCP-Configuration-Guide.md) - AI 辅助开发设置
 - [pnpm 最佳实践](docs/pnpm-MCP-Best-Practices.md) - 包管理优化
 - [MCP 快速开始](docs/MCP-Quick-Start.md) - 5分钟设置指南
 
 ### 测试文档
+
 - [Vitest Workspace 指南](VITEST_WORKSPACE_GUIDE.md) - 详细测试使用指南
 - [Vitest 配置总结](VITEST_WORKSPACE_CONFIGURATION_SUMMARY.md) - 配置说明
 - [Vitest 验证报告](VITEST_WORKSPACE_VERIFICATION_REPORT.md) - 配置验证
@@ -162,11 +171,12 @@ pnpm build:desktop    # 构建桌面应用
 ## 🔧 开发工具
 
 ### VS Code 扩展推荐
+
 ```json
 {
   "recommendations": [
     "Vue.volar",
-    "bradlc.vscode-tailwindcss", 
+    "bradlc.vscode-tailwindcss",
     "ms-vscode.vscode-typescript-next",
     "esbenp.prettier-vscode",
     "ms-vscode.vscode-eslint",
@@ -176,6 +186,7 @@ pnpm build:desktop    # 构建桌面应用
 ```
 
 ### 项目脚本
+
 ```bash
 # 开发（使用 Nx 命令）
 pnpm nx serve api          # 启动 API 服务
@@ -222,6 +233,7 @@ pnpm nx reset              # 清除 Nx 缓存
 ```
 
 **💡 提示**：
+
 - 安装全局 Nx CLI 后可省略 `pnpm` 前缀：`nx serve api`
 - 详细命令说明见：[Nx 使用指南](docs/NX_USAGE_GUIDE.md)
 - 配置说明见：[Nx 配置完整指南](docs/NX_CONFIGURATION_GUIDE.md)
@@ -229,19 +241,21 @@ pnpm nx reset              # 清除 Nx 缓存
 ## 🏗️ 架构设计
 
 ### 领域驱动设计 (DDD)
+
 ```
 Domain Layer (domain-core)     # 业务规则和实体
-├── Application Layer          # 应用服务和用例  
+├── Application Layer          # 应用服务和用例
 ├── Infrastructure Layer       # 数据访问和外部服务
 └── Presentation Layer         # UI 组件和控制器
 ```
 
 ### 跨应用代码共享
+
 ```typescript
 // 类型共享
 import { Task, User } from '@dailyuse/contracts';
 
-// 业务逻辑共享  
+// 业务逻辑共享
 import { TaskService } from '@dailyuse/domain-client';
 
 // UI 组件共享
@@ -261,7 +275,7 @@ import { Button, Dialog } from '@dailyuse/ui';
 # 代码统计
 pnpm cloc src --exclude-dir=node_modules
 
-# 依赖分析  
+# 依赖分析
 pnpm nx dep-graph
 
 # 包大小分析
@@ -282,12 +296,12 @@ pnpm nx bundle-analyzer
 
 ## 👥 作者
 
-- **BakerSean168** - *项目创建者* - [GitHub](https://github.com/BakerSean168)
+- **BakerSean168** - _项目创建者_ - [GitHub](https://github.com/BakerSean168)
 
 ## 🙏 致谢
 
 - [Vue.js](https://vuejs.org/) - 渐进式 JavaScript 框架
-- [Electron](https://electronjs.org/) - 跨平台桌面应用框架  
+- [Electron](https://electronjs.org/) - 跨平台桌面应用框架
 - [Nx](https://nx.dev/) - 智能构建系统
 - [pnpm](https://pnpm.io/) - 快速、节省磁盘空间的包管理器
-- [Vuetify](https://vuetifyjs.com/) - Vue Material 组件框架  
+- [Vuetify](https://vuetifyjs.com/) - Vue Material 组件框架

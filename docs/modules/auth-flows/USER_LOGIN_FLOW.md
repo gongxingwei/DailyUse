@@ -15,6 +15,7 @@
 ### 1.1 业务目标
 
 用户通过提供身份标识（用户名/邮箱/手机号）和密码进行身份验证，系统需要：
+
 - 验证用户身份的合法性
 - 检查账户和凭证状态
 - 创建会话（Session）并颁发令牌（access/refresh token）
@@ -55,6 +56,7 @@
 #### Authentication 模块 (packages/domain-server/authentication/)
 
 **聚合根**: `AuthCredential`
+
 - 属性:
   - `uuid`: 凭证唯一标识
   - `accountUuid`: 关联账户 UUID
@@ -68,6 +70,7 @@
   - `status`: 凭证状态（ACTIVE, SUSPENDED, EXPIRED, REVOKED）
 
 **聚合根**: `AuthSession`
+
 - 属性:
   - `uuid`: 会话唯一标识
   - `accountUuid`: 关联账户 UUID
@@ -82,6 +85,7 @@
   - `history`: 会话历史记录
 
 **领域服务**: `AuthenticationDomainService`
+
 - 职责:
   - 验证密码（verifyPassword）
   - 记录失败登录（recordFailedLogin）
@@ -91,6 +95,7 @@
   - 生成 token（generateRememberMeToken）
 
 **仓储接口**: `IAuthCredentialRepository`, `IAuthSessionRepository`
+
 ```typescript
 interface IAuthCredentialRepository {
   findByUuid(uuid: string): Promise<AuthCredential | null>;
@@ -109,10 +114,12 @@ interface IAuthSessionRepository {
 #### Account 模块 (packages/domain-server/account/)
 
 **聚合根**: `Account`
+
 - 职责: 提供账户基本信息和状态
 - 方法: `updateLastLogin()`, `incrementLoginCount()`
 
 **领域服务**: `AccountDomainService`
+
 - 职责:
   - 查询账户（getAccountByUsername/Email/Phone）
   - 更新登录统计（updateLoginStats）
@@ -128,41 +135,45 @@ interface IAuthSessionRepository {
 **核心用例**: `login()`
 
 **输入 DTO**:
+
 ```typescript
 interface LoginRequest {
-  identifier: string;        // 用户名/邮箱/手机号
-  password: string;          // 明文密码（通过 HTTPS 传输）
+  identifier: string; // 用户名/邮箱/手机号
+  password: string; // 明文密码（通过 HTTPS 传输）
   deviceInfo: {
     deviceType: 'BROWSER' | 'DESKTOP' | 'MOBILE' | 'TABLET' | 'API';
-    os?: string;             // 操作系统（如 Windows, macOS, iOS）
-    browser?: string;        // 浏览器（如 Chrome, Firefox）
-    ipAddress: string;       // 客户端 IP
-    userAgent: string;       // User-Agent 字符串
-    location?: {             // 地理位置（可选，通过 IP 解析）
+    os?: string; // 操作系统（如 Windows, macOS, iOS）
+    browser?: string; // 浏览器（如 Chrome, Firefox）
+    ipAddress: string; // 客户端 IP
+    userAgent: string; // User-Agent 字符串
+    location?: {
+      // 地理位置（可选，通过 IP 解析）
       country?: string;
       region?: string;
       city?: string;
       timezone?: string;
     };
   };
-  rememberMe?: boolean;      // 是否记住登录（延长 token 有效期）
-  rememberMeDays?: number;   // 记住天数（默认 30 天）
+  rememberMe?: boolean; // 是否记住登录（延长 token 有效期）
+  rememberMeDays?: number; // 记住天数（默认 30 天）
 }
 ```
 
 **输出 DTO**:
+
 ```typescript
 interface LoginResponse {
-  accessToken: string;                    // 访问令牌（短期，15分钟-1小时）
-  refreshToken: string;                   // 刷新令牌（长期，7-30天）
-  expiresIn: number;                      // access token 过期时间（秒）
-  tokenType: 'Bearer';                    // Token 类型
-  account: AccountClientDTO;              // 账户信息
-  session: AuthSessionClientDTO;          // 会话信息
+  accessToken: string; // 访问令牌（短期，15分钟-1小时）
+  refreshToken: string; // 刷新令牌（长期，7-30天）
+  expiresIn: number; // access token 过期时间（秒）
+  tokenType: 'Bearer'; // Token 类型
+  account: AccountClientDTO; // 账户信息
+  session: AuthSessionClientDTO; // 会话信息
 }
 ```
 
 **职责**:
+
 1. 参数验证（identifier、password、deviceInfo）
 2. 查询账户（通过 AccountRepository）
 3. 查询凭证（通过 AuthCredentialRepository）
@@ -185,16 +196,19 @@ interface LoginResponse {
 #### 仓储实现 (apps/api/modules/authentication/infrastructure/repositories/)
 
 **PrismaAuthCredentialRepository**:
+
 - 实现 `IAuthCredentialRepository` 接口
 - 查询凭证：`findByAccountUuid(accountUuid)`
 - 更新凭证：`save(credential)`（更新失败次数、锁定时间）
 
 **PrismaAuthSessionRepository**:
+
 - 实现 `IAuthSessionRepository` 接口
 - 创建会话：`save(session)`
 - 查询会话：`findByAccessToken(token)`
 
 **PrismaAccountRepository**:
+
 - 实现 `IAccountRepository` 接口
 - 查询账户：`findByUsername/Email/Phone(identifier)`
 - 更新统计：保存 account 时更新 stats 字段
@@ -202,6 +216,7 @@ interface LoginResponse {
 #### Token 服务 (apps/api/modules/authentication/infrastructure/services/)
 
 **TokenService**:
+
 - 职责: 生成和验证 JWT token
 - 方法:
   - `generateAccessToken(accountUuid, sessionUuid)`: 生成短期 access token（15-60分钟）
@@ -220,7 +235,7 @@ export class TokenService {
     return jwt.sign(
       { accountUuid, sessionUuid, type: 'access' },
       this.accessTokenSecret,
-      { expiresIn: '1h' } // 1小时
+      { expiresIn: '1h' }, // 1小时
     );
   }
 
@@ -228,7 +243,7 @@ export class TokenService {
     return jwt.sign(
       { accountUuid, sessionUuid, type: 'refresh' },
       this.refreshTokenSecret,
-      { expiresIn: '30d' } // 30天
+      { expiresIn: '30d' }, // 30天
     );
   }
 
@@ -247,28 +262,28 @@ model AuthSession {
   account_uuid           String
   access_token           String   @unique
   access_token_expires_at DateTime
-  
+
   // Refresh Token（嵌入 JSON）
   refresh_token          Json     // { token, expiresAt, createdAt }
-  
+
   // 设备信息
   device                 Json     // { deviceType, os, browser, userAgent }
   ip_address             String
   location               Json?    // { country, region, city, timezone }
-  
+
   // 状态
   status                 String   @default("ACTIVE")
   last_activity_at       DateTime
   last_activity_type     String?
-  
+
   // 时间戳
   created_at             DateTime @default(now())
   expires_at             DateTime
   revoked_at             DateTime?
-  
+
   // 关联关系
   account                Account  @relation(fields: [account_uuid], references: [uuid], onDelete: Cascade)
-  
+
   @@index([account_uuid])
   @@index([access_token])
   @@map("auth_sessions")
@@ -458,11 +473,7 @@ export default router;
 
 ```typescript
 // AuthenticationApplicationService.ts
-import {
-  Account,
-  AccountDomainService,
-  type IAccountRepository,
-} from '@dailyuse/domain-server';
+import { Account, AccountDomainService, type IAccountRepository } from '@dailyuse/domain-server';
 import {
   AuthenticationDomainService,
   type IAuthCredentialRepository,
@@ -667,10 +678,7 @@ export class AuthenticationApplicationService {
   /**
    * 验证密码
    */
-  private async verifyPassword(
-    plainPassword: string,
-    credential: any,
-  ): Promise<boolean> {
+  private async verifyPassword(plainPassword: string, credential: any): Promise<boolean> {
     const hashedPassword = credential.passwordCredential?.hashedPassword;
     if (!hashedPassword) return false;
 
@@ -686,6 +694,7 @@ export class AuthenticationApplicationService {
 已在现有代码中实现，主要方法：
 
 **AuthenticationDomainService.verifyPassword()**:
+
 ```typescript
 async verifyPassword(accountUuid: string, hashedPassword: string): Promise<boolean> {
   const credential = await this.credentialRepository.findByAccountUuid(accountUuid);
@@ -695,6 +704,7 @@ async verifyPassword(accountUuid: string, hashedPassword: string): Promise<boole
 ```
 
 **AuthenticationDomainService.recordFailedLogin()**:
+
 ```typescript
 async recordFailedLogin(accountUuid: string): Promise<void> {
   const credential = await this.credentialRepository.findByAccountUuid(accountUuid);
@@ -705,6 +715,7 @@ async recordFailedLogin(accountUuid: string): Promise<void> {
 ```
 
 **AuthenticationDomainService.isCredentialLocked()**:
+
 ```typescript
 async isCredentialLocked(accountUuid: string): Promise<boolean> {
   const credential = await this.credentialRepository.findByAccountUuid(accountUuid);
@@ -715,6 +726,7 @@ async isCredentialLocked(accountUuid: string): Promise<boolean> {
 ```
 
 **AuthenticationDomainService.createSession()**:
+
 ```typescript
 async createSession(params: {
   accountUuid: string;
@@ -742,27 +754,30 @@ async createSession(params: {
 
 ### 4.1 业务异常
 
-| 错误代码 | HTTP 状态 | 描述 | 处理方式 |
-|---------|---------|------|---------|
-| `NOT_FOUND` | 404 | 账户不存在 | 提示用户检查用户名/邮箱 |
-| `INVALID_CREDENTIALS` | 401 | 密码错误 | 提示密码错误，记录失败次数 |
-| `ACCOUNT_LOCKED` | 423 | 账户被锁定 | 提示锁定剩余时间 |
-| `ACCOUNT_SUSPENDED` | 403 | 账户被暂停 | 提示联系客服 |
-| `ACCOUNT_INACTIVE` | 403 | 账户未激活 | 提示验证邮箱 |
-| `CREDENTIAL_EXPIRED` | 403 | 凭证已过期 | 提示重置密码 |
+| 错误代码              | HTTP 状态 | 描述       | 处理方式                   |
+| --------------------- | --------- | ---------- | -------------------------- |
+| `NOT_FOUND`           | 404       | 账户不存在 | 提示用户检查用户名/邮箱    |
+| `INVALID_CREDENTIALS` | 401       | 密码错误   | 提示密码错误，记录失败次数 |
+| `ACCOUNT_LOCKED`      | 423       | 账户被锁定 | 提示锁定剩余时间           |
+| `ACCOUNT_SUSPENDED`   | 403       | 账户被暂停 | 提示联系客服               |
+| `ACCOUNT_INACTIVE`    | 403       | 账户未激活 | 提示验证邮箱               |
+| `CREDENTIAL_EXPIRED`  | 403       | 凭证已过期 | 提示重置密码               |
 
 ### 4.2 安全策略
 
 **防暴力破解**:
+
 - 连续 5 次密码错误 → 锁定账户 15 分钟
 - 连续 10 次密码错误 → 锁定账户 1 小时
 - 连续 15 次密码错误 → 锁定账户 24 小时
 
 **速率限制**:
+
 - 同一 IP：每分钟最多 10 次登录尝试
 - 同一账户：每分钟最多 5 次登录尝试
 
 **异常登录检测**:
+
 - 地理位置突变（如从中国到美国）
 - 设备类型变化（如从桌面到移动）
 - 发送邮件/短信提醒用户
@@ -904,6 +919,6 @@ describe('Login API Integration', () => {
 
 ## 10. 变更历史
 
-| 版本 | 日期 | 作者 | 变更说明 |
-|-----|------|------|---------|
-| 1.0 | 2025-10-17 | AI Assistant | 初始版本 |
+| 版本 | 日期       | 作者         | 变更说明 |
+| ---- | ---------- | ------------ | -------- |
+| 1.0  | 2025-10-17 | AI Assistant | 初始版本 |

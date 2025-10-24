@@ -15,12 +15,7 @@
 
           <div class="d-flex gap-2">
             <!-- 视图切换 -->
-            <v-btn-toggle
-              v-model="viewMode"
-              mandatory
-              density="compact"
-              variant="outlined"
-            >
+            <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined">
               <v-btn value="list" size="small">
                 <v-icon start>mdi-format-list-bulleted</v-icon>
                 列表视图
@@ -44,7 +39,7 @@
           <v-card-title>
             <div class="d-flex justify-space-between align-center w-100">
               <span>任务列表</span>
-              
+
               <!-- 筛选和搜索 -->
               <div class="d-flex gap-2">
                 <v-select
@@ -52,7 +47,7 @@
                   :items="statusOptions"
                   label="状态筛选"
                   density="compact"
-                  style="width: 150px;"
+                  style="width: 150px"
                   clearable
                 />
                 <v-select
@@ -60,7 +55,7 @@
                   :items="priorityOptions"
                   label="优先级"
                   density="compact"
-                  style="width: 150px;"
+                  style="width: 150px"
                   clearable
                 />
                 <v-text-field
@@ -68,7 +63,7 @@
                   label="搜索任务"
                   prepend-inner-icon="mdi-magnify"
                   density="compact"
-                  style="width: 200px;"
+                  style="width: 200px"
                   clearable
                 />
               </div>
@@ -86,7 +81,11 @@
             <div v-else-if="filteredTasks.length === 0" class="text-center py-8">
               <v-icon size="64" color="grey-lighten-1">mdi-clipboard-text-outline</v-icon>
               <p class="text-h6 text-medium-emphasis mt-4">
-                {{ searchQuery || filterStatus || filterPriority ? '没有找到匹配的任务' : '还没有任务' }}
+                {{
+                  searchQuery || filterStatus || filterPriority
+                    ? '没有找到匹配的任务'
+                    : '还没有任务'
+                }}
               </p>
               <v-btn
                 v-if="!searchQuery && !filterStatus && !filterPriority"
@@ -128,20 +127,12 @@
                     </v-chip>
 
                     <!-- 状态标签 -->
-                    <v-chip
-                      :color="getStatusColor(task.status)"
-                      size="small"
-                      variant="flat"
-                    >
+                    <v-chip :color="getStatusColor(task.status)" size="small" variant="flat">
                       {{ task.status }}
                     </v-chip>
 
                     <!-- 预估时长 -->
-                    <v-chip
-                      v-if="task.estimatedMinutes"
-                      size="small"
-                      variant="outlined"
-                    >
+                    <v-chip v-if="task.estimatedMinutes" size="small" variant="outlined">
                       <v-icon start size="small">mdi-clock-outline</v-icon>
                       {{ formatDuration(task.estimatedMinutes) }}
                     </v-chip>
@@ -190,9 +181,9 @@ import { TaskContracts } from '@dailyuse/contracts';
 import type { TaskForDAG } from '@/modules/task/types/task-dag.types';
 import { taskTemplateToDAG } from '@/modules/task/types/task-dag.types';
 import TaskDAGVisualization from '@/modules/task/presentation/components/dag/TaskDAGVisualization.vue';
-import { 
-  taskTemplateApiClient, 
-  taskDependencyApiClient 
+import {
+  taskTemplateApiClient,
+  taskDependencyApiClient,
 } from '@/modules/task/infrastructure/api/taskApiClient';
 import { taskAutoStatusService } from '@/modules/task/application/services/TaskAutoStatusService';
 
@@ -247,9 +238,9 @@ const filteredTasks = computed(() => {
   // 搜索
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    result = result.filter((task: TaskClientDTO) =>
-      task.title.toLowerCase().includes(query) ||
-      task.description?.toLowerCase().includes(query)
+    result = result.filter(
+      (task: TaskClientDTO) =>
+        task.title.toLowerCase().includes(query) || task.description?.toLowerCase().includes(query),
     );
   }
 
@@ -265,11 +256,11 @@ const loadTasks = async () => {
       status: 'ACTIVE',
       limit: 100,
     });
-    
+
     // 转换为 DAG 格式
     if (response.data) {
-      tasks.value = response.data.map((template: any) => 
-        taskTemplateToDAG(template as TaskContracts.TaskTemplateClientDTO)
+      tasks.value = response.data.map((template: any) =>
+        taskTemplateToDAG(template as TaskContracts.TaskTemplateClientDTO),
       );
     }
   } catch (error) {
@@ -285,7 +276,7 @@ const loadDependencies = async () => {
   try {
     // 加载所有任务的依赖关系
     const allDependencies: TaskDependencyClientDTO[] = [];
-    
+
     for (const task of tasks.value) {
       try {
         const deps = await taskDependencyApiClient.getDependencies(task.uuid);
@@ -295,12 +286,10 @@ const loadDependencies = async () => {
         // 继续加载其他任务的依赖
       }
     }
-    
+
     // 去重（基于 uuid）
-    const uniqueDeps = Array.from(
-      new Map(allDependencies.map(dep => [dep.uuid, dep])).values()
-    );
-    
+    const uniqueDeps = Array.from(new Map(allDependencies.map((dep) => [dep.uuid, dep])).values());
+
     dependencies.value = uniqueDeps;
   } catch (error) {
     console.error('Failed to load dependencies:', error);
@@ -320,7 +309,7 @@ const toggleTaskStatus = async (task: TaskClientDTO) => {
     // TODO: 实现状态切换
     // 由于 TaskForDAG 可能来自 Template 或 Instance，需要判断
     console.log('Toggle task status:', task.uuid);
-    
+
     // 临时直接修改本地状态
     const newStatus = task.status === 'COMPLETED' ? 'ACTIVE' : 'COMPLETED';
     task.status = newStatus;
@@ -362,12 +351,12 @@ const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   const now = new Date();
   const diffDays = Math.floor((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) return '今天';
   if (diffDays === 1) return '明天';
   if (diffDays === -1) return '昨天';
   if (diffDays > 1 && diffDays < 7) return `${diffDays}天后`;
-  
+
   return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
 };
 
@@ -385,9 +374,9 @@ const setupEventListeners = () => {
   // Subscribe to status change events
   unsubscribeStatus = taskAutoStatusService.onStatusChanged((event) => {
     console.log('[TaskListView] Task status changed:', event);
-    
+
     // Update local task list
-    const task = tasks.value.find(t => t.uuid === event.taskUuid);
+    const task = tasks.value.find((t) => t.uuid === event.taskUuid);
     if (task) {
       task.status = event.newStatus;
     }
@@ -396,7 +385,7 @@ const setupEventListeners = () => {
   // Subscribe to task ready events
   unsubscribeReady = taskAutoStatusService.onTaskReady((event) => {
     console.log('[TaskListView] Task ready:', event);
-    
+
     // TODO: Show notification to user
     // 可以使用 Vuetify 的 Snackbar 或第三方通知库
     // Example: useNotification().success({
@@ -408,7 +397,7 @@ const setupEventListeners = () => {
   // Subscribe to task blocked events
   unsubscribeBlocked = taskAutoStatusService.onTaskBlocked((event) => {
     console.log('[TaskListView] Task blocked:', event);
-    
+
     // TODO: Show notification to user
     // Example: useNotification().warning({
     //   title: '任务被阻塞',
@@ -418,11 +407,14 @@ const setupEventListeners = () => {
 };
 
 // 切换到 DAG 视图时加载依赖
-watch(() => viewMode.value, async (newMode) => {
-  if (newMode === 'dag' && dependencies.value.length === 0 && tasks.value.length > 0) {
-    await loadDependencies();
-  }
-});
+watch(
+  () => viewMode.value,
+  async (newMode) => {
+    if (newMode === 'dag' && dependencies.value.length === 0 && tasks.value.length > 0) {
+      await loadDependencies();
+    }
+  },
+);
 
 // Lifecycle
 onMounted(async () => {

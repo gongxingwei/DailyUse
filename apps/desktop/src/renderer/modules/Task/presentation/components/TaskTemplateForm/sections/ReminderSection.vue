@@ -9,24 +9,14 @@
     </v-card-title>
     <v-card-text>
       <!-- 显示验证错误 -->
-      <v-alert 
-        v-if="errors.length > 0" 
-        type="error" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="errors.length > 0" type="error" variant="tonal" class="mb-4">
         <ul class="mb-0">
           <li v-for="error in errors" :key="error">{{ error }}</li>
         </ul>
       </v-alert>
 
       <!-- 显示警告信息 -->
-      <v-alert 
-        v-if="hasWarnings" 
-        type="warning" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="hasWarnings" type="warning" variant="tonal" class="mb-4">
         <ul class="mb-0">
           <li v-for="warning in warnings" :key="warning">{{ warning }}</li>
         </ul>
@@ -34,25 +24,19 @@
 
       <v-row>
         <v-col cols="12">
-          <v-switch 
-            v-model="localData.reminderConfig.enabled" 
-            label="启用提醒" 
-            color="primary" 
-          />
+          <v-switch v-model="localData.reminderConfig.enabled" label="启用提醒" color="primary" />
         </v-col>
 
         <template v-if="localData.reminderConfig.enabled">
           <v-col cols="12">
-            <ReminderAlertsList 
+            <ReminderAlertsList
               v-model="localData.reminderConfig.alerts"
               @update:validation="handleAlertsValidation"
             />
           </v-col>
-          
+
           <v-col cols="12">
-            <ReminderSnoozeSettings 
-              v-model="localData.reminderConfig.snooze"
-            />
+            <ReminderSnoozeSettings v-model="localData.reminderConfig.snooze" />
           </v-col>
         </template>
       </v-row>
@@ -82,7 +66,7 @@ const localData = computed({
     const updatedTemplate = props.modelValue.clone();
     updatedTemplate.updateReminderConfig(value.reminderConfig);
     emit('update:modelValue', updatedTemplate);
-  }
+  },
 });
 
 // 使用完整的验证功能
@@ -93,7 +77,7 @@ const {
   hasWarnings,
   validateReminders,
   resetValidation,
-  checkTimeConflicts
+  checkTimeConflicts,
 } = useReminderValidation();
 
 const handleAlertsValidation = (isValid: boolean) => {
@@ -103,12 +87,12 @@ const handleAlertsValidation = (isValid: boolean) => {
 // 执行验证并发射结果
 const performValidation = () => {
   const validationResult = validateReminders(localData.value.reminderConfig);
-  
+
   // 额外检查时间冲突
   if (validationResult && localData.value.reminderConfig.enabled) {
     checkTimeConflicts(localData.value.reminderConfig.alerts);
   }
-  
+
   emit('update:validation', validationResult);
   return validationResult;
 };
@@ -119,7 +103,7 @@ watch(
   () => {
     performValidation();
   },
-  { deep: true, immediate: true } // 添加 immediate: true 进行初始验证
+  { deep: true, immediate: true }, // 添加 immediate: true 进行初始验证
 );
 
 // 监听启用状态变化
@@ -129,6 +113,6 @@ watch(
     if (!newEnabled) {
       resetValidation();
     }
-  }
+  },
 );
 </script>

@@ -7,19 +7,19 @@
  * formatDateWithTemplate(new Date(), 'YYYY年MM月DD日 HH:mm') // '2024年04月16日 14:30'
  */
 export const formatDateWithTemplate = (date: Date | string, template: string): string => {
-    const d = new Date(date);
-    const tokens = {
-        YYYY: d.getFullYear(),
-        MM: (d.getMonth() + 1).toString().padStart(2, '0'),
-        DD: d.getDate().toString().padStart(2, '0'),
-        HH: d.getHours().toString().padStart(2, '0'),
-        mm: d.getMinutes().toString().padStart(2, '0'),
-        ss: d.getSeconds().toString().padStart(2, '0'),
-    };
+  const d = new Date(date);
+  const tokens = {
+    YYYY: d.getFullYear(),
+    MM: (d.getMonth() + 1).toString().padStart(2, '0'),
+    DD: d.getDate().toString().padStart(2, '0'),
+    HH: d.getHours().toString().padStart(2, '0'),
+    mm: d.getMinutes().toString().padStart(2, '0'),
+    ss: d.getSeconds().toString().padStart(2, '0'),
+  };
 
-    return Object.entries(tokens).reduce((result, [token, value]) => {
-        return result.replace(token, value.toString());
-    }, template);
+  return Object.entries(tokens).reduce((result, [token, value]) => {
+    return result.replace(token, value.toString());
+  }, template);
 };
 
 /**
@@ -28,11 +28,11 @@ export const formatDateWithTemplate = (date: Date | string, template: string): s
  * @param end 结束日期
  */
 export const getDaysDiff = (start: Date | string, end: Date | string): number => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-    return Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(0, 0, 0, 0);
+  return Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 };
 
 /**
@@ -40,9 +40,9 @@ export const getDaysDiff = (start: Date | string, end: Date | string): number =>
  * @param days 天数，正数为未来，负数为过去
  */
 export const getRelativeDate = (days: number): Date => {
-    const date = new Date();
-    date.setDate(date.getDate() + days);
-    return date;
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date;
 };
 
 /**
@@ -50,9 +50,9 @@ export const getRelativeDate = (days: number): Date => {
  * @param date 日期对象或日期字符串
  */
 export const isToday = (date: Date | string): boolean => {
-    const d = new Date(date);
-    const today = new Date();
-    return d.toDateString() === today.toDateString();
+  const d = new Date(date);
+  const today = new Date();
+  return d.toDateString() === today.toDateString();
 };
 
 /**
@@ -60,8 +60,8 @@ export const isToday = (date: Date | string): boolean => {
  * @param date 日期对象或日期字符串
  */
 export const getDaysInMonth = (date: Date | string): number => {
-    const d = new Date(date);
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const d = new Date(date);
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 };
 
 /**
@@ -69,7 +69,7 @@ export const getDaysInMonth = (date: Date | string): number => {
  * @param date 日期对象或日期字符串
  */
 export const normalizeDate = (date: Date | string): Date => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
 };

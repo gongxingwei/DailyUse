@@ -20,7 +20,7 @@ interface TestTask {
 function createTestDependency(
   predecessorUuid: string,
   successorUuid: string,
-  type: string = 'FS'
+  type: string = 'FS',
 ): TaskDependencyClientDTO {
   return {
     uuid: `dep-${Math.random().toString(36).substr(2, 9)}`,
@@ -57,7 +57,7 @@ describe('TaskDependencyValidationService', () => {
         'task-a',
         'task-b',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.hasCycle).toBe(true);
@@ -78,7 +78,7 @@ describe('TaskDependencyValidationService', () => {
         'task-a',
         'task-b',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.hasCycle).toBe(true);
@@ -96,7 +96,7 @@ describe('TaskDependencyValidationService', () => {
         'task-a',
         'task-b',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.hasCycle).toBe(true);
@@ -112,7 +112,7 @@ describe('TaskDependencyValidationService', () => {
         'task-a',
         'task-b',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.hasCycle).toBe(false);
@@ -130,7 +130,7 @@ describe('TaskDependencyValidationService', () => {
         'task-a',
         'task-b',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.hasCycle).toBe(false);
@@ -143,7 +143,7 @@ describe('TaskDependencyValidationService', () => {
         'task-a',
         'task-b',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.hasCycle).toBe(false);
@@ -157,7 +157,7 @@ describe('TaskDependencyValidationService', () => {
         'task-a',
         'FS',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -174,7 +174,7 @@ describe('TaskDependencyValidationService', () => {
         'task-b',
         'FS',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -190,7 +190,7 @@ describe('TaskDependencyValidationService', () => {
         'task-b',
         'FS',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -205,7 +205,7 @@ describe('TaskDependencyValidationService', () => {
         'task-b',
         'INVALID_TYPE',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -219,7 +219,7 @@ describe('TaskDependencyValidationService', () => {
         'task-b',
         'FS',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.isValid).toBe(false);
@@ -233,7 +233,7 @@ describe('TaskDependencyValidationService', () => {
         'task-b',
         'FS',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       expect(result.isValid).toBe(true);
@@ -255,7 +255,7 @@ describe('TaskDependencyValidationService', () => {
         'task-b',
         'FS',
         mockDependencies,
-        mockTasks as any
+        mockTasks as any,
       );
 
       // 应该仍然有效，但可能有警告
@@ -274,7 +274,7 @@ describe('TaskDependencyValidationService', () => {
 
       const affected = taskDependencyValidationService.calculateAffectedTasks(
         'task-a',
-        mockDependencies
+        mockDependencies,
       );
 
       expect(affected).toContain('task-b');
@@ -288,7 +288,7 @@ describe('TaskDependencyValidationService', () => {
 
       const affected = taskDependencyValidationService.calculateAffectedTasks(
         'task-b',
-        mockDependencies
+        mockDependencies,
       );
 
       expect(affected).toEqual([]);

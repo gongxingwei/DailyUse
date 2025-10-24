@@ -1,6 +1,7 @@
 # 🚀 STORY-029 快速操作指南
 
 ## 当前状态 ✅
+
 - ✅ 代码已提交 (2 commits: 2591d4f1, 201c71e0)
 - ✅ 代码已推送到远程分支
 - ✅ 文档已完整准备
@@ -13,21 +14,25 @@
 ### 步骤 1: 验证 CI Pipeline 状态 ⏳
 
 **访问 GitHub Actions**:
+
 ```
 https://github.com/BakerSean168/DailyUse/actions
 ```
 
 **查找内容**:
+
 - Workflow 名称: "E2E Tests"
 - 分支: `feature/sprint-2a-kr-weight-snapshots`
 - 提交: 2591d4f1, 201c71e0
 - 状态: 应该显示 "✓" (通过) 或正在运行
 
 **如果 CI 通过** ✅:
+
 - 下载 artifacts 查看报告（可选）
 - 继续步骤 2
 
 **如果 CI 失败** ❌:
+
 - 点击查看失败的步骤
 - 下载 artifacts 查看详细日志
 - 参考 `apps/web/e2e/README.md` 的 Troubleshooting 部分
@@ -40,6 +45,7 @@ https://github.com/BakerSean168/DailyUse/actions
 #### 方法 A: 使用 GitHub 网页（推荐）
 
 1. **打开 GitHub 仓库**:
+
    ```
    https://github.com/BakerSean168/DailyUse
    ```
@@ -53,12 +59,13 @@ https://github.com/BakerSean168/DailyUse/actions
    - **Compare**: `feature/sprint-2a-kr-weight-snapshots`
 
 5. **填写 PR 信息**:
-   
+
    **Title** (复制下面内容):
+
    ```
    feat(web): STORY-029 E2E test coverage expansion
    ```
-   
+
    **Description** (使用准备好的模板):
    - 打开文件: `.github/PULL_REQUEST_TEMPLATE_STORY-029.md`
    - 复制全部内容
@@ -101,12 +108,14 @@ gh pr edit --add-reviewer developer1,developer2,qa-engineer,devops-engineer
 #### 提供给审查者的材料
 
 1. **Code Review Checklist**:
+
    ```
    文件: STORY-029-CODE-REVIEW-CHECKLIST.md
    内容: 450+ 行完整审查清单
    ```
 
 2. **测试指南**:
+
    ```
    文件: apps/web/e2e/README.md
    内容: 580 行测试文档
@@ -121,16 +130,19 @@ gh pr edit --add-reviewer developer1,developer2,qa-engineer,devops-engineer
 #### 审查重点
 
 **Critical (必须审查)**:
+
 - ✅ CI/CD workflow 配置
 - ✅ 测试数据 seeding 脚本
 - ✅ Page Object Models
 
 **Important (应该审查)**:
+
 - ✅ 测试场景覆盖
 - ✅ 配置文件修改
 - ✅ 组件 test-id 添加
 
 **Nice-to-Have (可选)**:
+
 - ℹ️ 文档完整性
 - ℹ️ 代码风格
 - ℹ️ 注释清晰度
@@ -158,6 +170,7 @@ git push origin feature/sprint-2a-kr-weight-snapshots
 ### 步骤 4: 合并到 Develop 分支 🔀
 
 #### 前置条件检查
+
 - ✅ CI 全部通过
 - ✅ 所有审查者已批准
 - ✅ 无合并冲突
@@ -233,6 +246,7 @@ pnpm nx e2e web
 ## 📊 完成清单
 
 ### 必须完成 ✅
+
 - [ ] 步骤 1: 验证 CI 通过
 - [ ] 步骤 2: 创建 Pull Request
 - [ ] 步骤 3: 完成 Code Review
@@ -240,6 +254,7 @@ pnpm nx e2e web
 - [ ] 步骤 5: 验证合并成功
 
 ### 可选任务 📋
+
 - [ ] 下载并审查 CI artifacts
 - [ ] 更新 Sprint 看板
 - [ ] 关闭相关 Issues
@@ -251,17 +266,21 @@ pnpm nx e2e web
 ## 🔗 关键文档链接
 
 ### PR 创建
+
 - **PR 模板**: `.github/PULL_REQUEST_TEMPLATE_STORY-029.md`
 
 ### Code Review
+
 - **Review Checklist**: `STORY-029-CODE-REVIEW-CHECKLIST.md`
 - **Git Commands**: `STORY-029-GIT-COMMANDS.md`
 
 ### 技术文档
+
 - **测试指南**: `apps/web/e2e/README.md`
 - **最终报告**: `STORY-029-COMPLETION-REPORT.md`
 
 ### 验证文档
+
 - **验证报告**: `STORY-029-FINAL-VERIFICATION-REPORT.md`
 - **执行总结**: `STORY-029-EXECUTION-SUMMARY.md`
 
@@ -270,16 +289,19 @@ pnpm nx e2e web
 ## 📞 需要帮助?
 
 ### 如果 CI 失败
+
 1. 查看 GitHub Actions 日志
 2. 参考 `apps/web/e2e/README.md` 的 Troubleshooting
 3. 本地复现问题: `pnpm nx e2e web`
 
 ### 如果 PR 创建遇到问题
+
 1. 确认分支已推送: `git push origin feature/sprint-2a-kr-weight-snapshots`
 2. 检查 GitHub 仓库权限
 3. 使用网页界面创建（最简单）
 
 ### 如果合并冲突
+
 ```bash
 # 1. 拉取最新 develop
 git checkout develop
@@ -300,6 +322,7 @@ git push origin feature/sprint-2a-kr-weight-snapshots
 ## 🎯 预期结果
 
 完成所有步骤后：
+
 - ✅ STORY-029 正式完成
 - ✅ 测试覆盖率达到 86%
 - ✅ CI/CD 自动化测试已上线
@@ -325,6 +348,6 @@ git push origin feature/sprint-2a-kr-weight-snapshots
 
 ---
 
-*创建日期: 2025-10-24*  
-*状态: 等待 CI 验证和 PR 创建*  
-*预计完成时间: 今天*
+_创建日期: 2025-10-24_  
+_状态: 等待 CI 验证和 PR 创建_  
+_预计完成时间: 今天_

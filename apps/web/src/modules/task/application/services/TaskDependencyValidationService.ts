@@ -1,6 +1,6 @@
 /**
  * Task Dependency Validation Service
- * 
+ *
  * 负责验证任务依赖关系的合法性，包括：
  * - 循环依赖检测（Circular Dependency Detection）
  * - 依赖规则验证（Rule Validation）
@@ -66,17 +66,13 @@ export class TaskDependencyValidationService {
     successorUuid: string,
     dependencyType: string,
     existingDependencies: TaskContracts.TaskDependencyClientDTO[],
-    allTasks?: TaskForDAG[]
+    allTasks?: TaskForDAG[],
   ): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
     // 1. 基本规则验证
-    const ruleErrors = this.validateDependencyRules(
-      predecessorUuid,
-      successorUuid,
-      dependencyType
-    );
+    const ruleErrors = this.validateDependencyRules(predecessorUuid, successorUuid, dependencyType);
     errors.push(...ruleErrors);
 
     // 2. 自依赖检测
@@ -89,7 +85,14 @@ export class TaskDependencyValidationService {
     }
 
     // 3. 重复依赖检测
-    if (this.isDuplicateDependency(predecessorUuid, successorUuid, dependencyType, existingDependencies)) {
+    if (
+      this.isDuplicateDependency(
+        predecessorUuid,
+        successorUuid,
+        dependencyType,
+        existingDependencies,
+      )
+    ) {
       errors.push({
         code: 'DUPLICATE_DEPENDENCY',
         message: '该依赖关系已存在',
@@ -102,7 +105,7 @@ export class TaskDependencyValidationService {
       predecessorUuid,
       successorUuid,
       existingDependencies,
-      allTasks
+      allTasks,
     );
 
     if (circularResult.hasCycle) {
@@ -141,7 +144,7 @@ export class TaskDependencyValidationService {
     predecessorUuid: string,
     successorUuid: string,
     existingDependencies: TaskContracts.TaskDependencyClientDTO[],
-    allTasks?: TaskForDAG[]
+    allTasks?: TaskForDAG[],
   ): CircularDependencyResult {
     // 构建邻接表（前驱 → 后继）
     const graph = this.buildDependencyGraph(existingDependencies);
@@ -163,20 +166,21 @@ export class TaskDependencyValidationService {
       graph,
       visited,
       recursionStack,
-      path
+      path,
     );
 
     if (hasCycle) {
       // 提取循环路径
       const cycleStartIndex = path.indexOf(predecessorUuid);
-      const cyclePath = cycleStartIndex >= 0
-        ? [...path.slice(cycleStartIndex), predecessorUuid]
-        : [successorUuid, predecessorUuid];
+      const cyclePath =
+        cycleStartIndex >= 0
+          ? [...path.slice(cycleStartIndex), predecessorUuid]
+          : [successorUuid, predecessorUuid];
 
       // 获取任务名称
       const cyclePathNames = allTasks
-        ? cyclePath.map(uuid => {
-            const task = allTasks.find(t => t.uuid === uuid);
+        ? cyclePath.map((uuid) => {
+            const task = allTasks.find((t) => t.uuid === uuid);
             return task?.title || uuid.slice(0, 8);
           })
         : undefined;
@@ -203,7 +207,7 @@ export class TaskDependencyValidationService {
     graph: Map<string, Set<string>>,
     visited: Set<string>,
     recursionStack: Set<string>,
-    path: string[]
+    path: string[],
   ): boolean {
     // 如果当前节点就是目标，找到循环
     if (current === target && recursionStack.size > 0) {
@@ -239,11 +243,11 @@ export class TaskDependencyValidationService {
    * 构建依赖图（邻接表）
    */
   private buildDependencyGraph(
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): Map<string, Set<string>> {
     const graph = new Map<string, Set<string>>();
 
-    dependencies.forEach(dep => {
+    dependencies.forEach((dep) => {
       if (!graph.has(dep.predecessorTaskUuid)) {
         graph.set(dep.predecessorTaskUuid, new Set());
       }
@@ -259,7 +263,7 @@ export class TaskDependencyValidationService {
   private validateDependencyRules(
     predecessorUuid: string,
     successorUuid: string,
-    dependencyType: string
+    dependencyType: string,
   ): ValidationError[] {
     const errors: ValidationError[] = [];
 
@@ -308,13 +312,13 @@ export class TaskDependencyValidationService {
     predecessorUuid: string,
     successorUuid: string,
     dependencyType: string,
-    existingDependencies: TaskContracts.TaskDependencyClientDTO[]
+    existingDependencies: TaskContracts.TaskDependencyClientDTO[],
   ): boolean {
     return existingDependencies.some(
-      dep =>
+      (dep) =>
         dep.predecessorTaskUuid === predecessorUuid &&
         dep.successorTaskUuid === successorUuid &&
-        dep.dependencyType === dependencyType
+        dep.dependencyType === dependencyType,
     );
   }
 
@@ -323,7 +327,7 @@ export class TaskDependencyValidationService {
    */
   private calculateChainDepth(
     taskUuid: string,
-    dependencies: TaskContracts.TaskDependencyClientDTO[]
+    dependencies: TaskContracts.TaskDependencyClientDTO[],
   ): number {
     const graph = this.buildDependencyGraph(dependencies);
     const visited = new Set<string>();
@@ -350,7 +354,7 @@ export class TaskDependencyValidationService {
    * 调用后端验证 API
    */
   async validateDependencyRemote(
-    request: TaskContracts.ValidateDependencyRequest
+    request: TaskContracts.ValidateDependencyRequest,
   ): Promise<TaskContracts.ValidateDependencyResponse> {
     try {
       return await taskDependencyApiClient.validateDependency(request);
@@ -367,7 +371,7 @@ export class TaskDependencyValidationService {
   calculateAffectedTasks(
     taskUuid: string,
     dependencies: TaskContracts.TaskDependencyClientDTO[],
-    isCreation: boolean
+    isCreation: boolean,
   ): string[] {
     const graph = this.buildDependencyGraph(dependencies);
     const affected = new Set<string>();
@@ -381,14 +385,14 @@ export class TaskDependencyValidationService {
         affected.add(uuid);
 
         const successors = graph.get(uuid) || new Set();
-        successors.forEach(successor => collectSuccessors(successor));
+        successors.forEach((successor) => collectSuccessors(successor));
       };
 
       collectSuccessors(taskUuid);
     } else {
       // 删除依赖：影响前驱任务及其前置链
       const reversedGraph = new Map<string, Set<string>>();
-      dependencies.forEach(dep => {
+      dependencies.forEach((dep) => {
         if (!reversedGraph.has(dep.successorTaskUuid)) {
           reversedGraph.set(dep.successorTaskUuid, new Set());
         }
@@ -402,7 +406,7 @@ export class TaskDependencyValidationService {
         affected.add(uuid);
 
         const predecessors = reversedGraph.get(uuid) || new Set();
-        predecessors.forEach(pred => collectPredecessors(pred));
+        predecessors.forEach((pred) => collectPredecessors(pred));
       };
 
       collectPredecessors(taskUuid);

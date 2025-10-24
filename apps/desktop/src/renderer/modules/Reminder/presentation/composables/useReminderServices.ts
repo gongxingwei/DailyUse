@@ -1,18 +1,18 @@
-import { getReminderDomainApplicationService } from "../../application/services/reminderApplicationService";
+import { getReminderDomainApplicationService } from '../../application/services/reminderApplicationService';
 // types
 
 // composables
-import { useSnackbar } from "@renderer/shared/composables/useSnackbar";
+import { useSnackbar } from '@renderer/shared/composables/useSnackbar';
 // domain aggregates
-import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
-import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
+import { ReminderTemplateGroup } from '../../domain/aggregates/reminderTemplateGroup';
+import { ReminderTemplate } from '../../domain/entities/reminderTemplate';
 
 /**
  * useReminderServices
- * 
+ *
  * 该组合式函数封装了所有与提醒模板和分组相关的业务操作（增删改查、移动等），
  * 并统一处理消息提示（snackbar），为表现层提供简洁的调用接口。
- * 
+ *
  * 主要职责：
  * - 调用应用服务（reminderService）完成业务操作
  * - 统一处理操作结果和异常
@@ -34,13 +34,13 @@ export function useReminderServices() {
       const result = await reminderService.createReminderTemplate(templateData);
       if (result.success && result.data) {
         const name = result.data.template?.name || '（无名称）';
-        
+
         showSuccess(`提醒模板创建成功：${name}`);
       } else {
         showError(`创建提醒模板失败：${result.message}`);
       }
     } catch (error) {
-        console.error("Error creating reminder template:", error);
+      console.error('Error creating reminder template:', error);
     }
   };
 
@@ -58,7 +58,7 @@ export function useReminderServices() {
         showError(`删除提醒模板失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error deleting reminder template:", error);
+      console.error('Error deleting reminder template:', error);
     }
   };
 
@@ -76,7 +76,7 @@ export function useReminderServices() {
         showError(`更新提醒模板失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error updating reminder template:", error);
+      console.error('Error updating reminder template:', error);
     }
   };
 
@@ -95,7 +95,7 @@ export function useReminderServices() {
         showError(`创建提醒分组失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error creating reminder group:", error);
+      console.error('Error creating reminder group:', error);
     }
   };
 
@@ -113,7 +113,7 @@ export function useReminderServices() {
         showError(`删除提醒分组失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error deleting reminder group:", error);
+      console.error('Error deleting reminder group:', error);
     }
   };
 
@@ -132,7 +132,7 @@ export function useReminderServices() {
         showError(`更新提醒分组失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error updating reminder group:", error);
+      console.error('Error updating reminder group:', error);
     }
   };
 
@@ -140,26 +140,32 @@ export function useReminderServices() {
    * 移动提醒模板到指定分组
    * @param payload - 包含模板实例和目标分组ID
    */
-  const handleMoveTemplateToGroup = async (payload: {template: ReminderTemplate, toGroupId: string}) => {
+  const handleMoveTemplateToGroup = async (payload: {
+    template: ReminderTemplate;
+    toGroupId: string;
+  }) => {
     console.log('[userReminderServices] Moving template to group:', payload);
     try {
-      const result = await reminderService.moveTemplateToGroup(payload.template.uuid, payload.toGroupId);
+      const result = await reminderService.moveTemplateToGroup(
+        payload.template.uuid,
+        payload.toGroupId,
+      );
       if (result.success) {
         showSuccess(`模板已移动到分组：${payload.toGroupId}`);
       } else {
         showError(`移动模板到分组失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error moving template to group:", error);
+      console.error('Error moving template to group:', error);
     }
-  }
+  };
 
   /**
    * 设置提醒组启用模式（group/individual）
    * @param groupId string 分组ID
    * @param mode "group" | "individual"
    */
-  const handleSetGroupEnableMode = async (groupId: string, mode: "group" | "individual") => {
+  const handleSetGroupEnableMode = async (groupId: string, mode: 'group' | 'individual') => {
     console.log('[userReminderServices] Setting group enable mode:', groupId, mode);
     try {
       const result = await reminderService.setGroupEnableMode(groupId, mode);
@@ -169,7 +175,7 @@ export function useReminderServices() {
         showError(`分组启用模式设置失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error setting group enable mode:", error);
+      console.error('Error setting group enable mode:', error);
     }
   };
 
@@ -188,7 +194,7 @@ export function useReminderServices() {
         showError(`分组启用状态设置失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error setting group enabled:", error);
+      console.error('Error setting group enabled:', error);
     }
   };
 
@@ -207,7 +213,7 @@ export function useReminderServices() {
         showError(`模板启用状态设置失败：${result.message}`);
       }
     } catch (error) {
-      console.error("Error setting template enabled:", error);
+      console.error('Error setting template enabled:', error);
     }
   };
 

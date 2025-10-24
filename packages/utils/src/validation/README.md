@@ -33,17 +33,17 @@ const config = {
       name: 'email',
       rules: [
         BuiltinValidators.required('邮箱不能为空'),
-        BuiltinValidators.email('请输入有效的邮箱地址')
-      ]
+        BuiltinValidators.email('请输入有效的邮箱地址'),
+      ],
     },
     {
       name: 'password',
       rules: [
         BuiltinValidators.required('密码不能为空'),
-        BuiltinValidators.minLength(8, '密码至少8个字符')
-      ]
-    }
-  ]
+        BuiltinValidators.minLength(8, '密码至少8个字符'),
+      ],
+    },
+  ],
 };
 
 // 创建校验器
@@ -52,7 +52,7 @@ const validator = new FormValidator(config);
 // 校验表单
 async function validateForm(formData) {
   const result = await validator.validateForm(formData);
-  
+
   if (result.valid) {
     console.log('表单校验通过');
   } else {
@@ -81,7 +81,7 @@ const patternRule = BuiltinValidators.pattern(/^[a-zA-Z]+$/, '只能包含字母
 const customRule = {
   type: 'custom',
   message: '密码必须包含数字',
-  validator: (value: string) => /\d/.test(value)
+  validator: (value: string) => /\d/.test(value),
 };
 
 // 异步规则
@@ -92,7 +92,7 @@ const asyncRule = {
     const response = await checkUsername(value);
     return response.available;
   },
-  debounce: 500 // 防抖500ms
+  debounce: 500, // 防抖500ms
 };
 ```
 
@@ -196,7 +196,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await methods.validateForm('submit');
-    
+
     if (result.valid) {
       // 提交表单
       console.log('提交数据:', state.values);
@@ -214,7 +214,7 @@ function LoginForm() {
       {state.fields.email?.error && (
         <span className="error">{state.fields.email.error}</span>
       )}
-      
+
       <input
         type="password"
         value={state.fields.password?.value || ''}
@@ -224,7 +224,7 @@ function LoginForm() {
       {state.fields.password?.error && (
         <span className="error">{state.fields.password.error}</span>
       )}
-      
+
       <button type="submit" disabled={!state.valid}>
         登录
       </button>
@@ -238,14 +238,9 @@ function LoginForm() {
 ```vue
 <template>
   <form @submit.prevent="handleSubmit">
-    <input
-      v-model="email.value"
-      @blur="email.touched = true"
-      type="email"
-      placeholder="邮箱"
-    />
+    <input v-model="email.value" @blur="email.touched = true" type="email" placeholder="邮箱" />
     <span v-if="email.error" class="error">{{ email.error }}</span>
-    
+
     <input
       v-model="password.value"
       @blur="password.touched = true"
@@ -253,7 +248,7 @@ function LoginForm() {
       placeholder="密码"
     />
     <span v-if="password.error" class="error">{{ password.error }}</span>
-    
+
     <button type="submit" :disabled="!isValid">登录</button>
   </form>
 </template>
@@ -273,52 +268,58 @@ const validator = new FormValidator({
       name: 'email',
       rules: [
         BuiltinValidators.required('邮箱不能为空'),
-        BuiltinValidators.email('邮箱格式不正确')
-      ]
+        BuiltinValidators.email('邮箱格式不正确'),
+      ],
     },
     {
       name: 'password',
       rules: [
         BuiltinValidators.required('密码不能为空'),
-        BuiltinValidators.minLength(6, '密码至少6位')
-      ]
-    }
-  ]
+        BuiltinValidators.minLength(6, '密码至少6位'),
+      ],
+    },
+  ],
 });
 
 // 校验状态
 const isValid = computed(() => !email.value.error && !password.value.error);
 
 // 监听字段变化并校验
-watch(() => email.value.value, async (newValue) => {
-  if (email.value.touched) {
-    const result = await validator.validateField('email', newValue, getFormData());
-    email.value.error = result.firstError || '';
-  }
-});
+watch(
+  () => email.value.value,
+  async (newValue) => {
+    if (email.value.touched) {
+      const result = await validator.validateField('email', newValue, getFormData());
+      email.value.error = result.firstError || '';
+    }
+  },
+);
 
-watch(() => password.value.value, async (newValue) => {
-  if (password.value.touched) {
-    const result = await validator.validateField('password', newValue, getFormData());
-    password.value.error = result.firstError || '';
-  }
-});
+watch(
+  () => password.value.value,
+  async (newValue) => {
+    if (password.value.touched) {
+      const result = await validator.validateField('password', newValue, getFormData());
+      password.value.error = result.firstError || '';
+    }
+  },
+);
 
 function getFormData() {
   return {
     email: email.value.value,
-    password: password.value.value
+    password: password.value.value,
   };
 }
 
 async function handleSubmit() {
   const result = await validator.validateForm(getFormData());
-  
+
   if (result.valid) {
     console.log('提交数据:', getFormData());
   } else {
     // 显示错误
-    Object.keys(result.fields).forEach(fieldName => {
+    Object.keys(result.fields).forEach((fieldName) => {
       const fieldResult = result.fields[fieldName];
       if (fieldName === 'email') {
         email.value.error = fieldResult.firstError || '';
@@ -364,7 +365,7 @@ validator.addRule('email', {
   validator: async (value) => {
     const exists = await checkEmailExists(value);
     return !exists;
-  }
+  },
 });
 
 // 移除规则
@@ -388,9 +389,9 @@ const config = {
       validator: (value: any, formData: any) => {
         return !!(formData.email || formData.phone);
       },
-      trigger: ['submit']
-    }
-  ]
+      trigger: ['submit'],
+    },
+  ],
 };
 ```
 
@@ -404,7 +405,7 @@ const zhValidators = new BuiltinValidators('zh-CN');
 // 使用指定语言的规则
 const rules = [
   enValidators.required('This field is required'),
-  enValidators.email('Please enter a valid email address')
+  enValidators.email('Please enter a valid email address'),
 ];
 ```
 
@@ -413,11 +414,13 @@ const rules = [
 ### FormValidator
 
 #### 构造函数
+
 ```typescript
 constructor(config: FormConfig)
 ```
 
 #### 方法
+
 ```typescript
 // 校验单个字段
 validateField(fieldName: string, value: any, formData: any, trigger?: ValidationTrigger): Promise<FieldValidationResult>
@@ -448,6 +451,7 @@ destroy(): void
 ### BuiltinValidators
 
 #### 静态方法
+
 ```typescript
 // 基础校验
 static required(message?: string): RequiredRule

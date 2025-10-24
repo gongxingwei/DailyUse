@@ -3,74 +3,73 @@
 </template>
 
 <script setup lang="ts">
-import { use } from 'echarts/core'
-import { BarChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent
-} from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
-import type { ComposeOption } from 'echarts/core'
-import type { BarSeriesOption } from 'echarts/charts'
+import { use } from 'echarts/core';
+import { BarChart } from 'echarts/charts';
+import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import type { ComposeOption } from 'echarts/core';
+import type { BarSeriesOption } from 'echarts/charts';
 import type {
   TitleComponentOption,
   TooltipComponentOption,
-  GridComponentOption
-} from 'echarts/components'
+  GridComponentOption,
+} from 'echarts/components';
 import VChart from 'vue-echarts';
 // composables
-import { useGoal } from '../../composables/useGoal'
+import { useGoal } from '../../composables/useGoal';
 
-const { getTimeProgress, getRemainingDays } = useGoal()
-use([TitleComponent, TooltipComponent, GridComponent, BarChart, CanvasRenderer])
+const { getTimeProgress, getRemainingDays } = useGoal();
+use([TitleComponent, TooltipComponent, GridComponent, BarChart, CanvasRenderer]);
 
 type EChartsOption = ComposeOption<
-  | TitleComponentOption
-  | TooltipComponentOption
-  | GridComponentOption
-  | BarSeriesOption>
+  TitleComponentOption | TooltipComponentOption | GridComponentOption | BarSeriesOption
+>;
 
-import { computed } from 'vue'
-import { Goal } from '@dailyuse/domain-client'
-import { useTheme } from 'vuetify'
-import { format } from 'date-fns'
-const theme = useTheme()
+import { computed } from 'vue';
+import { Goal } from '@dailyuse/domain-client';
+import { useTheme } from 'vuetify';
+import { format } from 'date-fns';
+const theme = useTheme();
 
 const props = defineProps<{
-  goal: Goal | null
-}>()
+  goal: Goal | null;
+}>();
 
-const danger_threshold = 20
-const warning_threshold = 10
-const danger_color = '#ff4d4f'
-const warning_color = '#faad14'
-const safe_color = '#52c41a'
+const danger_threshold = 20;
+const warning_threshold = 10;
+const danger_color = '#ff4d4f';
+const warning_color = '#faad14';
+const safe_color = '#52c41a';
 
-const surfaceColor = theme.current.value.colors.surface
-const fontColor = theme.current.value.colors.font // 获取主题主色
+const surfaceColor = theme.current.value.colors.surface;
+const fontColor = theme.current.value.colors.font; // 获取主题主色
 
 const progressOption = computed<EChartsOption>(() => {
-  const progress = props.goal?.weightedProgress ?? 0
-  const timeProgress = Math.round((getTimeProgress(props.goal!) ?? 0) * 100)
+  const progress = props.goal?.weightedProgress ?? 0;
+  const timeProgress = Math.round((getTimeProgress(props.goal!) ?? 0) * 100);
 
-  let bgColor = safe_color
+  let bgColor = safe_color;
   if (timeProgress - progress >= danger_threshold) {
-    bgColor = danger_color
+    bgColor = danger_color;
   } else if (timeProgress - progress >= warning_threshold) {
-    bgColor = warning_color
+    bgColor = warning_color;
   }
 
   return {
     backgroundColor: surfaceColor,
-    title: { text: '目标完成进度 vs 时间进度', left: 'center', top: 10, textStyle: { fontSize: 16 } },
+    title: {
+      text: '目标完成进度 vs 时间进度',
+      left: 'center',
+      top: 10,
+      textStyle: { fontSize: 16 },
+    },
     grid: { left: 100, right: 30, top: 50, bottom: 30 },
     tooltip: {
       backgroundColor: surfaceColor,
       borderColor: 'transparent',
       textStyle: {
         color: fontColor,
-        fontSize: 14
+        fontSize: 14,
       },
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
@@ -108,33 +107,35 @@ const progressOption = computed<EChartsOption>(() => {
       splitLine: { show: false },
       axisLabel: { show: false },
       axisLine: { show: false },
-      axisTick: { show: false }
+      axisTick: { show: false },
     },
     yAxis: {
       type: 'category',
       data: ['目标完成进度', '时间进度'],
       axisTick: { show: false },
       axisLine: { show: false },
-      axisLabel: { fontSize: 14 }
+      axisLabel: { fontSize: 14 },
     },
-    series: [{
-      type: 'bar',
-      data: [progress, timeProgress],
-      label: {
-        show: true,
-        position: 'right',
-        formatter: '{c}%',
-        fontSize: 14,
-        color: fontColor
+    series: [
+      {
+        type: 'bar',
+        data: [progress, timeProgress],
+        label: {
+          show: true,
+          position: 'right',
+          formatter: '{c}%',
+          fontSize: 14,
+          color: fontColor,
+        },
+        itemStyle: {
+          color: bgColor,
+          borderRadius: [8, 8, 8, 8],
+        },
+        barWidth: 18,
       },
-      itemStyle: {
-        color: bgColor,
-        borderRadius: [8, 8, 8, 8]
-      },
-      barWidth: 18
-    }]
-  }
-})
+    ],
+  };
+});
 </script>
 
 <style scoped>

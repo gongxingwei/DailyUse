@@ -24,6 +24,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 之前的配置中注释说："composite 与 tsup --dts 不兼容"，这是**错误的**！
 
 **真相**：
+
 - ✅ `composite: true` 只影响 **tsc** 的类型检查和 .d.ts 生成
 - ✅ **tsup/Vite** 等打包工具**不使用** tsc 的 composite 功能
 - ✅ 它们直接读取源码进行打包，与 composite 完全独立
@@ -39,16 +40,17 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 
 #### 修改的包
 
-| 包 | 打包工具 | 修改前 | 修改后 |
-|---|---------|-------|-------|
-| `packages/contracts` | tsup | `composite: false` | ✅ `composite: true` |
-| `packages/domain-core` | tsup | `composite: false` | ✅ `composite: true` |
-| `packages/domain-server` | tsup | `composite: false` | ✅ `composite: true` |
-| `packages/utils` | tsup | `composite: false` | ✅ `composite: true` |
+| 包                       | 打包工具 | 修改前             | 修改后               |
+| ------------------------ | -------- | ------------------ | -------------------- |
+| `packages/contracts`     | tsup     | `composite: false` | ✅ `composite: true` |
+| `packages/domain-core`   | tsup     | `composite: false` | ✅ `composite: true` |
+| `packages/domain-server` | tsup     | `composite: false` | ✅ `composite: true` |
+| `packages/utils`         | tsup     | `composite: false` | ✅ `composite: true` |
 
 #### 修改内容示例
 
 **修改前**：
+
 ```jsonc
 {
   "compilerOptions": {
@@ -56,11 +58,12 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
     "composite": false,
     // 禁用增量编译（与 tsup --dts 不兼容）
     "incremental": false,
-  }
+  },
 }
 ```
 
 **修改后**：
+
 ```jsonc
 {
   "compilerOptions": {
@@ -69,7 +72,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
     "composite": true,
     // 启用增量编译（提升性能）
     "incremental": true,
-  }
+  },
 }
 ```
 
@@ -78,6 +81,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 #### apps/api/tsconfig.json
 
 **修改前**（references 被注释掉了）：
+
 ```jsonc
 {
   // References removed: domain-core, contracts, domain-server have composite:false
@@ -89,20 +93,22 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 ```
 
 **修改后**（恢复 references）：
+
 ```jsonc
 {
   "references": [
     { "path": "../../packages/contracts" },
-    
+
     { "path": "../../packages/domain-server" },
-    { "path": "../../packages/utils" }
-  ]
+    { "path": "../../packages/utils" },
+  ],
 }
 ```
 
 #### packages/domain-client/tsconfig.json
 
 **修改前**（references 被注释掉了）：
+
 ```jsonc
 {
   // References removed: domain-core and contracts have composite:false
@@ -111,13 +117,10 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 ```
 
 **修改后**（恢复 references）：
+
 ```jsonc
 {
-  "references": [
-    { "path": "../contracts" },
-    { "path": "../domain-core" },
-    { "path": "../utils" }
-  ]
+  "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }],
 }
 ```
 
@@ -133,6 +136,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 - ✅ `packages/utils/package.json`
 
 **修改内容**：
+
 ```json
 {
   "scripts": {
@@ -244,11 +248,13 @@ pnpm nx affected --target=build
 部分包的 project.json 中 typecheck 使用的是 `tsc --noEmit`，建议统一改为 `tsc --build`：
 
 **原因**：
+
 - `tsc --build` 支持增量编译（生成 .tsbuildinfo）
 - 更好地利用 composite + references
 - 更快的类型检查速度
 
 **需要修改的文件**：
+
 - `packages/domain-core/project.json`
 - `packages/domain-server/project.json`
 - `packages/utils/project.json`
@@ -258,12 +264,13 @@ pnpm nx affected --target=build
 - `apps/desktop/project.json`
 
 **修改示例**：
+
 ```json
 {
   "typecheck": {
     "executor": "nx:run-commands",
     "options": {
-      "command": "tsc --build",  // 改为 --build
+      "command": "tsc --build", // 改为 --build
       "cwd": "packages/xxx"
     }
   }
@@ -288,6 +295,7 @@ pnpm nx run-many --target=build --all
 ## 📚 相关文档
 
 创建了新文档 `NX_BUILD_TOOLS_COMPOSITE_CONFIGURATION.md`，详细说明：
+
 - ✅ Composite 与打包工具的关系
 - ✅ 为什么 composite 不会与 tsup/Vite 冲突
 - ✅ 如何配置双轨制（类型检查 + 打包）
@@ -305,10 +313,10 @@ pnpm nx run-many --target=build --all
 ### 正确的理解 ✅
 
 > **composite 只影响 tsc 的类型检查，与打包工具完全独立**
-> 
+>
 > - tsc (composite + references): 类型检查、.d.ts 生成、跨包引用
 > - tsup/Vite: 代码打包、优化、bundling
-> 
+>
 > 两者可以完美共存，分工明确！
 
 ---
@@ -321,7 +329,6 @@ pnpm nx run-many --target=build --all
    ```bash
    pnpm nx typecheck desktop
    ```
-   
 2. **验证类型热更新**
    - 启动 watch 模式：`pnpm tsc --build --watch`
    - 修改 `packages/contracts/src/index.ts`
@@ -344,6 +351,7 @@ pnpm nx run-many --target=build --all
 **修复完成！** 🎉
 
 现在你的项目拥有：
+
 - ✅ 正确的 TypeScript composite 配置
 - ✅ 类型检查和打包完全分离
 - ✅ 跨包类型热更新支持

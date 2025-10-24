@@ -13,24 +13,14 @@
           <template v-for="(value, key) in formData" :key="key">
             <div class="form-item">
               <label :for="key">{{ formatLabel(key) }}</label>
-              
+
               <!-- 根据值类型渲染不同的输入控件 -->
               <template v-if="getInputType(value) === 'boolean'">
-                <input
-                  :id="key"
-                  type="checkbox"
-                  v-model="formData[key]"
-                  class="checkbox-input"
-                >
+                <input :id="key" type="checkbox" v-model="formData[key]" class="checkbox-input" />
               </template>
 
               <template v-else-if="getInputType(value) === 'number'">
-                <input
-                  :id="key"
-                  type="number"
-                  v-model.number="formData[key]"
-                  class="form-input"
-                >
+                <input :id="key" type="number" v-model.number="formData[key]" class="form-input" />
               </template>
 
               <template v-else-if="getInputType(value) === 'textarea'">
@@ -43,11 +33,7 @@
               </template>
 
               <template v-else-if="getInputType(value) === 'select'">
-                <select
-                  :id="key"
-                  v-model="formData[key]"
-                  class="form-select"
-                >
+                <select :id="key" v-model="formData[key]" class="form-select">
                   <option v-for="opt in getOptions(key)" :key="opt.value" :value="opt.value">
                     {{ opt.label }}
                   </option>
@@ -55,12 +41,7 @@
               </template>
 
               <template v-else>
-                <input
-                  :id="key"
-                  type="text"
-                  v-model="formData[key]"
-                  class="form-input"
-                >
+                <input :id="key" type="text" v-model="formData[key]" class="form-input" />
               </template>
             </div>
           </template>
@@ -100,28 +81,32 @@ const props = withDefaults(defineProps<Props>(), {
   confirmText: '确定',
   cancelText: '取消',
   options: () => ({}),
-  fieldTypes: () => ({})
+  fieldTypes: () => ({}),
 });
 
 const emit = defineEmits<Emits>();
 const formData = ref<Record<string, any>>({});
 
 // 监听输入数据变化
-watch(() => props.data, (newData) => {
-  formData.value = newData ? { ...newData } : {};
-}, { immediate: true, deep: true });
+watch(
+  () => props.data,
+  (newData) => {
+    formData.value = newData ? { ...newData } : {};
+  },
+  { immediate: true, deep: true },
+);
 
 // 格式化标签文本
 function formatLabel(key: string): string {
   return key
     .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
+    .replace(/^./, (str) => str.toUpperCase())
     .trim();
 }
 
 // 获取输入类型
 function getInputType(value: any): string {
-  const key = Object.keys(formData.value).find(k => formData.value[k] === value);
+  const key = Object.keys(formData.value).find((k) => formData.value[k] === value);
   if (key && props.fieldTypes[key]) {
     return props.fieldTypes[key];
   }

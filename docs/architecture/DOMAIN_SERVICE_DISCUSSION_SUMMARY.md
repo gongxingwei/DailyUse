@@ -3,6 +3,7 @@
 ## 📌 问题
 
 **用户提问**：
+
 > "对了，domainService 中是不是最好不要调用仓储层，是不是应该只返回生成的对象，在 applicationService 中调用仓储层？"
 
 ---
@@ -21,7 +22,7 @@
 // ❌ DomainService 依赖 Repository
 export class AccountDomainService {
   constructor(private readonly accountRepository: IAccountRepository) {}
-  
+
   async createAccount(params): Promise<Account> {
     const account = Account.create(params);
     // ❌ 错误：DomainService 调用 Repository 持久化
@@ -38,6 +39,7 @@ export class RegistrationApplicationService {
 ```
 
 **问题**：
+
 1. ❌ 职责混乱：DomainService 既负责领域逻辑又负责持久化
 2. ❌ 事务控制困难：难以在事务中调用多个 DomainService
 3. ❌ 基础设施耦合：DomainService 依赖 Repository 接口
@@ -51,22 +53,18 @@ export class RegistrationApplicationService {
 // ✅ DomainService 不依赖 Repository
 export class AccountDomainService {
   // 不注入任何基础设施依赖
-  
-  createAccount(params: {
-    username: string;
-    email: string;
-    displayName: string;
-  }): Account {
+
+  createAccount(params: { username: string; email: string; displayName: string }): Account {
     // 1. 创建聚合根
     const account = Account.create(params);
-    
+
     // 2. 业务逻辑验证
     this.validateAccount(account);
-    
+
     // 3. 只返回聚合根，不持久化
     return account;
   }
-  
+
   private validateAccount(account: Account): void {
     if (account.username.length < 3) {
       throw new DomainError('Username too short');
@@ -80,23 +78,24 @@ export class RegistrationApplicationService {
     private readonly accountRepository: IAccountRepository,
     private readonly accountDomainService: AccountDomainService,
   ) {}
-  
+
   async registerUser(request): Promise<Account> {
     // 1. 唯一性检查（ApplicationService 调用 Repository）
     await this.checkUniqueness(request.username);
-    
+
     // 2. DomainService 创建聚合根（不持久化）
     const account = this.accountDomainService.createAccount(request);
-    
+
     // 3. ApplicationService 负责持久化
     const savedAccount = await this.accountRepository.save(account);
-    
+
     return savedAccount;
   }
 }
 ```
 
 **优点**：
+
 1. ✅ 职责清晰：DomainService 只负责领域逻辑
 2. ✅ 事务控制简单：ApplicationService 统一管理事务
 3. ✅ 基础设施解耦：DomainService 零基础设施依赖
@@ -128,11 +127,11 @@ await prisma.$transaction(async (tx) => {
   // 1. DomainService 创建聚合根（不持久化）
   const account = accountService.createAccount(params);
   const credential = authService.createPasswordCredential(params);
-  
+
   // 2. ApplicationService 在事务中持久化
   const savedAccount = await accountRepository.save(account, tx);
   const savedCredential = await credentialRepository.save(credential, tx);
-  
+
   // 要么同时成功，要么自动回滚
   return { account: savedAccount, credential: savedCredential };
 });
@@ -206,10 +205,12 @@ await prisma.$transaction(async (tx) => {
 ## ✅ 后续行动
 
 ### **当前代码状态**：
+
 - ⚠️ DomainService 依然依赖 Repository（遗留架构）
 - ⚠️ 需要重构以符合最佳实践
 
 ### **重构计划**：
+
 1. 修改 `AccountDomainService`：去除 Repository 依赖
 2. 修改 `AuthenticationDomainService`：去除 Repository 依赖
 3. 修改 `RegistrationApplicationService`：接管持久化职责

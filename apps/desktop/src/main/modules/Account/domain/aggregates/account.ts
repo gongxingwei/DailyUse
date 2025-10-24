@@ -1,10 +1,15 @@
-import { AggregateRoot } from "@dailyuse/utils";
-import { User } from "../entities/user";
-import { Email } from "../valueObjects/email";
-import { PhoneNumber } from "../valueObjects/phoneNumber";
-import { Address } from "../valueObjects/address";
-import { AccountStatus, AccountType, IAccount, AccountDTO } from "../../../../../common/modules/account/types/account";
-import { AccountRegisteredEvent } from "../events/accountEvents";
+import { AggregateRoot } from '@dailyuse/utils';
+import { User } from '../entities/user';
+import { Email } from '../valueObjects/email';
+import { PhoneNumber } from '../valueObjects/phoneNumber';
+import { Address } from '../valueObjects/address';
+import {
+  AccountStatus,
+  AccountType,
+  IAccount,
+  AccountDTO,
+} from '../../../../../common/modules/account/types/account';
+import { AccountRegisteredEvent } from '../events/accountEvents';
 
 /**
  * Account 聚合根
@@ -60,55 +65,125 @@ export class Account extends AggregateRoot implements IAccount {
     this._lastLoginAt = params.lastLoginAt;
     this._emailVerificationToken = params.emailVerificationToken;
     this._phoneVerificationCode = params.phoneVerificationCode;
-    this._isEmailVerified = params.isEmailVerified ?? (params.email ? params.email.isVerified : false);
-    this._isPhoneVerified = params.isPhoneVerified ?? (params.phoneNumber ? params.phoneNumber.isVerified : false);
+    this._isEmailVerified =
+      params.isEmailVerified ?? (params.email ? params.email.isVerified : false);
+    this._isPhoneVerified =
+      params.isPhoneVerified ?? (params.phoneNumber ? params.phoneNumber.isVerified : false);
   }
 
   // ======================== Getter/Setter ========================
-  get username(): string { return this._username; }
-  set username(value: string) { this._username = value; this._updatedAt = new Date(); }
+  get username(): string {
+    return this._username;
+  }
+  set username(value: string) {
+    this._username = value;
+    this._updatedAt = new Date();
+  }
 
-  get email(): Email | undefined { return this._email; }
-  set email(value: Email | undefined) { this._email = value; this._updatedAt = new Date(); }
+  get email(): Email | undefined {
+    return this._email;
+  }
+  set email(value: Email | undefined) {
+    this._email = value;
+    this._updatedAt = new Date();
+  }
 
-  get phoneNumber(): PhoneNumber | undefined { return this._phoneNumber; }
-  set phoneNumber(value: PhoneNumber | undefined) { this._phoneNumber = value; this._updatedAt = new Date(); }
+  get phoneNumber(): PhoneNumber | undefined {
+    return this._phoneNumber;
+  }
+  set phoneNumber(value: PhoneNumber | undefined) {
+    this._phoneNumber = value;
+    this._updatedAt = new Date();
+  }
 
-  get address(): Address | undefined { return this._address; }
-  set address(value: Address | undefined) { this._address = value; this._updatedAt = new Date(); }
+  get address(): Address | undefined {
+    return this._address;
+  }
+  set address(value: Address | undefined) {
+    this._address = value;
+    this._updatedAt = new Date();
+  }
 
-  get status(): AccountStatus { return this._status; }
-  set status(value: AccountStatus) { this._status = value; this._updatedAt = new Date(); }
+  get status(): AccountStatus {
+    return this._status;
+  }
+  set status(value: AccountStatus) {
+    this._status = value;
+    this._updatedAt = new Date();
+  }
 
-  get accountType(): AccountType { return this._accountType; }
-  set accountType(value: AccountType) { this._accountType = value; this._updatedAt = new Date(); }
+  get accountType(): AccountType {
+    return this._accountType;
+  }
+  set accountType(value: AccountType) {
+    this._accountType = value;
+    this._updatedAt = new Date();
+  }
 
-  get user(): User { return this._user; }
-  set user(value: User) { this._user = value; this._updatedAt = new Date(); }
+  get user(): User {
+    return this._user;
+  }
+  set user(value: User) {
+    this._user = value;
+    this._updatedAt = new Date();
+  }
 
-  get roleIds(): Set<string> { return new Set(this._roleUuids); }
-  set roleIds(value: Set<string>) { this._roleUuids = value; this._updatedAt = new Date(); }
+  get roleIds(): Set<string> {
+    return new Set(this._roleUuids);
+  }
+  set roleIds(value: Set<string>) {
+    this._roleUuids = value;
+    this._updatedAt = new Date();
+  }
 
-  get createdAt(): Date { return this._createdAt; }
-  set createdAt(value: Date) { this._createdAt = value; }
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+  set createdAt(value: Date) {
+    this._createdAt = value;
+  }
 
-  get updatedAt(): Date { return this._updatedAt; }
-  set updatedAt(value: Date) { this._updatedAt = value; }
+  get updatedAt(): Date {
+    return this._updatedAt;
+  }
+  set updatedAt(value: Date) {
+    this._updatedAt = value;
+  }
 
-  get lastLoginAt(): Date | undefined { return this._lastLoginAt; }
-  set lastLoginAt(value: Date | undefined) { this._lastLoginAt = value; }
+  get lastLoginAt(): Date | undefined {
+    return this._lastLoginAt;
+  }
+  set lastLoginAt(value: Date | undefined) {
+    this._lastLoginAt = value;
+  }
 
-  get emailVerificationToken(): string | undefined { return this._emailVerificationToken; }
-  set emailVerificationToken(value: string | undefined) { this._emailVerificationToken = value; }
+  get emailVerificationToken(): string | undefined {
+    return this._emailVerificationToken;
+  }
+  set emailVerificationToken(value: string | undefined) {
+    this._emailVerificationToken = value;
+  }
 
-  get phoneVerificationCode(): string | undefined { return this._phoneVerificationCode; }
-  set phoneVerificationCode(value: string | undefined) { this._phoneVerificationCode = value; }
+  get phoneVerificationCode(): string | undefined {
+    return this._phoneVerificationCode;
+  }
+  set phoneVerificationCode(value: string | undefined) {
+    this._phoneVerificationCode = value;
+  }
 
-  get isEmailVerified(): boolean { return this._isEmailVerified; }
-  set isEmailVerified(value: boolean) { this._isEmailVerified = value; }
+  get isEmailVerified(): boolean {
+    return this._isEmailVerified;
+  }
+  set isEmailVerified(value: boolean) {
+    this._isEmailVerified = value;
+  }
 
-  get isPhoneVerified(): boolean { return this._isPhoneVerified; }
-  set isPhoneVerified(value: boolean) { this._isPhoneVerified = value; }
+  get isPhoneVerified(): boolean {
+    return this._isPhoneVerified;
+  }
+  set isPhoneVerified(value: boolean) {
+    this._isPhoneVerified = value;
+  }
   /**
    * 更新邮箱
    */
@@ -116,7 +191,7 @@ export class Account extends AggregateRoot implements IAccount {
     const newEmail = new Email(emailAddress);
     this._email = newEmail;
     this._updatedAt = new Date();
-    
+
     // 如果账号已激活，更新邮箱后需要重新验证
     if (this._status === AccountStatus.ACTIVE) {
       this._status = AccountStatus.PENDING_VERIFICATION;
@@ -126,7 +201,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'EmailUpdated',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, email: emailAddress, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, email: emailAddress, timestamp: this._updatedAt },
     });
   }
 
@@ -147,7 +222,11 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'PhoneUpdated',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, phoneNumber: newPhone.fullNumber, timestamp: this._updatedAt }
+      payload: {
+        accountUuid: this.uuid,
+        phoneNumber: newPhone.fullNumber,
+        timestamp: this._updatedAt,
+      },
     });
   }
 
@@ -162,7 +241,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'AddressUpdated',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, timestamp: this._updatedAt },
     });
   }
 
@@ -176,7 +255,7 @@ export class Account extends AggregateRoot implements IAccount {
 
     this._email = this._email.verify();
     this._emailVerificationToken = undefined;
-    
+
     // 如果手机号也已验证或不存在，则激活账号
     if (!this._phoneNumber || this._phoneNumber.isVerified) {
       this._status = AccountStatus.ACTIVE;
@@ -188,7 +267,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'EmailVerified',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, timestamp: this._updatedAt },
     });
   }
 
@@ -202,7 +281,7 @@ export class Account extends AggregateRoot implements IAccount {
 
     this._phoneNumber = this._phoneNumber.verify();
     this._phoneVerificationCode = undefined;
-    
+
     // 如果邮箱也已验证或不存在，则激活账号
     if (!this._email || this._email.isVerified) {
       this._status = AccountStatus.ACTIVE;
@@ -214,7 +293,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'PhoneVerified',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, timestamp: this._updatedAt },
     });
   }
 
@@ -233,7 +312,9 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: newAccount.uuid,
       eventType: 'AccountRegistered',
       occurredOn: new Date(),
-      payload: { accountUuid: newAccount.uuid, username: newAccount.username,
+      payload: {
+        accountUuid: newAccount.uuid,
+        username: newAccount.username,
         password: params.password,
         email: newAccount.email?.value,
         phone: newAccount.phoneNumber?.fullNumber,
@@ -243,12 +324,12 @@ export class Account extends AggregateRoot implements IAccount {
           firstName: newAccount.user.firstName,
           lastName: newAccount.user.lastName,
           avatar: newAccount.user.avatar,
-          bio: newAccount.user.bio
+          bio: newAccount.user.bio,
         },
         status: newAccount.status,
         createdAt: newAccount.createdAt,
-        requiresAuthentication: true
-       } as AccountRegisteredEvent['payload']
+        requiresAuthentication: true,
+      } as AccountRegisteredEvent['payload'],
     });
 
     return newAccount;
@@ -265,7 +346,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'AccountDisabled',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, timestamp: this._updatedAt },
     });
   }
 
@@ -280,7 +361,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'AccountEnabled',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, timestamp: this._updatedAt },
     });
   }
 
@@ -295,7 +376,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'AccountSuspended',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, timestamp: this._updatedAt },
     });
   }
 
@@ -310,7 +391,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'RoleAdded',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, roleId, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, roleId, timestamp: this._updatedAt },
     });
   }
 
@@ -325,7 +406,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'RoleRemoved',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, roleId, timestamp: this._updatedAt }
+      payload: { accountUuid: this.uuid, roleId, timestamp: this._updatedAt },
     });
   }
 
@@ -347,7 +428,7 @@ export class Account extends AggregateRoot implements IAccount {
       aggregateId: this.uuid,
       eventType: 'UserLoggedIn',
       occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._lastLoginAt }
+      payload: { accountUuid: this.uuid, timestamp: this._lastLoginAt },
     });
   }
 
@@ -395,11 +476,7 @@ export class Account extends AggregateRoot implements IAccount {
   static isAccount(obj: any): obj is Account {
     return (
       obj instanceof Account ||
-      (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "username" in obj &&
-        "user" in obj)
+      (obj && typeof obj === 'object' && 'uuid' in obj && 'username' in obj && 'user' in obj)
     );
   }
 
@@ -485,7 +562,7 @@ export class Account extends AggregateRoot implements IAccount {
    */
   static forCreate(): Account {
     return new Account({
-      username: "",
+      username: '',
       accountType: AccountType.LOCAL,
       user: User.forCreate(),
     });

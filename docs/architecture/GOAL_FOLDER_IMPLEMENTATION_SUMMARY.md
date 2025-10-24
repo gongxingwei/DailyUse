@@ -74,21 +74,30 @@ export class GoalFolderDomainService {
   constructor() {}
 
   // 所有方法都是同步的（纯业务逻辑）
-  validateFolderName(name: string): void
-  validateColor(color: string | null | undefined): void
-  validateFolderDeletion(folder: GoalFolder): void
-  checkDuplicateName(newName: string, accountUuid: string, existingFolders: GoalFolder[], excludeFolderUuid?: string): void
-  validateParentFolder(parentFolder: GoalFolder | null, accountUuid: string): void
-  calculateFolderDepth(folder: GoalFolder, allFolders: GoalFolder[]): number
-  validateFolderDepth(folder: GoalFolder, allFolders: GoalFolder[], maxDepth?: number): void
-  validateGoalMove(goal: Goal, folder: GoalFolder | null): void
-  validateBatchGoalMove(goals: Goal[], folder: GoalFolder | null, accountUuid: string): void
-  calculateFolderStatistics(folder: GoalFolder, goalsInFolder: Goal[]): { goalCount, completedGoalCount }
-  updateFolderStatistics(folder: GoalFolder, goalsInFolder: Goal[]): void
+  validateFolderName(name: string): void;
+  validateColor(color: string | null | undefined): void;
+  validateFolderDeletion(folder: GoalFolder): void;
+  checkDuplicateName(
+    newName: string,
+    accountUuid: string,
+    existingFolders: GoalFolder[],
+    excludeFolderUuid?: string,
+  ): void;
+  validateParentFolder(parentFolder: GoalFolder | null, accountUuid: string): void;
+  calculateFolderDepth(folder: GoalFolder, allFolders: GoalFolder[]): number;
+  validateFolderDepth(folder: GoalFolder, allFolders: GoalFolder[], maxDepth?: number): void;
+  validateGoalMove(goal: Goal, folder: GoalFolder | null): void;
+  validateBatchGoalMove(goals: Goal[], folder: GoalFolder | null, accountUuid: string): void;
+  calculateFolderStatistics(
+    folder: GoalFolder,
+    goalsInFolder: Goal[],
+  ): { goalCount; completedGoalCount };
+  updateFolderStatistics(folder: GoalFolder, goalsInFolder: Goal[]): void;
 }
 ```
 
 **关键特征**：
+
 - ✅ **无依赖注入** - 构造函数为空
 - ✅ **同步方法** - 纯计算逻辑，无 async/await
 - ✅ **接受聚合** - 参数是 `GoalFolder`, `Goal` 对象，不是 UUID
@@ -121,14 +130,14 @@ export class GoalFolderDomainService {
 calculateFolderDepth(sprintFolder, allFolders) {
   let depth = 0;
   let current = sprintFolder;
-  
+
   while (current.parentFolderUuid) {
     const parent = allFolders.find(f => f.uuid === current.parentFolderUuid);
     if (!parent) break;
     depth++;
     current = parent;
   }
-  
+
   return depth; // 3
 }
 
@@ -152,16 +161,16 @@ async operationName(params) {
   // 1. Query: ApplicationService 查询数据
   const folder = await this.folderRepository.findById(uuid);
   const existingFolders = await this.folderRepository.findByAccountUuid(accountUuid);
-  
+
   // 2. Domain: 委托给 DomainService 验证
   this.domainService.validateBusinessRule(folder, params);
-  
+
   // 3. Domain: 调用聚合根方法修改状态
   folder.businessMethod(params);
-  
+
   // 4. Persist: ApplicationService 持久化
   await this.folderRepository.save(folder);
-  
+
   // 5. Return: 返回 ClientDTO
   return folder.toClientDTO();
 }
@@ -207,6 +216,7 @@ async deleteFolder(uuid: string): Promise<void> {
 ```
 
 **业务规则**：
+
 - 系统文件夹不能删除
 - 删除文件夹不会删除其中的目标
 - 文件夹中的目标自动移至根目录（"全部目标"）
@@ -249,17 +259,20 @@ export class PrismaGoalFolderRepository implements IGoalFolderRepository {
 
   async save(folder: GoalFolder): Promise<void> {
     const persistence = folder.toPersistenceDTO();
-    await this.prisma.goalFolder.upsert({ /* ... */ });
+    await this.prisma.goalFolder.upsert({
+      /* ... */
+    });
   }
 
-  async findById(uuid: string): Promise<GoalFolder | null>
-  async findByAccountUuid(accountUuid: string): Promise<GoalFolder[]>
-  async delete(uuid: string): Promise<void>
-  async exists(uuid: string): Promise<boolean>
+  async findById(uuid: string): Promise<GoalFolder | null>;
+  async findByAccountUuid(accountUuid: string): Promise<GoalFolder[]>;
+  async delete(uuid: string): Promise<void>;
+  async exists(uuid: string): Promise<boolean>;
 }
 ```
 
 **阻塞问题**：
+
 - ❌ Prisma Client 没有 `goalFolder` 模型
 - ❌ 数据库中没有 `goal_folders` 表
 
@@ -299,6 +312,7 @@ export class GoalContainer {
 ```
 
 **注意**：
+
 - ✅ 接口已定义
 - ⏳ 实现被注释（等待数据库迁移）
 - ✅ 提供 setter 用于测试注入
@@ -349,11 +363,11 @@ model GoalFolder {
 ```prisma
 model Goal {
   // ... 现有字段
-  
+
   folderUuid  String? @map("folder_uuid") @db.Uuid
-  
+
   // ... 现有关系
-  
+
   folder      GoalFolder? @relation("GoalFolderGoals", fields: [folderUuid], references: [uuid], onDelete: SetNull)
 }
 ```
@@ -407,26 +421,26 @@ sequenceDiagram
 
     Client->>Controller: POST /api/goal-folders
     Controller->>AppService: createFolder(accountUuid, params)
-    
+
     Note over AppService,DomainService: 1. 验证业务规则
     AppService->>DomainService: validateFolderName(params.name)
     AppService->>DomainService: validateColor(params.color)
-    
+
     Note over AppService,FolderRepo: 2. 查询现有文件夹（检查重名）
     AppService->>FolderRepo: findByAccountUuid(accountUuid)
     FolderRepo-->>AppService: existingFolders[]
     AppService->>DomainService: checkDuplicateName(name, accountUuid, existingFolders)
-    
+
     Note over AppService,GoalFolder: 3. 创建聚合根
     AppService->>GoalFolder: create(params)
     GoalFolder-->>AppService: folder
-    
+
     Note over AppService,DomainService: 4. 验证嵌套深度
     AppService->>DomainService: validateFolderDepth(folder, existingFolders)
-    
+
     Note over AppService,FolderRepo: 5. 持久化
     AppService->>FolderRepo: save(folder)
-    
+
     AppService-->>Controller: GoalFolderClientDTO
     Controller-->>Client: ResponseBuilder.sendSuccess(folder)
 ```
@@ -446,24 +460,24 @@ sequenceDiagram
 
     Client->>Controller: PATCH /api/goals/:uuid/move
     Controller->>AppService: moveGoalToFolder(goalUuid, folderUuid)
-    
+
     Note over AppService,GoalRepo: 1. 查询目标和文件夹
     AppService->>GoalRepo: findById(goalUuid)
     GoalRepo-->>AppService: goal
     AppService->>FolderRepo: findById(folderUuid)
     FolderRepo-->>AppService: folder
-    
+
     Note over AppService,DomainService: 2. 验证移动规则
     AppService->>DomainService: validateGoalMove(goal, folder)
-    
+
     Note over AppService,Goal: 3. 移动目标
     AppService->>Goal: moveToFolder(folderUuid)
     AppService->>GoalRepo: save(goal)
-    
+
     Note over AppService: 4. 更新统计
     AppService->>AppService: updateFolderStatisticsInternal(oldFolderUuid)
     AppService->>AppService: updateFolderStatisticsInternal(newFolderUuid)
-    
+
     AppService-->>Controller: GoalClientDTO
     Controller-->>Client: ResponseBuilder.sendSuccess(goal)
 ```
@@ -475,38 +489,41 @@ sequenceDiagram
 ### ✅ 正确实践
 
 1. **DomainService 纯业务逻辑**
+
    ```typescript
    // ✅ 正确：不注入 Repository
    export class GoalFolderDomainService {
      constructor() {}
-     validateFolderName(name: string): void
-     checkDuplicateName(name: string, accountUuid: string, existingFolders: GoalFolder[]): void
+     validateFolderName(name: string): void;
+     checkDuplicateName(name: string, accountUuid: string, existingFolders: GoalFolder[]): void;
    }
    ```
 
 2. **ApplicationService 协调**
+
    ```typescript
    // ✅ 正确：ApplicationService 查询 + DomainService 验证 + Persist
    async createFolder(accountUuid: string, params): Promise<GoalFolderClientDTO> {
      // 1. Query
      const existingFolders = await this.folderRepository.findByAccountUuid(accountUuid);
-     
+
      // 2. Domain
      this.domainService.validateFolderName(params.name);
      this.domainService.checkDuplicateName(params.name, accountUuid, existingFolders);
-     
+
      // 3. Create aggregate
      const folder = GoalFolder.create(params);
-     
+
      // 4. Persist
      await this.folderRepository.save(folder);
-     
+
      // 5. Return DTO
      return folder.toClientDTO();
    }
    ```
 
 3. **聚合作为参数**
+
    ```typescript
    // ✅ 正确：接受 GoalFolder 对象，不是 UUID
    validateFolderDeletion(folder: GoalFolder): void
@@ -514,10 +531,11 @@ sequenceDiagram
    ```
 
 4. **统计更新的职责分离**
+
    ```typescript
    // ✅ DomainService 只负责计算
    calculateFolderStatistics(folder: GoalFolder, goalsInFolder: Goal[]): { goalCount, completedGoalCount }
-   
+
    // ✅ ApplicationService 负责查询 + 调用 DomainService + 持久化
    private async updateFolderStatisticsInternal(folderUuid: string): Promise<void> {
      const folder = await this.folderRepository.findById(folderUuid);
@@ -539,6 +557,7 @@ sequenceDiagram
    - 创建索引
 
 2. **运行数据库迁移**
+
    ```bash
    npx prisma migrate dev --name add_goal_folders
    npx prisma generate
@@ -553,6 +572,7 @@ sequenceDiagram
    - `goalFolderRoutes.ts` - 路由定义
 
 5. **API 路由规划**
+
    ```typescript
    POST   /api/goal-folders              # 创建文件夹
    GET    /api/goal-folders/:uuid        # 获取文件夹
@@ -560,10 +580,10 @@ sequenceDiagram
    PATCH  /api/goal-folders/:uuid        # 更新文件夹
    DELETE /api/goal-folders/:uuid        # 删除文件夹
    POST   /api/goal-folders/:uuid/restore  # 恢复文件夹
-   
+
    PATCH  /api/goals/:uuid/move          # 移动目标到文件夹
    POST   /api/goals/batch-move          # 批量移动目标
-   
+
    PATCH  /api/goal-folders/:uuid/statistics  # 更新文件夹统计
    ```
 

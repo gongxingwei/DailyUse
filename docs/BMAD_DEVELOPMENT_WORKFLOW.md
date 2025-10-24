@@ -28,13 +28,13 @@
 
 本项目已针对 **DDD + Contracts-First** 架构对 BMAD agents 进行了定制化增强：
 
-| Agent | 角色 | DailyUse 特化能力 |
-|-------|------|------------------|
-| **po** | Product Owner | 功能构思、RICE 评分、Feature Spec（含 Gherkin） |
-| **pm** | Project Manager | Contracts-First 流程、7 层拆解、任务估算 |
-| **architect** | System Architect | DDD 架构、Aggregate Root 模式、事件驱动 |
-| **dev** | Full-Stack Developer | 8 步实现顺序、DDD 合规、测试标准 |
-| **qa** | Quality Assurance | DDD 合规检查、Contracts 对齐、测试覆盖 |
+| Agent         | 角色                 | DailyUse 特化能力                               |
+| ------------- | -------------------- | ----------------------------------------------- |
+| **po**        | Product Owner        | 功能构思、RICE 评分、Feature Spec（含 Gherkin） |
+| **pm**        | Project Manager      | Contracts-First 流程、7 层拆解、任务估算        |
+| **architect** | System Architect     | DDD 架构、Aggregate Root 模式、事件驱动         |
+| **dev**       | Full-Stack Developer | 8 步实现顺序、DDD 合规、测试标准                |
+| **qa**        | Quality Assurance    | DDD 合规检查、Contracts 对齐、测试覆盖          |
 
 ---
 
@@ -53,6 +53,7 @@ npm install -g @bmad-method/cli
 ### 2. 熟悉 DailyUse 架构约束
 
 **必读文档**：
+
 - `.github/prompts/dailyuse.overview.prompt.md` - 项目概览
 - `.github/prompts/dailyuse.architecture.prompt.md` - DDD 架构
 - `.github/prompts/product.prompt.md` - 产品规范
@@ -60,6 +61,7 @@ npm install -g @bmad-method/cli
 - `.github/prompts/fullstack.prompt.md` - 全栈开发
 
 **核心约束**（务必牢记）：
+
 - ✅ **Contracts-First**: 所有开发从 `packages/contracts` 开始
 - ✅ **时间字段**: 使用 `number` (timestamp)，禁止 `Date` 对象
 - ✅ **7 层顺序**: Contracts → Domain → Application → Infrastructure → API → Client → UI → E2E
@@ -97,7 +99,7 @@ graph TD
     F --> G{通过?}
     G -->|否| E
     G -->|是| H[合并上线]
-    
+
     style A fill:#e1f5ff
     style B fill:#fff4e1
     style C fill:#f0e1ff
@@ -109,13 +111,13 @@ graph TD
 
 ### 开发阶段总览
 
-| 阶段 | Agent | 输入 | 输出 | 预计时间 |
-|------|-------|------|------|---------|
-| **1. 功能构思** | PO | 需求描述、目标模块 | Feature Spec + RICE 评分 | 2-4 小时 |
-| **2. 流程设计** | PM | Feature Spec | Project Flow 文档 | 4-8 小时 |
-| **3. 架构审查** | Architect | Project Flow | 架构决策、风险评估 | 2-4 小时 |
-| **4. 代码实现** | Dev | Project Flow | 完整代码 + 测试 | 按 Flow 估算 |
-| **5. 质量审查** | QA | 代码 + Feature Spec | 质量报告、改进建议 | 1-2 小时 |
+| 阶段            | Agent     | 输入                | 输出                     | 预计时间     |
+| --------------- | --------- | ------------------- | ------------------------ | ------------ |
+| **1. 功能构思** | PO        | 需求描述、目标模块  | Feature Spec + RICE 评分 | 2-4 小时     |
+| **2. 流程设计** | PM        | Feature Spec        | Project Flow 文档        | 4-8 小时     |
+| **3. 架构审查** | Architect | Project Flow        | 架构决策、风险评估       | 2-4 小时     |
+| **4. 代码实现** | Dev       | Project Flow        | 完整代码 + 测试          | 按 Flow 估算 |
+| **5. 质量审查** | QA        | 代码 + Feature Spec | 质量报告、改进建议       | 1-2 小时     |
 
 ---
 
@@ -124,11 +126,13 @@ graph TD
 ### 阶段 1️⃣: 功能构思与规格定义 (PO)
 
 #### 触发条件
+
 - 有新的功能想法
 - 需要为现有模块添加 Beyond-CRUD 特性
 - 产品迭代规划
 
 #### 使用 Agent
+
 ```bash
 *agent po
 ```
@@ -143,7 +147,7 @@ graph TD
 
 PO: 基于 goal 模块的现有字段 (keyResults, records, reviews, focusCycles)，
     我为你生成 10-20 个 Beyond-CRUD 功能候选...
-    
+
     [生成 RICE 评分表]
     | 功能 | Reach | Impact | Confidence | Effort | RICE | 优先级 |
     |------|-------|--------|------------|--------|------|--------|
@@ -167,30 +171,35 @@ PO: 正在生成...
 
 **Feature Spec 结构** (`docs/modules/{module}/features/{number}-{feature-name}.md`):
 
-```markdown
+````markdown
 # 功能名称
 
 ## 1. 概述与目标
+
 - 背景与痛点
 - 目标用户
 - 价值主张
 
 ## 2. 用户价值与场景
+
 - 核心场景 1
 - 核心场景 2
 - ...
 
 ## 3. 设计要点
+
 - 涉及字段（对齐 contracts）
 - 交互设计
 - 状态流转
 
 ## 4. MVP/MMP 路径
+
 - MVP: 核心功能（1-2周）
 - MMP: 完整功能（2-4周）
 - Full: 优化增强（4-8周）
 
 ## 5. 验收标准（Gherkin）
+
 ```gherkin
 Feature: ...
   Scenario: ...
@@ -198,11 +207,14 @@ Feature: ...
     When ...
     Then ...
 ```
+````
 
 ## 6. 指标与追踪
+
 - 事件埋点
 - 成功指标
-```
+
+````
 
 #### 质量检查
 
@@ -224,7 +236,7 @@ PO 阶段完成后确认：
 #### 使用 Agent
 ```bash
 *agent pm
-```
+````
 
 #### 工作流程
 
@@ -235,12 +247,12 @@ PO 阶段完成后确认：
 你: 分析 goal 模块的功能需求的实现
 
 PM: 正在读取 docs/modules/goal/features/ 下所有功能文档...
-    
+
     已识别功能:
     1. focus-cycle-tracking
     2. kr-weight-snapshot
     3. goal-task-linking
-    
+
     正在为每个功能生成 Project Flow...
 ```
 
@@ -263,6 +275,7 @@ PM 会生成详细的 Project Flow 文档：
 # {功能名称} 实现流程
 
 ## 概览
+
 - 预估时间: X 人天
 - 风险级别: Low/Medium/High
 - 前置条件: ...
@@ -271,7 +284,9 @@ PM 会生成详细的 Project Flow 文档：
 ## 实现层序（Contracts-First）
 
 ### Phase 1: Contracts Layer (0.5 天)
+
 **任务清单**:
+
 - [ ] 1.1 定义 `GoalFocusCycleServerDTO` in `packages/contracts/src/goal/goal.dto.ts`
   - 字段: `uuid: string`, `goalUuid: string`, `startTime: number`, `endTime: number`, ...
   - 时间字段使用 `number` 类型（timestamp）
@@ -280,6 +295,7 @@ PM 会生成详细的 Project Flow 文档：
 - [ ] 1.4 更新 `GoalServerDTO` 添加 `focusCycles?: GoalFocusCycleServerDTO[]`
 
 **验收标准**:
+
 - ✅ 所有 DTO 遵循命名规范
 - ✅ 时间字段使用 `number`
 - ✅ TypeScript 编译通过
@@ -287,13 +303,16 @@ PM 会生成详细的 Project Flow 文档：
 **Checkpoint 1**: Architect 审查 Contracts 合规性
 
 ### Phase 2: Domain Layer (1 天)
+
 **任务清单**:
+
 - [ ] 2.1 在 `Goal` 聚合根添加 `createFocusCycle()` 方法
 - [ ] 2.2 实现业务规则验证（时长限制、并发检查）
 - [ ] 2.3 发布领域事件 `GoalFocusCycleStartedEvent`
 - [ ] 2.4 编写单元测试（vitest）
 
 **验收标准**:
+
 - ✅ 业务逻辑在 Domain 层
 - ✅ 通过聚合根控制子实体
 - ✅ 单元测试覆盖 >80%
@@ -301,14 +320,17 @@ PM 会生成详细的 Project Flow 文档：
 **Checkpoint 2**: Architect 审查 DDD 合规性
 
 ### Phase 3-7: Application → E2E
+
 （类似结构，按层展开...）
 
 ## 风险与缓解
-| 风险 | 缓解措施 | 负责人 | 状态 |
-|------|---------|--------|------|
+
+| 风险                       | 缓解措施           | 负责人    | 状态   |
+| -------------------------- | ------------------ | --------- | ------ |
 | 定时器与 Schedule 模块冲突 | 使用独立内存定时器 | Architect | 已缓解 |
 
 ## 测试策略
+
 - Contracts: TypeScript 类型检查
 - Domain: 单元测试（vitest）
 - Application: 用例测试（mock repos）
@@ -319,6 +341,7 @@ PM 会生成详细的 Project Flow 文档：
 #### 质量检查
 
 PM 阶段完成后确认：
+
 - [ ] 严格遵循 7 层顺序（Contracts → E2E）
 - [ ] 每层任务拆解到 < 1 天粒度
 - [ ] 时间估算包含 20% buffer
@@ -331,11 +354,13 @@ PM 阶段完成后确认：
 ### 阶段 3️⃣: 架构审查 (Architect)
 
 #### 触发条件
+
 - Project Flow 完成，需要技术决策
 - 涉及跨模块集成或复杂设计
 - Checkpoint 阶段（Contracts → Domain 等）
 
 #### 使用 Agent
+
 ```bash
 *agent architect
 ```
@@ -371,6 +396,7 @@ Architect: 正在审查...
 ```
 
 #### 输出产物
+
 - 架构审查报告（可选文档或直接反馈）
 - 技术决策记录（ADR）
 - 更新后的 Project Flow（如有调整）
@@ -378,6 +404,7 @@ Architect: 正在审查...
 #### 质量检查
 
 Architect 阶段确认：
+
 - [ ] DDD 4 层边界清晰
 - [ ] Aggregate Root 控制模式正确
 - [ ] 事件驱动架构合理
@@ -389,10 +416,12 @@ Architect 阶段确认：
 ### 阶段 4️⃣: 代码实现 (Dev)
 
 #### 触发条件
+
 - Project Flow 经过 Architect 审查通过
 - 所有 Checkpoints 前置条件满足
 
 #### 使用 Agent
+
 ```bash
 *agent dev
 ```
@@ -464,6 +493,7 @@ Dev: 收到。开始实现，严格遵循 Contracts-First 顺序...
 #### 实现要点
 
 **1. Contracts-First（第一原则）**:
+
 ```typescript
 // ❌ 错误示例 - 跳过 Contracts 直接写 Domain
 class Goal {
@@ -500,6 +530,7 @@ class Goal {
 ```
 
 **2. Aggregate Root 控制**:
+
 ```typescript
 // ❌ 错误示例 - 直接创建子实体
 const keyResult = new KeyResult({ ... });
@@ -513,6 +544,7 @@ await goalRepository.updateGoal(goalUuid, goalDomain.toDTO());
 ```
 
 **3. 测试金字塔**:
+
 ```bash
 # 单元测试（最多）
 packages/domain-client/src/goal/__tests__/Goal.test.ts
@@ -526,6 +558,7 @@ apps/web/e2e/goal/focus-cycle.spec.ts
 ```
 
 #### 输出产物
+
 - 完整代码实现（7 层全覆盖）
 - 单元测试 + 集成测试 + E2E 测试
 - 更新后的 Story 文档（Dev Agent Record）
@@ -534,6 +567,7 @@ apps/web/e2e/goal/focus-cycle.spec.ts
 #### 质量检查
 
 Dev 阶段完成后确认：
+
 - [ ] 严格遵循 8 步顺序，无跳跃
 - [ ] 所有字段与 Contracts 对齐
 - [ ] Aggregate Root 模式正确
@@ -547,10 +581,12 @@ Dev 阶段完成后确认：
 ### 阶段 5️⃣: 质量审查 (QA)
 
 #### 触发条件
+
 - Dev 标记 Story 为 "Ready for Review"
 - 代码已提交到 feature branch
 
 #### 使用 Agent
+
 ```bash
 *agent qa
 ```
@@ -602,6 +638,7 @@ QA: 正在执行质量审查...
 ```
 
 #### 输出产物
+
 - 质量审查报告
 - Issue 清单（需修复/建议）
 - 质量评分
@@ -609,6 +646,7 @@ QA: 正在执行质量审查...
 #### 质量检查
 
 QA 阶段确认：
+
 - [ ] 无 High 优先级问题
 - [ ] DDD 合规性通过
 - [ ] Contracts 对齐验证通过
@@ -746,6 +784,7 @@ pnpm nx graph
 ### 1. Contracts-First 原则
 
 **永远从 Contracts 开始**:
+
 ```bash
 # ✅ 正确流程
 1. 定义 packages/contracts/src/{module}/{module}.dto.ts
@@ -763,20 +802,20 @@ pnpm nx graph
 ```typescript
 // ❌ 错误
 interface TaskDTO {
-  createdAt: Date;  // 禁止使用 Date
+  createdAt: Date; // 禁止使用 Date
   dueDate: Date;
 }
 
 // ✅ 正确
 interface TaskServerDTO {
-  createdAt: number;  // timestamp in milliseconds
+  createdAt: number; // timestamp in milliseconds
   dueDate: number;
 }
 
 // 使用示例
 const task: TaskServerDTO = {
   createdAt: Date.now(),
-  dueDate: Date.now() + 24 * 60 * 60 * 1000  // 1 day later
+  dueDate: Date.now() + 24 * 60 * 60 * 1000, // 1 day later
 };
 ```
 
@@ -794,13 +833,13 @@ goal.keyResults.push(new KeyResult(...));  // 绕过业务规则！
 // ✅ 正确 - 通过聚合根方法
 class Goal {
   private keyResults: KeyResult[];
-  
+
   createKeyResult(data: CreateKeyResultData): string {
     // 业务规则验证
     if (this.getTotalWeight() + data.weight > 100) {
       throw new Error('权重总和不能超过 100%');
     }
-    
+
     const kr = new KeyResult({ ...data, goalUuid: this.uuid });
     this.keyResults.push(kr);
     this.publishEvent('KeyResultCreated', kr);
@@ -831,7 +870,7 @@ describe('POST /api/v1/goals/:goalId/key-results', () => {
   it('should create key result and persist to DB', async () => {
     const response = await request(app).post(`/api/v1/goals/${goalId}/key-results`).send({...});
     expect(response.status).toBe(201);
-    
+
     const dbRecord = await prisma.keyResult.findUnique({ where: { uuid: response.body.uuid } });
     expect(dbRecord).toBeTruthy();
   });
@@ -844,7 +883,7 @@ test('user can add key result to goal', async ({ page }) => {
   await page.fill('[data-testid="kr-name"]', 'Increase revenue by 20%');
   await page.fill('[data-testid="kr-weight"]', '40');
   await page.click('[data-testid="submit"]');
-  
+
   await expect(page.locator('[data-testid="kr-list"]')).toContainText('Increase revenue by 20%');
 });
 ```
@@ -853,6 +892,7 @@ test('user can add key result to goal', async ({ page }) => {
 
 ```markdown
 ## MVP (1-2 周)
+
 - 核心流程 happy path
 - 基础 UI（无美化）
 - 最少验收标准
@@ -866,6 +906,7 @@ test('user can add key result to goal', async ({ page }) => {
 ❌ 通知提醒
 
 ## MMP (2-4 周)
+
 - MVP + 边界场景
 - 完整 UI + 交互
 - 完整验收标准
@@ -880,6 +921,7 @@ test('user can add key result to goal', async ({ page }) => {
 ❌ 番茄钟模式
 
 ## Full Release (4-8 周)
+
 - MMP + 高级特性
 - 性能优化
 - 数据分析
@@ -899,11 +941,13 @@ test('user can add key result to goal', async ({ page }) => {
 ### 问题 1: Agent 不理解 DailyUse 约束
 
 **症状**:
+
 - Agent 建议使用 `Date` 类型
 - Agent 建议跳过 Contracts 层
 - Agent 不了解 Aggregate Root 模式
 
 **解决方案**:
+
 ```bash
 # 1. 确认 agent 已加载 customization
 *agent po
@@ -914,7 +958,7 @@ test('user can add key result to goal', async ({ page }) => {
    - 时间字段必须使用 number (timestamp)
    - 必须从 Contracts 层开始
    - Goal 是聚合根，控制 KeyResult
-   
+
 # 3. 参考文档
 你: 请先阅读 .github/prompts/dailyuse.architecture.prompt.md
 ```
@@ -922,32 +966,36 @@ test('user can add key result to goal', async ({ page }) => {
 ### 问题 2: TypeScript 编译错误
 
 **症状**:
+
 ```
 error TS2322: Type 'Date' is not assignable to type 'number'
 ```
 
 **解决方案**:
+
 ```typescript
 // ❌ 错误代码
 const task: TaskServerDTO = {
-  createdAt: new Date()  // Type 'Date' is not assignable to type 'number'
+  createdAt: new Date(), // Type 'Date' is not assignable to type 'number'
 };
 
 // ✅ 修复
 const task: TaskServerDTO = {
-  createdAt: Date.now()  // number (timestamp)
+  createdAt: Date.now(), // number (timestamp)
 };
 ```
 
 ### 问题 3: 测试失败
 
 **症状**:
+
 ```bash
 pnpm nx run-many -t test
 ❌ Goal.createKeyResult should validate weight limit - FAILED
 ```
 
 **排查步骤**:
+
 ```bash
 # 1. 查看具体错误
 pnpm nx run domain-client:test -- --reporter=verbose
@@ -965,12 +1013,14 @@ pnpm nx run domain-client:test -- --coverage
 ### 问题 4: E2E 测试失败
 
 **症状**:
+
 ```bash
 pnpm nx run web:e2e
 ❌ Timeout 30000ms exceeded
 ```
 
 **排查步骤**:
+
 ```bash
 # 1. 启动开发服务器
 pnpm nx run web:serve
@@ -990,6 +1040,7 @@ pnpm prisma studio --schema apps/api/prisma/schema.prisma
 **原因**: Agent bundle 包含大量资源
 
 **优化方案**:
+
 ```bash
 # 1. 使用 YOLO 模式跳过确认
 *yolo
@@ -1053,30 +1104,30 @@ d:\myPrograms\DailyUse/
 
 ### B. 关键文件速查
 
-| 文件路径 | 用途 | 负责 Agent |
-|---------|------|-----------|
-| `packages/contracts/src/{module}/{module}.dto.ts` | DTO 定义 | Dev (必须先定义) |
-| `packages/contracts/src/{module}/{module}.event.ts` | 领域事件 | Dev |
-| `packages/domain-client/src/{module}/aggregates/*.ts` | 聚合根 | Dev |
-| `packages/domain-server/src/{module}/repositories/*.ts` | 仓储接口 | Dev |
-| `apps/api/src/modules/{module}/application/services/*.ts` | 应用服务 | Dev |
-| `apps/api/src/modules/{module}/infrastructure/repositories/*.ts` | 仓储实现 | Dev |
-| `apps/api/src/modules/{module}/interface/controllers/*.ts` | API 控制器 | Dev |
-| `apps/web/src/modules/{module}/composables/*.ts` | Vue Composables | Dev |
-| `apps/web/src/modules/{module}/components/*.vue` | Vue 组件 | Dev |
-| `apps/web/e2e/{module}/*.spec.ts` | E2E 测试 | Dev |
-| `docs/modules/{module}/features/*.md` | Feature Spec | PO |
-| `docs/modules/{module}/project-flows/*.md` | Project Flow | PM |
+| 文件路径                                                         | 用途            | 负责 Agent       |
+| ---------------------------------------------------------------- | --------------- | ---------------- |
+| `packages/contracts/src/{module}/{module}.dto.ts`                | DTO 定义        | Dev (必须先定义) |
+| `packages/contracts/src/{module}/{module}.event.ts`              | 领域事件        | Dev              |
+| `packages/domain-client/src/{module}/aggregates/*.ts`            | 聚合根          | Dev              |
+| `packages/domain-server/src/{module}/repositories/*.ts`          | 仓储接口        | Dev              |
+| `apps/api/src/modules/{module}/application/services/*.ts`        | 应用服务        | Dev              |
+| `apps/api/src/modules/{module}/infrastructure/repositories/*.ts` | 仓储实现        | Dev              |
+| `apps/api/src/modules/{module}/interface/controllers/*.ts`       | API 控制器      | Dev              |
+| `apps/web/src/modules/{module}/composables/*.ts`                 | Vue Composables | Dev              |
+| `apps/web/src/modules/{module}/components/*.vue`                 | Vue 组件        | Dev              |
+| `apps/web/e2e/{module}/*.spec.ts`                                | E2E 测试        | Dev              |
+| `docs/modules/{module}/features/*.md`                            | Feature Spec    | PO               |
+| `docs/modules/{module}/project-flows/*.md`                       | Project Flow    | PM               |
 
 ### C. Agent 能力矩阵
 
-| Agent | 功能构思 | 规格文档 | 流程设计 | 架构决策 | 代码实现 | 质量审查 |
-|-------|---------|---------|---------|---------|---------|---------|
-| **po** | ⭐⭐⭐ | ⭐⭐⭐ | ❌ | ❌ | ❌ | ❌ |
-| **pm** | ⭐ | ⭐ | ⭐⭐⭐ | ⭐ | ❌ | ❌ |
-| **architect** | ❌ | ⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐ | ⭐⭐ |
-| **dev** | ❌ | ❌ | ⭐ | ⭐ | ⭐⭐⭐ | ⭐ |
-| **qa** | ❌ | ❌ | ❌ | ⭐ | ⭐ | ⭐⭐⭐ |
+| Agent         | 功能构思 | 规格文档 | 流程设计 | 架构决策 | 代码实现 | 质量审查 |
+| ------------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| **po**        | ⭐⭐⭐   | ⭐⭐⭐   | ❌       | ❌       | ❌       | ❌       |
+| **pm**        | ⭐       | ⭐       | ⭐⭐⭐   | ⭐       | ❌       | ❌       |
+| **architect** | ❌       | ⭐       | ⭐⭐     | ⭐⭐⭐   | ⭐       | ⭐⭐     |
+| **dev**       | ❌       | ❌       | ⭐       | ⭐       | ⭐⭐⭐   | ⭐       |
+| **qa**        | ❌       | ❌       | ❌       | ⭐       | ⭐       | ⭐⭐⭐   |
 
 ⭐⭐⭐ = 核心能力 | ⭐⭐ = 辅助能力 | ⭐ = 可参与 | ❌ = 不涉及
 
@@ -1093,6 +1144,7 @@ d:\myPrograms\DailyUse/
 5. **文档驱动**: 完整的文档体系支撑开发决策
 
 **核心原则**（务必牢记）:
+
 - ✅ Contracts-First（永远第一步）
 - ✅ 时间字段 = `number` (timestamp)
 - ✅ 7 层顺序不可跳跃
@@ -1104,6 +1156,7 @@ d:\myPrograms\DailyUse/
 ---
 
 **文档维护**:
+
 - 作者: GitHub Copilot
 - 最后更新: 2025-10-21
 - 版本: 1.0

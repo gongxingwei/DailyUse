@@ -11,20 +11,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   login: (credentials: { username: string; password: string }) => {
     return ipcRenderer.invoke('authentication:login', credentials);
   },
-  
+
   // 认证相关API
   authLogin: (request: any) => {
     return ipcRenderer.invoke('authentication:login', request);
   },
-  
+
   authLogout: (sessionId?: string) => {
     return ipcRenderer.invoke('authentication:logout', sessionId || '');
   },
-  
+
   authVerifySession: (sessionId: string) => {
     return ipcRenderer.invoke('authentication:verify-session', sessionId);
   },
-  
+
   // 账户相关
   accountDeactivate: (request: any) => {
     return ipcRenderer.invoke('account:deactivate', request);
@@ -67,32 +67,32 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sendLoginCancelled: () => {
     ipcRenderer.send('login:cancelled');
   },
-  
+
   // 通用功能
   readClipboard: () => {
     return ipcRenderer.invoke('readClipboard');
   },
-  
+
   writeClipboard: (text: string) => {
     return ipcRenderer.invoke('writeClipboard', text);
   },
-  
+
   readClipboardFiles: () => {
     return ipcRenderer.invoke('readClipboardFiles');
   },
-  
+
   openExternalUrl: (url: string) => {
     return ipcRenderer.invoke('open-external-url', url);
   },
-  
+
   getAutoLaunch: () => {
     return ipcRenderer.invoke('get-auto-launch');
   },
-  
+
   setAutoLaunch: (enable: boolean) => {
     return ipcRenderer.invoke('set-auto-launch', enable);
   },
-  
+
   getModuleStatus: () => {
     return ipcRenderer.invoke('get-module-status');
   },
@@ -100,18 +100,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 移除监听器
   removeAllListeners: (channel: string) => {
     ipcRenderer.removeAllListeners(channel);
-  }
+  },
 });
 
 // 为了兼容性，也暴露 shared 对象
 contextBridge.exposeInMainWorld('shared', {
   ipcRenderer: {
     invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
-    on: (channel: string, listener: (event: any, ...args: any[]) => void) => ipcRenderer.on(channel, listener),
-    off: (channel: string, listener: (event: any, ...args: any[]) => void) => ipcRenderer.off(channel, listener),
+    on: (channel: string, listener: (event: any, ...args: any[]) => void) =>
+      ipcRenderer.on(channel, listener),
+    off: (channel: string, listener: (event: any, ...args: any[]) => void) =>
+      ipcRenderer.off(channel, listener),
     removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
-    send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args)
-  }
+    send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
+  },
 });
 
 // 为开发环境提供调试功能
@@ -120,7 +122,7 @@ if (process.env.NODE_ENV === 'development') {
     openDevTools: () => {
       // 在登录窗口中打开开发者工具
       console.log('Opening dev tools for login window');
-    }
+    },
   });
 }
 

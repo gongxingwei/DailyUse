@@ -1,21 +1,35 @@
 <template>
-  <v-card class="goal-info-card" :style="{ '--goal-color': goal.color || '#FF5733' }" elevation="2"
-    @click="navigateToGoalInfo">
+  <v-card
+    class="goal-info-card"
+    :style="{ '--goal-color': goal.color || '#FF5733' }"
+    elevation="2"
+    @click="navigateToGoalInfo"
+  >
     <!-- 卡片头部 -->
     <v-card-title class="goal-card-header pa-4 pb-2">
       <div class="d-flex align-center justify-space-between">
         <div class="goal-title-section">
           <h3 class="goal-title text-h6 font-weight-bold mb-1">{{ goal.name }}</h3>
-          <v-chip :color="goal.color || 'primary'" variant="tonal" size="x-small" prepend-icon="mdi-target"
-            class="goal-status-chip">
+          <v-chip
+            :color="goal.color || 'primary'"
+            variant="tonal"
+            size="x-small"
+            prepend-icon="mdi-target"
+            class="goal-status-chip"
+          >
             进行中
           </v-chip>
         </div>
 
         <!-- 今日进度提示 -->
         <div v-if="goal.getTodayProgress() > 0" class="today-progress-badge">
-          <v-chip color="success" variant="elevated" size="x-small" prepend-icon="mdi-trending-up"
-            class="today-progress-chip">
+          <v-chip
+            color="success"
+            variant="elevated"
+            size="x-small"
+            prepend-icon="mdi-trending-up"
+            class="today-progress-chip"
+          >
             +{{ Math.round(goal.getTodayProgress()) }}%
           </v-chip>
         </div>
@@ -33,8 +47,13 @@
           </span>
         </div>
 
-        <v-progress-linear :model-value="goal.weightedProgress" :color="goal.color || 'primary'" height="8" rounded
-          class="goal-progress-bar">
+        <v-progress-linear
+          :model-value="goal.weightedProgress"
+          :color="goal.color || 'primary'"
+          height="8"
+          rounded
+          class="goal-progress-bar"
+        >
           <template v-slot:default="{ value }">
             <div class="progress-glow" :style="{ width: `${value}%` }"></div>
           </template>
@@ -55,8 +74,13 @@
         <!-- 水平滚动的关键结果容器 -->
         <div class="key-results-scroll-container">
           <div class="key-results-horizontal">
-            <KeyResultCard v-for="keyResult in goal.keyResults" :key="keyResult.uuid" :keyResult="keyResult"
-              :goal="goal" class="key-result-item" />
+            <KeyResultCard
+              v-for="keyResult in goal.keyResults"
+              :key="keyResult.uuid"
+              :keyResult="keyResult"
+              :goal="goal"
+              class="key-result-item"
+            />
           </div>
         </div>
       </div>
@@ -111,7 +135,11 @@ const navigateToGoalInfo = () => {
 }
 
 .goal-card-header {
-  background: linear-gradient(135deg, rgba(var(--goal-color), 0.04) 0%, rgba(var(--goal-color), 0.01) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--goal-color), 0.04) 0%,
+    rgba(var(--goal-color), 0.01) 100%
+  );
   flex-shrink: 0;
 }
 
@@ -135,7 +163,6 @@ const navigateToGoalInfo = () => {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -157,7 +184,7 @@ const navigateToGoalInfo = () => {
 
 .progress-glow {
   height: 100%;
-  background: linear-gradient(90deg, var(--goal-color), var(--goal-color)88);
+  background: linear-gradient(90deg, var(--goal-color), var(--goal-color) 88);
   box-shadow: 0 0 6px rgba(var(--goal-color), 0.4);
   border-radius: inherit;
 }

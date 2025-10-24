@@ -1,19 +1,10 @@
 <template>
-  <v-card
-    class="goal-card mb-4"
-    elevation="2"
-    :style="{ borderLeft: `4px solid ${goal.color}` }"
-  >
+  <v-card class="goal-card mb-4" elevation="2" :style="{ borderLeft: `4px solid ${goal.color}` }">
     <v-card-text class="pa-6">
       <!-- 目标标题和状态 -->
       <div class="d-flex align-center justify-space-between mb-4">
         <div class="d-flex align-center">
-          <v-avatar
-            :color="goal.color"
-            size="40"
-            class="mr-3"
-            variant="tonal"
-          >
+          <v-avatar :color="goal.color" size="40" class="mr-3" variant="tonal">
             <v-icon color="white">mdi-target</v-icon>
           </v-avatar>
           <div>
@@ -29,7 +20,7 @@
             </v-chip>
           </div>
         </div>
-        
+
         <!-- 进度圆环 -->
         <v-progress-circular
           :model-value="goalProgress"
@@ -94,7 +85,7 @@
     <!-- 卡片操作 -->
     <v-card-actions class="goal-actions">
       <v-spacer></v-spacer>
-      
+
       <!-- 复盘按钮 -->
       <v-btn
         v-if="isGoalCompleted || isGoalArchived"
@@ -108,27 +99,17 @@
       </v-btn>
 
       <!-- 查看详情 -->
-      <v-btn
-        variant="text"
-        size="small"
-        color="info"
-        @click="handleViewGoal"
-      >
+      <v-btn variant="text" size="small" color="info" @click="handleViewGoal">
         <v-icon left size="16">mdi-eye</v-icon>
         查看详情
       </v-btn>
 
       <!-- 编辑按钮 -->
-      <v-btn
-        variant="text"
-        size="small"
-        color="primary"
-        @click="$emit('edit-goal', goal)"
-      >
+      <v-btn variant="text" size="small" color="primary" @click="$emit('edit-goal', goal)">
         <v-icon left size="16">mdi-pencil</v-icon>
         编辑
       </v-btn>
-      
+
       <!-- 删除按钮 -->
       <v-btn
         variant="text"
@@ -144,16 +125,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Goal } from '@renderer/modules/Goal/domain/aggregates/goal'
+import { computed } from 'vue';
+import { Goal } from '@renderer/modules/Goal/domain/aggregates/goal';
 import { KeyResult } from '@renderer/modules/Goal/domain/entities/keyResult';
-import { format } from 'date-fns'
+import { format } from 'date-fns';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const props = defineProps<{
-  goal: Goal
-}>()
+  goal: Goal;
+}>();
 
 // Emits
 interface Emits {
@@ -172,11 +153,11 @@ const goalProgress = computed(() => {
 });
 
 const isGoalArchived = computed(() => {
-  return props.goal.lifecycle.status === "archived";
+  return props.goal.lifecycle.status === 'archived';
 });
 
 const isGoalCompleted = computed(() => {
-  return props.goal.lifecycle.status === "completed";
+  return props.goal.lifecycle.status === 'completed';
 });
 
 const remainingDays = computed(() => {
@@ -186,7 +167,7 @@ const remainingDays = computed(() => {
 // 关键结果完成数量
 const completedKeyResultsCount = computed(() => {
   if (!props.goal.keyResults) return 0;
-  return props.goal.keyResults.filter(kr => kr.progress >= 100).length;
+  return props.goal.keyResults.filter((kr) => kr.progress >= 100).length;
 });
 
 const handleViewGoal = () => {

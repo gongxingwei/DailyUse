@@ -58,21 +58,14 @@
         <div class="weight-list">
           <h3>关键结果详情</h3>
           <div v-if="currentSnapshot" class="kr-items">
-            <div
-              v-for="kr in currentSnapshot.data.keyResults"
-              :key="kr.uuid"
-              class="kr-item"
-            >
+            <div v-for="kr in currentSnapshot.data.keyResults" :key="kr.uuid" class="kr-item">
               <div class="kr-header">
                 <span class="kr-title">{{ kr.title }}</span>
                 <span class="kr-weight">{{ kr.weight.toFixed(1) }}%</span>
               </div>
               <div class="kr-progress">
                 <div class="progress-bar">
-                  <div
-                    class="progress-fill"
-                    :style="{ width: kr.progress + '%' }"
-                  />
+                  <div class="progress-fill" :style="{ width: kr.progress + '%' }" />
                 </div>
                 <span class="progress-text">{{ kr.progress.toFixed(1) }}%</span>
               </div>
@@ -139,20 +132,20 @@ const goalTitle = computed(() => props.goal?.title || '未命名目标');
 
 function initWeightChart() {
   if (!weightChartRef.value) return;
-  
+
   weightChart = echarts.init(weightChartRef.value);
   updateWeightChart();
 }
 
 function updateWeightChart() {
   if (!weightChart || !currentSnapshot.value) return;
-  
+
   const snapshot = currentSnapshot.value;
   const data = snapshot.data.keyResults.map((kr) => ({
     name: kr.title,
     value: kr.weight,
   }));
-  
+
   const option = {
     tooltip: {
       trigger: 'item',
@@ -193,7 +186,7 @@ function updateWeightChart() {
     animation: true,
     animationDuration: 500,
   };
-  
+
   weightChart.setOption(option);
 }
 
@@ -203,23 +196,22 @@ function handleSnapshotChange(snapshot: TimelineSnapshot) {
 
 async function exportAsImage() {
   if (!weightChart) return;
-  
+
   try {
     exporting.value = true;
-    
+
     // 获取图表的 base64 数据
     const imageData = weightChart.getDataURL({
       type: 'png',
       pixelRatio: 2,
       backgroundColor: '#fff',
     });
-    
+
     // 创建下载链接
     const link = document.createElement('a');
     link.href = imageData;
     link.download = `${goalTitle.value}-时间线-${Date.now()}.png`;
     link.click();
-    
   } catch (error) {
     console.error('Failed to export image:', error);
   } finally {
@@ -238,7 +230,7 @@ watch(currentSnapshot, () => {
 onMounted(async () => {
   await nextTick();
   initWeightChart();
-  
+
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize);
 });

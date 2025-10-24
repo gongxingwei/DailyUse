@@ -22,18 +22,10 @@
         <v-progress-linear v-if="isLoading" indeterminate color="primary" />
 
         <!-- 空状态 -->
-        <v-alert v-else-if="!hasTrendData" type="info" variant="tonal">
-          暂无趋势数据
-        </v-alert>
+        <v-alert v-else-if="!hasTrendData" type="info" variant="tonal"> 暂无趋势数据 </v-alert>
 
         <!-- 图表 -->
-        <v-chart
-          v-else
-          class="chart"
-          :option="chartOption"
-          autoresize
-          style="height: 400px"
-        />
+        <v-chart v-else class="chart" :option="chartOption" autoresize style="height: 400px" />
 
         <!-- 图例说明 -->
         <div v-if="hasTrendData" class="legend-section mt-4">
@@ -158,7 +150,7 @@ const chartOption = computed(() => {
         const time = format(new Date(params[0].value[0]), 'yyyy-MM-dd HH:mm', { locale: zhCN });
         let html = `<div style="padding: 8px;">
           <div style="font-weight: bold; margin-bottom: 8px;">${time}</div>`;
-        
+
         params.forEach((param: any) => {
           html += `
             <div style="display: flex; align-items: center; margin-bottom: 4px;">
@@ -166,7 +158,7 @@ const chartOption = computed(() => {
               <span>${param.seriesName}: ${param.value[1]}%</span>
             </div>`;
         });
-        
+
         html += '</div>';
         return html;
       },
@@ -226,11 +218,16 @@ const handleRangeChange = async (range: typeof selectedRange.value) => {
 // 加载趋势数据
 const loadTrendData = async () => {
   const now = Date.now();
-  const days = selectedRange.value === '7d' ? 7 : 
-                selectedRange.value === '30d' ? 30 : 
-                selectedRange.value === '90d' ? 90 : 180;
+  const days =
+    selectedRange.value === '7d'
+      ? 7
+      : selectedRange.value === '30d'
+        ? 30
+        : selectedRange.value === '90d'
+          ? 90
+          : 180;
   const startTime = now - days * 24 * 60 * 60 * 1000;
-  
+
   await fetchWeightTrend(props.goalUuid, startTime, now);
 };
 

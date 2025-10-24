@@ -22,45 +22,55 @@
 ## ✅ Acceptance Criteria
 
 ### AC-1: Theme Modes Available
+
 **Given** I am using the application  
 **When** I access theme settings  
 **Then** I should see three theme options:
+
 - Light mode
-- Dark mode  
+- Dark mode
 - Auto mode (follows system preference)
 
 ### AC-2: Theme Switcher Component
+
 **Given** I want to change the theme  
 **When** I open the theme switcher  
 **Then**
+
 - I should see current theme highlighted
 - I can select a different theme
 - The change should apply immediately
 - Selection should persist across sessions
 
 ### AC-3: Smooth Theme Transition
+
 **Given** I switch between themes  
 **When** the theme changes  
 **Then**
+
 - Transition should be smooth (< 300ms)
 - No flash of unstyled content
 - All UI components should update correctly
 
 ### AC-4: All Components Support Themes
+
 **Given** I switch to dark/light mode  
 **When** I navigate through the application  
 **Then**
+
 - All pages should respect the theme
 - All components should have proper contrast
 - Charts (ECharts) should update their theme
 - Scrollbars should match the theme
 
 ### AC-5: LocalStorage Persistence
+
 **Given** I select a theme preference  
 **When** I close and reopen the application  
 **Then** my theme preference should be remembered
 
 ### AC-6: System Preference (Auto Mode)
+
 **Given** I select "Auto" theme mode  
 **When** my system theme changes  
 **Then** the application theme should automatically update to match
@@ -129,6 +139,7 @@
 ## 👨‍💻 Dev Notes
 
 ### Previous Story Insights
+
 - STORY-026 and 027 focused on UX improvements (Command Palette, Drag & Drop)
 - Vuetify is already configured with light and dark themes
 - Current default theme is `dark` (as seen in `apps/web/src/shared/vuetify/index.ts`)
@@ -137,33 +148,38 @@
 ### Technical Context
 
 #### 🎨 Theme System Architecture
+
 [Source: Project structure analysis + Vuetify documentation]
 
 **Current Vuetify Configuration**:
+
 - Location: `apps/web/src/shared/vuetify/index.ts`
 - Default theme: `dark`
 - Both themes already defined with full color palettes
 - Uses Material Design Icons (@mdi/font)
 
 **Theme Colors Already Defined**:
+
 ```typescript
 // Light Theme Colors
-background: '#FFFFFF'
-primary: '#1867C0'
-secondary: '#5CBBF6'
+background: '#FFFFFF';
+primary: '#1867C0';
+secondary: '#5CBBF6';
 // ... (full palette exists)
 
-// Dark Theme Colors  
-background: '#121212'
-primary: '#2196F3'
-secondary: '#424242'
+// Dark Theme Colors
+background: '#121212';
+primary: '#2196F3';
+secondary: '#424242';
 // ... (full palette exists)
 ```
 
 #### 🔧 Frontend Architecture
+
 [Source: docs/architecture/FRONTEND_ARCHITECTURE_GUIDE.md]
 
 **Project follows Clean Architecture**:
+
 - **Presentation Layer**: `apps/web/src/modules/*/presentation/`
   - Components: `presentation/components/`
   - Composables: `presentation/composables/`
@@ -178,21 +194,25 @@ secondary: '#424242'
 #### 📦 File Locations for New Code
 
 **Composable** (Theme State Management):
+
 ```
 apps/web/src/shared/composables/useTheme.ts
 ```
 
 **Component** (Theme Switcher UI):
+
 ```
 apps/web/src/shared/components/ThemeSwitcher.vue
 ```
 
 **Vuetify Config** (Already exists, needs modification):
+
 ```
 apps/web/src/shared/vuetify/index.ts
 ```
 
 **Tests**:
+
 ```
 apps/web/src/shared/composables/__tests__/useTheme.spec.ts
 apps/web/src/shared/components/__tests__/ThemeSwitcher.spec.ts
@@ -200,9 +220,11 @@ apps/web/e2e/theme.spec.ts
 ```
 
 #### 🔌 Vuetify Theme API
+
 [Source: Vuetify 3 documentation]
 
 **Accessing Theme in Vue Components**:
+
 ```typescript
 import { useTheme } from 'vuetify';
 
@@ -211,11 +233,12 @@ theme.global.name.value = 'dark'; // Switch theme
 ```
 
 **Creating Custom useTheme Composable**:
+
 ```typescript
 // Wrap Vuetify's useTheme with our business logic
 export function useTheme() {
   const vuetifyTheme = useVuetifyTheme();
-  
+
   const setTheme = (mode: ThemeMode) => {
     if (mode === 'auto') {
       // Detect system preference
@@ -226,37 +249,45 @@ export function useTheme() {
     }
     localStorage.setItem('theme-mode', mode);
   };
-  
+
   return { setTheme, currentTheme: vuetifyTheme.global.name };
 }
 ```
 
 #### 📊 ECharts Theme Integration
+
 [Source: Project DAG visualizations in Goal and Task modules]
 
 **ECharts Instances in Project**:
+
 - Goal DAG: `apps/web/src/modules/goal/presentation/components/GoalDAG.vue`
 - Task DAG: `apps/web/src/modules/task/presentation/components/TaskDAG.vue`
 - Statistics charts: Various modules
 
 **ECharts Theme Update Strategy**:
+
 ```typescript
 // Watch theme changes and update charts
-watch(() => theme.global.name.value, (newTheme) => {
-  if (chartInstance) {
-    chartInstance.dispose(); // Dispose old instance
-    chartInstance = echarts.init(el, newTheme); // Reinit with new theme
-    chartInstance.setOption(chartOptions);
-  }
-});
+watch(
+  () => theme.global.name.value,
+  (newTheme) => {
+    if (chartInstance) {
+      chartInstance.dispose(); // Dispose old instance
+      chartInstance = echarts.init(el, newTheme); // Reinit with new theme
+      chartInstance.setOption(chartOptions);
+    }
+  },
+);
 ```
 
 #### 💾 LocalStorage Pattern
+
 [Source: Project coding standards]
 
 **Key for Storage**: `'daily-use-theme'` or `'theme-mode'`
 
 **Storage Schema**:
+
 ```typescript
 interface ThemePreference {
   mode: 'light' | 'dark' | 'auto';
@@ -265,25 +296,32 @@ interface ThemePreference {
 ```
 
 #### 🎨 CSS Transitions
+
 [Source: Vuetify best practices]
 
 **Add to Global Styles**:
+
 ```css
 /* Smooth theme transitions */
 * {
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 ```
 
 **Prevent Flash of Unstyled Content**:
+
 - Load theme from LocalStorage before Vue app mounts
 - Apply theme class to `<html>` element immediately
 - Use `v-cloak` directive during initialization
 
 #### 🔍 System Preference Detection
+
 [Source: Web APIs]
 
 **matchMedia API**:
+
 ```typescript
 const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -299,30 +337,36 @@ darkModeQuery.addEventListener('change', (e) => {
 ```
 
 #### 🧪 Testing Strategy
+
 [Source: docs/architecture/FRONTEND_ARCHITECTURE_GUIDE.md - Testing section inferred]
 
 **Unit Tests** (Vitest):
+
 - Test `useTheme` composable logic
 - Mock LocalStorage
 - Mock matchMedia API
 
 **Component Tests** (Vitest + Testing Library):
+
 - Test ThemeSwitcher user interactions
 - Verify theme state updates
 - Verify icon/label changes
 
 **E2E Tests** (Playwright):
+
 - Test full user flow (open app → switch theme → verify UI)
 - Test persistence (switch theme → reload → verify theme retained)
 - Visual regression tests (screenshots in both themes)
 
 #### ⚠️ Technical Constraints
+
 - Must not break existing dark theme (current default)
 - Must work with all Vuetify components
 - Must support all modern browsers (Chrome, Firefox, Safari, Edge)
 - Theme switching must be < 300ms for perceived performance
 
 #### 🎯 Implementation Priorities
+
 1. **Core Theme System** (Task 1) - Foundation for everything
 2. **UI Component** (Task 2) - User-facing feature
 3. **Vuetify Integration** (Task 3) - Ensure existing UI works
@@ -335,17 +379,20 @@ darkModeQuery.addEventListener('change', (e) => {
 ## 📊 Testing
 
 ### Unit Tests
+
 - ✅ `useTheme` composable logic
 - ✅ LocalStorage save/load
 - ✅ System preference detection
 - ✅ Theme mode validation
 
 ### Component Tests
+
 - ✅ ThemeSwitcher rendering
 - ✅ Theme selection interaction
 - ✅ Active state visual feedback
 
 ### E2E Tests
+
 - ✅ Full theme switching flow
 - ✅ Persistence across sessions
 - ✅ Auto mode system preference sync
@@ -356,20 +403,22 @@ darkModeQuery.addEventListener('change', (e) => {
 
 ## 🔄 Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2024-10-24 | 1.0 | Initial story creation | Bob (Scrum Master) |
+| Date       | Version | Description            | Author             |
+| ---------- | ------- | ---------------------- | ------------------ |
+| 2024-10-24 | 1.0     | Initial story creation | Bob (Scrum Master) |
 
 ---
 
 ## 👨‍💻 Dev Agent Record
 
 ### Agent Model Used
+
 - GitHub Copilot
 - Implementation Date: 2024-10-24
 - Development Time: ~3 hours
 
 ### Completion Notes List
+
 1. **useTheme Composable Created** (150+ lines)
    - Implements light/dark/auto theme modes
    - LocalStorage persistence with error handling
@@ -404,18 +453,22 @@ darkModeQuery.addEventListener('change', (e) => {
    - Available themes validation
 
 ### File List
+
 **Created Files:**
+
 1. `apps/web/src/shared/composables/useTheme.ts` (185 lines)
 2. `apps/web/src/shared/composables/useEChartsTheme.ts` (90 lines)
 3. `apps/web/src/shared/components/ThemeSwitcher.vue` (135 lines)
 4. `apps/web/src/shared/composables/__tests__/useTheme.spec.ts` (150 lines)
 
 **Modified Files:**
+
 1. `apps/web/src/App.vue` - Added theme transition CSS
 2. `apps/web/src/modules/app/components/Sidebar.vue` - Integrated ThemeSwitcher
 3. `apps/web/src/modules/task/presentation/components/dag/TaskDAGVisualization.vue` - ECharts theme support
 
 ### Technical Highlights
+
 - ✅ Zero external dependencies (uses Vuetify's built-in theme system)
 - ✅ Type-safe with full TypeScript support
 - ✅ Reactive and composable architecture
@@ -425,6 +478,7 @@ darkModeQuery.addEventListener('change', (e) => {
 - ✅ Comprehensive JSDoc documentation
 
 ### Git Commit
+
 - **Commit Hash**: 56e9292f
 - **Message**: "feat(web): implement dark mode support (STORY-028)"
 - **Files Changed**: 10 files, +2261 lines
@@ -435,46 +489,56 @@ darkModeQuery.addEventListener('change', (e) => {
 ## 🧪 QA Results
 
 ### Manual Testing Checklist
+
 ✅ **AC-1: Theme Modes Available**
+
 - Light mode works correctly
 - Dark mode works correctly
 - Auto mode follows system preference
 - All 6 themes (3 light + 3 dark) selectable
 
 ✅ **AC-2: Theme Switcher Component**
+
 - Switcher appears in sidebar
 - Mode selection dropdown functional
 - Theme style selection per mode functional
 - Settings persist across page reloads
 
 ✅ **AC-3: Smooth Theme Transition**
+
 - Transitions are smooth (<300ms)
 - No flashing or jarring color changes
 - CSS transitions apply correctly
 
 ✅ **AC-4: All Components Support Themes**
+
 - Vuetify components auto-update
 - ECharts graphs update on theme change
 - Custom components respect theme colors
 
 ✅ **AC-5: LocalStorage Persistence**
+
 - Settings saved to localStorage
 - Settings loaded on app startup
 - Graceful fallback if localStorage unavailable
 
 ✅ **AC-6: System Preference**
+
 - Auto mode detects system preference
 - matchMedia API working correctly
 - Updates when system preference changes
 
 ### Unit Test Results
+
 - ✅ 8/8 tests passing
 - Test coverage: useTheme composable
 
 ### Known Issues
+
 - None identified
 
 ### Browser Compatibility
+
 - ✅ Chrome/Edge (tested)
 - ✅ Firefox (expected to work)
 - ✅ Safari (expected to work with legacy listener fallback)

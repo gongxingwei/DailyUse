@@ -5,6 +5,7 @@
 在应用初始化过程中，如果某个模块的初始化失败（如 SSE 连接失败、数据库连接失败等），可能会导致整个应用阻塞、白屏或黑屏，严重影响用户体验。
 
 **之前的问题**：
+
 - SSE 连接失败时，`connect()` 方法会 `reject` Promise
 - InitializationManager 等待这个 Promise 完成
 - 整个应用初始化被阻塞，页面无法加载
@@ -14,12 +15,14 @@
 ### 1. **关键路径 vs 非关键路径**
 
 **关键路径（Critical Path）**：应用启动必须完成的初始化
+
 - 加载配置文件
 - 初始化路由
 - 加载核心 UI 组件
 - 用户认证状态检查
 
 **非关键路径（Non-Critical Path）**：可以在后台异步完成的初始化
+
 - SSE 连接
 - WebSocket 连接
 - 后台数据同步
@@ -41,15 +44,16 @@
 对于非关键功能，初始化方法应该立即返回，实际工作在后台进行。
 
 **❌ 错误示例**（会阻塞应用）：
+
 ```typescript
 async connect(): Promise<void> {
   return new Promise((resolve, reject) => {
     this.eventSource = new EventSource(url);
-    
+
     this.eventSource.onopen = () => {
       resolve(); // 等待连接成功才 resolve
     };
-    
+
     this.eventSource.onerror = (error) => {
       reject(error); // 连接失败会 reject，阻塞整个应用
     };
@@ -58,6 +62,7 @@ async connect(): Promise<void> {
 ```
 
 **✅ 正确示例**（不阻塞应用）：
+
 ```typescript
 async connect(): Promise<void> {
   // 立即返回，不等待实际连接完成
@@ -73,12 +78,12 @@ async connect(): Promise<void> {
 private connectInBackground(): void {
   // 实际连接逻辑
   this.eventSource = new EventSource(url);
-  
+
   this.eventSource.onopen = () => {
     // 连接成功，更新状态
     this.isConnecting = false;
   };
-  
+
   this.eventSource.onerror = (error) => {
     // 连接失败，自动重试，不抛出错误
     console.error('连接失败，将自动重试');
@@ -100,9 +105,9 @@ private attemptReconnect(): void {
 
   this.reconnectAttempts++;
   const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-  
+
   console.log(`[SSE] ${delay}ms 后尝试第 ${this.reconnectAttempts} 次重连`);
-  
+
   setTimeout(() => {
     this.connectInBackground();
   }, delay);
@@ -122,7 +127,7 @@ class SSEClient {
       reconnectAttempts: this.reconnectAttempts,
     };
   }
-  
+
   isReady(): boolean {
     return this.eventSource?.readyState === EventSource.OPEN;
   }
@@ -151,14 +156,15 @@ if (!sseStatus.connected) {
 在 Vue/React 等框架中，使用错误边界捕获组件级别的错误。
 
 **Vue 3 示例**：
+
 ```typescript
 app.config.errorHandler = (err, instance, info) => {
   console.error('组件错误:', err);
   console.error('错误信息:', info);
-  
+
   // 上报错误，但不阻塞应用
   reportError(err);
-  
+
   // 可以显示友好的错误提示
   showErrorToast('某些功能暂时不可用，我们正在修复中');
 };
@@ -171,11 +177,11 @@ app.config.errorHandler = (err, instance, info) => {
 ```typescript
 async initializeApp() {
   const timeout = 5000; // 5秒超时
-  
+
   try {
     await Promise.race([
       this.criticalInitialization(),
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error('初始化超时')), timeout)
       )
     ]);
@@ -193,9 +199,9 @@ async initializeApp() {
 
 ```typescript
 export enum TaskPriority {
-  CRITICAL = 0,      // 必须成功，失败则应用无法使用
-  IMPORTANT = 5,     // 重要但不致命，失败后降级使用
-  OPTIONAL = 10,     // 可选功能，失败后静默重试
+  CRITICAL = 0, // 必须成功，失败则应用无法使用
+  IMPORTANT = 5, // 重要但不致命，失败后降级使用
+  OPTIONAL = 10, // 可选功能，失败后静默重试
 }
 
 interface InitializationTask {
@@ -233,10 +239,12 @@ register({
 ### 问题 1：响应为空
 
 **原因**：
+
 - `res.writeHead()` 后没有立即 flush headers
 - 在发送数据前有其他操作（如 `console.log`）
 
 **解决方案**：
+
 ```typescript
 // ✅ 正确做法
 res.writeHead(200, {
@@ -255,11 +263,13 @@ this.sendEvent(res, 'connected', { ... });
 ### 问题 2：EventSource.onopen 不触发
 
 **原因**：
+
 - CORS 头部配置错误
 - 数据未正确 flush 到客户端
 - EventSource 在 CONNECTING 状态时触发了 error
 
 **解决方案**：
+
 ```typescript
 // 后端：正确的 CORS 配置
 const origin = req.headers.origin || 'http://localhost:5173';
@@ -277,7 +287,7 @@ this.eventSource.onerror = (error) => {
     // 正在连接，等待...
     return;
   }
-  
+
   if (this.eventSource?.readyState === EventSource.CLOSED) {
     // 真正失败了，重试
     this.attemptReconnect();
@@ -321,13 +331,13 @@ console.log(`APP_STARTUP 阶段耗时: ${duration}ms`);
 
 ## 总结
 
-| 原则 | 说明 | 示例 |
-|------|------|------|
-| **立即返回** | 非关键功能不阻塞主流程 | SSE 连接在后台进行 |
-| **自动重试** | 网络错误自动重试，不抛出异常 | 指数退避重连 |
-| **状态追踪** | 提供状态查询接口 | `getStatus()`, `isReady()` |
-| **优雅降级** | 功能不可用时提供替代方案 | 轮询代替实时推送 |
-| **错误边界** | 捕获并隔离错误 | Vue errorHandler |
-| **超时保护** | 防止无限等待 | Promise.race() |
+| 原则         | 说明                         | 示例                       |
+| ------------ | ---------------------------- | -------------------------- |
+| **立即返回** | 非关键功能不阻塞主流程       | SSE 连接在后台进行         |
+| **自动重试** | 网络错误自动重试，不抛出异常 | 指数退避重连               |
+| **状态追踪** | 提供状态查询接口             | `getStatus()`, `isReady()` |
+| **优雅降级** | 功能不可用时提供替代方案     | 轮询代替实时推送           |
+| **错误边界** | 捕获并隔离错误               | Vue errorHandler           |
+| **超时保护** | 防止无限等待                 | Promise.race()             |
 
 **记住**：一个好的应用应该像坦克一样坚固，即使某些部件损坏，核心功能依然可用！

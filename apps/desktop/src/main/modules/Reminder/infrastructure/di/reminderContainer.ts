@@ -26,7 +26,7 @@ export class ReminderContainer {
   getReminderTemplateGroupRepository(): IReminderTemplateGroupRepository {
     return this.ReminderTemplateGroupRepository;
   }
-  
+
   // 用于测试时替换实现
   setReminderTemplateRepository(repository: IReminderTemplateRepository): void {
     this.ReminderTemplateRepository = repository;

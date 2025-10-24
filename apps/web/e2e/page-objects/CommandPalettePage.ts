@@ -22,7 +22,7 @@ export class CommandPalettePage {
 
   constructor(page: Page) {
     this.page = page;
-    
+
     // Initialize locators
     this.dialog = page.getByTestId('command-palette-dialog');
     this.palette = page.getByTestId('command-palette');
@@ -40,11 +40,11 @@ export class CommandPalettePage {
   // Open/Close
   async open() {
     console.log('[CommandPalette] Opening command palette');
-    
+
     // Use keyboard shortcut (platform-specific)
     const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
     await this.page.keyboard.press(`${modifier}+KeyK`);
-    
+
     // Wait for palette to appear
     await this.waitForOpen();
   }
@@ -171,7 +171,7 @@ export class CommandPalettePage {
   async getSearchResultCount(): Promise<number> {
     const visible = await this.searchResults.isVisible();
     if (!visible) return 0;
-    
+
     return await this.page.locator('[data-testid="search-results-list"] .v-list-item').count();
   }
 
@@ -184,11 +184,11 @@ export class CommandPalettePage {
   async getSearchStats(): Promise<{ count: number; time?: number }> {
     const visible = await this.searchStats.isVisible();
     if (!visible) return { count: 0 };
-    
+
     const text = await this.searchStats.textContent();
     const countMatch = text?.match(/Found (\d+) result/);
     const timeMatch = text?.match(/\((\d+)ms\)/);
-    
+
     return {
       count: countMatch ? parseInt(countMatch[1]) : 0,
       time: timeMatch ? parseInt(timeMatch[1]) : undefined,
@@ -295,7 +295,7 @@ export class CommandPalettePage {
     await this.open();
     await this.search(goalTitle);
     await this.page.waitForTimeout(500);
-    
+
     // Click first result
     const firstResult = this.searchResultItem(0);
     await firstResult.click();

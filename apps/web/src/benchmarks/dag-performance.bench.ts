@@ -179,12 +179,12 @@ describe('Performance Monitoring', () => {
 describe('Large-Scale DAG Node Processing', () => {
   bench('Process 100 nodes', () => {
     const { nodes, edges } = generateDAGData(100);
-    
+
     // 模拟节点处理
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       const optimizationLevel = getOptimizationLevel(nodes.length);
       const lodConfig = getLODNodeConfig(1.0, nodes.length);
-      
+
       return {
         ...node,
         ...lodConfig,
@@ -195,11 +195,11 @@ describe('Large-Scale DAG Node Processing', () => {
 
   bench('Process 200 nodes', () => {
     const { nodes, edges } = generateDAGData(200);
-    
-    nodes.forEach(node => {
+
+    nodes.forEach((node) => {
       const optimizationLevel = getOptimizationLevel(nodes.length);
       const lodConfig = getLODNodeConfig(1.0, nodes.length);
-      
+
       return {
         ...node,
         ...lodConfig,
@@ -217,10 +217,10 @@ describe('Edge Calculation Performance', () => {
   const { nodes: nodes200, edges: edges200 } = generateDAGData(200);
 
   bench('Calculate edge positions (100 edges)', () => {
-    edges100.forEach(edge => {
-      const source = nodes100.find(n => n.id === edge.source);
-      const target = nodes100.find(n => n.id === edge.target);
-      
+    edges100.forEach((edge) => {
+      const source = nodes100.find((n) => n.id === edge.source);
+      const target = nodes100.find((n) => n.id === edge.target);
+
       if (source && target) {
         const dx = target.x - source.x;
         const dy = target.y - source.y;
@@ -230,10 +230,10 @@ describe('Edge Calculation Performance', () => {
   });
 
   bench('Calculate edge positions (200 edges)', () => {
-    edges200.forEach(edge => {
-      const source = nodes200.find(n => n.id === edge.source);
-      const target = nodes200.find(n => n.id === edge.target);
-      
+    edges200.forEach((edge) => {
+      const source = nodes200.find((n) => n.id === edge.source);
+      const target = nodes200.find((n) => n.id === edge.target);
+
       if (source && target) {
         const dx = target.x - source.x;
         const dy = target.y - source.y;

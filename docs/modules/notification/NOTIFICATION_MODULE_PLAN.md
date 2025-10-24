@@ -11,10 +11,12 @@
 Notification 模块处理系统通知和用户通知偏好。
 
 ### 主要聚合根
+
 1. **Notification** - 通知消息
 2. **NotificationPreferences** - 通知偏好设置
 
 ### 主要实体
+
 1. **NotificationChannel** - 通知渠道（邮件、推送等）
 
 ---
@@ -23,16 +25,16 @@ Notification 模块处理系统通知和用户通知偏好。
 
 ```typescript
 // Server DTO
-NotificationServerDTO
-NotificationPreferencesServerDTO
+NotificationServerDTO;
+NotificationPreferencesServerDTO;
 
 // Client DTO（注意 Client 后缀）
-NotificationClientDTO
-NotificationPreferencesClientDTO
+NotificationClientDTO;
+NotificationPreferencesClientDTO;
 
 // Persistence DTO
-NotificationPersistenceDTO
-NotificationPreferencesPersistenceDTO
+NotificationPersistenceDTO;
+NotificationPreferencesPersistenceDTO;
 ```
 
 ---
@@ -66,7 +68,7 @@ export class Notification extends AggregateRoot {
   public markAsRead(): void;
   public archive(): void;
   public softDelete(): void;
-  
+
   // 查询
   public isRead(): boolean;
   public isExpired(): boolean;
@@ -82,11 +84,11 @@ export interface INotificationRepository {
   save(notification: Notification): Promise<void>;
   findByUuid(uuid: string): Promise<Notification | null>;
   findByAccountUuid(accountUuid: string): Promise<Notification[]>;
-  
+
   // 查询
   findUnread(accountUuid: string): Promise<Notification[]>;
   findByStatus(accountUuid: string, status: NotificationStatus): Promise<Notification[]>;
-  
+
   // 批量操作
   markAllAsRead(accountUuid: string): Promise<void>;
   deleteOld(beforeDate: Date): Promise<void>;

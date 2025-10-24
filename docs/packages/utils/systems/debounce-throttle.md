@@ -55,26 +55,24 @@ packages/utils/src/frontend/
 用于延迟执行函数，支持取消和立即执行。
 
 ```typescript
-import { createDebounce } from '@dailyuse/utils'
+import { createDebounce } from '@dailyuse/utils';
 
-const { debouncedFn, cancel, flush } = createDebounce(
-  (keyword: string) => {
-    console.log('搜索:', keyword)
-  },
-  500
-)
+const { debouncedFn, cancel, flush } = createDebounce((keyword: string) => {
+  console.log('搜索:', keyword);
+}, 500);
 
 // 用户输入时调用
-input.addEventListener('input', (e) => debouncedFn(e.target.value))
+input.addEventListener('input', (e) => debouncedFn(e.target.value));
 
 // 取消执行
-cancel()
+cancel();
 
 // 立即执行
-flush()
+flush();
 ```
 
 **适用场景**：
+
 - ✅ 搜索框输入
 - ✅ 窗口 resize 事件
 - ✅ 表单输入验证
@@ -84,25 +82,23 @@ flush()
 用于 API 调用防抖，只保留最后一次调用的结果。
 
 ```typescript
-import { createDebouncePromise } from '@dailyuse/utils'
+import { createDebouncePromise } from '@dailyuse/utils';
 
-const { debouncedFn: searchUser } = createDebouncePromise(
-  async (keyword: string) => {
-    const res = await searchApi(keyword)
-    return res.data
-  },
-  300
-)
+const { debouncedFn: searchUser } = createDebouncePromise(async (keyword: string) => {
+  const res = await searchApi(keyword);
+  return res.data;
+}, 300);
 
 // Vue 组件中
 watch(keyword, async (value) => {
   if (value) {
-    users.value = await searchUser(value)
+    users.value = await searchUser(value);
   }
-})
+});
 ```
 
 **适用场景**：
+
 - ✅ 自动补全
 - ✅ 实时搜索
 - ✅ 联想输入
@@ -112,24 +108,22 @@ watch(keyword, async (value) => {
 收集多次调用的参数，延迟后一次性处理。
 
 ```typescript
-import { createBatchDebounce } from '@dailyuse/utils'
+import { createBatchDebounce } from '@dailyuse/utils';
 
-const { debouncedFn: batchDelete } = createBatchDebounce(
-  async (ids: number[]) => {
-    await batchDeleteApi(ids)
-    message.success(`已删除 ${ids.length} 条记录`)
-  },
-  1000
-)
+const { debouncedFn: batchDelete } = createBatchDebounce(async (ids: number[]) => {
+  await batchDeleteApi(ids);
+  message.success(`已删除 ${ids.length} 条记录`);
+}, 1000);
 
 // 用户快速点击多个删除按钮
-items.forEach(item => {
-  batchDelete(item.id)
-})
+items.forEach((item) => {
+  batchDelete(item.id);
+});
 // 1秒后统一处理：[1, 2, 3, 4, 5]
 ```
 
 **适用场景**：
+
 - ✅ 批量操作
 - ✅ 日志上报
 - ✅ 统计打点
@@ -139,12 +133,12 @@ items.forEach(item => {
 用于类方法的防抖。
 
 ```typescript
-import { debounceDecorator } from '@dailyuse/utils'
+import { debounceDecorator } from '@dailyuse/utils';
 
 class SearchService {
   @debounceDecorator(500)
   search(keyword: string) {
-    console.log('搜索:', keyword)
+    console.log('搜索:', keyword);
   }
 }
 ```
@@ -158,23 +152,24 @@ class SearchService {
 限制函数在一定时间内只执行一次。
 
 ```typescript
-import { createThrottle } from '@dailyuse/utils'
+import { createThrottle } from '@dailyuse/utils';
 
 const { throttledFn, cancel, flush } = createThrottle(
   () => {
-    console.log('滚动位置:', window.scrollY)
+    console.log('滚动位置:', window.scrollY);
   },
   200,
   {
-    leading: true,  // 立即执行第一次
+    leading: true, // 立即执行第一次
     trailing: true, // 延迟执行最后一次
-  }
-)
+  },
+);
 
-window.addEventListener('scroll', throttledFn)
+window.addEventListener('scroll', throttledFn);
 ```
 
 **适用场景**：
+
 - ✅ 滚动事件
 - ✅ 鼠标移动
 - ✅ 窗口 resize
@@ -184,26 +179,24 @@ window.addEventListener('scroll', throttledFn)
 固定时间窗口内只执行一次，返回剩余时间。
 
 ```typescript
-import { createWindowThrottle } from '@dailyuse/utils'
+import { createWindowThrottle } from '@dailyuse/utils';
 
-const { throttledFn: handleLike, getRemainingTime } = createWindowThrottle(
-  async () => {
-    await likeApi(postId)
-    message.success('点赞成功')
-  },
-  1000
-)
+const { throttledFn: handleLike, getRemainingTime } = createWindowThrottle(async () => {
+  await likeApi(postId);
+  message.success('点赞成功');
+}, 1000);
 
 const onClick = () => {
-  const success = handleLike()
+  const success = handleLike();
   if (!success) {
-    const remaining = getRemainingTime()
-    message.warning(`请等待 ${Math.ceil(remaining / 1000)} 秒`)
+    const remaining = getRemainingTime();
+    message.warning(`请等待 ${Math.ceil(remaining / 1000)} 秒`);
   }
-}
+};
 ```
 
 **适用场景**：
+
 - ✅ 点赞、收藏
 - ✅ 表单提交
 - ✅ 验证码发送
@@ -213,17 +206,18 @@ const onClick = () => {
 使用 `requestAnimationFrame` 节流，适用于动画场景。
 
 ```typescript
-import { createRAFThrottle } from '@dailyuse/utils'
+import { createRAFThrottle } from '@dailyuse/utils';
 
 const { throttledFn: updateProgress } = createRAFThrottle(() => {
-  const progress = window.scrollY / document.body.scrollHeight
-  progressBar.value = progress * 100
-})
+  const progress = window.scrollY / document.body.scrollHeight;
+  progressBar.value = progress * 100;
+});
 
-window.addEventListener('scroll', updateProgress)
+window.addEventListener('scroll', updateProgress);
 ```
 
 **适用场景**：
+
 - ✅ 滚动动画
 - ✅ 拖拽效果
 - ✅ 实时渲染
@@ -233,18 +227,19 @@ window.addEventListener('scroll', updateProgress)
 先节流限制频率，再防抖等待停止。
 
 ```typescript
-import { createThrottleDebounce } from '@dailyuse/utils'
+import { createThrottleDebounce } from '@dailyuse/utils';
 
 const { combinedFn: handleInput } = createThrottleDebounce(
   (value: string) => {
-    console.log('处理输入:', value)
+    console.log('处理输入:', value);
   },
-  200,  // 节流间隔
-  500   // 防抖延迟
-)
+  200, // 节流间隔
+  500, // 防抖延迟
+);
 ```
 
 **适用场景**：
+
 - ✅ 复杂输入处理
 - ✅ 实时预览
 - ✅ 持续监控
@@ -254,12 +249,12 @@ const { combinedFn: handleInput } = createThrottleDebounce(
 用于类方法的节流。
 
 ```typescript
-import { throttleDecorator } from '@dailyuse/utils'
+import { throttleDecorator } from '@dailyuse/utils';
 
 class ScrollHandler {
   @throttleDecorator(200)
   handleScroll() {
-    console.log('滚动')
+    console.log('滚动');
   }
 }
 ```
@@ -270,53 +265,50 @@ class ScrollHandler {
 
 ### 1. 选择合适的工具
 
-| 场景 | 推荐工具 | 原因 |
-|------|---------|------|
-| 搜索输入 | `createDebounce` | 等待用户停止输入 |
-| API 自动补全 | `createDebouncePromise` | 只关心最后结果 |
-| 批量操作 | `createBatchDebounce` | 减少请求次数 |
-| 滚动事件 | `createThrottle` | 限制执行频率 |
-| 点赞按钮 | `createWindowThrottle` | 防止重复点击 |
-| 滚动动画 | `createRAFThrottle` | 流畅的动画效果 |
+| 场景         | 推荐工具                | 原因             |
+| ------------ | ----------------------- | ---------------- |
+| 搜索输入     | `createDebounce`        | 等待用户停止输入 |
+| API 自动补全 | `createDebouncePromise` | 只关心最后结果   |
+| 批量操作     | `createBatchDebounce`   | 减少请求次数     |
+| 滚动事件     | `createThrottle`        | 限制执行频率     |
+| 点赞按钮     | `createWindowThrottle`  | 防止重复点击     |
+| 滚动动画     | `createRAFThrottle`     | 流畅的动画效果   |
 
 ### 2. 合理设置延迟时间
 
 ```typescript
 // 输入防抖：300-500ms
-createDebounce(search, 300)
+createDebounce(search, 300);
 
 // 滚动节流：100-200ms
-createThrottle(handleScroll, 200)
+createThrottle(handleScroll, 200);
 
 // API 调用：500-800ms
-createDebouncePromise(fetchData, 500)
+createDebouncePromise(fetchData, 500);
 ```
 
 ### 3. 记得清理
 
 ```typescript
-const { debouncedFn, cancel } = createDebounce(fn, 500)
+const { debouncedFn, cancel } = createDebounce(fn, 500);
 
 // 组件卸载时清理
 onUnmounted(() => {
-  cancel()
-})
+  cancel();
+});
 ```
 
 ### 4. 错误处理
 
 ```typescript
-const { debouncedFn } = createDebouncePromise(
-  async (keyword: string) => {
-    try {
-      return await searchApi(keyword)
-    } catch (error) {
-      console.error('搜索失败:', error)
-      throw error
-    }
-  },
-  500
-)
+const { debouncedFn } = createDebouncePromise(async (keyword: string) => {
+  try {
+    return await searchApi(keyword);
+  } catch (error) {
+    console.error('搜索失败:', error);
+    throw error;
+  }
+}, 500);
 ```
 
 ---
@@ -327,35 +319,28 @@ const { debouncedFn } = createDebouncePromise(
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue'
-import { createDebounce } from '@dailyuse/utils'
+import { ref } from 'vue';
+import { createDebounce } from '@dailyuse/utils';
 
-const keyword = ref('')
-const results = ref([])
+const keyword = ref('');
+const results = ref([]);
 
-const { debouncedFn: handleSearch } = createDebounce(
-  async (value: string) => {
-    if (!value) {
-      results.value = []
-      return
-    }
-    const res = await searchApi(value)
-    results.value = res.data
-  },
-  500
-)
+const { debouncedFn: handleSearch } = createDebounce(async (value: string) => {
+  if (!value) {
+    results.value = [];
+    return;
+  }
+  const res = await searchApi(value);
+  results.value = res.data;
+}, 500);
 
 watch(keyword, (value) => {
-  handleSearch(value)
-})
+  handleSearch(value);
+});
 </script>
 
 <template>
-  <v-text-field
-    v-model="keyword"
-    label="搜索"
-    placeholder="输入关键词..."
-  />
+  <v-text-field v-model="keyword" label="搜索" placeholder="输入关键词..." />
   <div v-for="item in results" :key="item.id">
     {{ item.name }}
   </div>
@@ -365,57 +350,51 @@ watch(keyword, (value) => {
 ### 案例 2: 滚动加载
 
 ```typescript
-import { createThrottle } from '@dailyuse/utils'
+import { createThrottle } from '@dailyuse/utils';
 
-const { throttledFn: handleScroll } = createThrottle(
-  async () => {
-    const scrollTop = window.scrollY
-    const scrollHeight = document.body.scrollHeight
-    const clientHeight = window.innerHeight
+const { throttledFn: handleScroll } = createThrottle(async () => {
+  const scrollTop = window.scrollY;
+  const scrollHeight = document.body.scrollHeight;
+  const clientHeight = window.innerHeight;
 
-    // 距离底部 100px 时加载
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      if (!loading.value && hasMore.value) {
-        await loadMore()
-      }
+  // 距离底部 100px 时加载
+  if (scrollTop + clientHeight >= scrollHeight - 100) {
+    if (!loading.value && hasMore.value) {
+      await loadMore();
     }
-  },
-  200
-)
+  }
+}, 200);
 
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
-})
+  window.addEventListener('scroll', handleScroll);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-})
+  window.removeEventListener('scroll', handleScroll);
+});
 ```
 
 ### 案例 3: 批量删除
 
 ```typescript
-import { createBatchDebounce } from '@dailyuse/utils'
-import { useMessage } from '@dailyuse/ui'
+import { createBatchDebounce } from '@dailyuse/utils';
+import { useMessage } from '@dailyuse/ui';
 
-const message = useMessage()
+const message = useMessage();
 
-const { debouncedFn: batchDelete } = createBatchDebounce(
-  async (ids: number[]) => {
-    try {
-      await batchDeleteApi(ids)
-      message.success(`已删除 ${ids.length} 条记录`)
-      await refreshList()
-    } catch (error) {
-      message.error('删除失败')
-    }
-  },
-  1000
-)
+const { debouncedFn: batchDelete } = createBatchDebounce(async (ids: number[]) => {
+  try {
+    await batchDeleteApi(ids);
+    message.success(`已删除 ${ids.length} 条记录`);
+    await refreshList();
+  } catch (error) {
+    message.error('删除失败');
+  }
+}, 1000);
 
 const handleDelete = (id: number) => {
-  batchDelete(id)
-}
+  batchDelete(id);
+};
 ```
 
 ---
@@ -427,12 +406,12 @@ const handleDelete = (id: number) => {
 ```typescript
 function createDebounce<T extends (...args: any[]) => any>(
   fn: T,
-  delay: number
+  delay: number,
 ): {
   debouncedFn: T;
   cancel: () => void;
   flush: () => void;
-}
+};
 ```
 
 ### createDebouncePromise
@@ -440,11 +419,11 @@ function createDebounce<T extends (...args: any[]) => any>(
 ```typescript
 function createDebouncePromise<T extends (...args: any[]) => Promise<any>>(
   fn: T,
-  delay: number
+  delay: number,
 ): {
   debouncedFn: (...args: Parameters<T>) => Promise<ReturnType<T>>;
   cancel: () => void;
-}
+};
 ```
 
 ### createBatchDebounce
@@ -452,12 +431,12 @@ function createDebouncePromise<T extends (...args: any[]) => Promise<any>>(
 ```typescript
 function createBatchDebounce<T>(
   fn: (args: T[]) => void | Promise<void>,
-  delay: number
+  delay: number,
 ): {
   debouncedFn: (arg: T) => void;
   cancel: () => void;
   flush: () => void;
-}
+};
 ```
 
 ### createThrottle
@@ -466,12 +445,12 @@ function createBatchDebounce<T>(
 function createThrottle<T extends (...args: any[]) => any>(
   fn: T,
   delay: number,
-  options?: { leading?: boolean; trailing?: boolean }
+  options?: { leading?: boolean; trailing?: boolean },
 ): {
   throttledFn: T;
   cancel: () => void;
   flush: () => void;
-}
+};
 ```
 
 ### createWindowThrottle
@@ -479,23 +458,23 @@ function createThrottle<T extends (...args: any[]) => any>(
 ```typescript
 function createWindowThrottle<T extends (...args: any[]) => any>(
   fn: T,
-  windowMs: number
+  windowMs: number,
 ): {
   throttledFn: () => boolean;
   cancel: () => void;
   getRemainingTime: () => number;
-}
+};
 ```
 
 ### createRAFThrottle
 
 ```typescript
 function createRAFThrottle<T extends (...args: any[]) => any>(
-  fn: T
+  fn: T,
 ): {
   throttledFn: T;
   cancel: () => void;
-}
+};
 ```
 
 ---
@@ -510,8 +489,8 @@ function createRAFThrottle<T extends (...args: any[]) => any>(
 
 ## 📝 变更历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
+| 版本  | 日期       | 变更                             |
+| ----- | ---------- | -------------------------------- |
 | 1.0.0 | 2025-10-10 | 初始版本，完整实现防抖节流工具集 |
 
 ---

@@ -10,9 +10,9 @@
           </div>
         </div>
       </v-card-title>
-      
+
       <v-divider />
-      
+
       <v-card-text class="dialog-content">
         <v-form ref="form" class="settings-form">
           <!-- 基本信息 -->
@@ -21,11 +21,11 @@
               <v-icon class="mr-2" color="primary">mdi-information</v-icon>
               基本信息
             </h3>
-            
+
             <v-text-field
               v-model="repoData.name"
               label="仓库名称"
-              :rules="[v => !!v || '请输入仓库名称']"
+              :rules="[(v) => !!v || '请输入仓库名称']"
               required
               variant="outlined"
               prepend-inner-icon="mdi-format-title"
@@ -39,7 +39,7 @@
               prepend-inner-icon="mdi-text"
               counter="200"
             />
-            
+
             <v-select
               v-model="repoData.relatedGoals"
               :items="availableGoals"
@@ -58,30 +58,24 @@
               <v-icon class="mr-2" color="info">mdi-folder-information</v-icon>
               路径信息
             </h3>
-            
+
             <div class="info-item">
               <div class="info-label">存储路径</div>
               <div class="info-value">{{ repoData.path }}</div>
-              <v-btn
-                variant="tonal"
-                size="small"
-                color="info"
-                @click="openInExplorer"
-                class="ml-2"
-              >
+              <v-btn variant="tonal" size="small" color="info" @click="openInExplorer" class="ml-2">
                 <v-icon start>mdi-folder-open</v-icon>
                 打开
               </v-btn>
             </div>
-            
+
             <div class="info-item">
               <div class="info-label">创建时间</div>
-              <div class="info-value">{{ (repoData.createdAt) }}</div>
+              <div class="info-value">{{ repoData.createdAt }}</div>
             </div>
-            
+
             <div class="info-item">
               <div class="info-label">最后更新</div>
-              <div class="info-value">{{ (repoData.updatedAt) }}</div>
+              <div class="info-value">{{ repoData.updatedAt }}</div>
             </div>
           </div>
 
@@ -94,29 +88,25 @@
                   危险操作
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="danger-content">
-                  <v-alert
-                    type="warning"
-                    variant="tonal"
-                    class="mb-4"
-                  >
+                  <v-alert type="warning" variant="tonal" class="mb-4">
                     <div class="text-body-2">
-                      删除仓库将会：<br>
-                      • 永久删除仓库文件夹及其所有内容<br>
-                      • 移除所有相关配置和关联<br>
+                      删除仓库将会：<br />
+                      • 永久删除仓库文件夹及其所有内容<br />
+                      • 移除所有相关配置和关联<br />
                       • 此操作不可恢复
                     </div>
                   </v-alert>
-                  
+
                   <v-text-field
                     v-model="deleteConfirm"
                     label="输入 'DELETE' 确认删除"
                     placeholder="DELETE"
                     variant="outlined"
                     color="error"
-                    :rules="[v => v === 'DELETE' || '请输入 DELETE 确认删除']"
+                    :rules="[(v) => v === 'DELETE' || '请输入 DELETE 确认删除']"
                     @keyup.enter="handleDelete"
                   />
-                  
+
                   <v-btn
                     color="error"
                     variant="elevated"
@@ -135,20 +125,14 @@
           </div>
         </v-form>
       </v-card-text>
-      
+
       <v-divider />
-      
+
       <v-card-actions class="dialog-actions">
         <v-spacer />
-        <v-btn 
-          variant="text" 
-          @click="closeDialog"
-          class="cancel-btn"
-        >
-          取消
-        </v-btn>
-        <v-btn 
-          color="primary" 
+        <v-btn variant="text" @click="closeDialog" class="cancel-btn"> 取消 </v-btn>
+        <v-btn
+          color="primary"
           variant="elevated"
           @click="saveSettings"
           :loading="saving"
@@ -163,37 +147,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore'
-import { Repository } from '../../domain/aggregates/repository'
-import type { IRepository } from '../../domain/types'
+import { ref, computed } from 'vue';
+import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
+import { Repository } from '../../domain/aggregates/repository';
+import type { IRepository } from '../../domain/types';
 const props = defineProps<{
-  modelValue: boolean
-  repo: Repository | null
-}>()
+  modelValue: boolean;
+  repo: Repository | null;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'handle-delete-repository', repository: Repository): void
-}>()
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'handle-delete-repository', repository: Repository): void;
+}>();
 
-const goalStore = useGoalStore()
-const form = ref()
-const deleteConfirm = ref('')
-const saving = ref(false)
-const deleting = ref(false)
+const goalStore = useGoalStore();
+const form = ref();
+const deleteConfirm = ref('');
+const saving = ref(false);
+const deleting = ref(false);
 
 const dialogVisible = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
+  set: (value) => emit('update:modelValue', value),
+});
 
 const availableGoals = computed(() => {
-  return goalStore.goals.map(goal => ({
+  return goalStore.goals.map((goal) => ({
     uuid: goal.uuid,
     title: goal.name,
-  }))
-})
+  }));
+});
 
 const repoData = ref({
   uuid: '',
@@ -202,29 +186,27 @@ const repoData = ref({
   description: '',
   relatedGoals: [],
   createdAt: new Date(),
-  updatedAt: new Date()
-} as IRepository)
-
+  updatedAt: new Date(),
+} as IRepository);
 
 const openInExplorer = () => {
-  console.log('打开文件夹:', repoData.value.path)
-}
+  console.log('打开文件夹:', repoData.value.path);
+};
 
 const saveSettings = async () => {
-  console.log('保存设置:', repoData.value)
-}
+  console.log('保存设置:', repoData.value);
+};
 
 const handleDelete = async () => {
-  emit('handle-delete-repository', props.repo as Repository)
-  
-}
+  emit('handle-delete-repository', props.repo as Repository);
+};
 
 const closeDialog = () => {
-  dialogVisible.value = false
-  deleteConfirm.value = ''
-  saving.value = false
-  deleting.value = false
-}
+  dialogVisible.value = false;
+  deleteConfirm.value = '';
+  saving.value = false;
+  deleting.value = false;
+};
 </script>
 
 <style scoped>
@@ -234,7 +216,11 @@ const closeDialog = () => {
 }
 
 .dialog-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-warning), 0.05), rgba(var(--v-theme-primary), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-warning), 0.05),
+    rgba(var(--v-theme-primary), 0.05)
+  );
   padding: 1.5rem 2rem;
 }
 
@@ -359,21 +345,21 @@ const closeDialog = () => {
   .dialog-header {
     padding: 1rem;
   }
-  
+
   .dialog-content {
     padding: 1rem;
   }
-  
+
   .form-section {
     padding: 1rem;
   }
-  
+
   .info-item {
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
   }
-  
+
   .info-label {
     min-width: auto;
   }

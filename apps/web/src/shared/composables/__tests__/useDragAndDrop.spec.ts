@@ -1,6 +1,6 @@
 /**
  * filepath: d:\myPrograms\DailyUse\apps\web\src\shared\composables\__tests__\useDragAndDrop.spec.ts
- * 
+ *
  * Unit tests for useDragAndDrop composable
  * Tests drag-and-drop state management and callbacks
  */
@@ -57,7 +57,7 @@ describe('useDragAndDrop', () => {
     it('should accept configuration options', () => {
       const validateDrop = vi.fn(() => true);
       const onDragStart = vi.fn();
-      
+
       useDragAndDrop({
         mode: 'dependency',
         validateDrop,
@@ -249,7 +249,16 @@ describe('useDragAndDrop', () => {
 
   describe('handleDragEnd', () => {
     it('should reset state when drag ends', () => {
-      const { isDragging, draggedTask, dropTarget, isValidDrop, dragOperation, handleDragStart, handleDragOver, handleDragEnd } = useDragAndDrop();
+      const {
+        isDragging,
+        draggedTask,
+        dropTarget,
+        isValidDrop,
+        dragOperation,
+        handleDragStart,
+        handleDragOver,
+        handleDragEnd,
+      } = useDragAndDrop();
 
       handleDragStart(mockTask1);
       handleDragOver(mockTask2);
@@ -293,7 +302,7 @@ describe('useDragAndDrop', () => {
       });
 
       handleDragStart(mockTask1);
-      
+
       // Should not throw, should set isValidDrop to false
       expect(() => handleDragOver(mockTask2)).not.toThrow();
       expect(isValidDrop.value).toBe(false);

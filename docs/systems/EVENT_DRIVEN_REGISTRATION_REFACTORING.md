@@ -90,6 +90,7 @@
 ### **1. RegistrationApplicationService.ts**
 
 **重构内容**：
+
 - ❌ 移除：`IAuthCredentialRepository` 依赖
 - ❌ 移除：`AuthenticationDomainService` 依赖
 - ❌ 移除：`AuthenticationContainer` 依赖
@@ -105,6 +106,7 @@
 - ✅ 新增：`publishAccountCreatedEvent()` 方法（事件发布）
 
 **核心变化**：
+
 ```typescript
 // Before (7 steps with transaction):
 async registerUser(request: RegisterAccountRequest) {
@@ -128,11 +130,13 @@ async registerUser(request: RegisterAccountRequest) {
 ### **2. AccountCreatedHandler.ts** (新建)
 
 **文件路径**：
+
 ```
 apps/api/src/modules/authentication/application/event-handlers/AccountCreatedHandler.ts
 ```
 
 **职责**：
+
 - 监听 `account:created` 事件
 - 提取 `plainPassword` 并加密（bcrypt, 12 rounds）
 - 创建 `AuthCredential` 聚合根
@@ -140,6 +144,7 @@ apps/api/src/modules/authentication/application/event-handlers/AccountCreatedHan
 - 记录日志（成功/失败）
 
 **核心逻辑**：
+
 ```typescript
 async handle(event: { payload: AccountCreatedPayload }): Promise<void> {
   const { accountUuid, plainPassword } = event.payload;
@@ -162,15 +167,18 @@ async handle(event: { payload: AccountCreatedPayload }): Promise<void> {
 ### **3. authenticationInitialization.ts** (新建)
 
 **文件路径**：
+
 ```
 apps/api/src/modules/authentication/initialization/authenticationInitialization.ts
 ```
 
 **职责**：
+
 - 注册 Authentication 模块的初始化任务
 - 在应用启动时注册事件处理器到 `eventBus`
 
 **核心逻辑**：
+
 ```typescript
 const registerEventHandlersTask: InitializationTask = {
   name: 'authentication:event-handlers',
@@ -195,15 +203,18 @@ export function registerAuthenticationInitializationTasks(): void {
 ### **4. initializer.ts** (更新)
 
 **文件路径**：
+
 ```
 apps/api/src/shared/initialization/initializer.ts
 ```
 
 **修改内容**：
+
 - 导入 `registerAuthenticationInitializationTasks`
 - 在 `registerAllInitializationTasks()` 中调用
 
 **核心代码**：
+
 ```typescript
 import { registerAuthenticationInitializationTasks } from '../../modules/authentication/initialization/authenticationInitialization';
 
@@ -218,28 +229,34 @@ export function registerAllInitializationTasks(): void {
 ## ✅ 重构优势
 
 ### **1. 模块解耦**
+
 - ❌ **Before**: Account 模块直接依赖 Authentication 模块
 - ✅ **After**: 两模块通过事件总线通信，零依赖
 
 ### **2. 单一职责**
+
 - ❌ **Before**: `RegistrationApplicationService` 负责账户 + 凭证
-- ✅ **After**: 
+- ✅ **After**:
   - Account 模块只负责 Account 聚合根
   - Authentication 模块只负责 AuthCredential 聚合根
 
 ### **3. 密码加密位置**
+
 - ❌ **Before**: 密码加密在 Account 模块（错误）
 - ✅ **After**: 密码加密在 Authentication 模块（正确）
 
 ### **4. 事务处理**
+
 - ❌ **Before**: 分布式事务 `prisma.$transaction`（反模式）
 - ✅ **After**: 最终一致性（推荐模式）
 
 ### **5. 异步处理**
+
 - ❌ **Before**: 同步创建账户 + 凭证，阻塞流程
 - ✅ **After**: 异步处理凭证创建，不阻塞用户
 
 ### **6. 可扩展性**
+
 - ❌ **Before**: 添加新功能需要修改 `RegistrationApplicationService`
 - ✅ **After**: 添加新订阅者无需修改生产者代码
 
@@ -248,6 +265,7 @@ export function registerAllInitializationTasks(): void {
 ## 🔄 最终一致性处理
 
 ### **正常流程**
+
 ```
 1. 用户发起注册请求
 2. Account 创建成功，返回 DTO
@@ -260,6 +278,7 @@ export function registerAllInitializationTasks(): void {
 ### **异常场景处理**
 
 #### **场景 1: 事件发布失败**
+
 ```typescript
 // 在 publishAccountCreatedEvent() 中
 try {
@@ -271,6 +290,7 @@ try {
 ```
 
 #### **场景 2: 事件处理失败**
+
 ```typescript
 // 在 AccountCreatedHandler.handle() 中
 try {
@@ -301,6 +321,7 @@ try {
 ## 🧪 测试策略
 
 ### **单元测试**
+
 ```typescript
 // Account 模块测试
 describe('RegistrationApplicationService', () => {
@@ -322,15 +343,16 @@ describe('AccountCreatedHandler', () => {
 ```
 
 ### **集成测试**
+
 ```typescript
 describe('Event-Driven Registration Flow', () => {
   it('should create account and credential via event bus', async () => {
     // 1. 注册用户
     const accountDto = await registrationService.registerUser(request);
-    
+
     // 2. 等待事件处理完成
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     // 3. 验证凭证创建成功
     const credential = await credRepo.findByAccountUuid(accountDto.uuid);
     expect(credential).toBeDefined();
@@ -361,12 +383,12 @@ describe('Event-Driven Registration Flow', () => {
 
 ## 📊 性能对比
 
-| 指标                | 重构前 (分布式事务) | 重构后 (事件驱动) | 改善 |
-|---------------------|---------------------|-------------------|------|
-| 注册响应时间         | ~500ms             | ~200ms           | ⬇️ 60% |
-| 数据库事务时长       | ~300ms             | ~100ms           | ⬇️ 67% |
-| 模块耦合度           | 高（直接依赖）      | 低（事件通信）    | ⬆️ 100% |
-| 可扩展性             | 低                 | 高               | ⬆️ 100% |
+| 指标           | 重构前 (分布式事务) | 重构后 (事件驱动) | 改善    |
+| -------------- | ------------------- | ----------------- | ------- |
+| 注册响应时间   | ~500ms              | ~200ms            | ⬇️ 60%  |
+| 数据库事务时长 | ~300ms              | ~100ms            | ⬇️ 67%  |
+| 模块耦合度     | 高（直接依赖）      | 低（事件通信）    | ⬆️ 100% |
+| 可扩展性       | 低                  | 高                | ⬆️ 100% |
 
 ---
 

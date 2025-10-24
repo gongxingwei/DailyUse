@@ -1,10 +1,10 @@
-import { Entity } from "@dailyuse/utils";
-import type { UserDTO } from "@renderer/modules/Account/domain/types/account";
+import { Entity } from '@dailyuse/utils';
+import type { UserDTO } from '@renderer/modules/Account/domain/types/account';
 
 /**
  * User 实体
  * 用户个人信息实体
- * 
+ *
  * 构造参数说明：
  * - uuid: 用户唯一标识
  * - firstName?: 名
@@ -55,25 +55,47 @@ export class User extends Entity {
   }
 
   // ======================== Getter/Setter ========================
-  get id(): string { return this._uuid; }
-  get firstName(): string | null { return this._firstName; }
-  set firstName(value: string | null) { this._firstName = value; }
-
-  get lastName(): string | null { return this._lastName; }
-  set lastName(value: string | null) { this._lastName = value; }
-
-  get fullName(): string | null {
-    return `${this._firstName ?? ""} ${this._lastName ?? ""}`.trim();
+  get id(): string {
+    return this._uuid;
+  }
+  get firstName(): string | null {
+    return this._firstName;
+  }
+  set firstName(value: string | null) {
+    this._firstName = value;
   }
 
-  get sex(): string | null | undefined { return this._sex; }
-  set sex(value: string | null | undefined) { this._sex = value ?? null; }
+  get lastName(): string | null {
+    return this._lastName;
+  }
+  set lastName(value: string | null) {
+    this._lastName = value;
+  }
 
-  get avatar(): string | null | undefined { return this._avatar; }
-  set avatar(value: string | null | undefined) { this._avatar = value ?? null; }
+  get fullName(): string | null {
+    return `${this._firstName ?? ''} ${this._lastName ?? ''}`.trim();
+  }
 
-  get bio(): string | null | undefined { return this._bio; }
-  set bio(value: string | null | undefined) { this._bio = value ?? null; }
+  get sex(): string | null | undefined {
+    return this._sex;
+  }
+  set sex(value: string | null | undefined) {
+    this._sex = value ?? null;
+  }
+
+  get avatar(): string | null | undefined {
+    return this._avatar;
+  }
+  set avatar(value: string | null | undefined) {
+    this._avatar = value ?? null;
+  }
+
+  get bio(): string | null | undefined {
+    return this._bio;
+  }
+  set bio(value: string | null | undefined) {
+    this._bio = value ?? null;
+  }
 
   get socialAccounts(): Map<string, string> {
     return new Map(this._socialAccounts);
@@ -138,83 +160,79 @@ export class User extends Entity {
   static isUser(obj: any): obj is User {
     return (
       obj instanceof User ||
-      (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        ("firstName" in obj || "lastName" in obj))
+      (obj && typeof obj === 'object' && 'uuid' in obj && ('firstName' in obj || 'lastName' in obj))
     );
   }
 
- /**
- * 保证返回 User 实例或 null
- * @param obj 任意对象
- * @returns User 或 null
- */
-static ensureUser(obj: any): User | null {
-  if (obj instanceof User) return obj;
-  if (obj && obj.uuid && ("firstName" in obj || "lastName" in obj)) {
-    return User.fromDTO(obj);
+  /**
+   * 保证返回 User 实例或 null
+   * @param obj 任意对象
+   * @returns User 或 null
+   */
+  static ensureUser(obj: any): User | null {
+    if (obj instanceof User) return obj;
+    if (obj && obj.uuid && ('firstName' in obj || 'lastName' in obj)) {
+      return User.fromDTO(obj);
+    }
+    return null;
   }
-  return null;
-}
 
-/**
- * 保证返回 User 实例，永不为 null
- * @param obj 任意对象
- * @returns User
- */
-static ensureUserNeverNull(obj: any): User {
-  if (obj instanceof User) return obj;
-  if (obj && obj.uuid && ("firstName" in obj || "lastName" in obj)) {
-    return User.fromDTO(obj);
+  /**
+   * 保证返回 User 实例，永不为 null
+   * @param obj 任意对象
+   * @returns User
+   */
+  static ensureUserNeverNull(obj: any): User {
+    if (obj instanceof User) return obj;
+    if (obj && obj.uuid && ('firstName' in obj || 'lastName' in obj)) {
+      return User.fromDTO(obj);
+    }
+    return User.forCreate();
   }
-  return User.forCreate();
-}
 
   /**
    * 转为接口数据（DTO）
    * @returns UserDTO 对象
    */
   toDTO(): UserDTO {
-  return {
-    uuid: this.uuid,
-    firstName: this.firstName ?? null,
-    lastName: this.lastName ?? null,
-    sex: this.sex ?? null,
-    avatar: this.avatar ?? null,
-    bio: this.bio ?? null,
-    // Map 转为普通对象，便于序列化和跨进程传输
-    socialAccounts: Object.fromEntries(this.socialAccounts),
-  };
-}
-
+    return {
+      uuid: this.uuid,
+      firstName: this.firstName ?? null,
+      lastName: this.lastName ?? null,
+      sex: this.sex ?? null,
+      avatar: this.avatar ?? null,
+      bio: this.bio ?? null,
+      // Map 转为普通对象，便于序列化和跨进程传输
+      socialAccounts: Object.fromEntries(this.socialAccounts),
+    };
+  }
 
   /**
- * 从接口数据创建实例
- * @param dto - UserDTO 对象
- * @returns User 实体
- */
-static fromDTO(dto: UserDTO): User {
-  let socialAccounts: Map<string, string>;
-  if (dto.socialAccounts instanceof Map) {
-    socialAccounts = dto.socialAccounts;
-  } else if (Array.isArray(dto.socialAccounts)) {
-    socialAccounts = new Map(dto.socialAccounts);
-  } else if (dto.socialAccounts && typeof dto.socialAccounts === 'object') {
-    socialAccounts = new Map(Object.entries(dto.socialAccounts));
-  } else {
-    socialAccounts = new Map();
+   * 从接口数据创建实例
+   * @param dto - UserDTO 对象
+   * @returns User 实体
+   */
+  static fromDTO(dto: UserDTO): User {
+    let socialAccounts: Map<string, string>;
+    if (dto.socialAccounts instanceof Map) {
+      socialAccounts = dto.socialAccounts;
+    } else if (Array.isArray(dto.socialAccounts)) {
+      socialAccounts = new Map(dto.socialAccounts);
+    } else if (dto.socialAccounts && typeof dto.socialAccounts === 'object') {
+      socialAccounts = new Map(Object.entries(dto.socialAccounts));
+    } else {
+      socialAccounts = new Map();
+    }
+    return new User({
+      uuid: dto.uuid,
+      firstName: dto.firstName ?? null,
+      lastName: dto.lastName ?? null,
+      sex: dto.sex ?? null,
+      avatar: dto.avatar ?? null,
+      bio: dto.bio ?? null,
+      socialAccounts,
+    });
   }
-  return new User({
-    uuid: dto.uuid,
-    firstName: dto.firstName ?? null,
-    lastName: dto.lastName ?? null,
-    sex: dto.sex ?? null,
-    avatar: dto.avatar ?? null,
-    bio: dto.bio ?? null,
-    socialAccounts,
-  });
-}
 
   /**
    * 克隆当前对象（深拷贝）
@@ -231,11 +249,11 @@ static fromDTO(dto: UserDTO): User {
   static forCreate(): User {
     return new User({
       uuid: Entity.generateUUID(),
-      firstName: "",
-      lastName: "",
-      sex: "2",
-      avatar: "",
-      bio: "",
+      firstName: '',
+      lastName: '',
+      sex: '2',
+      avatar: '',
+      bio: '',
       socialAccounts: new Map(),
     });
   }

@@ -36,7 +36,7 @@ Scenario: 展示 Goal 的所有权重快照
     - 调整原因
     - 操作人
   And 按时间倒序排列（最新的在最上面）
-  
+
 Scenario: 支持分页
   Given 权重快照超过 20 条
   When 用户滚动到底部
@@ -51,11 +51,11 @@ Scenario: 按 KeyResult 筛选
   Given 用户想查看特定 KR 的权重历史
   When 选择 KeyResult 筛选器
   Then 应该只显示该 KR 的快照
-  
+
 Scenario: 按触发方式筛选
   When 用户选择"手动调整"筛选
   Then 应该只显示 trigger=manual 的快照
-  
+
 Scenario: 按时间范围筛选
   When 用户选择"最近 7 天"
   Then 应该只显示最近 7 天的快照
@@ -113,11 +113,7 @@ Scenario: 查看快照详情
         </div>
       </template>
 
-      <el-table
-        v-loading="isLoading"
-        :data="snapshots"
-        @row-click="handleRowClick"
-      >
+      <el-table v-loading="isLoading" :data="snapshots" @row-click="handleRowClick">
         <el-table-column prop="snapshotTime" label="时间">
           <template #default="{ row }">
             {{ formatDate(row.snapshotTime) }}
@@ -132,10 +128,7 @@ Scenario: 查看快照详情
 
         <el-table-column label="权重变化">
           <template #default="{ row }">
-            <WeightChange
-              :old-weight="row.oldWeight"
-              :new-weight="row.newWeight"
-            />
+            <WeightChange :old-weight="row.oldWeight" :new-weight="row.newWeight" />
           </template>
         </el-table-column>
 
@@ -176,11 +169,7 @@ const filters = ref({
   timeRange: null,
 });
 
-const { data, isLoading } = useGoalSnapshots(
-  props.goalUuid,
-  page,
-  pageSize
-);
+const { data, isLoading } = useGoalSnapshots(props.goalUuid, page, pageSize);
 
 const snapshots = computed(() => data.value?.snapshots ?? []);
 const total = computed(() => data.value?.total ?? 0);

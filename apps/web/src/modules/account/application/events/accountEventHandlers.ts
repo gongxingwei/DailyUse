@@ -79,8 +79,6 @@ export class AccountEventHandlers {
         return;
       }
 
-      
-
       const accountStore = useAccountStore();
 
       // 1. 设置 accountUuid
@@ -151,21 +149,21 @@ export class AccountEventHandlers {
       accountStore.error = null;
 
       const accountDTO = await AccountApiService.getAccountById(accountUuid);
-        if (!accountDTO) {
-          throw new Error('未找到账户信息');
-        }
-        console.log('✅ [AccountEventHandlers] 成功获取账户信息', {
-          apiResponse: accountDTO, // 显示完整的 API 响应
-          responseType: typeof accountDTO,
-          responseKeys: accountDTO ? Object.keys(accountDTO) : null,
-          accountUuid: accountDTO.uuid,
-          username: accountDTO.username,
-        });
+      if (!accountDTO) {
+        throw new Error('未找到账户信息');
+      }
+      console.log('✅ [AccountEventHandlers] 成功获取账户信息', {
+        apiResponse: accountDTO, // 显示完整的 API 响应
+        responseType: typeof accountDTO,
+        responseKeys: accountDTO ? Object.keys(accountDTO) : null,
+        accountUuid: accountDTO.uuid,
+        username: accountDTO.username,
+      });
 
-        const accountEntity = Account.fromDTO(accountDTO);
+      const accountEntity = Account.fromDTO(accountDTO);
 
-        // 3. 将账户信息保存到 store
-        accountStore.setAccount(accountEntity as Account);
+      // 3. 将账户信息保存到 store
+      accountStore.setAccount(accountEntity as Account);
       console.log('✅ [AccountEventHandlers] 账户信息刷新完成');
     } catch (error) {
       console.error('❌ [AccountEventHandlers] 刷新账户信息失败', error);

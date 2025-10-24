@@ -289,10 +289,10 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateTheme(uuid, theme);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
-      
+
       // 触发主题变更事件
       this.eventBus.send(UserSettingEventType.THEME_CHANGED, { theme });
-      
+
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新主题失败:', error);
@@ -312,10 +312,10 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateLanguage(uuid, language);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
-      
+
       // 触发语言变更事件
       this.eventBus.send(UserSettingEventType.LANGUAGE_CHANGED, { language });
-      
+
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新语言失败:', error);
@@ -336,10 +336,10 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateShortcut(uuid, action, shortcut);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
-      
+
       // 触发快捷键变更事件
       this.eventBus.send(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut });
-      
+
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新快捷键失败:', error);
@@ -359,10 +359,10 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.deleteShortcut(uuid, action);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
-      
+
       // 触发快捷键变更事件（删除）
       this.eventBus.send(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut: null });
-      
+
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 删除快捷键失败:', error);
@@ -404,10 +404,7 @@ export class UserSettingWebApplicationService {
   /**
    * 移除事件监听器
    */
-  public off<T extends UserSettingEventType>(
-    event: T,
-    handler: UserSettingEventHandler<T>,
-  ): void {
+  public off<T extends UserSettingEventType>(event: T, handler: UserSettingEventHandler<T>): void {
     this.eventBus.off(event, handler);
   }
 
@@ -450,9 +447,7 @@ export class UserSettingWebApplicationService {
    * 便捷方法：监听通知设置变更
    */
   public onNotificationsChanged(handler: (enabled: boolean) => void): () => void {
-    return this.on(UserSettingEventType.NOTIFICATIONS_CHANGED, ({ enabled }) =>
-      handler(enabled),
-    );
+    return this.on(UserSettingEventType.NOTIFICATIONS_CHANGED, ({ enabled }) => handler(enabled));
   }
 
   /**

@@ -22,13 +22,27 @@
 
         <template v-if="reminderEnabled">
           <v-col cols="12" md="6">
-            <v-text-field v-model.number="minutesBefore" label="提前提醒时间（分钟）" type="number" variant="outlined" min="1"
-              max="1440" hint="在任务开始前多少分钟提醒" />
+            <v-text-field
+              v-model.number="minutesBefore"
+              label="提前提醒时间（分钟）"
+              type="number"
+              variant="outlined"
+              min="1"
+              max="1440"
+              hint="在任务开始前多少分钟提醒"
+            />
           </v-col>
 
           <v-col cols="12" md="6">
-            <v-select v-model="selectedMethods" label="提醒方式" :items="reminderMethods" variant="outlined" multiple chips
-              closable-chips />
+            <v-select
+              v-model="selectedMethods"
+              label="提醒方式"
+              :items="reminderMethods"
+              variant="outlined"
+              multiple
+              chips
+              closable-chips
+            />
           </v-col>
         </template>
       </v-row>
@@ -64,10 +78,10 @@ const reminderEnabled = computed({
     updateTemplate((template) => {
       (template as any)._reminderConfig = {
         ...template.reminderConfig,
-        enabled: value
+        enabled: value,
       };
     });
-  }
+  },
 });
 
 const minutesBefore = computed({
@@ -76,10 +90,10 @@ const minutesBefore = computed({
     updateTemplate((template) => {
       (template as any)._reminderConfig = {
         ...template.reminderConfig,
-        minutesBefore: value
+        minutesBefore: value,
       };
     });
-  }
+  },
 });
 
 const selectedMethods = computed({
@@ -88,16 +102,16 @@ const selectedMethods = computed({
     updateTemplate((template) => {
       (template as any)._reminderConfig = {
         ...template.reminderConfig,
-        methods: value
+        methods: value,
       };
     });
-  }
+  },
 });
 
 // 提醒方式选项
 const reminderMethods = [
   { title: '通知', value: 'notification' },
-  { title: '声音', value: 'sound' }
+  { title: '声音', value: 'sound' },
 ];
 
 // 简单的验证
@@ -122,12 +136,20 @@ const isValid = computed(() => {
 });
 
 // 监听验证状态变化
-watch(isValid, (newValue) => {
-  emit('update:validation', newValue);
-}, { immediate: true });
+watch(
+  isValid,
+  (newValue) => {
+    emit('update:validation', newValue);
+  },
+  { immediate: true },
+);
 
 // 监听提醒配置变化
-watch(() => props.modelValue.reminderConfig, () => {
-  validateReminderConfig();
-}, { deep: true, immediate: true });
+watch(
+  () => props.modelValue.reminderConfig,
+  () => {
+    validateReminderConfig();
+  },
+  { deep: true, immediate: true },
+);
 </script>

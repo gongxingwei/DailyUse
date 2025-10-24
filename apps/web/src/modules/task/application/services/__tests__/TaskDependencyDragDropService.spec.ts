@@ -1,6 +1,6 @@
 /**
  * filepath: d:\myPrograms\DailyUse\apps\web\src\modules\task\application\services\__tests__\TaskDependencyDragDropService.spec.ts
- * 
+ *
  * Unit tests for TaskDependencyDragDropService
  * Tests drag-drop dependency creation business logic
  */
@@ -98,7 +98,7 @@ describe('TaskDependencyDragDropService', () => {
       const result = await service.createDependencyFromDrop(
         mockSourceTask,
         mockSourceTask,
-        'FINISH_TO_START' as DependencyType
+        'FINISH_TO_START' as DependencyType,
       );
 
       expect(result.success).toBe(false);
@@ -114,7 +114,7 @@ describe('TaskDependencyDragDropService', () => {
       const result = await service.createDependencyFromDrop(
         archivedTask,
         mockTargetTask,
-        'FINISH_TO_START' as DependencyType
+        'FINISH_TO_START' as DependencyType,
       );
 
       expect(result.success).toBe(false);
@@ -123,7 +123,7 @@ describe('TaskDependencyDragDropService', () => {
 
     it('should create dependency with correct predecessor/successor', async () => {
       const { taskDependencyApiClient } = await import('../../../infrastructure/api/taskApiClient');
-      
+
       (taskDependencyApiClient.validateDependency as any).mockResolvedValue({
         isValid: true,
       });
@@ -137,24 +137,21 @@ describe('TaskDependencyDragDropService', () => {
       const result = await service.createDependencyFromDrop(
         mockSourceTask,
         mockTargetTask,
-        'FINISH_TO_START' as DependencyType
+        'FINISH_TO_START' as DependencyType,
       );
 
       expect(result.success).toBe(true);
-      expect(taskDependencyApiClient.createDependency).toHaveBeenCalledWith(
-        mockSourceTask.uuid,
-        {
-          predecessorTaskUuid: mockTargetTask.uuid,  // Target must finish first
-          successorTaskUuid: mockSourceTask.uuid,    // Source depends on target
-          dependencyType: 'FINISH_TO_START',
-          lagDays: 0,
-        }
-      );
+      expect(taskDependencyApiClient.createDependency).toHaveBeenCalledWith(mockSourceTask.uuid, {
+        predecessorTaskUuid: mockTargetTask.uuid, // Target must finish first
+        successorTaskUuid: mockSourceTask.uuid, // Source depends on target
+        dependencyType: 'FINISH_TO_START',
+        lagDays: 0,
+      });
     });
 
     it('should handle validation failure', async () => {
       const { taskDependencyApiClient } = await import('../../../infrastructure/api/taskApiClient');
-      
+
       (taskDependencyApiClient.validateDependency as any).mockResolvedValue({
         isValid: false,
         errors: ['会形成循环依赖'],
@@ -164,7 +161,7 @@ describe('TaskDependencyDragDropService', () => {
       const result = await service.createDependencyFromDrop(
         mockSourceTask,
         mockTargetTask,
-        'FINISH_TO_START' as DependencyType
+        'FINISH_TO_START' as DependencyType,
       );
 
       expect(result.success).toBe(false);
@@ -173,19 +170,19 @@ describe('TaskDependencyDragDropService', () => {
 
     it('should handle API error', async () => {
       const { taskDependencyApiClient } = await import('../../../infrastructure/api/taskApiClient');
-      
+
       (taskDependencyApiClient.validateDependency as any).mockResolvedValue({
         isValid: true,
       });
 
       (taskDependencyApiClient.createDependency as any).mockRejectedValue(
-        new Error('Network error')
+        new Error('Network error'),
       );
 
       const result = await service.createDependencyFromDrop(
         mockSourceTask,
         mockTargetTask,
-        'FINISH_TO_START' as DependencyType
+        'FINISH_TO_START' as DependencyType,
       );
 
       expect(result.success).toBe(false);
@@ -196,7 +193,7 @@ describe('TaskDependencyDragDropService', () => {
   describe('dependency types', () => {
     it('should support FS (Finish-to-Start) dependency', async () => {
       const { taskDependencyApiClient } = await import('../../../infrastructure/api/taskApiClient');
-      
+
       (taskDependencyApiClient.validateDependency as any).mockResolvedValue({ isValid: true });
       (taskDependencyApiClient.createDependency as any).mockResolvedValue({
         uuid: 'dep-uuid',
@@ -206,7 +203,7 @@ describe('TaskDependencyDragDropService', () => {
       const result = await service.createDependencyFromDrop(
         mockSourceTask,
         mockTargetTask,
-        'FINISH_TO_START' as DependencyType
+        'FINISH_TO_START' as DependencyType,
       );
 
       expect(result.success).toBe(true);
@@ -214,13 +211,13 @@ describe('TaskDependencyDragDropService', () => {
         expect.any(String),
         expect.objectContaining({
           dependencyType: 'FINISH_TO_START',
-        })
+        }),
       );
     });
 
     it('should default to FINISH_TO_START when no type specified', async () => {
       const { taskDependencyApiClient } = await import('../../../infrastructure/api/taskApiClient');
-      
+
       (taskDependencyApiClient.validateDependency as any).mockResolvedValue({ isValid: true });
       (taskDependencyApiClient.createDependency as any).mockResolvedValue({
         uuid: 'dep-uuid',
@@ -232,7 +229,7 @@ describe('TaskDependencyDragDropService', () => {
         expect.any(String),
         expect.objectContaining({
           dependencyType: 'FINISH_TO_START',
-        })
+        }),
       );
     });
   });

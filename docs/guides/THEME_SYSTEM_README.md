@@ -7,12 +7,14 @@ DailyUse 应用集成了完整的主题系统，支持浅色模式、深色模�
 ## 功能特性
 
 ### 🎨 主题类型
+
 - **浅色主题（Light）**: 适合日间使用的明亮主题
 - **深色主题（Dark）**: 适合夜间使用的深色主题
 - **自动主题（Auto）**: 根据系统设置自动切换
 - **自定义主题（Custom）**: 用户自定义的个性化主题
 
 ### ⚙️ 配置选项
+
 - **跟随系统主题**: 自动根据操作系统的主题设置进行切换
 - **启用动画过渡**: 主题切换时的平滑动画效果
 - **定时切换**: 根据时间自动在浅色和深色主题间切换
@@ -41,6 +43,7 @@ packages/
 ### 1. 基础主题切换
 
 在应用设置页面（`/settings`）中：
+
 - 选择想要的主题类型
 - 配置主题选项
 - 实时预览效果
@@ -48,6 +51,7 @@ packages/
 ### 2. 主题演示页面
 
 访问 `/settings/themes` 查看：
+
 - 所有可用主题列表
 - 当前主题详细信息
 - 主题配置状态
@@ -59,20 +63,23 @@ packages/
 
 ```vue
 <script setup lang="ts">
-import { useThemeStore } from '@/modules/theme'
+import { useThemeStore } from '@/modules/theme';
 
-const themeStore = useThemeStore()
+const themeStore = useThemeStore();
 
 // 切换到指定主题
-await themeStore.applyTheme('theme-id')
+await themeStore.applyTheme('theme-id');
 
 // 获取当前主题信息
-const currentTheme = themeStore.currentTheme
+const currentTheme = themeStore.currentTheme;
 
 // 监听主题变化
-watch(() => themeStore.activeTheme, (newTheme) => {
-  console.log('主题已切换:', newTheme?.name)
-})
+watch(
+  () => themeStore.activeTheme,
+  (newTheme) => {
+    console.log('主题已切换:', newTheme?.name);
+  },
+);
 </script>
 ```
 
@@ -85,36 +92,41 @@ watch(() => themeStore.activeTheme, (newTheme) => {
 await themeStore.updateConfig({
   followSystemTheme: true,
   enableTransitions: true,
-  autoSwitchTheme: false
-})
+  autoSwitchTheme: false,
+});
 
 // 获取配置状态
-const config = themeStore.config
+const config = themeStore.config;
 ```
 
 ## 文件结构
 
 ### 契约层（Contracts）
+
 - `IThemeDefinition`: 主题定义接口
 - `IThemeConfig`: 主题配置接口
 - `ThemeType`: 主题类型枚举
 - `CreateThemeDto`: 创建主题数据传输对象
 
 ### 领域核心层（Domain Core）
+
 - `ThemeDefinitionCore`: 主题定义抽象类
 - `ThemeConfigCore`: 主题配置抽象类
 
 ### 服务端领域层（Domain Server）
+
 - `ThemeDefinition`: 主题定义实体类
 - `ThemeConfig`: 主题配置实体类
 - `ThemeService`: 主题业务服务类
 
 ### 客户端领域层（Domain Client）
+
 - `useThemeStore`: Pinia 状态管理 store
 - `ThemeClientService`: HTTP 客户端服务
 - `ThemeApplier`: DOM 主题应用工具
 
 ### 表现层（Web）
+
 - `SettingView`: 设置页面（包含主题设置）
 - `ThemeDemo`: 主题演示页面
 - `ThemeSwitcher`: 主题切换组件
@@ -125,26 +137,29 @@ const config = themeStore.config
 ### 添加新主题
 
 1. 在服务端创建新主题：
+
 ```typescript
 const newTheme = new ThemeDefinition({
   name: '新主题',
   type: 'custom',
   colors: {
     primary: '#1976d2',
-    secondary: '#424242'
+    secondary: '#424242',
     // ... 其他颜色定义
-  }
-})
+  },
+});
 ```
 
 2. 在客户端使用：
+
 ```typescript
-await themeStore.createTheme(newThemeData)
+await themeStore.createTheme(newThemeData);
 ```
 
 ### 自定义主题样式
 
 主题系统会自动生成 CSS 变量：
+
 ```css
 :root {
   --theme-primary: #1976d2;
@@ -156,6 +171,7 @@ await themeStore.createTheme(newThemeData)
 ### 扩展主题配置
 
 在 `IThemeConfig` 接口中添加新配置项：
+
 ```typescript
 interface IThemeConfig {
   // 现有配置...

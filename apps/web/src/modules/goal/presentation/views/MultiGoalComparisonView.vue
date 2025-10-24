@@ -9,17 +9,13 @@
     <v-row>
       <v-col cols="12">
         <div class="d-flex align-center mb-4">
-          <v-btn
-            icon="mdi-arrow-left"
-            variant="text"
-            @click="goBack"
-          />
+          <v-btn icon="mdi-arrow-left" variant="text" @click="goBack" />
           <h1 class="text-h4 ml-2">
             <v-icon class="mr-2">mdi-compare</v-icon>
             多目标对比分析
           </h1>
           <v-spacer />
-          
+
           <!-- 导出按钮 -->
           <v-btn
             v-if="selectedGoals.length >= 2"
@@ -36,10 +32,7 @@
     <!-- 目标选择器 -->
     <v-row v-if="selectedGoals.length < 2">
       <v-col cols="12" md="8" offset-md="2" lg="6" offset-lg="3">
-        <multi-goal-selector
-          ref="selectorRef"
-          @compare="handleGoalSelection"
-        />
+        <multi-goal-selector ref="selectorRef" @compare="handleGoalSelection" />
       </v-col>
     </v-row>
 
@@ -50,19 +43,14 @@
           <v-card-title class="d-flex align-center">
             <v-icon class="mr-2">mdi-target-variant</v-icon>
             已选目标 ({{ selectedGoals.length }})
-            
+
             <v-spacer />
-            
-            <v-btn
-              variant="text"
-              size="small"
-              prepend-icon="mdi-pencil"
-              @click="resetSelection"
-            >
+
+            <v-btn variant="text" size="small" prepend-icon="mdi-pencil" @click="resetSelection">
               重新选择
             </v-btn>
           </v-card-title>
-          
+
           <v-card-text>
             <v-chip
               v-for="goal in selectedGoals"
@@ -82,29 +70,18 @@
 
     <!-- 对比视图网格 -->
     <v-row v-if="selectedGoals.length >= 2" class="mt-4">
-      <v-col
-        v-for="goal in selectedGoals"
-        :key="goal.uuid"
-        :cols="getColSize()"
-      >
+      <v-col v-for="goal in selectedGoals" :key="goal.uuid" :cols="getColSize()">
         <v-card class="goal-card" elevation="2">
           <v-card-title class="d-flex align-center">
-            <v-chip
-              size="small"
-              :color="goal.color || 'primary'"
-              class="mr-2"
-            >
+            <v-chip size="small" :color="goal.color || 'primary'" class="mr-2">
               <v-icon start>mdi-target</v-icon>
             </v-chip>
             <span class="text-h6">{{ goal.title }}</span>
-            
+
             <v-spacer />
-            
+
             <!-- 目标状态 -->
-            <v-chip
-              size="small"
-              :color="getStatusColor(goal)"
-            >
+            <v-chip size="small" :color="getStatusColor(goal)">
               {{ getStatusText(goal) }}
             </v-chip>
           </v-card-title>
@@ -123,17 +100,13 @@
               <v-col cols="6">
                 <v-card variant="outlined" class="pa-2">
                   <div class="text-caption text-grey">进度</div>
-                  <div class="text-h6 text-primary">
-                    {{ goal.progressPercentage || 0 }}%
-                  </div>
+                  <div class="text-h6 text-primary">{{ goal.progressPercentage || 0 }}%</div>
                 </v-card>
               </v-col>
               <v-col cols="6">
                 <v-card variant="outlined" class="pa-2">
                   <div class="text-caption text-grey">关键结果</div>
-                  <div class="text-h6 text-success">
-                    {{ goal.keyResults?.length || 0 }} 个
-                  </div>
+                  <div class="text-h6 text-success">{{ goal.keyResults?.length || 0 }} 个</div>
                 </v-card>
               </v-col>
             </v-row>
@@ -163,15 +136,9 @@
     <!-- 空状态 -->
     <v-row v-if="selectedGoals.length === 0">
       <v-col cols="12" class="text-center pa-12">
-        <v-icon size="120" color="grey-lighten-2">
-          mdi-compare
-        </v-icon>
-        <h2 class="text-h5 text-grey mt-4">
-          选择目标开始对比
-        </h2>
-        <p class="text-body-1 text-grey mt-2">
-          请使用上方的选择器选择 2-4 个目标进行对比分析
-        </p>
+        <v-icon size="120" color="grey-lighten-2"> mdi-compare </v-icon>
+        <h2 class="text-h5 text-grey mt-4">选择目标开始对比</h2>
+        <p class="text-body-1 text-grey mt-2">请使用上方的选择器选择 2-4 个目标进行对比分析</p>
       </v-col>
     </v-row>
 
@@ -210,9 +177,7 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="exportDialog = false">
-            取消
-          </v-btn>
+          <v-btn variant="text" @click="exportDialog = false"> 取消 </v-btn>
           <v-btn color="primary" variant="elevated" @click="confirmExport">
             <v-icon start>mdi-download</v-icon>
             导出
@@ -251,7 +216,7 @@ const handleGoalSelection = (goals: any[]) => {
 };
 
 const removeGoal = (goalUuid: string) => {
-  const index = selectedGoals.value.findIndex(g => g.uuid === goalUuid);
+  const index = selectedGoals.value.findIndex((g) => g.uuid === goalUuid);
   if (index !== -1) {
     selectedGoals.value.splice(index, 1);
     dagRefs.value.delete(goalUuid);
@@ -282,7 +247,7 @@ const confirmExport = async () => {
   try {
     // 使用 html2canvas 捕获整个对比视图
     const { default: html2canvas } = await import('html2canvas');
-    
+
     // 获取对比视图容器
     const comparisonContainer = document.querySelector('.multi-goal-comparison-view');
     if (!comparisonContainer) {
@@ -295,7 +260,7 @@ const confirmExport = async () => {
     exportDialog.value = false;
 
     // 等待对话框关闭动画完成
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // 生成截图
     const canvas = await html2canvas(comparisonContainer as HTMLElement, {
@@ -315,7 +280,7 @@ const confirmExport = async () => {
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
-        
+
         console.log('对比视图已导出');
       }
     }, 'image/png');
@@ -326,7 +291,10 @@ const confirmExport = async () => {
 };
 
 // 视口同步处理
-const handleViewportChange = (goalUuid: string, viewport: { zoom: number; center: [number, number] }) => {
+const handleViewportChange = (
+  goalUuid: string,
+  viewport: { zoom: number; center: [number, number] },
+) => {
   if (isUpdatingViewport.value) return;
 
   isUpdatingViewport.value = true;
@@ -355,27 +323,27 @@ const registerDagRef = (goalUuid: string, ref: any) => {
 // UI Helpers
 const getColSize = (): number => {
   const count = selectedGoals.value.length;
-  if (count === 2) return 6;  // 2列
-  if (count === 3) return 4;  // 3列
-  return 3;                    // 4列
+  if (count === 2) return 6; // 2列
+  if (count === 3) return 4; // 3列
+  return 3; // 4列
 };
 
 const getStatusColor = (goal: any): string => {
   const colorMap: Record<string, string> = {
-    'NOT_STARTED': 'grey',
-    'IN_PROGRESS': 'primary',
-    'COMPLETED': 'success',
-    'ARCHIVED': 'warning',
+    NOT_STARTED: 'grey',
+    IN_PROGRESS: 'primary',
+    COMPLETED: 'success',
+    ARCHIVED: 'warning',
   };
   return colorMap[goal.status] || 'default';
 };
 
 const getStatusText = (goal: any): string => {
   const textMap: Record<string, string> = {
-    'NOT_STARTED': '未开始',
-    'IN_PROGRESS': '进行中',
-    'COMPLETED': '已完成',
-    'ARCHIVED': '已归档',
+    NOT_STARTED: '未开始',
+    IN_PROGRESS: '进行中',
+    COMPLETED: '已完成',
+    ARCHIVED: '已归档',
   };
   return textMap[goal.status] || goal.status;
 };

@@ -1,4 +1,4 @@
-import type { Database } from "better-sqlite3";
+import type { Database } from 'better-sqlite3';
 
 /**
  * 认证模块数据表管理

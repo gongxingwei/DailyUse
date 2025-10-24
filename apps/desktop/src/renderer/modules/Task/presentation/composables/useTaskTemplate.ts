@@ -1,6 +1,6 @@
-import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
-import { useNotification } from "./useNotification";
-import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
+import { getTaskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
+import { useNotification } from './useNotification';
+import type { TaskTemplate } from '../../domain/aggregates/taskTemplate';
 
 /**
  * 任务模板管理 Composable
@@ -8,7 +8,7 @@ import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
  */
 export function useTaskTemplate() {
   const { showSuccess, showError } = useNotification();
-  
+
   // 获取任务服务实例
   const getTaskService = () => getTaskDomainApplicationService();
 
@@ -19,9 +19,7 @@ export function useTaskTemplate() {
       return templates;
     } catch (error) {
       console.error('获取任务模板失败:', error);
-      showError(
-        `获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
+      showError(`获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -42,9 +40,7 @@ export function useTaskTemplate() {
       return template;
     } catch (error) {
       console.error('获取任务模板失败:', error);
-      showError(
-        `获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
+      showError(`获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return null;
     }
   };
@@ -58,7 +54,7 @@ export function useTaskTemplate() {
 
     try {
       const result = await getTaskService().createTaskTemplate(templateData);
-      
+
       if (result.success) {
         showSuccess(`任务模板 "${templateData.title}" 创建成功`);
         return { success: true, data: result.data as TaskTemplate };
@@ -83,7 +79,7 @@ export function useTaskTemplate() {
 
     try {
       const result = await getTaskService().updateTaskTemplate(templateData);
-      
+
       if (result.success) {
         showSuccess(`任务模板 "${templateData.title}" 更新成功`);
         return { success: true, data: result.data as TaskTemplate };
@@ -108,7 +104,7 @@ export function useTaskTemplate() {
 
     try {
       const result = await getTaskService().deleteTaskTemplate(template.uuid);
-      
+
       if (result.success) {
         showSuccess(`任务模板 "${template.title}" 删除成功`);
         return { success: true };
@@ -128,7 +124,7 @@ export function useTaskTemplate() {
   const createFromMetaTemplate = async (
     metaTemplateId: string,
     title: string,
-    description?: string
+    description?: string,
   ) => {
     if (!metaTemplateId || !title) {
       showError('元模板 ID 和标题不能为空');
@@ -139,7 +135,7 @@ export function useTaskTemplate() {
       const newTaskTemplate = await getTaskService().createTaskTemplateFromMetaTemplate(
         metaTemplateId,
         title,
-        { description }
+        { description },
       );
 
       showSuccess(`从元模板创建任务模板 "${title}" 成功`);
@@ -158,6 +154,6 @@ export function useTaskTemplate() {
     createTaskTemplate,
     updateTaskTemplate,
     deleteTaskTemplate,
-    createFromMetaTemplate
+    createFromMetaTemplate,
   };
 }

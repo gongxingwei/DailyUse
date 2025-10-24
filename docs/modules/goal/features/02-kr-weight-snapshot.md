@@ -15,6 +15,7 @@
 ### 背景与痛点
 
 在目标管理中，用户经常需要调整关键结果（Key Result）的权重，但当前系统没有记录权重变更历史，导致：
+
 - ❌ 无法追溯权重调整的原因和时机
 - ❌ 难以分析权重调整对目标进度的影响
 - ❌ 复盘时缺少权重变化的历史数据
@@ -31,6 +32,7 @@
 **一句话价值**: 自动记录 KR 权重变更历史，支持历史查看和对比分析
 
 **核心收益**:
+
 - ✅ 提供完整的权重调整历史，便于复盘
 - ✅ 支持权重变化趋势分析
 - ✅ 增强目标管理的透明度和可追溯性
@@ -46,6 +48,7 @@
 用户调整某个 KR 的权重时，系统自动创建权重快照，记录调整前的状态。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 系统在我调整 KR 权重时自动创建快照
@@ -53,6 +56,7 @@ So that 我可以追溯每次调整的历史
 ```
 
 **操作流程**:
+
 1. 用户打开目标详情页
 2. 点击某个 KR 的"编辑"按钮
 3. 修改 `weight` 字段（如从 30% 改为 40%）
@@ -61,6 +65,7 @@ So that 我可以追溯每次调整的历史
 6. 系统显示"权重已更新，历史快照已保存"
 
 **预期结果**:
+
 - 权重快照表新增一条记录
 - 快照包含：`goalUuid`, `keyResultUuid`, `oldWeight`, `newWeight`, `snapshotTime`, `trigger: 'manual'`
 - 用户可在"权重历史"标签页查看
@@ -73,6 +78,7 @@ So that 我可以追溯每次调整的历史
 用户查看某个 KR 的权重调整历史，了解权重如何随时间变化。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 查看某个 KR 的权重变化历史
@@ -80,17 +86,20 @@ So that 我可以理解权重调整的演进过程
 ```
 
 **操作流程**:
+
 1. 用户打开目标详情页
 2. 点击某个 KR 旁的"历史"图标
 3. 系统显示权重快照列表（按时间倒序）
 4. 每条快照显示：时间、旧权重 → 新权重、触发原因
 
 **预期结果**:
+
 - 显示时间轴式的权重变化记录
 - 支持折线图展示权重趋势（可选）
 - 点击某条快照可查看详细信息
 
 **UI 示例**:
+
 ```
 权重变化历史
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -107,6 +116,7 @@ So that 我可以理解权重调整的演进过程
 用户对比目标在不同时间点的 KR 权重分布，分析权重调整策略的变化。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 对比两个时间点的 KR 权重分布
@@ -114,12 +124,14 @@ So that 我可以分析权重调整策略是否合理
 ```
 
 **操作流程**:
+
 1. 用户打开目标的"权重历史"页面
 2. 选择两个时间点（如"目标创建时" vs "当前"）
 3. 系统生成对比视图，显示每个 KR 的权重变化
 4. 高亮显示权重增加/减少的 KR
 
 **预期结果**:
+
 - 并排显示两个时间点的权重分布
 - 饼图/柱状图对比（可选）
 - 计算权重变化幅度（如 KR1: +10%, KR2: -5%）
@@ -132,6 +144,7 @@ So that 我可以分析权重调整策略是否合理
 用户发现当前权重分配不合理，希望恢复到某个历史状态。
 
 **操作流程**:
+
 1. 用户查看权重历史
 2. 选择某个历史快照
 3. 点击"恢复到此状态"
@@ -139,6 +152,7 @@ So that 我可以分析权重调整策略是否合理
 5. 创建新的快照记录此次恢复操作
 
 **预期结果**:
+
 - 所有 KR 权重恢复到指定时间点
 - 生成新快照，trigger 类型为 `'restore'`
 
@@ -161,20 +175,20 @@ So that 我可以分析权重调整策略是否合理
 export interface KeyResultWeightSnapshotServerDTO {
   // 基础字段
   readonly uuid: string;
-  readonly goalUuid: string;           // 所属目标
-  readonly keyResultUuid: string;       // 所属 KR
-  
+  readonly goalUuid: string; // 所属目标
+  readonly keyResultUuid: string; // 所属 KR
+
   // 快照数据
-  readonly oldWeight: number;           // 调整前权重 (0-100)
-  readonly newWeight: number;           // 调整后权重 (0-100)
-  readonly weightDelta: number;         // 权重变化量 (newWeight - oldWeight)
-  
+  readonly oldWeight: number; // 调整前权重 (0-100)
+  readonly newWeight: number; // 调整后权重 (0-100)
+  readonly weightDelta: number; // 权重变化量 (newWeight - oldWeight)
+
   // 元数据
-  readonly snapshotTime: number;        // 快照创建时间 (timestamp)
-  readonly trigger: SnapshotTrigger;    // 触发方式
-  readonly reason: string | null;       // 调整原因（用户可选填）
-  readonly operatorUuid: string;        // 操作人 UUID
-  
+  readonly snapshotTime: number; // 快照创建时间 (timestamp)
+  readonly trigger: SnapshotTrigger; // 触发方式
+  readonly reason: string | null; // 调整原因（用户可选填）
+  readonly operatorUuid: string; // 操作人 UUID
+
   // 审计字段
   readonly createdAt: number;
 }
@@ -183,10 +197,10 @@ export interface KeyResultWeightSnapshotServerDTO {
  * 快照触发方式
  */
 export enum SnapshotTrigger {
-  MANUAL = 'manual',       // 手动调整
-  AUTO = 'auto',           // 自动调整（未来功能）
-  RESTORE = 'restore',     // 恢复操作
-  IMPORT = 'import',       // 导入数据
+  MANUAL = 'manual', // 手动调整
+  AUTO = 'auto', // 自动调整（未来功能）
+  RESTORE = 'restore', // 恢复操作
+  IMPORT = 'import', // 导入数据
 }
 ```
 
@@ -197,7 +211,7 @@ export enum SnapshotTrigger {
 ```typescript
 export interface GoalServerDTO {
   // ...existing fields...
-  
+
   // 新增字段
   readonly weightSnapshots?: KeyResultWeightSnapshotServerDTO[]; // 权重快照历史
 }
@@ -240,6 +254,7 @@ stateDiagram-v2
 ```
 
 **状态说明**:
+
 - 快照创建是瞬时操作，没有中间状态
 - 快照创建后不可修改，只能查询
 - 如需修正，创建新快照覆盖
@@ -251,12 +266,14 @@ stateDiagram-v2
 ### MVP: 核心快照功能（0.5-1 周）
 
 **范围**:
+
 - ✅ KR 权重调整时自动创建快照
 - ✅ 快照列表查看（按时间倒序）
 - ✅ 快照详情查看（旧权重 → 新权重）
 - ✅ 基础 UI（表格形式）
 
 **技术要点**:
+
 - Contracts: 定义 `KeyResultWeightSnapshotServerDTO`
 - Domain: Goal 聚合根添加 `recordWeightSnapshot()` 方法
 - Application: `UpdateKeyResultWeightService` 调用快照记录
@@ -265,6 +282,7 @@ stateDiagram-v2
 - UI: 简单的快照列表组件
 
 **验收标准**:
+
 ```gherkin
 Given 目标有 3 个 KR，权重分别为 30%, 40%, 30%
 When 用户将 KR1 的权重从 30% 改为 50%
@@ -278,17 +296,20 @@ And 用户可在"权重历史"查看此快照
 ### MMP: 可视化与对比（+1-2 周）
 
 **在 MVP 基础上新增**:
+
 - ✅ 权重变化折线图
 - ✅ 两个时间点的权重分布对比
 - ✅ 饼图/柱状图展示权重分布
 - ✅ 快照筛选（按时间范围、触发方式）
 
 **技术要点**:
+
 - 前端图表库（如 ECharts 或 Chart.js）
 - 对比算法（计算权重差异）
 - 高级筛选 UI
 
 **验收标准**:
+
 ```gherkin
 Given 目标有 5 个历史权重快照
 When 用户选择"目标创建时" vs "当前"进行对比
@@ -302,6 +323,7 @@ And 显示权重变化幅度（如 KR1: +15%, KR2: -10%）
 ### Full Release: 智能分析与推荐（+2-4 周）
 
 **在 MMP 基础上新增**:
+
 - ✅ 恢复到历史权重状态
 - ✅ 权重调整趋势分析（识别频繁调整的 KR）
 - ✅ 智能推荐权重分配（基于历史数据）
@@ -309,11 +331,13 @@ And 显示权重变化幅度（如 KR1: +15%, KR2: -10%）
 - ✅ 导出权重变化报告（CSV/PDF）
 
 **技术要点**:
+
 - 机器学习算法推荐权重
 - 权重恢复功能（事务处理）
 - 报告生成服务
 
 **验收标准**:
+
 ```gherkin
 Given 某个 KR 在过去 30 天内被调整了 5 次
 When 用户查看权重历史
@@ -525,6 +549,7 @@ Feature: KR 权重快照
 | 快照查询响应时间 | P95 <200ms | API 响应时间监控 |
 
 **定性指标**:
+
 - 用户反馈"权重调整更透明"
 - 复盘时能够追溯权重变化原因
 - 减少权重调整失误（可回滚）
@@ -534,12 +559,14 @@ Feature: KR 权重快照
 ### 数据分析
 
 **关键问题**:
+
 1. 哪些 KR 的权重调整最频繁？
 2. 权重调整是否与目标进度相关？
 3. 用户平均多久调整一次权重？
 4. 恢复功能的使用场景是什么？
 
 **分析方法**:
+
 - 按 `keyResultUuid` 聚合快照数量（识别高频调整）
 - 计算权重调整与进度变化的相关性
 - 分析快照创建的时间间隔分布
@@ -560,11 +587,11 @@ export interface KeyResultWeightSnapshotServerDTO {
   readonly oldWeight: number;
   readonly newWeight: number;
   readonly weightDelta: number;
-  readonly snapshotTime: number;  // ✅ timestamp
+  readonly snapshotTime: number; // ✅ timestamp
   readonly trigger: 'manual' | 'auto' | 'restore' | 'import';
   readonly reason: string | null;
   readonly operatorUuid: string;
-  readonly createdAt: number;      // ✅ timestamp
+  readonly createdAt: number; // ✅ timestamp
 }
 ```
 
@@ -615,12 +642,12 @@ Response: { success: boolean, affectedKRCount: number }
 
 ## 8. 风险与缓解
 
-| 风险 | 可能性 | 影响 | 缓解措施 |
-|------|-------|------|---------|
-| 快照数据量过大 | 中 | 中 | 添加索引优化 + 分页加载 + 归档策略 |
-| 权重恢复失败 | 低 | 高 | 数据库事务 + 前置校验 + 回滚机制 |
-| 并发创建快照冲突 | 低 | 中 | snapshotTime 去重 + 批次时间戳共享 |
-| 快照与 KR 不一致 | 低 | 高 | 外键约束 + 级联删除 + 定期校验 |
+| 风险             | 可能性 | 影响 | 缓解措施                           |
+| ---------------- | ------ | ---- | ---------------------------------- |
+| 快照数据量过大   | 中     | 中   | 添加索引优化 + 分页加载 + 归档策略 |
+| 权重恢复失败     | 低     | 高   | 数据库事务 + 前置校验 + 回滚机制   |
+| 并发创建快照冲突 | 低     | 中   | snapshotTime 去重 + 批次时间戳共享 |
+| 快照与 KR 不一致 | 低     | 高   | 外键约束 + 级联删除 + 定期校验     |
 
 ---
 
@@ -638,7 +665,8 @@ Response: { success: boolean, affectedKRCount: number }
 ---
 
 **文档维护**:
+
 - 创建: 2025-10-21
-- 创建者: PO Agent  
+- 创建者: PO Agent
 - 版本: 2.0 (详细版)
 - 下次更新: Sprint Planning 前

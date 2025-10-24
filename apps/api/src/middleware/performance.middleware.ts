@@ -20,10 +20,10 @@ class MetricsStore {
     if (!this.metrics.has(endpoint)) {
       this.metrics.set(endpoint, []);
     }
-    
+
     const values = this.metrics.get(endpoint)!;
     values.push(duration);
-    
+
     // Keep only last MAX_SAMPLES
     if (values.length > this.MAX_SAMPLES) {
       values.shift();
@@ -56,11 +56,11 @@ class MetricsStore {
 
   getAllStats(): Record<string, ReturnType<typeof this.getStats>> {
     const result: Record<string, ReturnType<typeof this.getStats>> = {};
-    
+
     for (const [endpoint, _] of this.metrics.entries()) {
       result[endpoint] = this.getStats(endpoint);
     }
-    
+
     return result;
   }
 
@@ -83,17 +83,17 @@ export function performanceMiddleware(req: Request, res: Response, next: NextFun
   const originalJson = res.json.bind(res);
   res.json = function (body: any) {
     const duration = Date.now() - start;
-    
+
     // Log performance
     const logLevel = duration > 300 ? 'warn' : 'debug';
     logger[logLevel](`[PERF] ${endpoint} - ${duration}ms - ${res.statusCode}`);
-    
+
     // Store metrics
     metricsStore.recordRequest(endpoint, duration);
-    
+
     // Add performance header
     res.setHeader('X-Response-Time', `${duration}ms`);
-    
+
     return originalJson(body);
   };
 
@@ -102,11 +102,11 @@ export function performanceMiddleware(req: Request, res: Response, next: NextFun
     if (!res.headersSent || res.getHeader('X-Response-Time')) {
       return; // Already logged via json override
     }
-    
+
     const duration = Date.now() - start;
     const logLevel = duration > 300 ? 'warn' : 'debug';
     logger[logLevel](`[PERF] ${endpoint} - ${duration}ms - ${res.statusCode}`);
-    
+
     metricsStore.recordRequest(endpoint, duration);
     res.setHeader('X-Response-Time', `${duration}ms`);
   });

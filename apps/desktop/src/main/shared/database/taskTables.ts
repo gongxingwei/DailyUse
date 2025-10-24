@@ -1,4 +1,4 @@
-import type { Database } from "better-sqlite3";
+import type { Database } from 'better-sqlite3';
 
 /**
  * 任务模块数据表管理
@@ -193,5 +193,4 @@ export class TaskTables {
       CREATE INDEX IF NOT EXISTS idx_task_dependencies_dependency_type ON task_dependencies(dependency_type);
     `);
   }
-
 }

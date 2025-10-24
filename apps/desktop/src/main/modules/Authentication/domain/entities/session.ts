@@ -1,6 +1,6 @@
-import { Entity } from "@dailyuse/utils";
-import { ISession, ISessionDTO } from "@common/modules/authentication/types/authentication";
-import { isValid } from "date-fns";
+import { Entity } from '@dailyuse/utils';
+import { ISession, ISessionDTO } from '@common/modules/authentication/types/authentication';
+import { isValid } from 'date-fns';
 
 /**
  * 会话实体
@@ -20,13 +20,13 @@ export class Session extends Entity implements ISession {
   private _terminationReason?: string;
 
   constructor(params: {
-    uuid?: string,
-    accountUuid: string,
-    token: string,
-    deviceInfo: string,
-    ipAddress: string,
-    userAgent?: string,
-    sessionDurationInMinutes?: number // 默认24小时
+    uuid?: string;
+    accountUuid: string;
+    token: string;
+    deviceInfo: string;
+    ipAddress: string;
+    userAgent?: string;
+    sessionDurationInMinutes?: number; // 默认24小时
   }) {
     super(params.uuid || Session.generateUUID());
     this._accountUuid = params.accountUuid;
@@ -157,7 +157,7 @@ export class Session extends Entity implements ISession {
     const now = new Date();
     const timeToExpiry = this._expiresAt.getTime() - now.getTime();
     const thresholdMilliseconds = thresholdMinutes * 60 * 1000;
-    
+
     return timeToExpiry < thresholdMilliseconds && timeToExpiry > 0;
   }
 
@@ -213,7 +213,7 @@ export class Session extends Entity implements ISession {
       expiresAt: this._expiresAt.getTime(),
       isActive: this._isActive,
       terminatedAt: this._terminatedAt?.getTime(),
-      terminationReason: this._terminationReason
+      terminationReason: this._terminationReason,
     };
   }
 
@@ -225,13 +225,13 @@ export class Session extends Entity implements ISession {
       deviceInfo: dto.deviceInfo,
       ipAddress: dto.ipAddress,
       userAgent: dto.userAgent,
-      sessionDurationInMinutes: 60 * 24 // 默认24小时
+      sessionDurationInMinutes: 60 * 24, // 默认24小时
     });
     session.createdAt = isValid(dto.createdAt) ? new Date(dto.createdAt) : new Date();
     session.lastActiveAt = isValid(dto.lastActiveAt) ? new Date(dto.lastActiveAt) : new Date();
     session.expiresAt = isValid(dto.expiresAt) ? new Date(dto.expiresAt) : new Date();
-    session.terminatedAt = dto.terminatedAt && isValid(dto.terminatedAt) ? new Date(dto.terminatedAt) : undefined;
+    session.terminatedAt =
+      dto.terminatedAt && isValid(dto.terminatedAt) ? new Date(dto.terminatedAt) : undefined;
     return session;
   }
-
 }

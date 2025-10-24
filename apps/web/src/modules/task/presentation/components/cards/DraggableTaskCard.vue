@@ -1,11 +1,5 @@
-/**
- * Draggable Task Card Wrapper
- * 
- * Wraps TaskTemplateCard with drag-and-drop functionality.
- * Provides visual feedback and dependency creation via drag-drop.
- * 
- * @module DraggableTaskCard
- */
+/** * Draggable Task Card Wrapper * * Wraps TaskTemplateCard with drag-and-drop functionality. *
+Provides visual feedback and dependency creation via drag-drop. * * @module DraggableTaskCard */
 <template>
   <div
     data-testid="draggable-task-card"
@@ -17,7 +11,8 @@
       'draggable-task-card': true,
       'draggable-task-card--dragging': isDragging && draggedTask?.uuid === template.uuid,
       'draggable-task-card--drag-over': isValidDrop && dropTarget?.uuid === template.uuid,
-      'draggable-task-card--invalid-drop': !isValidDrop && dropTarget?.uuid === template.uuid && isDragging,
+      'draggable-task-card--invalid-drop':
+        !isValidDrop && dropTarget?.uuid === template.uuid && isDragging,
     }"
     :draggable="enableDrag"
     @dragstart="onDragStart"
@@ -30,25 +25,29 @@
     <div v-if="enableDrag && !isDragging" class="drag-handle" data-testid="drag-handle">
       <v-icon size="small" color="grey">mdi-drag-vertical</v-icon>
     </div>
-    
+
     <!-- Drop Zone Indicator (when valid drop target) -->
-    <div v-if="isValidDrop && dropTarget?.uuid === template.uuid" class="drop-zone-indicator" data-testid="drop-zone-valid">
+    <div
+      v-if="isValidDrop && dropTarget?.uuid === template.uuid"
+      class="drop-zone-indicator"
+      data-testid="drop-zone-valid"
+    >
       <v-icon color="success" size="large">mdi-plus-circle</v-icon>
       <span class="drop-zone-text">松开创建依赖关系</span>
     </div>
-    
+
     <!-- Invalid Drop Indicator -->
-    <div v-else-if="!isValidDrop && dropTarget?.uuid === template.uuid && isDragging" class="drop-zone-indicator invalid" data-testid="drop-zone-invalid">
+    <div
+      v-else-if="!isValidDrop && dropTarget?.uuid === template.uuid && isDragging"
+      class="drop-zone-indicator invalid"
+      data-testid="drop-zone-invalid"
+    >
       <v-icon color="error" size="large">mdi-close-circle</v-icon>
       <span class="drop-zone-text">无法创建依赖</span>
     </div>
-    
+
     <!-- Original Task Card -->
-    <TaskTemplateCard 
-      :template="template" 
-      @edit="handleEdit" 
-      @delete="handleDelete" 
-    />
+    <TaskTemplateCard :template="template" @edit="handleEdit" @delete="handleDelete" />
   </div>
 </template>
 
@@ -79,7 +78,8 @@ const emit = defineEmits<{
 }>();
 
 // Event handlers for TaskTemplateCard
-const handleEdit = (templateUuid: string) => { // Changed: accepts string, not DTO
+const handleEdit = (templateUuid: string) => {
+  // Changed: accepts string, not DTO
   emit('edit', templateUuid);
 };
 
@@ -111,9 +111,9 @@ const {
       source: source.title,
       target: target.title,
     });
-    
+
     const result = await dragDropService.createDependencyFromDrop(source, target);
-    
+
     if (result.success) {
       // Emit event so parent can refresh DAG
       emit('dependencyCreated', source.uuid, target.uuid);
@@ -124,17 +124,20 @@ const {
 // Drag event handlers
 const onDragStart = (event: DragEvent) => {
   if (!props.enableDrag) return;
-  
+
   handleDragStart(props.template);
-  
+
   // Set drag data for native drag-and-drop
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'copy';
-    event.dataTransfer.setData('application/json', JSON.stringify({
-      type: 'task-template',
-      uuid: props.template.uuid,
-      title: props.template.title,
-    }));
+    event.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({
+        type: 'task-template',
+        uuid: props.template.uuid,
+        title: props.template.title,
+      }),
+    );
   }
 };
 
@@ -145,9 +148,9 @@ const onDragEnd = (event: DragEvent) => {
 const onDragOver = (event: DragEvent) => {
   if (!isDragging.value) return;
   if (draggedTask.value?.uuid === props.template.uuid) return; // Can't drop on self
-  
+
   handleDragOver(props.template);
-  
+
   // Set drop effect based on validation
   if (event.dataTransfer) {
     event.dataTransfer.dropEffect = isValidDrop.value ? 'copy' : 'none';
@@ -162,7 +165,7 @@ const onDragLeave = (event: DragEvent) => {
 const onDrop = async (event: DragEvent) => {
   if (!isDragging.value || !draggedTask.value) return;
   if (draggedTask.value.uuid === props.template.uuid) return;
-  
+
   await handleDrop(props.template);
 };
 </script>
@@ -258,7 +261,8 @@ const onDrop = async (event: DragEvent) => {
 
 /* Animation */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

@@ -21,7 +21,7 @@
           <span>{{ t('settings.general.title') }}</span>
         </div>
       </v-card-title>
-      
+
       <v-card-text class="pa-6">
         <v-row>
           <v-col cols="12" md="6">
@@ -30,16 +30,32 @@
                 <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-palette</v-icon>
                 <span class="font-weight-medium">{{ t('settings.general.theme.label') }}</span>
               </div>
-              <v-select 
-                v-model="themeMode" 
+              <v-select
+                v-model="themeMode"
                 :items="[
-                  { title: t('settings.general.theme.system'), value: 'system', icon: 'mdi-monitor' },
-                  { title: t('settings.general.theme.dark'), value: 'dark', icon: 'mdi-weather-night' },
-                  { title: t('settings.general.theme.light'), value: 'light', icon: 'mdi-weather-sunny' },
-                  { title: t('settings.general.theme.blueGreen'), value: 'blueGreen', icon: 'mdi-water' }
-                ]" 
-                item-title="title" 
-                item-value="value" 
+                  {
+                    title: t('settings.general.theme.system'),
+                    value: 'system',
+                    icon: 'mdi-monitor',
+                  },
+                  {
+                    title: t('settings.general.theme.dark'),
+                    value: 'dark',
+                    icon: 'mdi-weather-night',
+                  },
+                  {
+                    title: t('settings.general.theme.light'),
+                    value: 'light',
+                    icon: 'mdi-weather-sunny',
+                  },
+                  {
+                    title: t('settings.general.theme.blueGreen'),
+                    value: 'blueGreen',
+                    icon: 'mdi-water',
+                  },
+                ]"
+                item-title="title"
+                item-value="value"
                 variant="outlined"
                 density="comfortable"
                 hide-details
@@ -60,21 +76,25 @@
               </v-select>
             </div>
           </v-col>
-          
+
           <v-col cols="12" md="6">
             <div class="setting-item">
               <div class="setting-label mb-2">
                 <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-translate</v-icon>
                 <span class="font-weight-medium">{{ t('settings.general.language.label') }}</span>
               </div>
-              <v-select 
-                v-model="language" 
+              <v-select
+                v-model="language"
                 :items="[
                   { title: t('settings.general.language.zhCN'), value: 'zh-CN', icon: 'mdi-flag' },
-                  { title: t('settings.general.language.enUS'), value: 'en-US', icon: 'mdi-flag-outline' }
-                ]" 
-                item-title="title" 
-                item-value="value" 
+                  {
+                    title: t('settings.general.language.enUS'),
+                    value: 'en-US',
+                    icon: 'mdi-flag-outline',
+                  },
+                ]"
+                item-title="title"
+                item-value="value"
                 variant="outlined"
                 density="comfortable"
                 hide-details
@@ -89,7 +109,7 @@
               </v-select>
             </div>
           </v-col>
-          
+
           <v-col cols="12" md="6">
             <div class="setting-item">
               <div class="setting-label mb-2">
@@ -105,7 +125,11 @@
                 :false-value="false"
               >
                 <template #label>
-                  <span class="text-body-2">{{ autoLaunch ? t('settings.general.autoLaunch.on') : t('settings.general.autoLaunch.off') }}</span>
+                  <span class="text-body-2">{{
+                    autoLaunch
+                      ? t('settings.general.autoLaunch.on')
+                      : t('settings.general.autoLaunch.off')
+                  }}</span>
                 </template>
               </v-switch>
             </div>
@@ -122,7 +146,7 @@
           <span>{{ t('settings.editor.title') }}</span>
         </div>
       </v-card-title>
-      
+
       <v-card-text class="pa-6">
         <v-row>
           <!-- 字体大小 -->
@@ -132,16 +156,14 @@
                 <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-format-size</v-icon>
                 <span class="font-weight-medium">{{ t('settings.editor.fontSize') }}</span>
               </div>
-              <v-select 
-                v-model="editorSettings.fontSize" 
+              <v-select
+                v-model="editorSettings.fontSize"
                 :items="[12, 14, 16, 18, 20]"
                 variant="outlined"
                 density="comfortable"
                 hide-details
               >
-                <template #selection="{ item }">
-                  {{ item.value }}px
-                </template>
+                <template #selection="{ item }"> {{ item.value }}px </template>
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
                     <v-list-item-title>{{ item.value }}px</v-list-item-title>
@@ -158,16 +180,25 @@
                 <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-format-font</v-icon>
                 <span class="font-weight-medium">{{ t('settings.editor.fontFamily.label') }}</span>
               </div>
-              <v-select 
-                v-model="editorSettings.fontFamily" 
+              <v-select
+                v-model="editorSettings.fontFamily"
                 :items="[
                   { title: t('settings.editor.fontFamily.consolas'), value: 'Consolas, monospace' },
-                  { title: t('settings.editor.fontFamily.sourceCodePro'), value: 'Source Code Pro, monospace' },
-                  { title: t('settings.editor.fontFamily.firaCode'), value: 'Fira Code, monospace' },
-                  { title: t('settings.editor.fontFamily.jetbrainsMono'), value: 'JetBrains Mono, monospace' }
-                ]" 
-                item-title="title" 
-                item-value="value" 
+                  {
+                    title: t('settings.editor.fontFamily.sourceCodePro'),
+                    value: 'Source Code Pro, monospace',
+                  },
+                  {
+                    title: t('settings.editor.fontFamily.firaCode'),
+                    value: 'Fira Code, monospace',
+                  },
+                  {
+                    title: t('settings.editor.fontFamily.jetbrainsMono'),
+                    value: 'JetBrains Mono, monospace',
+                  },
+                ]"
+                item-title="title"
+                item-value="value"
                 variant="outlined"
                 density="comfortable"
                 hide-details
@@ -182,8 +213,8 @@
                 <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-format-line-height</v-icon>
                 <span class="font-weight-medium">{{ t('settings.editor.lineHeight.label') }}</span>
               </div>
-              <v-select 
-                v-model="editorSettings.lineHeight" 
+              <v-select
+                v-model="editorSettings.lineHeight"
                 :items="[16, 18, 20, 22, 24]"
                 variant="outlined"
                 density="comfortable"
@@ -199,8 +230,8 @@
                 <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-keyboard-tab</v-icon>
                 <span class="font-weight-medium">{{ t('settings.editor.tabSize.label') }}</span>
               </div>
-              <v-select 
-                v-model="editorSettings.tabSize" 
+              <v-select
+                v-model="editorSettings.tabSize"
                 :items="[2, 4, 8]"
                 variant="outlined"
                 density="comfortable"
@@ -212,20 +243,28 @@
 
         <!-- 开关选项 -->
         <v-divider class="my-6"></v-divider>
-        
+
         <div class="mb-4">
           <h3 class="text-h6 font-weight-medium mb-4 d-flex align-center">
             <v-icon class="mr-2" color="primary">mdi-toggle-switch</v-icon>
             功能开关
           </h3>
-          
+
           <v-row>
             <v-col cols="12" md="6" lg="4" v-for="setting in booleanSettings" :key="setting.key">
               <v-card variant="outlined" class="pa-4 switch-card">
                 <div class="d-flex align-center justify-space-between">
                   <div class="flex-grow-1">
                     <div class="d-flex align-center mb-1">
-                      <v-icon size="20" class="mr-2" :color="editorSettings[setting.key as keyof typeof editorSettings] ? 'primary' : 'medium-emphasis'">
+                      <v-icon
+                        size="20"
+                        class="mr-2"
+                        :color="
+                          editorSettings[setting.key as keyof typeof editorSettings]
+                            ? 'primary'
+                            : 'medium-emphasis'
+                        "
+                      >
                         {{ setting.icon }}
                       </v-icon>
                       <span class="font-weight-medium">{{ setting.label }}</span>
@@ -246,13 +285,13 @@
 
         <!-- 高级选项 -->
         <v-divider class="my-6"></v-divider>
-        
+
         <div>
           <h3 class="text-h6 font-weight-medium mb-4 d-flex align-center">
             <v-icon class="mr-2" color="primary">mdi-cog-outline</v-icon>
             高级选项
           </h3>
-          
+
           <v-row>
             <v-col cols="12" md="6">
               <div class="setting-item">
@@ -260,14 +299,14 @@
                   <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-wrap</v-icon>
                   <span class="font-weight-medium">{{ t('settings.editor.wordWrap.label') }}</span>
                 </div>
-                <v-select 
-                  v-model="editorSettings.wordWrap" 
+                <v-select
+                  v-model="editorSettings.wordWrap"
                   :items="[
                     { title: t('settings.editor.wordWrap.on'), value: 'on' },
-                    { title: t('settings.editor.wordWrap.off'), value: 'off' }
-                  ]" 
-                  item-title="title" 
-                  item-value="value" 
+                    { title: t('settings.editor.wordWrap.off'), value: 'off' },
+                  ]"
+                  item-title="title"
+                  item-value="value"
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -278,19 +317,23 @@
             <v-col cols="12" md="6">
               <div class="setting-item">
                 <div class="setting-label mb-2">
-                  <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-format-indent-increase</v-icon>
-                  <span class="font-weight-medium">{{ t('settings.editor.autoIndent.label') }}</span>
+                  <v-icon size="20" class="mr-2 text-medium-emphasis"
+                    >mdi-format-indent-increase</v-icon
+                  >
+                  <span class="font-weight-medium">{{
+                    t('settings.editor.autoIndent.label')
+                  }}</span>
                 </div>
-                <v-select 
-                  v-model="editorSettings.autoIndent" 
+                <v-select
+                  v-model="editorSettings.autoIndent"
                   :items="[
                     { title: t('settings.editor.autoIndent.none'), value: 'none' },
                     { title: t('settings.editor.autoIndent.keep'), value: 'keep' },
                     { title: t('settings.editor.autoIndent.brackets'), value: 'brackets' },
-                    { title: t('settings.editor.autoIndent.advanced'), value: 'advanced' }
-                  ]" 
-                  item-title="title" 
-                  item-value="value" 
+                    { title: t('settings.editor.autoIndent.advanced'), value: 'advanced' },
+                  ]"
+                  item-title="title"
+                  item-value="value"
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -302,20 +345,28 @@
               <div class="setting-item">
                 <div class="setting-label mb-2">
                   <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-cursor-default</v-icon>
-                  <span class="font-weight-medium">{{ t('settings.editor.cursorStyle.label') }}</span>
+                  <span class="font-weight-medium">{{
+                    t('settings.editor.cursorStyle.label')
+                  }}</span>
                 </div>
-                <v-select 
-                  v-model="editorSettings.cursorStyle" 
+                <v-select
+                  v-model="editorSettings.cursorStyle"
                   :items="[
                     { title: t('settings.editor.cursorStyle.line'), value: 'line' },
                     { title: t('settings.editor.cursorStyle.block'), value: 'block' },
                     { title: t('settings.editor.cursorStyle.underline'), value: 'underline' },
                     { title: t('settings.editor.cursorStyle.lineThin'), value: 'line-thin' },
-                    { title: t('settings.editor.cursorStyle.blockOutline'), value: 'block-outline' },
-                    { title: t('settings.editor.cursorStyle.underlineThin'), value: 'underline-thin' }
-                  ]" 
-                  item-title="title" 
-                  item-value="value" 
+                    {
+                      title: t('settings.editor.cursorStyle.blockOutline'),
+                      value: 'block-outline',
+                    },
+                    {
+                      title: t('settings.editor.cursorStyle.underlineThin'),
+                      value: 'underline-thin',
+                    },
+                  ]"
+                  item-title="title"
+                  item-value="value"
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -327,16 +378,18 @@
               <div class="setting-item">
                 <div class="setting-label mb-2">
                   <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-image-plus</v-icon>
-                  <span class="font-weight-medium">{{ t('settings.editor.insertImage.label') }}</span>
+                  <span class="font-weight-medium">{{
+                    t('settings.editor.insertImage.label')
+                  }}</span>
                 </div>
-                <v-select 
-                  v-model="editorSettings.insertImage" 
+                <v-select
+                  v-model="editorSettings.insertImage"
                   :items="[
                     { title: t('settings.editor.insertImage.embed'), value: 'embed' },
-                    { title: t('settings.editor.insertImage.link'), value: 'link' }
-                  ]" 
-                  item-title="title" 
-                  item-value="value" 
+                    { title: t('settings.editor.insertImage.link'), value: 'link' },
+                  ]"
+                  item-title="title"
+                  item-value="value"
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -356,17 +409,23 @@
           <span>{{ t('settings.file.title') }}</span>
         </div>
       </v-card-title>
-      
+
       <v-card-text class="pa-6">
         <div class="setting-item">
           <v-card variant="outlined" class="pa-4 switch-card">
             <div class="d-flex align-center justify-space-between">
               <div class="flex-grow-1">
                 <div class="d-flex align-center mb-1">
-                  <v-icon size="20" class="mr-2" :color="settingStore.showHiddenFiles ? 'primary' : 'medium-emphasis'">
+                  <v-icon
+                    size="20"
+                    class="mr-2"
+                    :color="settingStore.showHiddenFiles ? 'primary' : 'medium-emphasis'"
+                  >
                     mdi-eye
                   </v-icon>
-                  <span class="font-weight-medium">{{ t('settings.file.showHiddenFiles.label') }}</span>
+                  <span class="font-weight-medium">{{
+                    t('settings.file.showHiddenFiles.label')
+                  }}</span>
                 </div>
                 <p class="text-caption text-medium-emphasis mb-0">显示以点开头的隐藏文件和文件夹</p>
               </div>
@@ -385,11 +444,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useSettingStore } from '../stores/settingStore'
-import { useI18n } from 'vue-i18n'
-const { t } = useI18n()
-const settingStore = useSettingStore()
+import { computed, onMounted } from 'vue';
+import { useSettingStore } from '../stores/settingStore';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
+const settingStore = useSettingStore();
 
 // 布尔设置项配置
 const booleanSettings = [
@@ -397,60 +456,60 @@ const booleanSettings = [
     key: 'lineNumbers',
     icon: 'mdi-format-list-numbered',
     label: t('settings.editor.lineNumbers.label'),
-    description: '在编辑器左侧显示行号'
+    description: '在编辑器左侧显示行号',
   },
   {
     key: 'minimap',
     icon: 'mdi-map',
     label: t('settings.editor.minimap.label'),
-    description: '显示代码缩略图'
+    description: '显示代码缩略图',
   },
   {
     key: 'autoSave',
     icon: 'mdi-content-save-auto',
     label: t('settings.editor.autoSave.label'),
-    description: '自动保存文件更改'
+    description: '自动保存文件更改',
   },
   {
     key: 'smoothScrolling',
     icon: 'mdi-arrow-up-down',
     label: t('settings.editor.smoothScrolling.label'),
-    description: '启用平滑滚动效果'
+    description: '启用平滑滚动效果',
   },
   {
     key: 'mouseWheelZoom',
     icon: 'mdi-magnify',
     label: t('settings.editor.mouseWheelZoom.label'),
-    description: 'Ctrl + 滚轮缩放'
-  }
-]
+    description: 'Ctrl + 滚轮缩放',
+  },
+];
 
 // 计算属性
 const themeMode = computed({
   get: () => settingStore.themeMode,
   set: (value) => {
-    settingStore.setTheme(value)
-  }
-})
+    settingStore.setTheme(value);
+  },
+});
 
 const editorSettings = computed({
   get: () => settingStore.editor,
-  set: (value) => settingStore.updateEditorSettings(value)
-})
+  set: (value) => settingStore.updateEditorSettings(value),
+});
 
 const autoLaunch = computed({
   get: () => settingStore.autoLaunch,
   set: (value) => {
-    settingStore.setAutoLaunch(value)
-  }
-})
+    settingStore.setAutoLaunch(value);
+  },
+});
 
 const language = computed({
   get: () => settingStore.language,
   set: (locale: 'en-US' | 'zh-CN') => {
-    settingStore.setLanguage(locale)
-  }
-})
+    settingStore.setLanguage(locale);
+  },
+});
 
 // 方法
 const getThemeIcon = (theme: string) => {
@@ -458,27 +517,31 @@ const getThemeIcon = (theme: string) => {
     system: 'mdi-monitor',
     dark: 'mdi-weather-night',
     light: 'mdi-weather-sunny',
-    blueGreen: 'mdi-water'
-  }
+    blueGreen: 'mdi-water',
+  };
 
-  return icons[theme] || 'mdi-monitor'
-}
+  return icons[theme] || 'mdi-monitor';
+};
 
 // 初始化
 onMounted(async () => {
   try {
-    const isAutoLaunch = await window.shared?.ipcRenderer.invoke('get-auto-launch')
-    autoLaunch.value = isAutoLaunch
+    const isAutoLaunch = await window.shared?.ipcRenderer.invoke('get-auto-launch');
+    autoLaunch.value = isAutoLaunch;
   } catch (error) {
-    console.error('获取开机自启动状态失败:', error)
+    console.error('获取开机自启动状态失败:', error);
   }
-})
+});
 </script>
 
 <style scoped>
 .page-header {
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-secondary), 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05) 0%,
+    rgba(var(--v-theme-secondary), 0.05) 100%
+  );
   padding: 2rem;
   margin-bottom: 2rem;
 }
@@ -495,7 +558,11 @@ onMounted(async () => {
 }
 
 .settings-section-title {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-primary), 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.08) 0%,
+    rgba(var(--v-theme-primary), 0.02) 100%
+  );
   font-size: 1.25rem;
   font-weight: 600;
   padding: 1.5rem 1.5rem 1rem;
@@ -525,11 +592,19 @@ onMounted(async () => {
 
 /* 深色主题适配 */
 .v-theme--dark .page-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.1) 0%, rgba(var(--v-theme-secondary), 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.1) 0%,
+    rgba(var(--v-theme-secondary), 0.1) 100%
+  );
 }
 
 .v-theme--dark .settings-section-title {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.12) 0%, rgba(var(--v-theme-primary), 0.04) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.12) 0%,
+    rgba(var(--v-theme-primary), 0.04) 100%
+  );
 }
 
 .v-theme--dark .switch-card:hover {
@@ -542,7 +617,7 @@ onMounted(async () => {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
   }
-  
+
   .settings-section-title {
     padding: 1rem;
   }

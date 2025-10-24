@@ -481,9 +481,7 @@ export class ReminderWebApplicationService {
   /**
    * 获取聚合根统计信息
    */
-  async getAggregateStats(
-    templateUuid: string,
-  ): Promise<ReminderContracts.ReminderStatsResponse> {
+  async getAggregateStats(templateUuid: string): Promise<ReminderContracts.ReminderStatsResponse> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);

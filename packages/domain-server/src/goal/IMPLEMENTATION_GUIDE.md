@@ -7,6 +7,7 @@
 ## 已完成的工作
 
 ### 1. 目录结构 ✅
+
 ```
 packages/domain-server/src/goal/
 ├── aggregates/         # 聚合根（待实现）
@@ -20,6 +21,7 @@ packages/domain-server/src/goal/
 ```
 
 ### 2. 值对象 (部分完成)
+
 - ✅ `GoalMetadata.ts` - 已创建，需要根据最新 contracts 修正
 - ✅ `GoalTimeRange.ts` - 已创建，需要根据最新 contracts 修正
 - ⏳ `KeyResultProgress.ts` - 待创建
@@ -27,11 +29,13 @@ packages/domain-server/src/goal/
 - ⏳ `GoalReminderConfig.ts` - 待创建
 
 ### 3. 仓储接口 ✅
+
 - ✅ `IGoalRepository.ts` - 完成
 - ✅ `IGoalFolderRepository.ts` - 完成
 - ✅ `IGoalStatisticsRepository.ts` - 完成
 
 ### 4. 导出文件 ✅
+
 - ✅ `index.ts` - 主导出文件
 - ✅ `value-objects/index.ts` - 值对象导出
 - ✅ `infrastructure/index.ts` - 基础设施层导出占位符
@@ -41,6 +45,7 @@ packages/domain-server/src/goal/
 ### 优先级 1: 值对象（完成剩余部分）
 
 #### KeyResultProgress.ts
+
 ```typescript
 import { ValueObject } from '@dailyuse/utils';
 import type { GoalContracts } from '@dailyuse/contracts';
@@ -51,16 +56,17 @@ export class KeyResultProgress extends ValueObject {
   public readonly targetValue: number;
   public readonly currentValue: number;
   public readonly unit: string | null;
-  
+
   // 业务方法
-  public calculatePercentage(): number { }
-  public isCompleted(): boolean { }
-  public updateProgress(newValue: number): KeyResultProgress { }
-  public recalculateFromRecords(recordValues: number[]): number { }
+  public calculatePercentage(): number {}
+  public isCompleted(): boolean {}
+  public updateProgress(newValue: number): KeyResultProgress {}
+  public recalculateFromRecords(recordValues: number[]): number {}
 }
 ```
 
 #### KeyResultSnapshot.ts
+
 ```typescript
 export class KeyResultSnapshot extends ValueObject {
   public readonly keyResultUuid: string;
@@ -72,6 +78,7 @@ export class KeyResultSnapshot extends ValueObject {
 ```
 
 #### GoalReminderConfig.ts
+
 ```typescript
 export class GoalReminderConfig extends ValueObject {
   // 根据 contracts 定义实现
@@ -81,6 +88,7 @@ export class GoalReminderConfig extends ValueObject {
 ### 优先级 2: 实体
 
 #### KeyResult.ts (Entity)
+
 这是一个重要的实体，包含 GoalRecord 子实体。
 
 ```typescript
@@ -98,19 +106,20 @@ export class KeyResult extends Entity implements GoalContracts.KeyResultServer {
   private _createdAt: number;
   private _updatedAt: number;
   private _records: GoalRecord[];
-  
+
   // 子实体管理
-  public addRecord(record: GoalRecord): void { }
-  public getRecords(): GoalRecord[] { }
-  
+  public addRecord(record: GoalRecord): void {}
+  public getRecords(): GoalRecord[] {}
+
   // 业务方法
-  public updateProgress(newValue: number, note?: string): GoalRecord { }
-  public recalculateProgress(): void { }
-  public isCompleted(): boolean { }
+  public updateProgress(newValue: number, note?: string): GoalRecord {}
+  public recalculateProgress(): void {}
+  public isCompleted(): boolean {}
 }
 ```
 
 #### GoalRecord.ts (Entity)
+
 ```typescript
 export class GoalRecord extends Entity implements GoalContracts.GoalRecordServer {
   private _keyResultUuid: string;
@@ -120,13 +129,14 @@ export class GoalRecord extends Entity implements GoalContracts.GoalRecordServer
   private _changeAmount: number;
   private _note: string | null;
   private _recordedAt: number;
-  
-  public getChangePercentage(): number { }
-  public isPositiveChange(): boolean { }
+
+  public getChangePercentage(): number {}
+  public isPositiveChange(): boolean {}
 }
 ```
 
 #### GoalReview.ts (Entity)
+
 ```typescript
 export class GoalReview extends Entity implements GoalContracts.GoalReviewServer {
   private _goalUuid: string;
@@ -138,14 +148,15 @@ export class GoalReview extends Entity implements GoalContracts.GoalReviewServer
   private _improvements: string | null;
   private _keyResultSnapshots: KeyResultSnapshot[];
   private _reviewedAt: number;
-  
-  public isHighQuality(): boolean { }
+
+  public isHighQuality(): boolean {}
 }
 ```
 
 ### 优先级 3: 聚合根
 
 #### Goal.ts (Aggregate Root) - 最核心
+
 这是整个 goal 模块的核心聚合根，管理所有子实体。
 
 ```typescript
@@ -170,35 +181,36 @@ export class Goal extends AggregateRoot implements GoalContracts.GoalServer {
   private _reminderConfig: GoalReminderConfig | null;
   private _createdAt: number;
   private _updatedAt: number;
-  
+
   // 子实体集合
   private _keyResults: KeyResult[];
   private _reviews: GoalReview[];
-  
+
   // 工厂方法
-  public static create(params): Goal { }
-  
+  public static create(params): Goal {}
+
   // 子实体管理
-  public addKeyResult(keyResult: KeyResult): void { }
-  public removeKeyResult(uuid: string): KeyResult | null { }
-  public addReview(review: GoalReview): void { }
-  
+  public addKeyResult(keyResult: KeyResult): void {}
+  public removeKeyResult(uuid: string): KeyResult | null {}
+  public addReview(review: GoalReview): void {}
+
   // 业务方法
-  public complete(): void { }
-  public archive(): void { }
-  public activate(): void { }
-  public updateProgress(): void { }
-  public calculateProgress(): number { }
-  
+  public complete(): void {}
+  public archive(): void {}
+  public activate(): void {}
+  public updateProgress(): void {}
+  public calculateProgress(): number {}
+
   // 转换方法
-  public toServerDTO(includeChildren = false): GoalContracts.GoalServerDTO { }
-  public toPersistenceDTO(): GoalContracts.GoalPersistenceDTO { }
-  public static fromServerDTO(dto): Goal { }
-  public static fromPersistenceDTO(dto): Goal { }
+  public toServerDTO(includeChildren = false): GoalContracts.GoalServerDTO {}
+  public toPersistenceDTO(): GoalContracts.GoalPersistenceDTO {}
+  public static fromServerDTO(dto): Goal {}
+  public static fromPersistenceDTO(dto): Goal {}
 }
 ```
 
 #### GoalFolder.ts (Aggregate Root)
+
 ```typescript
 export class GoalFolder extends AggregateRoot implements GoalContracts.GoalFolderServer {
   private _accountUuid: string;
@@ -209,14 +221,15 @@ export class GoalFolder extends AggregateRoot implements GoalContracts.GoalFolde
   private _color: string | null;
   private _order: number;
   private _goalCount: number;
-  
-  public updateStats(): void { }
-  public incrementGoalCount(): void { }
-  public decrementGoalCount(): void { }
+
+  public updateStats(): void {}
+  public incrementGoalCount(): void {}
+  public decrementGoalCount(): void {}
 }
 ```
 
 #### GoalStatistics.ts (Aggregate Root)
+
 ```typescript
 export class GoalStatistics extends AggregateRoot implements GoalContracts.GoalStatisticsServer {
   private _accountUuid: string;
@@ -225,16 +238,17 @@ export class GoalStatistics extends AggregateRoot implements GoalContracts.GoalS
   private _completedGoals: number;
   private _archivedGoals: number;
   // ... 更多统计字段
-  
-  public recalculate(goals: Goal[]): void { }
-  public getCompletionRate(): number { }
-  public getTrendData(): GoalContracts.TrendType { }
+
+  public recalculate(goals: Goal[]): void {}
+  public getCompletionRate(): number {}
+  public getTrendData(): GoalContracts.TrendType {}
 }
 ```
 
 ### 优先级 4: 领域服务
 
 #### GoalDomainService.ts
+
 这是协调聚合根操作的主要服务。
 
 ```typescript
@@ -244,7 +258,7 @@ export class GoalDomainService {
     private readonly folderRepo: IGoalFolderRepository,
     private readonly statisticsRepo: IGoalStatisticsRepository,
   ) {}
-  
+
   public async createGoal(params): Promise<Goal> {
     // 1. 验证
     // 2. 创建聚合根
@@ -252,7 +266,7 @@ export class GoalDomainService {
     // 4. 更新统计
     // 5. 触发领域事件
   }
-  
+
   public async completeGoal(uuid: string): Promise<Goal> {
     // 1. 加载聚合根
     // 2. 执行业务逻辑
@@ -260,20 +274,20 @@ export class GoalDomainService {
     // 4. 更新统计
     // 5. 触发领域事件
   }
-  
+
   public async addKeyResult(goalUuid: string, params): Promise<KeyResult> {
     // 通过聚合根添加子实体
   }
-  
+
   public async updateKeyResultProgress(
     goalUuid: string,
     keyResultUuid: string,
     newValue: number,
-    note?: string
+    note?: string,
   ): Promise<void> {
     // 通过聚合根更新子实体
   }
-  
+
   public async createReview(goalUuid: string, params): Promise<GoalReview> {
     // 通过聚合根添加复盘
   }
@@ -281,35 +295,38 @@ export class GoalDomainService {
 ```
 
 #### GoalFolderDomainService.ts
+
 ```typescript
 export class GoalFolderDomainService {
   constructor(
     private readonly folderRepo: IGoalFolderRepository,
     private readonly goalRepo: IGoalRepository,
   ) {}
-  
-  public async createFolder(params): Promise<GoalFolder> { }
-  public async moveGoalsToFolder(goalUuids: string[], folderUuid: string): Promise<void> { }
-  public async deleteFolder(uuid: string, moveGoalsTo?: string): Promise<void> { }
+
+  public async createFolder(params): Promise<GoalFolder> {}
+  public async moveGoalsToFolder(goalUuids: string[], folderUuid: string): Promise<void> {}
+  public async deleteFolder(uuid: string, moveGoalsTo?: string): Promise<void> {}
 }
 ```
 
 #### GoalStatisticsDomainService.ts
+
 ```typescript
 export class GoalStatisticsDomainService {
   constructor(
     private readonly statisticsRepo: IGoalStatisticsRepository,
     private readonly goalRepo: IGoalRepository,
   ) {}
-  
-  public async recalculateStatistics(accountUuid: string): Promise<GoalStatistics> { }
-  public async getStatistics(accountUuid: string): Promise<GoalStatistics> { }
+
+  public async recalculateStatistics(accountUuid: string): Promise<GoalStatistics> {}
+  public async getStatistics(accountUuid: string): Promise<GoalStatistics> {}
 }
 ```
 
 ### 优先级 5: 基础设施层
 
 #### PrismaGoalRepository.ts
+
 ```typescript
 import { PrismaClient } from '@prisma/client';
 import type { IGoalRepository } from '../../repositories/IGoalRepository';
@@ -318,24 +335,25 @@ import { GoalMapper } from './mappers/GoalMapper';
 
 export class PrismaGoalRepository implements IGoalRepository {
   constructor(private readonly prisma: PrismaClient) {}
-  
+
   public async save(goal: Goal): Promise<void> {
     const persistenceDTO = goal.toPersistenceDTO();
     // 使用 prisma 保存
     // 级联保存子实体
   }
-  
+
   public async findById(uuid: string, options?): Promise<Goal | null> {
     // 使用 prisma 查询
     // 使用 GoalMapper 转换
     // 可选加载子实体
   }
-  
+
   // ... 实现其他方法
 }
 ```
 
 #### GoalMapper.ts
+
 ```typescript
 import type { Goal } from '@prisma/client';
 import { Goal as GoalAggregate } from '../../../aggregates/Goal';
@@ -350,7 +368,7 @@ export class GoalMapper {
   public static toDomain(prismaGoal: PrismaGoalWithRelations): GoalAggregate {
     // 从 Prisma 模型转换为领域模型
   }
-  
+
   public static toPersistence(goal: GoalAggregate): any {
     // 从领域模型转换为 Prisma 模型
   }
@@ -404,6 +422,7 @@ type GoalPersistenceDTO = GoalContracts.GoalPersistenceDTO;
 ## 参考资源
 
 ### Repository 模块文件
+
 - `packages/domain-server/src/repository/aggregates/Repository.ts`
 - `packages/domain-server/src/repository/entities/Resource.ts`
 - `packages/domain-server/src/repository/value-objects/RepositoryConfig.ts`
@@ -411,9 +430,11 @@ type GoalPersistenceDTO = GoalContracts.GoalPersistenceDTO;
 - `packages/domain-server/src/repository/infrastructure/prisma/PrismaRepositoryRepository.ts`
 
 ### Utils 包
+
 - `@dailyuse/utils` 提供了 `AggregateRoot`、`Entity`、`ValueObject` 基类
 
 ### Contracts 包
+
 - `@dailyuse/contracts` 的 `GoalContracts` 命名空间
 
 ## 注意事项

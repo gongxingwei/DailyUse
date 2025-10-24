@@ -18,12 +18,13 @@
 
 | 方案              | RepositoryStatistics | GoalStatistics     |
 | ----------------- | -------------------- | ------------------ |
-| **持久化**        | ✅ 有独立表           | ❌ 无表             |
+| **持久化**        | ✅ 有独立表          | ❌ 无表            |
 | **计算方式**      | 增量更新（事件驱动） | 实时计算           |
 | **DomainService** | 注入 Repository      | 纯业务逻辑         |
 | **适用场景**      | 大量数据，性能优化   | 数据量小，即时统计 |
 
 **选择理由**：
+
 1. Goal 数据量相对较小（每个账户通常不会超过数百个目标）
 2. 统计需求不频繁（用户查看统计的频率低）
 3. 实时计算保证数据一致性（无需担心统计与实际数据不同步）
@@ -50,6 +51,7 @@ apps/api/src/modules/goal/application/services/
 **文件**: `packages/domain-server/src/goal/services/GoalStatisticsDomainService.ts`
 
 #### 架构原则
+
 ```typescript
 export class GoalStatisticsDomainService {
   /**
@@ -64,11 +66,12 @@ export class GoalStatisticsDomainService {
    * @param goals - 目标数组（由 ApplicationService 查询）
    * @returns 统计 DTO
    */
-  calculateStatistics(accountUuid: string, goals: Goal[]): GoalStatisticsServerDTO
+  calculateStatistics(accountUuid: string, goals: Goal[]): GoalStatisticsServerDTO;
 }
 ```
 
 **关键特征**：
+
 - ✅ **无依赖注入** - 构造函数为空
 - ✅ **同步方法** - 纯计算逻辑，无 async/await
 - ✅ **接受聚合数组** - 参数是 `Goal[]`，不是 UUID
@@ -110,6 +113,7 @@ calculateStatistics(accountUuid: string, goals: Goal[]): GoalStatisticsServerDTO
 #### 时间计算逻辑
 
 **本周起始时间**（周一 00:00:00）：
+
 ```typescript
 private getPeriodStart(now: number, period: 'week'): number {
   const date = new Date(now);
@@ -121,6 +125,7 @@ private getPeriodStart(now: number, period: 'week'): number {
 ```
 
 **本月起始时间**（1号 00:00:00）：
+
 ```typescript
 private getPeriodStart(now: number, period: 'month'): number {
   const date = new Date(now);
@@ -181,6 +186,7 @@ async getGoalStatistics(accountUuid: string): Promise<GoalContracts.GoalStatisti
 ```
 
 **架构模式**：
+
 1. **Query**: ApplicationService 查询所有 Goal 聚合
 2. **Domain**: 传递聚合数组给 DomainService
 3. **Return**: 返回计算结果（无需持久化）
@@ -228,13 +234,13 @@ sequenceDiagram
     AppService->>Repository: findByAccountUuid(accountUuid, { includeChildren: true })
     Repository-->>AppService: Goal[]
     AppService->>StatisticsService: calculateStatistics(accountUuid, goals)
-    
+
     Note over StatisticsService: 纯业务逻辑计算
     StatisticsService->>StatisticsService: countByStatus()
     StatisticsService->>StatisticsService: calculateKeyResultStats()
     StatisticsService->>StatisticsService: groupByImportance()
     StatisticsService->>StatisticsService: ... (其他计算方法)
-    
+
     StatisticsService-->>AppService: GoalStatisticsServerDTO
     AppService-->>Controller: GoalStatisticsClientDTO
     Controller-->>Client: ResponseBuilder.sendSuccess(statistics)
@@ -246,12 +252,12 @@ sequenceDiagram
 
 ### 时间复杂度
 
-| 操作         | 复杂度   | 说明                        |
-| ------------ | -------- | --------------------------- |
-| 查询所有目标 | O(n)     | Repository 查询             |
-| 统计计算     | O(n * m) | n=目标数, m=平均KeyResult数 |
-| 分组统计     | O(n)     | Map/Reduce                  |
-| 总体         | O(n * m) | 主要开销在 KeyResult 统计   |
+| 操作         | 复杂度    | 说明                        |
+| ------------ | --------- | --------------------------- |
+| 查询所有目标 | O(n)      | Repository 查询             |
+| 统计计算     | O(n \* m) | n=目标数, m=平均KeyResult数 |
+| 分组统计     | O(n)      | Map/Reduce                  |
+| 总体         | O(n \* m) | 主要开销在 KeyResult 统计   |
 
 ### 优化建议（未来）
 
@@ -295,7 +301,7 @@ router.get('/statistics/:accountUuid', GoalController.getGoalStatistics);
 
 | 特性                  | GoalStatistics    | RepositoryStatistics                 |
 | --------------------- | ----------------- | ------------------------------------ |
-| **持久化**            | ❌ 无表            | ✅ 有表                               |
+| **持久化**            | ❌ 无表           | ✅ 有表                              |
 | **计算方式**          | 实时计算          | 增量更新                             |
 | **更新机制**          | 查询时计算        | 事件驱动                             |
 | **DomainService依赖** | 无（纯业务逻辑）  | 注入 IRepositoryStatisticsRepository |
@@ -311,15 +317,17 @@ router.get('/statistics/:accountUuid', GoalController.getGoalStatistics);
 ### ✅ 正确实践
 
 1. **DomainService 纯业务逻辑**
+
    ```typescript
    // ✅ 正确：不注入 Repository
    export class GoalStatisticsDomainService {
      constructor() {}
-     calculateStatistics(accountUuid: string, goals: Goal[]): GoalStatisticsServerDTO
+     calculateStatistics(accountUuid: string, goals: Goal[]): GoalStatisticsServerDTO;
    }
    ```
 
 2. **ApplicationService 协调**
+
    ```typescript
    // ✅ 正确：ApplicationService 查询 + DomainService 计算
    async getGoalStatistics(accountUuid: string): Promise<GoalStatisticsClientDTO> {
@@ -344,7 +352,7 @@ export class RepositoryStatisticsDomainService {
     private readonly statisticsRepo: IRepositoryStatisticsRepository,
     private readonly repositoryRepo: IRepositoryRepository,
   ) {}
-  
+
   // ❌ DomainService 直接调用 Repository 持久化
   public async getOrCreateStatistics(accountUuid: string): Promise<RepositoryStatistics> {
     let statistics = await this.statisticsRepo.findByAccountUuid(accountUuid);
@@ -398,18 +406,22 @@ export class RepositoryStatisticsDomainService {
 ## ✅ 实现总结
 
 ### 新增文件
+
 - `packages/domain-server/src/goal/services/GoalStatisticsDomainService.ts` (~320 lines)
 
 ### 修改文件
+
 - `apps/api/src/modules/goal/application/services/GoalApplicationService.ts` - 更新 getGoalStatistics()
 - `packages/domain-server/src/goal/services/index.ts` - 添加导出
 
 ### 代码行数
+
 - 新增：~320 lines
 - 修改：~30 lines
 - 总计：~350 lines
 
 ### 编译验证
+
 ```bash
 ✅ pnpm tsc --noEmit - PASSED
 ```

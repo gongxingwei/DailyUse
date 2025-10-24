@@ -11,11 +11,7 @@ import { DomainError } from '@dailyuse/utils';
  * 当所有 KeyResult 的权重总和不等于 100% 时抛出
  */
 export class InvalidWeightSumError extends DomainError {
-  constructor(
-    goalUuid: string,
-    actualSum: number,
-    weights: Record<string, number>,
-  ) {
+  constructor(goalUuid: string, actualSum: number, weights: Record<string, number>) {
     super(
       'INVALID_WEIGHT_SUM',
       `Invalid weight sum for Goal ${goalUuid}: ${actualSum.toFixed(2)} (expected 100). KR weights: ${JSON.stringify(weights)}`,
@@ -35,12 +31,7 @@ export class InvalidWeightSumError extends DomainError {
  */
 export class GoalNotFoundError extends DomainError {
   constructor(goalUuid: string) {
-    super(
-      'GOAL_NOT_FOUND',
-      `Goal not found: ${goalUuid}`,
-      { goalUuid },
-      404,
-    );
+    super('GOAL_NOT_FOUND', `Goal not found: ${goalUuid}`, { goalUuid }, 404);
   }
 }
 
@@ -49,11 +40,6 @@ export class GoalNotFoundError extends DomainError {
  */
 export class KeyResultNotFoundError extends DomainError {
   constructor(krUuid: string) {
-    super(
-      'KEY_RESULT_NOT_FOUND',
-      `KeyResult not found: ${krUuid}`,
-      { krUuid },
-      404,
-    );
+    super('KEY_RESULT_NOT_FOUND', `KeyResult not found: ${krUuid}`, { krUuid }, 404);
   }
 }

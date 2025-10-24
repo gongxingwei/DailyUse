@@ -53,7 +53,7 @@ TaskInstance 从创建到完成经历多个状态转换：
     │          │ cancel() / skip()
     │          │
     └──────────┘
-    
+
     任意状态 ──softDelete()──▶ DELETED
 ```
 
@@ -110,7 +110,7 @@ PUT /api/task-instances/:uuid/complete
 ```typescript
 interface CompleteTaskInstanceRequest {
   accountUuid: string;
-  note?: string | null;                // 完成备注
+  note?: string | null; // 完成备注
 }
 ```
 
@@ -120,8 +120,8 @@ interface CompleteTaskInstanceRequest {
 interface CompleteTaskInstanceResponse {
   instance: TaskInstanceClientDTO;
   statistics: {
-    totalCompleted: number;            // 今日完成总数
-    completionRate: number;            // 完成率
+    totalCompleted: number; // 今日完成总数
+    completionRate: number; // 完成率
   };
   message: string;
 }
@@ -152,7 +152,7 @@ PUT /api/task-instances/:uuid/cancel
 ```typescript
 interface CancelTaskInstanceRequest {
   accountUuid: string;
-  reason?: string | null;              // 取消原因
+  reason?: string | null; // 取消原因
 }
 ```
 
@@ -167,7 +167,7 @@ PUT /api/task-instances/:uuid/skip
 ```typescript
 interface SkipTaskInstanceRequest {
   accountUuid: string;
-  reason?: string | null;              // 跳过原因
+  reason?: string | null; // 跳过原因
 }
 ```
 
@@ -182,9 +182,9 @@ PUT /api/task-instances/:uuid/reschedule
 ```typescript
 interface RescheduleTaskInstanceRequest {
   accountUuid: string;
-  newScheduledTime?: number | null;    // 新的计划时间
-  newDeadline?: number | null;         // 新的截止时间
-  resetStatus?: boolean;               // 是否重置状态为PENDING
+  newScheduledTime?: number | null; // 新的计划时间
+  newDeadline?: number | null; // 新的截止时间
+  resetStatus?: boolean; // 是否重置状态为PENDING
 }
 ```
 
@@ -224,13 +224,15 @@ export class TaskInstance extends AggregateRoot {
 
   // 完成任务
   public complete(note?: string): void {
-    if (this._status !== TaskInstanceStatus.PENDING && 
-        this._status !== TaskInstanceStatus.IN_PROGRESS) {
+    if (
+      this._status !== TaskInstanceStatus.PENDING &&
+      this._status !== TaskInstanceStatus.IN_PROGRESS
+    ) {
       throw new Error(`只能完成待处理或进行中的任务，当前状态: ${this._status}`);
     }
 
     const now = Date.now();
-    
+
     // 计算实际时长
     let actualDuration: number | null = null;
     if (this._actualStartTime) {
@@ -259,9 +261,7 @@ export class TaskInstance extends AggregateRoot {
         accountUuid: this._accountUuid,
         completedAt: now,
         actualDuration,
-        isOnTime: this._timeConfig.deadline 
-          ? now <= this._timeConfig.deadline 
-          : true,
+        isOnTime: this._timeConfig.deadline ? now <= this._timeConfig.deadline : true,
       },
     });
   }
@@ -428,7 +428,7 @@ export class TaskInstanceApplicationService {
 
   async startTask(
     instanceUuid: string,
-    request: StartTaskInstanceRequest
+    request: StartTaskInstanceRequest,
   ): Promise<StartTaskInstanceResponse> {
     // 1. 加载实例
     const instance = await this.taskInstanceRepository.findByUuid(instanceUuid);
@@ -458,7 +458,7 @@ export class TaskInstanceApplicationService {
 
   async completeTask(
     instanceUuid: string,
-    request: CompleteTaskInstanceRequest
+    request: CompleteTaskInstanceRequest,
   ): Promise<CompleteTaskInstanceResponse> {
     // 1. 加载实例
     const instance = await this.taskInstanceRepository.findByUuid(instanceUuid);
@@ -481,9 +481,7 @@ export class TaskInstanceApplicationService {
     this.publishDomainEvents(instance);
 
     // 6. 获取统计数据
-    const statistics = await this.statisticsService.getTaskStatistics(
-      request.accountUuid
-    );
+    const statistics = await this.statisticsService.getTaskStatistics(request.accountUuid);
 
     return {
       instance: instance.toClientDTO(),
@@ -497,7 +495,7 @@ export class TaskInstanceApplicationService {
 
   async undoCompleteTask(
     instanceUuid: string,
-    request: UndoCompleteTaskInstanceRequest
+    request: UndoCompleteTaskInstanceRequest,
   ): Promise<TaskInstanceClientDTO> {
     const instance = await this.taskInstanceRepository.findByUuid(instanceUuid);
     if (!instance) {
@@ -517,7 +515,7 @@ export class TaskInstanceApplicationService {
 
   async cancelTask(
     instanceUuid: string,
-    request: CancelTaskInstanceRequest
+    request: CancelTaskInstanceRequest,
   ): Promise<TaskInstanceClientDTO> {
     const instance = await this.taskInstanceRepository.findByUuid(instanceUuid);
     if (!instance) {
@@ -537,7 +535,7 @@ export class TaskInstanceApplicationService {
 
   async skipTask(
     instanceUuid: string,
-    request: SkipTaskInstanceRequest
+    request: SkipTaskInstanceRequest,
   ): Promise<TaskInstanceClientDTO> {
     const instance = await this.taskInstanceRepository.findByUuid(instanceUuid);
     if (!instance) {
@@ -557,7 +555,7 @@ export class TaskInstanceApplicationService {
 
   async rescheduleTask(
     instanceUuid: string,
-    request: RescheduleTaskInstanceRequest
+    request: RescheduleTaskInstanceRequest,
   ): Promise<TaskInstanceClientDTO> {
     const instance = await this.taskInstanceRepository.findByUuid(instanceUuid);
     if (!instance) {
@@ -599,22 +597,12 @@ export class TaskInstanceApplicationService {
   <div class="task-actions">
     <!-- 待处理状态 -->
     <template v-if="instance.status === 'PENDING'">
-      <el-button 
-        type="primary" 
-        size="small"
-        @click="handleStart"
-        :loading="isOperating"
-      >
+      <el-button type="primary" size="small" @click="handleStart" :loading="isOperating">
         <el-icon><VideoPlay /></el-icon>
         开始
       </el-button>
 
-      <el-button 
-        type="success"
-        size="small"
-        @click="handleComplete"
-        :loading="isOperating"
-      >
+      <el-button type="success" size="small" @click="handleComplete" :loading="isOperating">
         <el-icon><Check /></el-icon>
         完成
       </el-button>
@@ -644,21 +632,12 @@ export class TaskInstanceApplicationService {
 
     <!-- 进行中状态 -->
     <template v-else-if="instance.status === 'IN_PROGRESS'">
-      <el-button 
-        type="success"
-        size="small"
-        @click="handleComplete"
-        :loading="isOperating"
-      >
+      <el-button type="success" size="small" @click="handleComplete" :loading="isOperating">
         <el-icon><Check /></el-icon>
         完成
       </el-button>
 
-      <el-button 
-        size="small"
-        @click="handleCancel"
-        :loading="isOperating"
-      >
+      <el-button size="small" @click="handleCancel" :loading="isOperating">
         <el-icon><CircleClose /></el-icon>
         取消
       </el-button>
@@ -671,7 +650,7 @@ export class TaskInstanceApplicationService {
         已完成
       </el-tag>
 
-      <el-button 
+      <el-button
         type="warning"
         size="small"
         text
@@ -690,23 +669,14 @@ export class TaskInstanceApplicationService {
         已取消
       </el-tag>
 
-      <el-button 
-        size="small"
-        text
-        @click="handleReschedule"
-        :loading="isOperating"
-      >
+      <el-button size="small" text @click="handleReschedule" :loading="isOperating">
         <el-icon><Clock /></el-icon>
         重新安排
       </el-button>
     </template>
 
     <!-- 重新安排对话框 -->
-    <el-dialog
-      v-model="showRescheduleDialog"
-      title="重新安排任务"
-      width="500px"
-    >
+    <el-dialog v-model="showRescheduleDialog" title="重新安排任务" width="500px">
       <el-form label-width="100px">
         <el-form-item label="计划时间">
           <el-date-picker
@@ -726,19 +696,13 @@ export class TaskInstanceApplicationService {
 
         <el-form-item label="重置状态">
           <el-switch v-model="rescheduleForm.resetStatus" />
-          <span class="ml-2 text-sm text-gray-500">
-            将状态重置为待处理
-          </span>
+          <span class="ml-2 text-sm text-gray-500"> 将状态重置为待处理 </span>
         </el-form-item>
       </el-form>
 
       <template #footer>
         <el-button @click="showRescheduleDialog = false">取消</el-button>
-        <el-button 
-          type="primary"
-          @click="confirmReschedule"
-          :loading="isOperating"
-        >
+        <el-button type="primary" @click="confirmReschedule" :loading="isOperating">
           确定
         </el-button>
       </template>
@@ -790,18 +754,14 @@ async function handleStart() {
 async function handleComplete() {
   isOperating.value = true;
   try {
-    const { value: note } = await ElMessageBox.prompt(
-      '添加完成备注（可选）',
-      '完成任务',
-      {
-        confirmButtonText: '完成',
-        cancelButtonText: '取消',
-        inputType: 'textarea',
-      }
-    );
+    const { value: note } = await ElMessageBox.prompt('添加完成备注（可选）', '完成任务', {
+      confirmButtonText: '完成',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+    });
 
     await taskStore.completeTaskInstance(props.instance.uuid, { note });
-    
+
     ElMessage.success({
       message: '任务已完成！',
       type: 'success',
@@ -819,11 +779,7 @@ async function handleComplete() {
 async function handleUndoComplete() {
   isOperating.value = true;
   try {
-    await ElMessageBox.confirm(
-      '确定要撤销完成吗？',
-      '提示',
-      { type: 'warning' }
-    );
+    await ElMessageBox.confirm('确定要撤销完成吗？', '提示', { type: 'warning' });
 
     await taskStore.undoCompleteTaskInstance(props.instance.uuid);
     ElMessage.info('已撤销完成');
@@ -839,15 +795,11 @@ async function handleUndoComplete() {
 async function handleCancel() {
   isOperating.value = true;
   try {
-    const { value: reason } = await ElMessageBox.prompt(
-      '取消原因（可选）',
-      '取消任务',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '返回',
-        inputType: 'textarea',
-      }
-    );
+    const { value: reason } = await ElMessageBox.prompt('取消原因（可选）', '取消任务', {
+      confirmButtonText: '确定',
+      cancelButtonText: '返回',
+      inputType: 'textarea',
+    });
 
     await taskStore.cancelTaskInstance(props.instance.uuid, { reason });
     ElMessage.info('任务已取消');
@@ -873,15 +825,11 @@ async function handleCommand(command: string) {
 async function handleSkip() {
   isOperating.value = true;
   try {
-    const { value: reason } = await ElMessageBox.prompt(
-      '跳过原因（可选）',
-      '跳过任务',
-      {
-        confirmButtonText: '跳过',
-        cancelButtonText: '取消',
-        inputType: 'textarea',
-      }
-    );
+    const { value: reason } = await ElMessageBox.prompt('跳过原因（可选）', '跳过任务', {
+      confirmButtonText: '跳过',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+    });
 
     await taskStore.skipTaskInstance(props.instance.uuid, { reason });
     ElMessage.info('任务已跳过');
@@ -896,7 +844,7 @@ async function handleSkip() {
 
 function handleReschedule() {
   rescheduleForm.value = {
-    scheduledTime: props.instance.timeConfig.scheduledTime 
+    scheduledTime: props.instance.timeConfig.scheduledTime
       ? new Date(props.instance.timeConfig.scheduledTime)
       : null,
     deadline: props.instance.timeConfig.deadline
@@ -946,14 +894,14 @@ async function confirmReschedule() {
 
 eventBus.on('TaskInstanceCompletedEvent', async (event) => {
   const { accountUuid, templateUuid, completedAt, actualDuration, isOnTime } = event.payload;
-  
+
   // 更新任务统计
   await statisticsService.incrementTaskCompleted(accountUuid, {
     completedAt,
     actualDuration,
     isOnTime,
   });
-  
+
   // 更新模板统计
   await statisticsService.updateTemplateStatistics(templateUuid, {
     incrementCompleted: 1,
@@ -963,10 +911,10 @@ eventBus.on('TaskInstanceCompletedEvent', async (event) => {
 
 eventBus.on('TaskInstanceUndoCompletedEvent', async (event) => {
   const { accountUuid, templateUuid } = event.payload;
-  
+
   // 减少完成计数
   await statisticsService.decrementTaskCompleted(accountUuid);
-  
+
   // 更新模板统计
   await statisticsService.updateTemplateStatistics(templateUuid, {
     decrementCompleted: 1,

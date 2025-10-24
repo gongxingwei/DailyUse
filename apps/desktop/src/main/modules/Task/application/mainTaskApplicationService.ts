@@ -1,17 +1,17 @@
-import { TaskDomainService } from "../domain/services/taskDomainService";
-import { TaskContainer } from "../infrastructure/di/taskContainer";
-import type { ITaskTemplateRepository } from "../domain/repositories/iTaskTemplateRepository";
-import type { ITaskInstanceRepository } from "../domain/repositories/iTaskInstanceRepository";
-import type { ITaskMetaTemplateRepository } from "../domain/repositories/iTaskMetaTemplateRepository";
-import { TaskTemplate } from "../domain/aggregates/taskTemplate";
-import { TaskTemplateValidator } from "../validation/TaskTemplateValidator";
+import { TaskDomainService } from '../domain/services/taskDomainService';
+import { TaskContainer } from '../infrastructure/di/taskContainer';
+import type { ITaskTemplateRepository } from '../domain/repositories/iTaskTemplateRepository';
+import type { ITaskInstanceRepository } from '../domain/repositories/iTaskInstanceRepository';
+import type { ITaskMetaTemplateRepository } from '../domain/repositories/iTaskMetaTemplateRepository';
+import { TaskTemplate } from '../domain/aggregates/taskTemplate';
+import { TaskTemplateValidator } from '../validation/TaskTemplateValidator';
 import type {
   ITaskTemplate,
   TaskResponse,
   ITaskTemplateDTO,
   ITaskMetaTemplateDTO,
-  ITaskInstanceDTO
-} from "@common/modules/task/types/task";
+  ITaskInstanceDTO,
+} from '@common/modules/task/types/task';
 
 /**
  * MainTaskApplicationService
@@ -34,8 +34,6 @@ export class MainTaskApplicationService {
     this.taskDomainService = new TaskDomainService();
   }
 
-
-
   // ========== 元模板相关 ==========
 
   /**
@@ -47,10 +45,13 @@ export class MainTaskApplicationService {
   async getAllMetaTemplates(accountUuid: string): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
     try {
       const templates = await this.taskMetaTemplateRepo.findAll(accountUuid);
-      const templateDTOs = templates.map(t => t.toDTO());
+      const templateDTOs = templates.map((t) => t.toDTO());
       return { success: true, data: templateDTOs };
     } catch (error) {
-      return { success: false, message: `Failed to get meta templates: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get meta templates: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -61,7 +62,10 @@ export class MainTaskApplicationService {
    * @returns { success: boolean, data?: ITaskMetaTemplateDTO, message?: string }
    * 示例返回: { success: true, data: { uuid, name, ... } }
    */
-  async getMetaTemplate(accountUuid: string, uuid: string): Promise<TaskResponse<ITaskMetaTemplateDTO>> {
+  async getMetaTemplate(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<TaskResponse<ITaskMetaTemplateDTO>> {
     try {
       const template = await this.taskMetaTemplateRepo.findById(accountUuid, uuid);
       if (!template) {
@@ -69,7 +73,10 @@ export class MainTaskApplicationService {
       }
       return { success: true, data: template.toDTO() };
     } catch (error) {
-      return { success: false, message: `Failed to get meta template: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get meta template: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -79,13 +86,19 @@ export class MainTaskApplicationService {
    * @param category 分类名
    * @returns { success: boolean, data?: ITaskMetaTemplateDTO[], message?: string }
    */
-  async getMetaTemplatesByCategory(accountUuid: string, category: string): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
+  async getMetaTemplatesByCategory(
+    accountUuid: string,
+    category: string,
+  ): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
     try {
       const templates = await this.taskMetaTemplateRepo.findByCategory(accountUuid, category);
-      const templateDTOs = templates.map(t => t.toDTO());
+      const templateDTOs = templates.map((t) => t.toDTO());
       return { success: true, data: templateDTOs };
     } catch (error) {
-      return { success: false, message: `Failed to get meta templates by category: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get meta templates by category: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -99,10 +112,13 @@ export class MainTaskApplicationService {
   async getAllTaskTemplates(accountUuid: string): Promise<TaskResponse<ITaskTemplateDTO[]>> {
     try {
       const templates = await this.taskTemplateRepo.findAll(accountUuid);
-      const templateDTOs = templates.map(t => t.toDTO());
+      const templateDTOs = templates.map((t) => t.toDTO());
       return { success: true, data: templateDTOs };
     } catch (error) {
-      return { success: false, message: `Failed to get task templates: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get task templates: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -112,7 +128,10 @@ export class MainTaskApplicationService {
    * @param taskTemplateId 任务模板ID
    * @returns { success: boolean, data?: ITaskTemplateDTO, message?: string }
    */
-  async getTaskTemplate(accountUuid: string, taskTemplateId: string): Promise<TaskResponse<ITaskTemplateDTO>> {
+  async getTaskTemplate(
+    accountUuid: string,
+    taskTemplateId: string,
+  ): Promise<TaskResponse<ITaskTemplateDTO>> {
     try {
       const template = await this.taskTemplateRepo.findById(accountUuid, taskTemplateId);
       if (!template) {
@@ -120,7 +139,10 @@ export class MainTaskApplicationService {
       }
       return { success: true, data: template.toDTO() };
     } catch (error) {
-      return { success: false, message: `Failed to get task template: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get task template: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -131,13 +153,24 @@ export class MainTaskApplicationService {
    * @param keyResultId 关键结果ID
    * @returns { success: boolean, data?: ITaskTemplateDTO[], message?: string }
    */
-  async getTaskTemplateForKeyResult(accountUuid: string, goalUuid: string, keyResultId: string): Promise<TaskResponse<ITaskTemplateDTO[]>> {
+  async getTaskTemplateForKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResultId: string,
+  ): Promise<TaskResponse<ITaskTemplateDTO[]>> {
     try {
-      const templates = await this.taskTemplateRepo.findByKeyResult(accountUuid, goalUuid, keyResultId);
-      const templateDTOs = templates.map(t => t.toDTO());
+      const templates = await this.taskTemplateRepo.findByKeyResult(
+        accountUuid,
+        goalUuid,
+        keyResultId,
+      );
+      const templateDTOs = templates.map((t) => t.toDTO());
       return { success: true, data: templateDTOs };
     } catch (error) {
-      return { success: false, message: `Failed to get task templates for key result: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get task templates for key result: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -148,7 +181,10 @@ export class MainTaskApplicationService {
    * @returns { success: boolean, data?: ITaskTemplateDTO, message?: string }
    * 业务流程：DTO转领域实体 -> 验证 -> 激活 -> 保存 -> 自动生成任务实例
    */
-  async createTaskTemplate(accountUuid: string, dto: ITaskTemplateDTO): Promise<TaskResponse<ITaskTemplateDTO>> {
+  async createTaskTemplate(
+    accountUuid: string,
+    dto: ITaskTemplateDTO,
+  ): Promise<TaskResponse<ITaskTemplateDTO>> {
     try {
       // 1. DTO 转领域实体
       const template = TaskTemplate.fromDTO(dto);
@@ -156,7 +192,7 @@ export class MainTaskApplicationService {
       // 2. 验证
       const validation = TaskTemplateValidator.validate(template);
       if (!validation.isValid) {
-        return { success: false, message: validation.errors.join(", ") };
+        return { success: false, message: validation.errors.join(', ') };
       }
 
       // 3. 激活模板
@@ -170,7 +206,7 @@ export class MainTaskApplicationService {
         const instances = await this.taskDomainService.generateInstancesWithBusinessRules(
           template,
           this.taskInstanceRepo,
-          { maxInstances: 10 }
+          { maxInstances: 10 },
         );
         for (const instance of instances) {
           await this.taskInstanceRepo.save(accountUuid, instance);
@@ -182,7 +218,10 @@ export class MainTaskApplicationService {
       // 6. 返回DTO
       return { success: true, data: savedTemplate.toDTO() };
     } catch (error) {
-      return { success: false, message: `Failed to create task template: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to create task template: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -192,32 +231,38 @@ export class MainTaskApplicationService {
    * @param dto 任务模板DTO对象
    * @returns { success: boolean, data?: ITaskTemplateDTO, message?: string }
    */
-  async updateTaskTemplate(accountUuid: string, dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplateDTO>> {
+  async updateTaskTemplate(
+    accountUuid: string,
+    dto: ITaskTemplate,
+  ): Promise<TaskResponse<ITaskTemplateDTO>> {
     try {
       const template = await this.taskTemplateRepo.findById(accountUuid, dto.uuid);
       if (!template) {
         return { success: false, message: `Task template with id ${dto.uuid} not found` };
       }
-      
+
       // 更新属性
       if (dto.title) template.updateTitle(dto.title);
       if (dto.description !== undefined) template.updateDescription(dto.description);
 
       const validation = TaskTemplateValidator.validate(template);
       if (!validation.isValid) {
-        return { success: false, message: validation.errors.join(", ") };
+        return { success: false, message: validation.errors.join(', ') };
       }
 
       await this.taskDomainService.updateTaskTemplate(
         template,
         this.taskTemplateRepo,
         this.taskInstanceRepo,
-        accountUuid
+        accountUuid,
       );
-      
+
       return { success: true, data: template.toDTO() };
     } catch (error) {
-      return { success: false, message: `Failed to update task template: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to update task template: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -233,18 +278,21 @@ export class MainTaskApplicationService {
       if (!template) {
         return { success: false, message: `Task template with id ${templateId} not found` };
       }
-      
+
       await this.taskDomainService.deleteTaskTemplate(
         template,
         this.taskTemplateRepo,
         this.taskInstanceRepo,
         true,
-        accountUuid
+        accountUuid,
       );
-      
-      return { success: true, message: "Task template deleted successfully" };
+
+      return { success: true, message: 'Task template deleted successfully' };
     } catch (error) {
-      return { success: false, message: `Failed to delete task template: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to delete task template: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -257,13 +305,13 @@ export class MainTaskApplicationService {
     try {
       const templates = await this.taskTemplateRepo.findAll(accountUuid);
       if (templates.length === 0) {
-        return { success: true, message: "No task templates to delete" };
+        return { success: true, message: 'No task templates to delete' };
       }
-      
+
       let successCount = 0;
       let errorCount = 0;
       const errors: string[] = [];
-      
+
       for (const template of templates) {
         try {
           await this.taskDomainService.deleteTaskTemplate(
@@ -271,7 +319,7 @@ export class MainTaskApplicationService {
             this.taskTemplateRepo,
             this.taskInstanceRepo,
             true,
-            accountUuid
+            accountUuid,
           );
           successCount++;
         } catch (error) {
@@ -280,16 +328,28 @@ export class MainTaskApplicationService {
           errors.push(`Error deleting template "${template.title}": ${errorMessage}`);
         }
       }
-      
+
       if (errorCount === 0) {
-        return { success: true, message: `Successfully deleted all ${successCount} task templates` };
+        return {
+          success: true,
+          message: `Successfully deleted all ${successCount} task templates`,
+        };
       } else if (successCount === 0) {
-        return { success: false, message: `Failed to delete all task templates: ${errors.join('; ')}` };
+        return {
+          success: false,
+          message: `Failed to delete all task templates: ${errors.join('; ')}`,
+        };
       } else {
-        return { success: true, message: `Partially completed: ${successCount} templates deleted successfully, ${errorCount} failed. Errors: ${errors.join('; ')}` };
+        return {
+          success: true,
+          message: `Partially completed: ${successCount} templates deleted successfully, ${errorCount} failed. Errors: ${errors.join('; ')}`,
+        };
       }
     } catch (error) {
-      return { success: false, message: `Failed to delete all task templates: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to delete all task templates: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -303,10 +363,13 @@ export class MainTaskApplicationService {
   async getAllTaskInstances(accountUuid: string): Promise<TaskResponse<ITaskInstanceDTO[]>> {
     try {
       const instances = await this.taskInstanceRepo.findAll(accountUuid);
-      const instanceDTOs = instances.map(i => i.toDTO());
+      const instanceDTOs = instances.map((i) => i.toDTO());
       return { success: true, data: instanceDTOs };
     } catch (error) {
-      return { success: false, message: `Failed to get task instances: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get task instances: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -316,7 +379,10 @@ export class MainTaskApplicationService {
    * @param taskInstanceId 任务实例ID
    * @returns { success: boolean, data?: ITaskInstanceDTO, message?: string }
    */
-  async getTaskInstance(accountUuid: string, taskInstanceId: string): Promise<TaskResponse<ITaskInstanceDTO>> {
+  async getTaskInstance(
+    accountUuid: string,
+    taskInstanceId: string,
+  ): Promise<TaskResponse<ITaskInstanceDTO>> {
     try {
       const instance = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!instance) {
@@ -324,7 +390,10 @@ export class MainTaskApplicationService {
       }
       return { success: true, data: instance.toDTO() };
     } catch (error) {
-      return { success: false, message: `Failed to get task instance: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get task instance: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -338,12 +407,15 @@ export class MainTaskApplicationService {
       const instances = await this.taskInstanceRepo.findByDateRange(
         accountUuid,
         new Date(new Date().setHours(0, 0, 0, 0)),
-        new Date(new Date().setHours(23, 59, 59, 999))
+        new Date(new Date().setHours(23, 59, 59, 999)),
       );
-      const instanceDTOs = instances.map(i => i.toDTO());
+      const instanceDTOs = instances.map((i) => i.toDTO());
       return { success: true, data: instanceDTOs };
     } catch (error) {
-      return { success: false, message: `Failed to get today tasks: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to get today tasks: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -357,16 +429,19 @@ export class MainTaskApplicationService {
     try {
       const taskInstance = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!taskInstance) {
-        return { success: false, message: "Task instance not found" };
+        return { success: false, message: 'Task instance not found' };
       }
-      
+
       taskInstance.complete(accountUuid);
       await this.taskInstanceRepo.update(accountUuid, taskInstance);
-      
+
       // 可在此发布领域事件
-      return { success: true, message: "Task instance completed successfully" };
+      return { success: true, message: 'Task instance completed successfully' };
     } catch (error) {
-      return { success: false, message: `Failed to complete task instance ${taskInstanceId}: ${error instanceof Error ? error.message : "未知错误"}` };
+      return {
+        success: false,
+        message: `Failed to complete task instance ${taskInstanceId}: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -380,20 +455,26 @@ export class MainTaskApplicationService {
     try {
       const taskInstance = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!taskInstance) {
-        return { success: false, message: "Task instance not found" };
+        return { success: false, message: 'Task instance not found' };
       }
-      
+
       if (!taskInstance.isCompleted()) {
-        return { success: false, message: "Task instance is not completed, cannot undo completion" };
+        return {
+          success: false,
+          message: 'Task instance is not completed, cannot undo completion',
+        };
       }
-      
+
       taskInstance.undoComplete(accountUuid);
       await this.taskInstanceRepo.update(accountUuid, taskInstance);
-      
+
       // 可在此发布领域事件
-      return { success: true, message: "Task instance undone successfully" };
+      return { success: true, message: 'Task instance undone successfully' };
     } catch (error) {
-      return { success: false, message: `Failed to undo task instance ${taskInstanceId} completion: ${error instanceof Error ? error.message : "未知错误"}` };
+      return {
+        success: false,
+        message: `Failed to undo task instance ${taskInstanceId} completion: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -407,15 +488,18 @@ export class MainTaskApplicationService {
     try {
       const taskInstance = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!taskInstance) {
-        return { success: false, message: "Task instance not found" };
+        return { success: false, message: 'Task instance not found' };
       }
-      
+
       taskInstance.cancel();
       await this.taskInstanceRepo.update(accountUuid, taskInstance);
-      
-      return { success: true, message: "Task instance cancelled successfully" };
+
+      return { success: true, message: 'Task instance cancelled successfully' };
     } catch (error) {
-      return { success: false, message: `Failed to cancel task instance ${taskInstanceId}: ${error instanceof Error ? error.message : "未知错误"}` };
+      return {
+        success: false,
+        message: `Failed to cancel task instance ${taskInstanceId}: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -433,7 +517,7 @@ export class MainTaskApplicationService {
       if (!template) {
         return false;
       }
-      
+
       template.activate();
       await this.taskTemplateRepo.update(accountUuid, template);
       return true;
@@ -454,12 +538,12 @@ export class MainTaskApplicationService {
       if (!template) {
         return false;
       }
-      
+
       await this.taskDomainService.pauseTaskTemplate(
         template,
         this.taskTemplateRepo,
         this.taskInstanceRepo,
-        accountUuid
+        accountUuid,
       );
       return true;
     } catch (error) {
@@ -479,12 +563,12 @@ export class MainTaskApplicationService {
       if (!template) {
         return false;
       }
-      
+
       await this.taskDomainService.resumeTaskTemplate(
         template,
         this.taskTemplateRepo,
         this.taskInstanceRepo,
-        accountUuid
+        accountUuid,
       );
       return true;
     } catch (error) {
@@ -504,7 +588,7 @@ export class MainTaskApplicationService {
       if (!template) {
         return false;
       }
-      
+
       template.archive();
       await this.taskTemplateRepo.update(accountUuid, template);
       return true;
@@ -530,17 +614,24 @@ export class MainTaskApplicationService {
       if (!metaTemplate) {
         return { success: false, message: `Meta template with id ${metaTemplateId} not found` };
       }
-      
+
       const taskTemplate = metaTemplate.createTaskTemplate();
       const validation = TaskTemplateValidator.validate(taskTemplate);
       if (!validation.isValid) {
-        return { success: false, message: validation.errors.join(", ") };
+        return { success: false, message: validation.errors.join(', ') };
       }
       const taskTemplateDTO = taskTemplate.toDTO();
 
-      return { success: true, message: 'Task template created from meta template (not saved yet)', data: taskTemplateDTO };
+      return {
+        success: true,
+        message: 'Task template created from meta template (not saved yet)',
+        data: taskTemplateDTO,
+      };
     } catch (error) {
-      return { success: false, message: `Failed to create task template from meta template: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to create task template from meta template: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 
@@ -553,11 +644,14 @@ export class MainTaskApplicationService {
     try {
       await this.taskDomainService.initializeSystemTemplates(
         this.taskMetaTemplateRepo,
-        accountUuid
+        accountUuid,
       );
-      return { success: true, message: "System templates initialized successfully" };
+      return { success: true, message: 'System templates initialized successfully' };
     } catch (error) {
-      return { success: false, message: `Failed to initialize system templates: ${error instanceof Error ? error.message : '未知错误'}` };
+      return {
+        success: false,
+        message: `Failed to initialize system templates: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
     }
   }
 }

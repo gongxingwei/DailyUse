@@ -10,14 +10,15 @@ export class AccountEventHandlers {
     // 账户登录事件，监听 Authentication 模块发送的 UserLoggedIn 事件，接收 accountUuid，来向主进程获取完整账户信息
     eventBus.subscribe<UserLoggedInEvent>('UserLoggedIn', async (event) => {
       console.log('Account模块处理账户登录事件事件:', event);
-      await accountLoggedService.initAccountInfo(event.payload.accountUuid)
-      .then(async (response) => {
-        if (response.success) {
-          console.log('成功处理 UserLoggedIn 事件');
-        } else {
-          console.log('UserLoggedIn 事件失败');
-        }
-      })
+      await accountLoggedService
+        .initAccountInfo(event.payload.accountUuid)
+        .then(async (response) => {
+          if (response.success) {
+            console.log('成功处理 UserLoggedIn 事件');
+          } else {
+            console.log('UserLoggedIn 事件失败');
+          }
+        });
     });
 
     // 账户更新事件 - 监听

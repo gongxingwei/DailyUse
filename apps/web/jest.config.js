@@ -2,31 +2,34 @@
 export default {
   // 使用 ts-jest preset
   preset: 'ts-jest',
-  
+
   // 测试环境
   testEnvironment: 'jsdom',
-  
+
   // 测试环境选项
   testEnvironmentOptions: {
     customExportConditions: ['node', 'node-addons'],
   },
-  
+
   // 支持的文件扩展名
   moduleFileExtensions: ['js', 'ts', 'json', 'vue'],
-  
+
   // 文件转换规则
   transform: {
     '^.+\\.vue$': '@vue/vue3-jest',
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'preserve',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          jsx: 'preserve',
+          esModuleInterop: true,
+          allowSyntheticDefaultImports: true,
+        },
+        isolatedModules: true,
       },
-      isolatedModules: true,
-    }],
+    ],
   },
-  
+
   // 模块名称映射（路径别名）
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -39,24 +42,19 @@ export default {
     // 静态资源处理
     '\\.(jpg|jpeg|png|gif|svg|webp)$': '<rootDir>/src/test/__mocks__/fileMock.js',
   },
-  
+
   // 测试匹配模式
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{spec,test}.{js,ts}',
     '<rootDir>/src/**/*.{spec,test}.{js,ts}',
   ],
-  
+
   // 忽略的路径
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/coverage/',
-    '\\.snap$',
-  ],
-  
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/', '\\.snap$'],
+
   // 测试设置文件
   setupFilesAfterEnv: ['<rootDir>/src/test/jest.setup.ts'],
-  
+
   // 覆盖率收集
   collectCoverageFrom: [
     'src/**/*.{js,ts,vue}',
@@ -68,7 +66,7 @@ export default {
     '!src/App.vue',
     '!src/**/*.stories.ts',
   ],
-  
+
   // 覆盖率阈值
   coverageThreshold: {
     global: {
@@ -78,27 +76,25 @@ export default {
       statements: 85,
     },
   },
-  
+
   // 覆盖率报告格式
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
-  
+
   // 覆盖率输出目录
   coverageDirectory: '<rootDir>/coverage',
-  
+
   // 清除 mock
   clearMocks: true,
-  
+
   // 每个测试文件的最大并发数
   maxWorkers: '50%',
-  
+
   // 测试超时时间 (ms)
   testTimeout: 10000,
-  
+
   // 详细输出
   verbose: true,
-  
+
   // 转换忽略
-  transformIgnorePatterns: [
-    'node_modules/(?!(@vue|@vueuse|echarts|zrender)/)',
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(@vue|@vueuse|echarts|zrender)/)'],
 };

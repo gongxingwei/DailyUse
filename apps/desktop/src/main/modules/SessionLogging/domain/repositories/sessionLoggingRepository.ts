@@ -1,5 +1,5 @@
-import { SessionLog } from "../aggregates/sessionLog";
-import { AuditTrail } from "../entities/auditTrail";
+import { SessionLog } from '../aggregates/sessionLog';
+import { AuditTrail } from '../entities/auditTrail';
 
 /**
  * 会话日志存储库接口
@@ -13,7 +13,11 @@ export interface ISessionLoggingRepository {
   findAnomalous(): Promise<SessionLog[]>;
   findByRiskLevel(riskLevel: string): Promise<SessionLog[]>;
   findByTimeRange(startTime: Date, endTime: Date): Promise<SessionLog[]>;
-  findByAccountUuidAndTimeRange(accountUuid: string, startTime: Date, endTime: Date): Promise<SessionLog[]>;
+  findByAccountUuidAndTimeRange(
+    accountUuid: string,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<SessionLog[]>;
   delete(uuid: string): Promise<void>;
   deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteOlderThan(date: Date): Promise<number>;
@@ -31,7 +35,11 @@ export interface IAuditTrailRepository {
   findByRiskLevel(riskLevel: string): Promise<AuditTrail[]>;
   findAlertsTriggered(): Promise<AuditTrail[]>;
   findByTimeRange(startTime: Date, endTime: Date): Promise<AuditTrail[]>;
-  findByAccountUuidAndTimeRange(accountUuid: string, startTime: Date, endTime: Date): Promise<AuditTrail[]>;
+  findByAccountUuidAndTimeRange(
+    accountUuid: string,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<AuditTrail[]>;
   delete(uuid: string): Promise<void>;
   deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteBySessionLogId(sessionLogId: string): Promise<void>;

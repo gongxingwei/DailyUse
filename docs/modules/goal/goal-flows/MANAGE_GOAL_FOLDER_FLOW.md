@@ -51,12 +51,12 @@ POST /api/goal-folders
 ```typescript
 interface CreateGoalFolderRequest {
   accountUuid: string;
-  name: string;                        // 必填，1-100 字符
-  description?: string | null;         // 可选描述
-  color?: string | null;               // 主题色（hex 格式）
-  icon?: string | null;                // 图标名称
-  parentFolderUuid?: string | null;    // 父文件夹 UUID（支持嵌套）
-  sortOrder?: number;                  // 排序
+  name: string; // 必填，1-100 字符
+  description?: string | null; // 可选描述
+  color?: string | null; // 主题色（hex 格式）
+  icon?: string | null; // 图标名称
+  parentFolderUuid?: string | null; // 父文件夹 UUID（支持嵌套）
+  sortOrder?: number; // 排序
 }
 ```
 
@@ -73,12 +73,12 @@ interface GoalFolderClientDTO {
   accountUuid: string;
   name: string;
   description: string | null;
-  type: FolderType;                    // CUSTOM | SYSTEM
+  type: FolderType; // CUSTOM | SYSTEM
   color: string | null;
   icon: string | null;
   parentFolderUuid: string | null;
   sortOrder: number;
-  goalCount: number;                   // 包含的目标数量
+  goalCount: number; // 包含的目标数量
   createdAt: number;
   updatedAt: number;
 }
@@ -198,23 +198,16 @@ export class GoalFolder extends AggregateRoot {
 ```typescript
 // GoalFolderApplicationService.ts
 export class GoalFolderApplicationService {
-  async createFolder(
-    request: CreateGoalFolderRequest
-  ): Promise<CreateGoalFolderResponse> {
+  async createFolder(request: CreateGoalFolderRequest): Promise<CreateGoalFolderResponse> {
     // 1. 检查同名文件夹
-    const exists = await this.folderRepository.existsByName(
-      request.accountUuid,
-      request.name
-    );
+    const exists = await this.folderRepository.existsByName(request.accountUuid, request.name);
     if (exists) {
       throw new Error(`文件夹"${request.name}"已存在`);
     }
 
     // 2. 验证父文件夹（如果指定）
     if (request.parentFolderUuid) {
-      const parentFolder = await this.folderRepository.findByUuid(
-        request.parentFolderUuid
-      );
+      const parentFolder = await this.folderRepository.findByUuid(request.parentFolderUuid);
       if (!parentFolder) {
         throw new Error('父文件夹不存在');
       }
@@ -255,7 +248,7 @@ PATCH /api/goals/:goalUuid/move
 
 ```typescript
 interface MoveGoalToFolderRequest {
-  folderUuid: string | null;          // null 表示移到"全部目标"
+  folderUuid: string | null; // null 表示移到"全部目标"
 }
 ```
 
@@ -414,13 +407,7 @@ async deleteFolder(
     <div class="custom-folders">
       <div class="header">
         <span>我的文件夹</span>
-        <el-button 
-          type="text" 
-          icon="Plus"
-          @click="showCreateDialog = true"
-        >
-          新建
-        </el-button>
+        <el-button type="text" icon="Plus" @click="showCreateDialog = true"> 新建 </el-button>
       </div>
 
       <el-tree
@@ -437,10 +424,7 @@ async deleteFolder(
             <span>{{ data.name }}</span>
             <span class="count">({{ data.goalCount }})</span>
 
-            <el-dropdown 
-              trigger="click"
-              @command="handleFolderAction(data, $event)"
-            >
+            <el-dropdown trigger="click" @command="handleFolderAction(data, $event)">
               <el-icon class="more-icon">
                 <MoreFilled />
               </el-icon>
@@ -457,10 +441,7 @@ async deleteFolder(
     </div>
 
     <!-- 创建文件夹对话框 -->
-    <CreateFolderDialog 
-      v-model="showCreateDialog"
-      @success="handleFolderCreated"
-    />
+    <CreateFolderDialog v-model="showCreateDialog" @success="handleFolderCreated" />
   </div>
 </template>
 
@@ -474,7 +455,7 @@ const showCreateDialog = ref(false);
 const currentFolderUuid = ref<string | null>(null);
 
 const systemFolders = computed(() => {
-  return folderStore.folders.filter(f => f.type === 'SYSTEM');
+  return folderStore.folders.filter((f) => f.type === 'SYSTEM');
 });
 
 const folderTree = computed(() => {
@@ -496,24 +477,20 @@ async function handleFolderAction(folder: any, command: string) {
 
 async function handleRenameFolder(folder: any) {
   try {
-    const { value: newName } = await ElMessageBox.prompt(
-      '请输入新的文件夹名称',
-      '重命名',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        inputValue: folder.name,
-        inputValidator: (value) => {
-          if (!value || value.trim().length === 0) {
-            return '名称不能为空';
-          }
-          if (value.length > 100) {
-            return '名称不能超过 100 字符';
-          }
-          return true;
-        },
-      }
-    );
+    const { value: newName } = await ElMessageBox.prompt('请输入新的文件夹名称', '重命名', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputValue: folder.name,
+      inputValidator: (value) => {
+        if (!value || value.trim().length === 0) {
+          return '名称不能为空';
+        }
+        if (value.length > 100) {
+          return '名称不能超过 100 字符';
+        }
+        return true;
+      },
+    });
 
     await folderStore.renameFolder(folder.uuid, newName);
     ElMessage.success('重命名成功');
@@ -533,7 +510,7 @@ async function handleDeleteFolder(folder: any) {
         confirmButtonText: '删除',
         cancelButtonText: '取消',
         type: 'warning',
-      }
+      },
     );
 
     await folderStore.deleteFolder(folder.uuid);
@@ -628,9 +605,9 @@ describe('GoalFolderApplicationService.deleteFolder()', () => {
   it('should move goals to root when deleting folder', async () => {
     // 创建文件夹和目标
     const folder = await service.createFolder({ name: 'Test' });
-    const goal = await goalService.createGoal({ 
+    const goal = await goalService.createGoal({
       title: 'Test Goal',
-      folderUuid: folder.uuid 
+      folderUuid: folder.uuid,
     });
 
     // 删除文件夹

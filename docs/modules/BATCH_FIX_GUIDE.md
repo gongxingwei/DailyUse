@@ -7,10 +7,12 @@
 ## 📋 修正清单
 
 ### ✅ 已完成
+
 - [x] Goal 模块 - `docs/modules/goal/GOAL_MODULE_PLAN.md`
 - [x] 创建修正说明文档 - `docs/modules/MODULE_PLAN_CORRECTIONS.md`
 
 ### 🔄 待完成（已删除旧文件，等待创建）
+
 - [ ] Task 模块 - `docs/modules/task/TASK_MODULE_PLAN.md`
 - [ ] Reminder 模块 - `docs/modules/reminder/REMINDER_MODULE_PLAN.md` **（特殊：去掉归档状态）**
 - [ ] Account 模块 - `docs/modules/account/ACCOUNT_MODULE_PLAN.md`
@@ -34,21 +36,21 @@
 
 ### 2. Client DTO 命名修正
 
-| 模块 | 旧命名 | 新命名 |
-|------|--------|--------|
-| Task | `TaskTemplateDTO` | `TaskTemplateClientDTO` |
-| Task | `TaskInstanceDTO` | `TaskInstanceClientDTO` |
-| Task | `TaskFolderDTO` | `TaskFolderClientDTO` |
-| Reminder | `ReminderTemplateDTO` | `ReminderTemplateClientDTO` |
-| Reminder | `ReminderInstanceDTO` | `ReminderInstanceClientDTO` |
-| Account | `AccountDTO` | `AccountClientDTO` |
-| Account | `AccountPreferencesDTO` | `AccountPreferencesClientDTO` |
-| Authentication | `SessionDTO` | `SessionClientDTO` |
-| Authentication | `AuthTokenDTO` | `AuthTokenClientDTO` |
-| Notification | `NotificationDTO` | `NotificationClientDTO` |
-| Notification | `NotificationPreferencesDTO` | `NotificationPreferencesClientDTO` |
-| Setting | `UserPreferenceDTO` | `UserPreferenceClientDTO` |
-| Setting | `ThemeSettingDTO` | `ThemeSettingClientDTO` |
+| 模块           | 旧命名                       | 新命名                             |
+| -------------- | ---------------------------- | ---------------------------------- |
+| Task           | `TaskTemplateDTO`            | `TaskTemplateClientDTO`            |
+| Task           | `TaskInstanceDTO`            | `TaskInstanceClientDTO`            |
+| Task           | `TaskFolderDTO`              | `TaskFolderClientDTO`              |
+| Reminder       | `ReminderTemplateDTO`        | `ReminderTemplateClientDTO`        |
+| Reminder       | `ReminderInstanceDTO`        | `ReminderInstanceClientDTO`        |
+| Account        | `AccountDTO`                 | `AccountClientDTO`                 |
+| Account        | `AccountPreferencesDTO`      | `AccountPreferencesClientDTO`      |
+| Authentication | `SessionDTO`                 | `SessionClientDTO`                 |
+| Authentication | `AuthTokenDTO`               | `AuthTokenClientDTO`               |
+| Notification   | `NotificationDTO`            | `NotificationClientDTO`            |
+| Notification   | `NotificationPreferencesDTO` | `NotificationPreferencesClientDTO` |
+| Setting        | `UserPreferenceDTO`          | `UserPreferenceClientDTO`          |
+| Setting        | `ThemeSettingDTO`            | `ThemeSettingClientDTO`            |
 
 ### 3. 聚合根 DTO 转换方法（Domain-Server）
 
@@ -73,7 +75,7 @@
 \`\`\`typescript
 export class XxxClient extends AggregateRoot {
   // ... 同 Domain-Server 层的业务方法
-  
+
   // ===== DTO 转换方法（Domain-Client 层）=====
   public toServerDTO(includeChildren = false): XxxServerDTO;
   public toClientDTO(includeChildren = false): XxxClientDTO;
@@ -95,10 +97,15 @@ export class XxxClient extends AggregateRoot {
 ## 9. TypeScript 类型定义
 
 ### 9.1 枚举
+
 ### 9.2 Server DTO
+
 ### 9.3 Client DTO
-### 9.4 Persistence DTO  ⬅️ 新增
+
+### 9.4 Persistence DTO ⬅️ 新增
+
 ### 9.5 API Request/Response DTO
+
 ### 9.6 创建参数类型
 ```
 
@@ -108,19 +115,19 @@ export class XxxClient extends AggregateRoot {
 // ===== Xxx Persistence DTO =====
 export interface XxxPersistenceDTO {
   uuid: string;
-  account_uuid: string;  // snake_case
+  account_uuid: string; // snake_case
   title: string;
   description: string | null;
-  
+
   // 日期字段使用 timestamp
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
-  
+
   // JSON 字段需要序列化
-  tags: string;  // JSON.stringify(string[])
-  custom_fields: string;  // JSON.stringify(Record<string, any>)
-  
+  tags: string; // JSON.stringify(string[])
+  custom_fields: string; // JSON.stringify(Record<string, any>)
+
   // 其他字段...
 }
 ```
@@ -146,8 +153,8 @@ export interface IXxxRepository {
   // ...
   softDelete(uuid: string): Promise<void>;
   restore(uuid: string): Promise<void>;
-  hardDelete(uuid: string): Promise<void>;  // 物理删除（谨慎使用）
-  
+  hardDelete(uuid: string): Promise<void>; // 物理删除（谨慎使用）
+
   findByAccountUuid(accountUuid: string, includeDeleted?: boolean): Promise<Xxx[]>;
 }
 ```
@@ -166,7 +173,7 @@ export enum ReminderTemplateStatus {
   Draft = 'draft',
   Active = 'active',
   Paused = 'paused',
-  Archived = 'archived',  // 删除这个
+  Archived = 'archived', // 删除这个
   Deleted = 'deleted',
 }
 

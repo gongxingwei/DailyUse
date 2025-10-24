@@ -41,7 +41,7 @@ export function useTimeConfigValidation() {
       // 时长合理性检查
       const duration = timeConfig.baseTime.end.getTime() - timeConfig.baseTime.start.getTime();
       const hours = duration / (1000 * 60 * 60);
-      
+
       if (hours > 12) {
         warnings.value.push('任务时长超过12小时，请确认是否合理');
       } else if (hours < 0.25) {
@@ -63,17 +63,20 @@ export function useTimeConfigValidation() {
   /**
    * 快速检查时间冲突 (简单的UI层检查)
    */
-  const checkBasicTimeConflict = (timeConfig: TaskTemplate['timeConfig'], otherTimes: TaskTemplate['timeConfig'][] = []): boolean => {
+  const checkBasicTimeConflict = (
+    timeConfig: TaskTemplate['timeConfig'],
+    otherTimes: TaskTemplate['timeConfig'][] = [],
+  ): boolean => {
     if (timeConfig.type === 'allDay') return true;
 
     // 简单的重叠检查
     for (const other of otherTimes) {
       if (other.type === 'allDay') continue;
-      
+
       const start1 = timeConfig.baseTime.start.getTime();
-      const end1 = timeConfig.baseTime.end?.getTime() || start1 + (60 * 60 * 1000); // 默认1小时
+      const end1 = timeConfig.baseTime.end?.getTime() || start1 + 60 * 60 * 1000; // 默认1小时
       const start2 = other.baseTime.start.getTime();
-      const end2 = other.baseTime.end?.getTime() || start2 + (60 * 60 * 1000);
+      const end2 = other.baseTime.end?.getTime() || start2 + 60 * 60 * 1000;
 
       if (start1 < end2 && end1 > start2) {
         warnings.value.push('存在时间重叠的任务，请注意安排');
@@ -89,7 +92,7 @@ export function useTimeConfigValidation() {
    */
   const validateRecurrenceSettings = (timeConfig: TaskTemplate['timeConfig']): boolean => {
     const recurrence = timeConfig.recurrence;
-    
+
     if (recurrence.type === 'none') return true;
 
     // 检查间隔合理性
@@ -125,11 +128,11 @@ export function useTimeConfigValidation() {
     warnings,
     isValid,
     hasWarnings,
-    
+
     // 方法 - 仅UI验证相关
     validateTimeConfig,
     checkBasicTimeConflict,
     validateRecurrenceSettings,
-    resetValidation
+    resetValidation,
   };
 }

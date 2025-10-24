@@ -44,7 +44,7 @@ export function serializeForIpc(obj: any): any {
 
   // 处理数组
   if (Array.isArray(obj)) {
-    return obj.map(item => serializeForIpc(item));
+    return obj.map((item) => serializeForIpc(item));
   }
 
   // 处理普通对象
@@ -81,7 +81,7 @@ export function serializeForIpc(obj: any): any {
  * 自动序列化参数
  */
 export function safeIpcInvoke(channel: string, ...args: any[]): Promise<any> {
-  const serializedArgs = args.map(arg => serializeForIpc(arg));
+  const serializedArgs = args.map((arg) => serializeForIpc(arg));
   return window.shared.ipcRenderer.invoke(channel, ...serializedArgs);
 }
 
@@ -106,7 +106,9 @@ export function validateAndSerializeForIpc(obj: any, context?: string): any {
 
   if (!isIpcSafe(serialized)) {
     const contextInfo = context ? ` in ${context}` : '';
-    throw new Error(`Object cannot be safely transmitted via IPC${contextInfo}. Check for circular references or non-serializable properties.`);
+    throw new Error(
+      `Object cannot be safely transmitted via IPC${contextInfo}. Check for circular references or non-serializable properties.`,
+    );
   }
 
   return serialized;
@@ -122,35 +124,40 @@ export function deepSerializeForIpc(obj: any): any {
     const regularSerialized = serializeForIpc(obj);
 
     // 然后使用JSON.stringify/parse进行深度清理
-    const deepCleaned = JSON.parse(JSON.stringify(regularSerialized, (_key, value) => {
-      if (typeof value === 'function') {
-        return undefined;
-      }
-      if (typeof value === 'undefined') {
-        return null;
-      }
-      if (value instanceof Date) {
-        return value.toISOString();
-      }
-      if (value && typeof value === 'object') {
-        try {
-          JSON.stringify(value);
-        } catch {
+    const deepCleaned = JSON.parse(
+      JSON.stringify(regularSerialized, (_key, value) => {
+        if (typeof value === 'function') {
+          return undefined;
+        }
+        if (typeof value === 'undefined') {
           return null;
         }
-      }
-      return value;
-    }));
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        if (value && typeof value === 'object') {
+          try {
+            JSON.stringify(value);
+          } catch {
+            return null;
+          }
+        }
+        return value;
+      }),
+    );
 
     return deepCleaned;
-
   } catch {
     if (obj && typeof obj === 'object') {
       const safeObj: any = {};
       for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
           const value = obj[key];
-          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+          if (
+            typeof value === 'string' ||
+            typeof value === 'number' ||
+            typeof value === 'boolean'
+          ) {
             safeObj[key] = value;
           } else if (value === null) {
             safeObj[key] = null;

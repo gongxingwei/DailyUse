@@ -10,11 +10,7 @@
       <div v-if="currentDependencies.length > 0" class="mb-4">
         <div class="text-subtitle-2 mb-2">当前依赖 ({{ currentDependencies.length }})</div>
         <v-list density="compact">
-          <v-list-item
-            v-for="dep in currentDependencies"
-            :key="dep.uuid"
-            class="px-0"
-          >
+          <v-list-item v-for="dep in currentDependencies" :key="dep.uuid" class="px-0">
             <template #prepend>
               <v-icon :color="getDependencyTypeColor(dep.dependencyType)" size="small">
                 {{ getDependencyTypeIcon(dep.dependencyType) }}
@@ -45,9 +41,9 @@
 
       <!-- 添加新依赖 -->
       <v-divider class="my-4" />
-      
+
       <div class="text-subtitle-2 mb-3">添加新依赖</div>
-      
+
       <v-row>
         <v-col cols="12" md="5">
           <v-select
@@ -109,12 +105,7 @@
       </v-row>
 
       <!-- 验证警告 -->
-      <v-alert
-        v-if="validationWarnings.length > 0"
-        type="warning"
-        density="compact"
-        class="mt-3"
-      >
+      <v-alert v-if="validationWarnings.length > 0" type="warning" density="compact" class="mt-3">
         <div class="text-subtitle-2 mb-1">⚠️ 验证警告</div>
         <ul class="pl-4 mb-0">
           <li v-for="(warning, index) in validationWarnings" :key="index">
@@ -148,7 +139,10 @@ import { TaskContracts } from '@dailyuse/contracts';
 import type { TaskForDAG } from '@/modules/task/types/task-dag.types';
 import { taskDependencyValidationService } from '@/modules/task/application/services/TaskDependencyValidationService';
 import { taskAutoStatusService } from '@/modules/task/application/services/TaskAutoStatusService';
-import type { ValidationError, ValidationWarning } from '@/modules/task/application/services/TaskDependencyValidationService';
+import type {
+  ValidationError,
+  ValidationWarning,
+} from '@/modules/task/application/services/TaskDependencyValidationService';
 import DependencyValidationDialog from './DependencyValidationDialog.vue';
 import BlockedTaskInfo from './BlockedTaskInfo.vue';
 import { taskDependencyApiClient } from '@/modules/task/infrastructure/api/taskApiClient';
@@ -184,16 +178,14 @@ const showValidationDialog = ref(false);
 // Computed
 const currentDependencies = computed(() => {
   if (!props.currentTaskUuid) return [];
-  return props.dependencies.filter(
-    dep => dep.successorTaskUuid === props.currentTaskUuid
-  );
+  return props.dependencies.filter((dep) => dep.successorTaskUuid === props.currentTaskUuid);
 });
 
 const availablePredecessors = computed(() => {
   if (!props.currentTaskUuid) return [];
-  
+
   // 排除当前任务自己
-  return props.allTasks.filter(task => task.uuid !== props.currentTaskUuid);
+  return props.allTasks.filter((task) => task.uuid !== props.currentTaskUuid);
 });
 
 const canAddDependency = computed(() => {
@@ -207,21 +199,21 @@ const canAddDependency = computed(() => {
 
 const blockingInfo = computed(() => {
   if (!props.currentTaskUuid) return null;
-  
-  const currentTask = props.allTasks.find(t => t.uuid === props.currentTaskUuid);
+
+  const currentTask = props.allTasks.find((t) => t.uuid === props.currentTaskUuid);
   if (!currentTask) return null;
-  
+
   const readiness = taskAutoStatusService.analyzeTaskReadiness(
     currentTask,
     props.allTasks,
-    props.dependencies
+    props.dependencies,
   );
-  
+
   if (readiness.incompletePredecessors.length === 0) return null;
-  
+
   return {
-    blockingTasks: readiness.incompletePredecessors.map(uuid => {
-      const task = props.allTasks.find(t => t.uuid === uuid);
+    blockingTasks: readiness.incompletePredecessors.map((uuid) => {
+      const task = props.allTasks.find((t) => t.uuid === uuid);
       return {
         uuid,
         title: task?.title || 'Unknown',
@@ -268,11 +260,11 @@ const dependencyTypeOptions = [
 // Methods
 const handleAddDependency = async () => {
   if (!props.currentTaskUuid || !newDependency.value.predecessorUuid) return;
-  
+
   isValidating.value = true;
   validationError.value = null;
   validationWarnings.value = [];
-  
+
   try {
     // 1. 验证依赖
     const validationResult = await taskDependencyValidationService.validateDependency(
@@ -280,44 +272,40 @@ const handleAddDependency = async () => {
       props.currentTaskUuid,
       newDependency.value.dependencyType,
       props.dependencies,
-      props.allTasks
+      props.allTasks,
     );
-    
+
     // 2. 处理验证结果
     if (!validationResult.isValid) {
       validationError.value = validationResult.errors[0];
       showValidationDialog.value = true;
       return;
     }
-    
+
     // 显示警告（如果有）
     if (validationResult.warnings.length > 0) {
       validationWarnings.value = validationResult.warnings;
     }
-    
+
     // 3. 创建依赖
-    const newDep = await taskDependencyApiClient.createDependency(
-      props.currentTaskUuid,
-      {
-        predecessorTaskUuid: newDependency.value.predecessorUuid,
-        dependencyType: newDependency.value.dependencyType,
-      }
-    );
-    
+    const newDep = await taskDependencyApiClient.createDependency(props.currentTaskUuid, {
+      predecessorTaskUuid: newDependency.value.predecessorUuid,
+      dependencyType: newDependency.value.dependencyType,
+    });
+
     // 4. 触发状态级联更新
     await taskAutoStatusService.updateTaskStatusOnDependencyChange(
       props.currentTaskUuid,
       props.allTasks,
-      [...props.dependencies, newDep]
+      [...props.dependencies, newDep],
     );
-    
+
     // 5. 通知父组件
     emit('dependency-added', newDep);
-    
+
     // 6. 重置表单
     newDependency.value.predecessorUuid = '';
     newDependency.value.dependencyType = 'FS';
-    
   } catch (error) {
     console.error('Failed to add dependency:', error);
     validationError.value = {
@@ -333,17 +321,17 @@ const handleAddDependency = async () => {
 const handleDeleteDependency = async (dep: TaskDependencyClientDTO) => {
   try {
     await taskDependencyApiClient.deleteDependency(dep.uuid);
-    
+
     // 触发状态级联更新
     if (props.currentTaskUuid) {
-      const remainingDeps = props.dependencies.filter(d => d.uuid !== dep.uuid);
+      const remainingDeps = props.dependencies.filter((d) => d.uuid !== dep.uuid);
       await taskAutoStatusService.updateTaskStatusOnDependencyChange(
         props.currentTaskUuid,
         props.allTasks,
-        remainingDeps
+        remainingDeps,
       );
     }
-    
+
     emit('dependency-deleted', dep.uuid);
   } catch (error) {
     console.error('Failed to delete dependency:', error);
@@ -351,7 +339,7 @@ const handleDeleteDependency = async (dep: TaskDependencyClientDTO) => {
 };
 
 const getTaskTitle = (uuid: string): string => {
-  const task = props.allTasks.find(t => t.uuid === uuid);
+  const task = props.allTasks.find((t) => t.uuid === uuid);
   return task?.title || uuid.substring(0, 8) + '...';
 };
 
@@ -367,17 +355,17 @@ const getStatusColor = (status: string): string => {
 };
 
 const getDependencyTypeColor = (type: string): string => {
-  const option = dependencyTypeOptions.find(opt => opt.value === type);
+  const option = dependencyTypeOptions.find((opt) => opt.value === type);
   return option?.color || 'default';
 };
 
 const getDependencyTypeIcon = (type: string): string => {
-  const option = dependencyTypeOptions.find(opt => opt.value === type);
+  const option = dependencyTypeOptions.find((opt) => opt.value === type);
   return option?.icon || 'mdi-arrow-right';
 };
 
 const getDependencyTypeName = (type: string): string => {
-  const option = dependencyTypeOptions.find(opt => opt.value === type);
+  const option = dependencyTypeOptions.find((opt) => opt.value === type);
   return option?.label || type;
 };
 

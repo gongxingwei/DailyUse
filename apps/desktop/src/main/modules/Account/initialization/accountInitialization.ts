@@ -1,4 +1,8 @@
-import { InitializationManager, InitializationPhase, InitializationTask } from '../../../shared/initialization/initializationManager';
+import {
+  InitializationManager,
+  InitializationPhase,
+  InitializationTask,
+} from '../../../shared/initialization/initializationManager';
 import { AccountIpcHandler } from '../infrastructure/ipc/accountIpcHandler';
 import { registerAccountEventHandlers } from '../application/eventHandlers';
 
@@ -14,7 +18,7 @@ const accountIpcInitTask: InitializationTask = {
   initialize: async () => {
     await new AccountIpcHandler().initialize();
     console.log('✓ Account IPC handlers registered');
-  }
+  },
 };
 
 /**
@@ -28,7 +32,7 @@ const accountEventHandlersInitTask: InitializationTask = {
   initialize: async () => {
     registerAccountEventHandlers();
     console.log('✓ Account 模块 的事件处理器 注册成功');
-  }
+  },
 };
 
 /**
@@ -37,8 +41,7 @@ const accountEventHandlersInitTask: InitializationTask = {
 export function registerAccountInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
   manager.registerTask(accountIpcInitTask);
-  manager.registerTask(accountEventHandlersInitTask)
+  manager.registerTask(accountEventHandlersInitTask);
 
-  
   console.log('Account module initialization tasks registered');
 }

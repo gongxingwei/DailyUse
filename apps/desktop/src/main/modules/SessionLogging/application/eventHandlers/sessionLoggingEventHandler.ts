@@ -1,11 +1,15 @@
-import { eventBus } from "@dailyuse/utils";
-import { SessionLoggingApplicationService } from "../services/sessionLoggingApplicationService";
-import type { LoginAttemptEvent, UserLoggedInEvent, LoginCredentialVerificationEvent } from "../../../Authentication/index"
+import { eventBus } from '@dailyuse/utils';
+import { SessionLoggingApplicationService } from '../services/sessionLoggingApplicationService';
+import type {
+  LoginAttemptEvent,
+  UserLoggedInEvent,
+  LoginCredentialVerificationEvent,
+} from '../../../Authentication/index';
 
 export class SessionLoggingEventHandler {
-  
   static registerHandlers(): void {
-    const sessionLoggingApplicationService = SessionLoggingApplicationService.getSessionLoggingApplicationService();
+    const sessionLoggingApplicationService =
+      SessionLoggingApplicationService.getSessionLoggingApplicationService();
     eventBus.subscribe('LoginAttempt', async (event: LoginAttemptEvent) => {
       await sessionLoggingApplicationService.handleLoginAttemptEvent(event);
     });
@@ -14,11 +18,11 @@ export class SessionLoggingEventHandler {
       await sessionLoggingApplicationService.handleUserLoggedInEvent(event);
     });
 
-    eventBus.subscribe('LoginCredentialVerification', async (event: LoginCredentialVerificationEvent) => {
-      await sessionLoggingApplicationService.handleCredentialVerificationEvent(event);
-    });
+    eventBus.subscribe(
+      'LoginCredentialVerification',
+      async (event: LoginCredentialVerificationEvent) => {
+        await sessionLoggingApplicationService.handleCredentialVerificationEvent(event);
+      },
+    );
   }
-
-  
 }
-

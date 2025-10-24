@@ -42,18 +42,21 @@
           <v-alert-title>操作失败</v-alert-title>
           <div>{{ operationState.error }}</div>
           <template #append>
-            <v-btn variant="text" @click="clearError">
-              关闭
-            </v-btn>
+            <v-btn variant="text" @click="clearError"> 关闭 </v-btn>
           </template>
         </v-alert>
 
         <!-- 表单内容 -->
         <div v-else class="form-container pa-4" :class="{ readonly: operationState.loading }">
-          <TaskTemplateForm ref="formRef" :model-value="(formData.taskTemplate as TaskTemplate)"
-            :is-edit-mode="dialogState.mode === 'edit'" :readonly="operationState.loading"
-            @update:model-value="handleTemplateUpdate" @update:validation="handleValidationUpdate"
-            @close="handleCancel" />
+          <TaskTemplateForm
+            ref="formRef"
+            :model-value="formData.taskTemplate as TaskTemplate"
+            :is-edit-mode="dialogState.mode === 'edit'"
+            :readonly="operationState.loading"
+            @update:model-value="handleTemplateUpdate"
+            @update:validation="handleValidationUpdate"
+            @close="handleCancel"
+          />
         </div>
       </v-card-text>
 
@@ -67,8 +70,13 @@
         </v-btn>
 
         <!-- 保存按钮 -->
-        <v-btn color="primary" variant="elevated" :disabled="!canSave" :loading="operationState.saving"
-          @click="handleSave">
+        <v-btn
+          color="primary"
+          variant="elevated"
+          :disabled="!canSave"
+          :loading="operationState.saving"
+          @click="handleSave"
+        >
           {{ getSaveButtonText() }}
         </v-btn>
       </v-card-actions>
@@ -78,7 +86,7 @@
 <script setup lang="ts">
 /**
  * TaskTemplateDialog - 任务模板创建和编辑对话框
- * 
+ *
  * 功能特性：
  * - 支持三种模式：创建(create)、编辑(edit)、基于元模板创建(createFromMeta)
  * - 完整的表单验证和错误处理
@@ -87,15 +95,15 @@
  * - 步骤指示器(仅在基于元模板创建时显示)
  * - 加载状态和错误状态处理
  * - 事件通知机制
- * 
+ *
  * 使用方法：
  * ```vue
- * <TaskTemplateDialog 
+ * <TaskTemplateDialog
  *   ref="dialogRef"
  *   @saved="handleSaved"
  *   @cancelled="handleCancelled"
  * />
- * 
+ *
  * // 在代码中调用
  * dialogRef.value?.openForCreation()
  * dialogRef.value?.openForUpdate(template)
@@ -138,8 +146,8 @@ const taskStore = useTaskStore();
 
 // ===== Emits 定义 =====
 interface Emits {
-  'saved': [template: any, mode: DialogMode];
-  'cancelled': [];
+  saved: [template: any, mode: DialogMode];
+  cancelled: [];
 }
 
 const emit = defineEmits<Emits>();
@@ -172,10 +180,12 @@ const formValidation = ref({
 
 // ===== 计算属性 =====
 const canSave = computed(() => {
-  return formValidation.value.isValid &&
+  return (
+    formValidation.value.isValid &&
     !operationState.loading &&
     !operationState.saving &&
-    formData.taskTemplate !== null;
+    formData.taskTemplate !== null
+  );
 });
 
 // ===== 方法 =====
@@ -412,7 +422,6 @@ const handleSave = async (): Promise<void> => {
 
     // 记录成功日志
     console.log('任务模板保存成功:', result);
-
   } catch (error) {
     console.error('保存任务模板失败:', error);
     operationState.error = error instanceof Error ? error.message : '保存失败';
@@ -453,7 +462,6 @@ const openForCreationWithMetaTemplateUuid = async (metaTemplateUuid: string): Pr
     formData.taskTemplate = template;
     formData.metaTemplateUuid = metaTemplateUuid;
     dialogState.step = 2; // 跳到配置步骤
-
   } catch (error) {
     console.error('加载元模板失败:', error);
     operationState.error = error instanceof Error ? error.message : '加载元模板失败';
@@ -478,21 +486,27 @@ const openForUpdate = (template: TaskTemplate): void => {
 // ===== 监听器 =====
 
 // 监听对话框关闭，清理状态
-watch(() => dialogState.visible, (newVisible) => {
-  if (!newVisible) {
-    // 延迟重置以确保动画完成
-    setTimeout(resetDialog, 300);
-  }
-});
+watch(
+  () => dialogState.visible,
+  (newVisible) => {
+    if (!newVisible) {
+      // 延迟重置以确保动画完成
+      setTimeout(resetDialog, 300);
+    }
+  },
+);
 
 // 监听键盘事件
-watch(() => dialogState.visible, (visible) => {
-  if (visible) {
-    document.addEventListener('keydown', handleKeyDown);
-  } else {
-    document.removeEventListener('keydown', handleKeyDown);
-  }
-});
+watch(
+  () => dialogState.visible,
+  (visible) => {
+    if (visible) {
+      document.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+  },
+);
 
 // ===== 键盘快捷键支持 =====
 const handleKeyDown = (event: KeyboardEvent): void => {
@@ -534,7 +548,11 @@ defineExpose({
 }
 
 .dialog-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.1), rgba(var(--v-theme-secondary), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.1),
+    rgba(var(--v-theme-secondary), 0.05)
+  );
   border-bottom: 1px solid rgba(var(--v-theme-outline), 0.12);
   padding: 1.5rem;
 }
@@ -620,7 +638,11 @@ defineExpose({
 /* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
   .dialog-header {
-    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.15), rgba(var(--v-theme-secondary), 0.08));
+    background: linear-gradient(
+      135deg,
+      rgba(var(--v-theme-primary), 0.15),
+      rgba(var(--v-theme-secondary), 0.08)
+    );
   }
 
   .dialog-actions {

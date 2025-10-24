@@ -2,7 +2,12 @@
   <div>
     <!-- Tabs -->
     <div class="tabs">
-      <button v-for="tab in tabs" :key="tab" :class="{ active: activeTab === tab }" @click="activeTab = tab">
+      <button
+        v-for="tab in tabs"
+        :key="tab"
+        :class="{ active: activeTab === tab }"
+        @click="activeTab = tab"
+      >
         {{ tab }}
       </button>
     </div>
@@ -11,9 +16,7 @@
     <div v-if="activeTab === '图表测试'">
       <EchartsTest />
     </div>
-    <div v-else-if="activeTab === '右键菜单测试'">
-      这是右键菜单测试内容
-    </div>
+    <div v-else-if="activeTab === '右键菜单测试'">这是右键菜单测试内容</div>
     <div v-else-if="activeTab === '其他测试'">
       <div class="notification-test-container">
         <div class="test-header">

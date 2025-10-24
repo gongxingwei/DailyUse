@@ -18,12 +18,14 @@
 统一管理应用内/桌面/邮件多渠道通知，提供聚合通知中心，支持已读/未读管理。
 
 **核心问题**:
+
 - ❌ 通知散落在各个模块，无统一入口
 - ❌ 无法区分已读/未读
 - ❌ 缺少通知分组和优先级
 - ❌ 桌面通知与应用内通知不同步
 
 **解决方案**:
+
 - ✅ 统一通知中心聚合所有通知
 - ✅ 多渠道推送（应用内+桌面+邮件）
 - ✅ 已读/未读管理
@@ -44,7 +46,7 @@ export interface NotificationServerDTO {
   readonly title: string;
   readonly content: string;
   readonly priority: NotificationPriority;
-  readonly channels: NotificationChannel[];  // 推送渠道
+  readonly channels: NotificationChannel[]; // 推送渠道
   readonly isRead: boolean;
   readonly readAt?: number;
   readonly actionUrl?: string;
@@ -57,44 +59,47 @@ export enum NotificationType {
   TASK_REMINDER = 'task_reminder',
   GOAL_PROGRESS = 'goal_progress',
   DEPENDENCY_MET = 'dependency_met',
-  SYSTEM = 'system'
+  SYSTEM = 'system',
 }
 
 export enum NotificationPriority {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  URGENT = 'urgent'
+  URGENT = 'urgent',
 }
 
 export enum NotificationChannel {
-  IN_APP = 'in_app',           // 应用内
+  IN_APP = 'in_app', // 应用内
   DESKTOP_PUSH = 'desktop_push', // 桌面推送
-  EMAIL = 'email'               // 邮件
+  EMAIL = 'email', // 邮件
 }
 ```
 
 **Domain 逻辑**:
+
 ```typescript
 export class Notification {
   markAsRead(): void {
     if (this.isRead) return;
-    
+
     this.isRead = true;
     this.readAt = Date.now();
-    
-    this.addDomainEvent(new NotificationReadEvent({
-      notificationUuid: this.uuid,
-      userId: this.userId,
-      readAt: this.readAt
-    }));
+
+    this.addDomainEvent(
+      new NotificationReadEvent({
+        notificationUuid: this.uuid,
+        userId: this.userId,
+        readAt: this.readAt,
+      }),
+    );
   }
-  
+
   shouldExpire(): boolean {
     if (!this.expiresAt) return false;
     return Date.now() > this.expiresAt;
   }
-  
+
   canSendViaChannel(channel: NotificationChannel): boolean {
     return this.channels.includes(channel);
   }
@@ -112,58 +117,58 @@ export class NotificationService {
       uuid: generateUuid(),
       ...command,
       isRead: false,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
-    
+
     await this.repo.save(notification);
-    
+
     // 多渠道推送
     await this.dispatchToChannels(notification);
-    
+
     return notification;
   }
-  
+
   private async dispatchToChannels(notification: Notification): Promise<void> {
     const promises: Promise<void>[] = [];
-    
+
     if (notification.canSendViaChannel(NotificationChannel.IN_APP)) {
       promises.push(this.inAppService.send(notification));
     }
-    
+
     if (notification.canSendViaChannel(NotificationChannel.DESKTOP_PUSH)) {
       promises.push(this.desktopPushService.send(notification));
     }
-    
+
     if (notification.canSendViaChannel(NotificationChannel.EMAIL)) {
       // 邮件通知异步发送
       promises.push(this.emailService.sendAsync(notification));
     }
-    
+
     await Promise.all(promises);
   }
-  
+
   async markAsRead(userId: string, notificationUuid: string): Promise<void> {
     const notification = await this.repo.findByUuid(notificationUuid);
-    
+
     if (notification.userId !== userId) {
       throw new UnauthorizedError();
     }
-    
+
     notification.markAsRead();
     await this.repo.save(notification);
   }
-  
+
   async markAllAsRead(userId: string): Promise<number> {
     const unread = await this.repo.findUnread(userId);
-    
+
     for (const notification of unread) {
       notification.markAsRead();
     }
-    
+
     await this.repo.saveAll(unread);
     return unread.length;
   }
-  
+
   async getUnreadCount(userId: string): Promise<number> {
     return await this.repo.countUnread(userId);
   }
@@ -189,9 +194,9 @@ model Notification {
   metadata      Json?    @map("metadata")
   createdAt     BigInt   @map("created_at")
   expiresAt     BigInt?  @map("expires_at")
-  
+
   user          User     @relation(fields: [userId], references: [uuid])
-  
+
   @@index([userId, isRead])
   @@index([userId, createdAt(sort: Desc)])
   @@index([expiresAt])
@@ -200,6 +205,7 @@ model Notification {
 ```
 
 **Indexes**:
+
 - `(userId, isRead)`: 快速查询未读数量
 - `(userId, createdAt DESC)`: 按时间排序列表
 - `(expiresAt)`: 定期清理过期通知
@@ -243,7 +249,7 @@ export function useNotifications(filters?: { isRead?: boolean }) {
   return useQuery({
     queryKey: ['notifications', filters],
     queryFn: () => service.getList(filters),
-    refetchInterval: 30000  // 30秒轮询
+    refetchInterval: 30000, // 30秒轮询
   });
 }
 
@@ -251,19 +257,19 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: ['notification-unread-count'],
     queryFn: () => service.getUnreadCount(),
-    refetchInterval: 10000  // 10秒轮询
+    refetchInterval: 10000, // 10秒轮询
   });
 }
 
 export function useMarkAsRead() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (uuid: string) => service.markAsRead(uuid),
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
       queryClient.invalidateQueries(['notification-unread-count']);
-    }
+    },
   });
 }
 ```
@@ -284,21 +290,14 @@ export function useMarkAsRead() {
       <el-dropdown-menu class="notification-dropdown">
         <div class="header">
           <span>通知中心</span>
-          <el-button
-            link
-            size="small"
-            :disabled="unreadCount === 0"
-            @click="markAllAsRead"
-          >
+          <el-button link size="small" :disabled="unreadCount === 0" @click="markAllAsRead">
             全部已读
           </el-button>
         </div>
 
         <!-- 通知列表 -->
         <el-scrollbar max-height="400px">
-          <div v-if="notifications.length === 0" class="empty">
-            暂无通知
-          </div>
+          <div v-if="notifications.length === 0" class="empty">暂无通知</div>
 
           <div
             v-for="notification in notifications"
@@ -308,10 +307,7 @@ export function useMarkAsRead() {
             @click="handleNotificationClick(notification)"
           >
             <!-- 优先级图标 -->
-            <el-icon
-              :size="16"
-              :color="getPriorityColor(notification.priority)"
-            >
+            <el-icon :size="16" :color="getPriorityColor(notification.priority)">
               <component :is="getPriorityIcon(notification.priority)" />
             </el-icon>
 
@@ -350,7 +346,7 @@ async function handleNotificationClick(notification: any) {
   if (!notification.isRead) {
     await markAsRead.mutateAsync(notification.uuid);
   }
-  
+
   // 跳转到目标页面
   if (notification.actionUrl) {
     router.push(notification.actionUrl);
@@ -370,7 +366,7 @@ function getPriorityColor(priority: string) {
     low: '#909399',
     medium: '#409eff',
     high: '#e6a23c',
-    urgent: '#f56c6c'
+    urgent: '#f56c6c',
   };
   return colors[priority] || '#909399';
 }
@@ -451,20 +447,20 @@ function getPriorityColor(priority: string) {
 ```typescript
 test('通知中心完整流程', async ({ page }) => {
   await page.goto('/');
-  
+
   // 验证未读数量
   await expect(page.locator('[data-testid="notification-badge"]')).toContainText('3');
-  
+
   // 打开通知中心
   await page.click('[data-testid="notification-icon"]');
   await expect(page.locator('[data-testid="notification-dropdown"]')).toBeVisible();
-  
+
   // 点击通知
   await page.click('[data-testid="notification-item-1"]');
-  
+
   // 验证已读
   await expect(page.locator('[data-testid="notification-badge"]')).toContainText('2');
-  
+
   // 全部已读
   await page.click('[data-testid="notification-icon"]');
   await page.click('[data-testid="mark-all-read"]');
@@ -487,6 +483,7 @@ test('通知中心完整流程', async ({ page }) => {
 ## 4. Release Plan
 
 **Sprint 6 (Week 11-12)**:
+
 - Week 1: Stories 001-004
 - Week 2: Stories 005-007
 
@@ -511,7 +508,7 @@ Feature: 多渠道通知聚合
     When 用户点击某条通知
     Then 该通知应标记为已读
     And 未读数量应减少 1
-    
+
   Scenario: 全部已读
     Given 用户有 5 条未读通知
     When 用户点击"全部已读"
@@ -521,4 +518,4 @@ Feature: 多渠道通知聚合
 
 ---
 
-*文档创建: 2025-10-21 | Epic Owner: PM Agent*
+_文档创建: 2025-10-21 | Epic Owner: PM Agent_

@@ -1,7 +1,7 @@
-import { ReminderTemplate } from "../entities/reminderTemplate";
-import { AggregateRoot } from "@dailyuse/utils";
-import type { IReminderTemplateGroup, ReminderTemplateEnableMode } from "@common/modules/reminder";
-import { SYSTEM_GROUP_ID } from "@common/modules/reminder/types/reminder";
+import { ReminderTemplate } from '../entities/reminderTemplate';
+import { AggregateRoot } from '@dailyuse/utils';
+import type { IReminderTemplateGroup, ReminderTemplateEnableMode } from '@common/modules/reminder';
+import { SYSTEM_GROUP_ID } from '@common/modules/reminder/types/reminder';
 
 /**
  * ReminderTemplateGroup 聚合根
@@ -12,7 +12,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
   private _name: string;
   private _enabled: boolean;
   private _templates: ReminderTemplate[] = [];
-  private _enableMode: ReminderTemplateEnableMode = "group";
+  private _enableMode: ReminderTemplateEnableMode = 'group';
 
   // ========== 构造函数 ==========
   /**
@@ -27,7 +27,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
     name: string,
     enabled = true,
     templates: ReminderTemplate[] = [],
-    enableMode: ReminderTemplateEnableMode = "group",
+    enableMode: ReminderTemplateEnableMode = 'group',
     uuid?: string,
   ) {
     super(uuid || ReminderTemplateGroup.generateUUID());
@@ -38,14 +38,30 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
   }
 
   // ========== Getter/Setter ==========
-  get uuid() { return this._uuid; }
-  get name() { return this._name; }
-  set name(val: string) { this._name = val; }
-  get enabled() { return this._enabled; }
-  set enabled(val: boolean) { this._enabled = val; }
-  get enableMode() { return this._enableMode; }
-  set enableMode(val: ReminderTemplateEnableMode) { this._enableMode = val; }
-  get templates() { return this._templates; }
+  get uuid() {
+    return this._uuid;
+  }
+  get name() {
+    return this._name;
+  }
+  set name(val: string) {
+    this._name = val;
+  }
+  get enabled() {
+    return this._enabled;
+  }
+  set enabled(val: boolean) {
+    this._enabled = val;
+  }
+  get enableMode() {
+    return this._enableMode;
+  }
+  set enableMode(val: ReminderTemplateEnableMode) {
+    this._enableMode = val;
+  }
+  get templates() {
+    return this._templates;
+  }
 
   // ========== 实例方法 ==========
 
@@ -54,7 +70,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
       const template = this._templates.find((t) => t.uuid === templateUuid);
       return template ? template.selfEnabled : false;
     }
-    if (this._enableMode === "group") return this._enabled;
+    if (this._enableMode === 'group') return this._enabled;
     const template = this._templates.find((t) => t.uuid === templateUuid);
     return template ? template.selfEnabled : false;
   }
@@ -86,7 +102,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
       this._enabled,
       this._templates.map((t) => t.clone()),
       this._enableMode,
-      this._uuid
+      this._uuid,
     );
   }
 
@@ -114,7 +130,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
       dto.name,
       dto.enabled,
       (dto.templates || []).map((t: any) => ReminderTemplate.fromDTO(t)),
-      dto.enableMode || "group",
+      dto.enableMode || 'group',
       dto.uuid,
     );
   }
@@ -142,7 +158,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
     return null;
   }
 
-    /**
+  /**
    * 保证返回 ReminderTemplateGroup 实例或空对象
    * @param obj 任意对象
    */
@@ -158,12 +174,6 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    * 创建一个用于新建的默认分组实例
    */
   static forCreate(): ReminderTemplateGroup {
-    return new ReminderTemplateGroup(
-      '',
-      true,
-      [],
-      'group',
-      undefined
-    );
+    return new ReminderTemplateGroup('', true, [], 'group', undefined);
   }
 }

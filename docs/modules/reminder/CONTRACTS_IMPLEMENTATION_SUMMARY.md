@@ -1,4 +1,5 @@
 # Reminder Module - Contracts Implementation Summary
+
 # 提醒模块 - Contracts 层实现总结
 
 > **实现日期**: 2025-01-14  
@@ -10,9 +11,11 @@
 ## 📦 已创建的文件
 
 ### 1. 枚举类型
+
 - ✅ `enums.ts` - 所有枚举定义
 
 **包含的枚举**:
+
 - `ReminderType` - 提醒类型（ONE_TIME | RECURRING）
 - `TriggerType` - 触发器类型（FIXED_TIME | INTERVAL）
 - `ReminderStatus` - 提醒状态（ACTIVE | PAUSED）
@@ -24,6 +27,7 @@
 - `TriggerResult` - 触发结果（SUCCESS | FAILED | SKIPPED）
 
 ### 2. 值对象 (Value Objects)
+
 - ✅ `value-objects/RecurrenceConfig.ts` - 重复配置
 - ✅ `value-objects/NotificationConfig.ts` - 通知配置
 - ✅ `value-objects/TriggerConfig.ts` - 触发器配置
@@ -34,6 +38,7 @@
 - ✅ `value-objects/index.ts` - 值对象统一导出
 
 **每个值对象都包含**:
+
 - Server 接口 (`IXxxServer`)
 - Client 接口 (`IXxxClient`)
 - Server DTO (`XxxServerDTO`)
@@ -42,11 +47,13 @@
 - 类型别名导出 (`XxxServer`, `XxxClient`)
 
 ### 3. 实体 (Entities)
+
 - ✅ `entities/ReminderHistoryServer.ts` - 提醒历史实体（服务端）
 - ✅ `entities/ReminderHistoryClient.ts` - 提醒历史实体（客户端）
 - ✅ `entities/index.ts` - 实体统一导出
 
 **包含内容**:
+
 - Server/Client 接口
 - Server/Client DTO
 - Persistence DTO（仅 Server）
@@ -54,6 +61,7 @@
 - 业务方法定义
 
 ### 4. 聚合根 (Aggregate Roots)
+
 - ✅ `aggregates/ReminderTemplateServer.ts` - 提醒模板聚合根（服务端）
 - ✅ `aggregates/ReminderTemplateClient.ts` - 提醒模板聚合根（客户端）
 - ✅ `aggregates/ReminderGroupServer.ts` - 提醒分组聚合根（服务端）⭐️ 核心
@@ -63,6 +71,7 @@
 - ✅ `aggregates/index.ts` - 聚合根统一导出
 
 **每个聚合根都包含**:
+
 - 实体接口（业务方法）
 - 静态工厂方法接口
 - Server DTO
@@ -71,9 +80,11 @@
 - 领域事件定义（仅 Server）
 
 ### 5. API 请求/响应
+
 - ✅ `api-requests.ts` - 所有 API 请求和响应定义
 
 **包含内容**:
+
 - Template 相关：Create/Update/Query 请求，列表响应
 - Group 相关：Create/Update/SwitchMode/BatchOperation 请求，列表响应
 - History 相关：列表响应
@@ -81,6 +92,7 @@
 - Operation 相关：操作响应、触发响应、批量操作响应
 
 ### 6. 统一导出
+
 - ✅ `index.ts` - 模块统一导出
 
 ---
@@ -90,19 +102,20 @@
 ### 1. 灵活的启用状态控制 ⭐️
 
 **控制逻辑**:
+
 ```typescript
-effectiveEnabled = group.controlMode === 'GROUP' 
-  ? group.enabled 
-  : template.selfEnabled;
+effectiveEnabled = group.controlMode === 'GROUP' ? group.enabled : template.selfEnabled;
 ```
 
 **两种控制模式**:
+
 - **GROUP**: 组控制模式 - 所有 Template 的启用状态由 Group 统一控制
 - **INDIVIDUAL**: 个体控制模式 - 每个 Template 根据自己的 `selfEnabled` 决定
 
 ### 2. 完整的值对象设计
 
 每个值对象都包含：
+
 - **Server 接口**: 业务方法 + DTO 转换
 - **Client 接口**: UI 辅助属性 + 格式化方法
 - **三层 DTO**: Server / Client / Persistence
@@ -111,6 +124,7 @@ effectiveEnabled = group.controlMode === 'GROUP'
 ### 3. 聚合根与子实体的关系
 
 **ReminderTemplate** 管理子实体：
+
 - `history?: ReminderHistoryServer[]` - 提醒历史列表
 - 提供工厂方法：`createHistory()`
 - 提供管理方法：`addHistory()`, `getAllHistory()`, `getRecentHistory()`
@@ -118,6 +132,7 @@ effectiveEnabled = group.controlMode === 'GROUP'
 ### 4. 时间戳统一使用 `number`
 
 所有时间戳字段都使用 `number` (epoch milliseconds)：
+
 - ✅ `createdAt: number`
 - ✅ `updatedAt: number`
 - ✅ `triggeredAt: number`
@@ -126,6 +141,7 @@ effectiveEnabled = group.controlMode === 'GROUP'
 ### 5. 领域事件完整定义
 
 每个聚合根都定义了完整的领域事件：
+
 - **ReminderTemplate**: Created, Updated, Deleted, Enabled, Paused, Triggered
 - **ReminderGroup**: Created, Updated, Deleted, ControlModeSwitched, Enabled, Paused
 - **ReminderStatistics**: Updated
@@ -135,26 +151,31 @@ effectiveEnabled = group.controlMode === 'GROUP'
 ## 🏗️ 架构规范遵循
 
 ### ✅ 文件组织
+
 - 按领域概念分组（enums → value-objects → entities → aggregates）
 - 每个概念分 Server/Client 两个文件
 - 统一使用 `index.ts` 导出
 
 ### ✅ 命名约定
+
 - 接口：`IXxxServer`, `IXxxClient`
 - DTO：`XxxServerDTO`, `XxxClientDTO`, `XxxPersistenceDTO`
 - 类型别名：`XxxServer`, `XxxClient`
 - 静态接口：`XxxServerStatic`, `XxxClientStatic`
 
 ### ✅ DTO 分层
+
 - **ServerDTO**: 服务端完整数据 + 子实体
 - **ClientDTO**: 客户端数据 + UI 扩展属性
 - **PersistenceDTO**: 数据库映射 + snake_case + JSON string
 
 ### ✅ 转换方法
+
 - **To 方法**: `toServerDTO()`, `toClientDTO()`, `toPersistenceDTO()`
 - **From 方法**: 静态工厂方法 `fromServerDTO()`, `fromClientDTO()`, `fromPersistenceDTO()`
 
 ### ✅ 业务方法清晰
+
 - Server: 领域逻辑 + 状态管理
 - Client: UI 辅助 + 格式化展示
 
@@ -163,6 +184,7 @@ effectiveEnabled = group.controlMode === 'GROUP'
 ## 🔄 与 Repository 模块的一致性
 
 ### ✅ 完全遵循的模式
+
 1. **文件结构**: enums → value-objects → entities → aggregates → api-requests → index
 2. **命名约定**: Server/Client 后缀，DTO 后缀
 3. **DTO 分层**: ServerDTO, ClientDTO, PersistenceDTO 三层
@@ -173,6 +195,7 @@ effectiveEnabled = group.controlMode === 'GROUP'
 8. **领域事件**: 完整的事件定义和联合类型
 
 ### ⭐️ 特殊设计
+
 1. **灵活控制模式**: GROUP / INDIVIDUAL 双模式
 2. **实际启用状态**: `effectiveEnabled` 计算属性
 3. **批量操作**: 支持一键批量启用/暂停
@@ -242,6 +265,7 @@ Reminder 模块的 Contracts 层已完整实现，严格遵循 DDD 设计原则�
 5. **可扩展性**: 易于添加新功能和新字段
 
 **核心创新**:
+
 - ⭐️ 灵活的启用状态控制（GROUP / INDIVIDUAL）
 - ⭐️ 实际启用状态计算（`effectiveEnabled`）
 - ⭐️ 批量操作支持

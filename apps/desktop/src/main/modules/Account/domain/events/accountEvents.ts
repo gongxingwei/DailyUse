@@ -1,5 +1,5 @@
-import { DomainEvent } from "@dailyuse/utils";
-import { AccountDTO } from "@common/modules/account/types/account";
+import { DomainEvent } from '@dailyuse/utils';
+import { AccountDTO } from '@common/modules/account/types/account';
 /**
  * 账号注册事件载荷
  */
@@ -104,13 +104,14 @@ export interface AccountStatusVerificationResponseEventPayload {
 /**
  * 账号状态验证响应事件
  */
-export interface AccountStatusVerificationResponseEvent extends DomainEvent<AccountStatusVerificationResponseEventPayload> {
+export interface AccountStatusVerificationResponseEvent
+  extends DomainEvent<AccountStatusVerificationResponseEventPayload> {
   eventType: 'AccountStatusVerificationResponse';
   payload: AccountStatusVerificationResponseEventPayload;
 }
 
 /**
- * 
+ *
  */
 export interface AccountUuidGetterResponseEventPayload {
   accountUuid: string | null;
@@ -118,7 +119,8 @@ export interface AccountUuidGetterResponseEventPayload {
   requestId: string; // 关联原始请求
 }
 
-export interface AccountUuidGetterResponseEvent extends DomainEvent<AccountUuidGetterResponseEventPayload> {
+export interface AccountUuidGetterResponseEvent
+  extends DomainEvent<AccountUuidGetterResponseEventPayload> {
   eventType: 'AccountUuidGetterResponse';
   payload: AccountUuidGetterResponseEventPayload;
 }
@@ -127,7 +129,8 @@ export interface AccountInfoGetterResponseEventPayload {
   accountDTO: AccountDTO;
   requestId: string;
 }
-export interface AccountInfoGetterResponseEvent extends DomainEvent<AccountInfoGetterResponseEventPayload> {
+export interface AccountInfoGetterResponseEvent
+  extends DomainEvent<AccountInfoGetterResponseEventPayload> {
   eventType: 'AccountInfoGetterResponse';
   payload: AccountInfoGetterResponseEventPayload;
 }

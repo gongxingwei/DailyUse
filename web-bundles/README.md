@@ -21,6 +21,7 @@ web-bundles/
 ## 🎯 Agent Overview
 
 ### 1. DailyUse Orchestrator 🎯
+
 **Central coordinator and traffic controller**
 
 - Routes requests to appropriate specialists
@@ -31,6 +32,7 @@ web-bundles/
 **Use When**: Unsure which specialist to use, need coordination
 
 ### 2. Product Manager 📊
+
 **Feature innovation and specification**
 
 - Beyond-CRUD feature ideation
@@ -41,6 +43,7 @@ web-bundles/
 **Use When**: Brainstorming features, creating specs, prioritizing backlog
 
 ### 3. Project Manager 🚀
+
 **Implementation planning and delivery**
 
 - Convert Feature Specs to Implementation Flows
@@ -51,6 +54,7 @@ web-bundles/
 **Use When**: Planning implementation, analyzing dependencies
 
 ### 4. System Architect 🏗️
+
 **Architecture design and technical leadership**
 
 - DDD + Contracts-First architecture
@@ -61,6 +65,7 @@ web-bundles/
 **Use When**: Designing architecture, making technical decisions
 
 ### 5. Full-Stack Developer 💻
+
 **End-to-end implementation**
 
 - Vue3 + Express + Prisma implementation
@@ -71,6 +76,7 @@ web-bundles/
 **Use When**: Implementing features, writing code, debugging
 
 ### 6. Code Quality Guardian 🛡️
+
 **Standards enforcement and code review**
 
 - DDD compliance checking
@@ -81,6 +87,7 @@ web-bundles/
 **Use When**: Reviewing code, ensuring standards compliance
 
 ### 7. Migration Specialist 🔄
+
 **Technology and data migrations**
 
 - MonoRepo migrations
@@ -93,6 +100,7 @@ web-bundles/
 ## 🚀 Quick Start
 
 ### Option 1: Use Web UI (Gemini Gem / Custom GPT)
+
 1. Navigate to `web-bundles/teams/`
 2. Copy `dailyuse-fullstack-team.txt` content
 3. Create a new Gemini Gem or Custom GPT
@@ -101,6 +109,7 @@ web-bundles/
 6. Start chatting!
 
 ### Option 2: Use Individual Agents
+
 1. Navigate to `web-bundles/agents/`
 2. Choose the appropriate agent for your task
 3. Copy the agent configuration
@@ -108,6 +117,7 @@ web-bundles/
 5. Paste the configuration
 
 ### Option 3: Use IDE (with BMAD installer)
+
 ```bash
 npx bmad-method install
 # Follow prompts to select IDE integration
@@ -116,6 +126,7 @@ npx bmad-method install
 ## 📋 Common Workflows
 
 ### New Feature Development (Full Cycle)
+
 ```
 1. Product Manager: Generate feature spec
    Command: "为 goal 模块生成功能构思"
@@ -134,6 +145,7 @@ npx bmad-method install
 ```
 
 ### Quick Implementation
+
 ```
 1. Full-Stack Developer: Implement
    Command: "实现 {feature}"
@@ -143,6 +155,7 @@ npx bmad-method install
 ```
 
 ### Architecture Design
+
 ```
 1. System Architect: Design
    Command: "设计 {module} 的架构"
@@ -155,18 +168,19 @@ npx bmad-method install
 
 ### Choosing the Right Agent
 
-| Task | Primary Agent | Secondary Agents |
-|------|---------------|------------------|
-| Feature ideation | Product Manager | - |
-| Implementation planning | Project Manager | System Architect |
-| Architecture design | System Architect | - |
-| Coding | Full-Stack Developer | System Architect |
-| Code review | Code Quality Guardian | System Architect |
-| Migration | Migration Specialist | System Architect |
+| Task                    | Primary Agent         | Secondary Agents |
+| ----------------------- | --------------------- | ---------------- |
+| Feature ideation        | Product Manager       | -                |
+| Implementation planning | Project Manager       | System Architect |
+| Architecture design     | System Architect      | -                |
+| Coding                  | Full-Stack Developer  | System Architect |
+| Code review             | Code Quality Guardian | System Architect |
+| Migration               | Migration Specialist  | System Architect |
 
 ### Activation Phrases
 
 #### Chinese
+
 - "为 {模块} 生成功能构思"
 - "分析 {模块} 模块的功能需求的实现"
 - "设计 {模块} 的架构"
@@ -175,6 +189,7 @@ npx bmad-method install
 - "迁移到 {技术栈}"
 
 #### English
+
 - "Create feature spec for {feature}"
 - "Generate implementation plan for {module}"
 - "Design architecture for {module}"

@@ -1,6 +1,24 @@
 ---
-description: "Activates the Game Scrum Master/Producer agent persona."
-tools: ['changes', 'codebase', 'fetch', 'findTestFiles', 'githubRepo', 'problems', 'usages', 'editFiles', 'runCommands', 'runTasks', 'runTests', 'search', 'searchResults', 'terminalLastCommand', 'terminalSelection', 'testFailure']
+description: 'Activates the Game Scrum Master/Producer agent persona.'
+tools:
+  [
+    'changes',
+    'codebase',
+    'fetch',
+    'findTestFiles',
+    'githubRepo',
+    'problems',
+    'usages',
+    'editFiles',
+    'runCommands',
+    'runTasks',
+    'runTests',
+    'search',
+    'searchResults',
+    'terminalLastCommand',
+    'terminalSelection',
+    'testFailure',
+  ]
 ---
 
 # game-sm

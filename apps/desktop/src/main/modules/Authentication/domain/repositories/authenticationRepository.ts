@@ -1,7 +1,7 @@
-import { AuthCredential } from "../aggregates/authCredential";
-import { Session } from "../entities/session";
-import { MFADevice } from "../entities/mfaDevice";
-import { Token } from "../valueObjects/token";
+import { AuthCredential } from '../aggregates/authCredential';
+import { Session } from '../entities/session';
+import { MFADevice } from '../entities/mfaDevice';
+import { Token } from '../valueObjects/token';
 
 /**
  * 认证凭证存储库接口
@@ -12,7 +12,7 @@ export interface IAuthCredentialRepository {
   findById(uuid: string): Promise<AuthCredential | null>;
   findByAccountUuid(accountUuid: string): Promise<AuthCredential | null>;
   delete(uuid: string): Promise<void>;
-  
+
   // 查询操作
   findAll(): Promise<AuthCredential[]>;
   existsByAccountUuid(accountUuid: string): Promise<boolean>;

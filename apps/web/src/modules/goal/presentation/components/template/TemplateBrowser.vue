@@ -49,7 +49,13 @@
         </v-row>
 
         <!-- 结果统计 -->
-        <v-alert v-if="filteredTemplates.length > 0" type="info" variant="tonal" density="compact" class="mb-4">
+        <v-alert
+          v-if="filteredTemplates.length > 0"
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+        >
           找到 {{ filteredTemplates.length }} 个匹配的模板
           <span v-if="filters.role || filters.category"> (已应用筛选)</span>
         </v-alert>
@@ -194,11 +200,7 @@
 
           <h4 class="text-h6 mb-3">关键结果 ({{ previewingTemplate.keyResults.length }})</h4>
           <v-list density="compact">
-            <v-list-item
-              v-for="(kr, idx) in previewingTemplate.keyResults"
-              :key="idx"
-              class="mb-2"
-            >
+            <v-list-item v-for="(kr, idx) in previewingTemplate.keyResults" :key="idx" class="mb-2">
               <template #prepend>
                 <v-avatar size="32" :color="getWeightColor(kr.suggestedWeight)">
                   <span class="text-caption">{{ kr.suggestedWeight }}%</span>
@@ -219,9 +221,7 @@
         <v-card-actions>
           <v-btn variant="text" @click="previewVisible = false">关闭</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" variant="elevated" @click="applyFromPreview">
-            使用此模板
-          </v-btn>
+          <v-btn color="primary" variant="elevated" @click="applyFromPreview"> 使用此模板 </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -281,7 +281,7 @@ const filteredTemplates = computed(() => {
 watch(filters, () => {
   if (selectedTemplate.value) {
     const stillExists = filteredTemplates.value.some(
-      (r) => r.template.id === selectedTemplate.value!.id
+      (r) => r.template.id === selectedTemplate.value!.id,
     );
     if (!stillExists) {
       selectedTemplate.value = null;

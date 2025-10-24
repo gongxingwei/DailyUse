@@ -3,6 +3,7 @@
 ## ✅ 已完成
 
 ### 1. 目录结构
+
 ```
 packages/domain-server/src/schedule/
 ├── value-objects/        ✅ 完成
@@ -15,6 +16,7 @@ packages/domain-server/src/schedule/
 ### 2. 值对象（Value Objects）- ✅ 100% 完成
 
 #### ✅ ScheduleConfig.ts
+
 - **功能**: Cron 调度配置
 - **关键方法**:
   - `calculateNextRun()`: 计算下次执行时间（TODO: 完整 cron 解析）
@@ -25,6 +27,7 @@ packages/domain-server/src/schedule/
   - `createOneTime()`: 单次执行配置
 
 #### ✅ ExecutionInfo.ts
+
 - **功能**: 执行信息追踪
 - **关键方法**:
   - `updateAfterExecution()`: 执行后更新
@@ -34,6 +37,7 @@ packages/domain-server/src/schedule/
   - `createDefault()`: 默认执行信息
 
 #### ✅ RetryPolicy.ts
+
 - **功能**: 重试策略（指数退避）
 - **关键方法**:
   - `shouldRetry()`: 判断是否应该重试
@@ -44,6 +48,7 @@ packages/domain-server/src/schedule/
   - `createDisabled()`: 禁用重试
 
 #### ✅ TaskMetadata.ts
+
 - **功能**: 任务元数据
 - **关键方法**:
   - `updatePayload()`: 更新业务数据
@@ -53,6 +58,7 @@ packages/domain-server/src/schedule/
   - `createDefault()`: 默认元数据
 
 #### ✅ ModuleStatistics.ts
+
 - **功能**: 模块统计
 - **关键方法**:
   - `update()`: 更新统计（智能计算平均值）
@@ -68,6 +74,7 @@ packages/domain-server/src/schedule/
 ### 3. 实体（Entities）- ⏳ 进行中
 
 #### ⏳ ScheduleExecution.ts
+
 - **职责**: 单次执行记录
 - **需要实现**:
   - 基础属性 getter
@@ -78,6 +85,7 @@ packages/domain-server/src/schedule/
 ### 4. 聚合根（Aggregate Roots）- ⏳ 待实现
 
 #### ⏳ ScheduleTask.ts
+
 - **职责**: 任务生命周期管理
 - **需要实现**:
   - 子实体管理（ScheduleExecution 集合）
@@ -89,6 +97,7 @@ packages/domain-server/src/schedule/
   - 领域事件发布
 
 #### ⏳ ScheduleStatistics.ts
+
 - **职责**: 系统统计管理
 - **需要实现**:
   - 任务计数方法: `incrementTaskCount()`, `decrementTaskCount()`, `updateTaskStatus()`
@@ -101,6 +110,7 @@ packages/domain-server/src/schedule/
 ### 5. 领域服务（Domain Services）- ⏳ 待实现
 
 #### ⏳ ScheduleDomainService.ts
+
 - **职责**: 跨聚合根的业务逻辑
 - **需要实现**:
   - 任务调度逻辑
@@ -109,6 +119,7 @@ packages/domain-server/src/schedule/
   - 统计更新逻辑
 
 #### ⏳ ScheduleStatisticsDomainService.ts
+
 - **职责**: 统计计算和更新
 - **需要实现**:
   - 统计数据聚合
@@ -118,6 +129,7 @@ packages/domain-server/src/schedule/
 ### 6. 仓储接口（Repository Interfaces）- ⏳ 待实现
 
 #### ⏳ IScheduleTaskRepository.ts
+
 - **方法**:
   - `findById()`
   - `findBySourceEntity()`
@@ -128,6 +140,7 @@ packages/domain-server/src/schedule/
   - `findByNextRunTime()`
 
 #### ⏳ IScheduleStatisticsRepository.ts
+
 - **方法**:
   - `findByAccountUuid()`
   - `save()`
@@ -138,22 +151,28 @@ packages/domain-server/src/schedule/
 ## 📝 设计决策
 
 ### 类型定义策略
+
 **问题**: Contracts 层使用 Date 类型，但设计文档要求 number (epoch ms)
 
-**临时方案**: 
+**临时方案**:
+
 - Domain-Server 层暂时使用本地类型定义
 - 使用 number (epoch ms) 表示时间戳
 - 后续统一调整 Contracts 层
 
 ### Cron 解析策略
+
 **问题**: cron-parser 库导入问题
 
 **临时方案**:
+
 - `calculateNextRun()` 使用占位实现（+1小时）
 - TODO: 完整实现需要正确集成 cron-parser
 
 ### 不可变性实现
+
 **已实现**:
+
 - 所有值对象使用 `Object.freeze()`
 - 提供 `with()` 方法创建新实例
 - 继承 `ValueObject` 基类

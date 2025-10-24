@@ -1,7 +1,9 @@
 # API 接口完整测试指南
 
 ## 🎯 测试目标
+
 为每个 API 接口建立全面的测试覆盖，确保：
+
 - ✅ **CRUD 操作正确性**
 - ✅ **业务逻辑正确触发**
 - ✅ **数据验证有效性**
@@ -12,6 +14,7 @@
 ## 📋 测试分层策略
 
 ### 1. **基础 CRUD 测试** (必须)
+
 ```typescript
 describe('CRUD 操作测试', () => {
   // 创建测试
@@ -47,6 +50,7 @@ describe('CRUD 操作测试', () => {
 ```
 
 ### 2. **业务逻辑测试** (核心)
+
 ```typescript
 describe('业务逻辑测试', () => {
   describe('权限验证', () => {
@@ -71,6 +75,7 @@ describe('业务逻辑测试', () => {
 ```
 
 ### 3. **错误处理测试** (重要)
+
 ```typescript
 describe('错误处理测试', () => {
   describe('认证错误', () => {
@@ -99,6 +104,7 @@ describe('错误处理测试', () => {
 ```
 
 ### 4. **性能测试** (可选但推荐)
+
 ```typescript
 describe('性能测试', () => {
   describe('响应时间', () => {
@@ -122,6 +128,7 @@ describe('性能测试', () => {
 ```
 
 ### 5. **数据一致性测试** (关键)
+
 ```typescript
 describe('数据一致性测试', () => {
   describe('操作一致性', () => {
@@ -141,6 +148,7 @@ describe('数据一致性测试', () => {
 ## 🛠️ 实际使用方法
 
 ### 1. **快速创建测试**
+
 ```bash
 # 运行单个模块测试
 pnpm test goal.integration.test.ts
@@ -153,13 +161,14 @@ pnpm test:coverage
 ```
 
 ### 2. **使用测试助手**
+
 ```typescript
 // 基础 CRUD 测试
 const result = await ApiTestHelpers.crud.testCreate(
   request(app),
   '/api/v1/goals',
   authToken,
-  goalData
+  goalData,
 );
 
 // 业务逻辑测试
@@ -167,23 +176,24 @@ const result = await ApiTestHelpers.business.testValidation(
   request(app),
   '/api/v1/goals',
   authToken,
-  invalidData
+  invalidData,
 );
 
 // 性能测试
 const duration = await ApiTestHelpers.performance.testResponseTime(
   request(app),
   '/api/v1/goals',
-  authToken
+  authToken,
 );
 ```
 
 ### 3. **Mock 数据设置**
+
 ```typescript
 beforeEach(() => {
   // 重置数据
   resetMockData();
-  
+
   // 设置测试数据
   setMockData('goal', [
     {
@@ -191,7 +201,7 @@ beforeEach(() => {
       accountUuid: testAccountUuid,
       name: '测试目标',
       // ... 其他字段
-    }
+    },
   ]);
 });
 ```
@@ -199,16 +209,19 @@ beforeEach(() => {
 ## 📊 测试覆盖率目标
 
 ### **最低要求** (必须达到)
+
 - **行覆盖率**: 80%+
 - **分支覆盖率**: 75%+
 - **函数覆盖率**: 90%+
 
 ### **理想目标** (努力方向)
+
 - **行覆盖率**: 90%+
 - **分支覆盖率**: 85%+
 - **函数覆盖率**: 95%+
 
 ### **关键测试场景** (100% 必须覆盖)
+
 - ✅ 所有 CRUD 操作的成功路径
 - ✅ 所有错误处理路径
 - ✅ 所有权限验证场景
@@ -219,6 +232,7 @@ beforeEach(() => {
 ### 对于每个 API 端点，确保测试：
 
 #### **创建接口 (POST)**
+
 - [ ] 成功创建有效资源
 - [ ] 拒绝无效/缺失数据
 - [ ] 验证数据格式和类型
@@ -228,6 +242,7 @@ beforeEach(() => {
 - [ ] 测试并发创建
 
 #### **查询接口 (GET)**
+
 - [ ] 返回正确的数据列表
 - [ ] 支持分页参数
 - [ ] 支持过滤条件
@@ -237,6 +252,7 @@ beforeEach(() => {
 - [ ] 测试性能表现
 
 #### **更新接口 (PUT/PATCH)**
+
 - [ ] 成功更新有效数据
 - [ ] 拒绝无效数据
 - [ ] 验证资源存在性
@@ -245,6 +261,7 @@ beforeEach(() => {
 - [ ] 处理并发更新
 
 #### **删除接口 (DELETE)**
+
 - [ ] 成功删除资源
 - [ ] 验证资源存在性
 - [ ] 检查权限控制
@@ -254,6 +271,7 @@ beforeEach(() => {
 ## 🔧 测试工具使用建议
 
 ### **1. Vitest 配置优化**
+
 ```typescript
 // vitest.config.ts
 export default defineConfig({
@@ -261,7 +279,7 @@ export default defineConfig({
     // 使用单进程避免数据库冲突
     pool: 'forks',
     poolOptions: {
-      forks: { singleFork: true }
+      forks: { singleFork: true },
     },
     // 增加超时时间处理数据库操作
     testTimeout: 30000,
@@ -272,15 +290,16 @@ export default defineConfig({
           branches: 75,
           functions: 90,
           lines: 80,
-          statements: 80
-        }
-      }
-    }
-  }
+          statements: 80,
+        },
+      },
+    },
+  },
 });
 ```
 
 ### **2. Mock 数据管理**
+
 ```typescript
 // 在每个测试文件中
 beforeEach(async () => {
@@ -292,6 +311,7 @@ beforeEach(async () => {
 ```
 
 ### **3. 错误验证模式**
+
 ```typescript
 // 验证错误响应的标准模式
 const response = await request(app)
@@ -308,16 +328,19 @@ expect(response.body.message).toContain('expected error');
 ## 📈 持续改进建议
 
 ### **1. 定期测试审查**
+
 - 每月检查测试覆盖率
 - 分析失败测试的根本原因
 - 更新测试用例以反映新需求
 
 ### **2. 测试性能监控**
+
 - 跟踪测试执行时间
 - 识别慢速测试并优化
 - 监控测试环境稳定性
 
 ### **3. 测试数据管理**
+
 - 维护现实的测试数据集
 - 定期清理无用的测试数据
 - 确保测试数据的隐私性

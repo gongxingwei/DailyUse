@@ -10,13 +10,7 @@
       transition="slide-x-transition"
     >
       <template #activator="{ props }">
-        <v-avatar
-          v-bind="props"
-          :size="size"
-          class="mb-4"
-          color="primary"
-          style="cursor:pointer;"
-        >
+        <v-avatar v-bind="props" :size="size" class="mb-4" color="primary" style="cursor: pointer">
           <template v-if="avatarUrl">
             <img :src="avatarUrl" alt="用户头像" />
           </template>
@@ -36,10 +30,14 @@
             </template>
           </v-avatar>
           <div class="user-info-basic">
-            <div class="user-name ml-3">{{ localAccount?.username || '未设置昵称' }}<v-icon>{{ localAccount?.user.sex === 'male' ? 'mdi-gender-male' : 'mdi-gender-female' }}</v-icon></div>
+            <div class="user-name ml-3">
+              {{ localAccount?.username || '未设置昵称'
+              }}<v-icon>{{
+                localAccount?.user.sex === 'male' ? 'mdi-gender-male' : 'mdi-gender-female'
+              }}</v-icon>
+            </div>
             <div class="user-uuid ml-3">{{ localAccount?.uuid || '未设置UUID' }}</div>
           </div>
-          
         </div>
         <div class="user-detail mb-2">
           <div>邮箱：{{ localAccount?.email || '未绑定' }}</div>
@@ -51,7 +49,7 @@
       </div>
     </v-menu>
     <!-- 用户信息编辑框 -->
-     <profile-dialog
+    <profile-dialog
       :model-value="profileDialog.show"
       :user="User.ensureUserNeverNull(user)"
       @update:model-value="profileDialog.show = $event"
@@ -74,8 +72,7 @@ import { useAccountService } from '../composables/userAccountService';
 const accountStore = useAccountStore();
 const { handleUpdateUserProfile } = useAccountService();
 
-defineProps<{ avatarUrl?: string, size: string }>();
-
+defineProps<{ avatarUrl?: string; size: string }>();
 
 const localAccount = computed(() => accountStore.currentAccount);
 
@@ -87,20 +84,19 @@ const user = computed(() => {
 });
 
 const profileDialog = ref<{
-    show: boolean;
-    account: Account | null;
+  show: boolean;
+  account: Account | null;
 }>({
-    show: false,
-    account: null
+  show: false,
+  account: null,
 });
 
 const startEditProfile = () => {
-    profileDialog.value.show = true;
-    profileDialog.value.account = Account.ensureAccount(localAccount.value);
+  profileDialog.value.show = true;
+  profileDialog.value.account = Account.ensureAccount(localAccount.value);
 };
 
 const showInfo = ref(false);
-
 </script>
 
 <style scoped>
@@ -123,8 +119,8 @@ const showInfo = ref(false);
 }
 
 .user-name {
-    font-size: 1.1rem;
-    font-weight: bold;
+  font-size: 1.1rem;
+  font-weight: bold;
   color: rgb(var(--v-theme-font));
 }
 

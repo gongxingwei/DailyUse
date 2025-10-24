@@ -1,7 +1,7 @@
 /**
  * DAG Performance Optimization Module (STORY-018)
  * DAG 性能优化模块
- * 
+ *
  * 针对大规模目标图的渲染优化
  */
 
@@ -13,19 +13,19 @@ export const DAG_PERFORMANCE_CONFIG = {
    * 渲染优化阈值
    */
   THRESHOLDS: {
-    SMALL: 20,       // < 20 nodes: 全功能渲染
-    MEDIUM: 50,      // 20-50 nodes: 优化渲染
-    LARGE: 100,      // 50-100 nodes: 激进优化
-    HUGE: 200,       // >100 nodes: 极限优化
+    SMALL: 20, // < 20 nodes: 全功能渲染
+    MEDIUM: 50, // 20-50 nodes: 优化渲染
+    LARGE: 100, // 50-100 nodes: 激进优化
+    HUGE: 200, // >100 nodes: 极限优化
   },
 
   /**
    * 性能目标
    */
   TARGETS: {
-    RENDER_TIME: 500,     // ms - 渲染时间
-    FPS: 60,              // frames per second
-    FRAME_BUDGET: 16.67,  // ms per frame (1000ms / 60fps)
+    RENDER_TIME: 500, // ms - 渲染时间
+    FPS: 60, // frames per second
+    FRAME_BUDGET: 16.67, // ms per frame (1000ms / 60fps)
   },
 
   /**
@@ -35,29 +35,29 @@ export const DAG_PERFORMANCE_CONFIG = {
     // LOD (Level of Detail) 配置
     LOD: {
       enabled: true,
-      minZoom: 0.3,       // 最小缩放级别显示简化版
-      mediumZoom: 0.6,    // 中等缩放显示部分详情
-      fullZoom: 1.0,      // 完整缩放显示所有详情
+      minZoom: 0.3, // 最小缩放级别显示简化版
+      mediumZoom: 0.6, // 中等缩放显示部分详情
+      fullZoom: 1.0, // 完整缩放显示所有详情
     },
 
     // 视口裁剪配置
     VIEWPORT_CULLING: {
       enabled: true,
-      padding: 100,       // 视口外扩展范围 (px)
-      debounceTime: 100,  // 防抖时间 (ms)
+      padding: 100, // 视口外扩展范围 (px)
+      debounceTime: 100, // 防抖时间 (ms)
     },
 
     // 渲染优化
     RENDERING: {
-      useSVG: false,         // 大规模时使用 Canvas
-      progressive: true,      // 渐进式渲染
+      useSVG: false, // 大规模时使用 Canvas
+      progressive: true, // 渐进式渲染
       progressiveChunkSize: 50, // 每次渲染节点数
     },
 
     // 动画优化
     ANIMATION: {
       enabled: true,
-      duration: 300,         // ms
+      duration: 300, // ms
       disableThreshold: 100, // 节点数超过此值禁用动画
     },
   },
@@ -68,7 +68,7 @@ export const DAG_PERFORMANCE_CONFIG = {
  */
 export function getOptimizationLevel(nodeCount: number): 'small' | 'medium' | 'large' | 'huge' {
   const { SMALL, MEDIUM, LARGE } = DAG_PERFORMANCE_CONFIG.THRESHOLDS;
-  
+
   if (nodeCount < SMALL) return 'small';
   if (nodeCount < MEDIUM) return 'medium';
   if (nodeCount < LARGE) return 'large';
@@ -141,7 +141,7 @@ export function getOptimizedEChartsConfig(nodeCount: number) {
  */
 export function getLODNodeConfig(zoom: number, nodeCount: number) {
   const { LOD } = DAG_PERFORMANCE_CONFIG.STRATEGIES;
-  
+
   if (!LOD.enabled) {
     return { showLabel: true, showTooltip: true, symbolSize: 40 };
   }
@@ -187,7 +187,7 @@ export function getLODNodeConfig(zoom: number, nodeCount: number) {
 export function cullNodesOutsideViewport(
   nodes: any[],
   viewportBounds: { left: number; top: number; right: number; bottom: number },
-  padding = DAG_PERFORMANCE_CONFIG.STRATEGIES.VIEWPORT_CULLING.padding
+  padding = DAG_PERFORMANCE_CONFIG.STRATEGIES.VIEWPORT_CULLING.padding,
 ): any[] {
   if (!DAG_PERFORMANCE_CONFIG.STRATEGIES.VIEWPORT_CULLING.enabled) {
     return nodes;
@@ -195,15 +195,12 @@ export function cullNodesOutsideViewport(
 
   const { left, top, right, bottom } = viewportBounds;
 
-  return nodes.filter(node => {
+  return nodes.filter((node) => {
     const x = node.x || 0;
     const y = node.y || 0;
 
     return (
-      x >= left - padding &&
-      x <= right + padding &&
-      y >= top - padding &&
-      y <= bottom + padding
+      x >= left - padding && x <= right + padding && y >= top - padding && y <= bottom + padding
     );
   });
 }
@@ -240,7 +237,9 @@ export class DAGPerformanceMonitor {
 
     // 检查是否超过目标
     if (time > DAG_PERFORMANCE_CONFIG.TARGETS.RENDER_TIME) {
-      console.warn(`[DAG Performance] Render time ${time}ms exceeds target ${DAG_PERFORMANCE_CONFIG.TARGETS.RENDER_TIME}ms for ${nodeCount} nodes`);
+      console.warn(
+        `[DAG Performance] Render time ${time}ms exceeds target ${DAG_PERFORMANCE_CONFIG.TARGETS.RENDER_TIME}ms for ${nodeCount} nodes`,
+      );
     }
   }
 
@@ -264,7 +263,9 @@ export class DAGPerformanceMonitor {
 
     // 检查是否低于目标
     if (fps < DAG_PERFORMANCE_CONFIG.TARGETS.FPS * 0.8) {
-      console.warn(`[DAG Performance] FPS ${fps.toFixed(1)} below target ${DAG_PERFORMANCE_CONFIG.TARGETS.FPS}`);
+      console.warn(
+        `[DAG Performance] FPS ${fps.toFixed(1)} below target ${DAG_PERFORMANCE_CONFIG.TARGETS.FPS}`,
+      );
     }
 
     return fps;
@@ -274,9 +275,11 @@ export class DAGPerformanceMonitor {
    * 获取性能报告
    */
   getReport() {
-    const avgRenderTime = this.metrics.renderTime.reduce((a, b) => a + b, 0) / this.metrics.renderTime.length || 0;
+    const avgRenderTime =
+      this.metrics.renderTime.reduce((a, b) => a + b, 0) / this.metrics.renderTime.length || 0;
     const avgFps = this.metrics.fps.reduce((a, b) => a + b, 0) / this.metrics.fps.length || 0;
-    const avgNodeCount = this.metrics.nodeCount.reduce((a, b) => a + b, 0) / this.metrics.nodeCount.length || 0;
+    const avgNodeCount =
+      this.metrics.nodeCount.reduce((a, b) => a + b, 0) / this.metrics.nodeCount.length || 0;
 
     return {
       avgRenderTime: avgRenderTime.toFixed(2),

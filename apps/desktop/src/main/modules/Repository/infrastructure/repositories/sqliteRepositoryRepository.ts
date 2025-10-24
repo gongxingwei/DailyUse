@@ -1,7 +1,7 @@
-import { Database } from "better-sqlite3";
-import { getDatabase } from "../../../../shared/database/index";
-import { Repository } from "../../domain/aggregates/repository";
-import { IRepositoryRepository } from "../../domain/repositories/iRepositoryRepository";
+import { Database } from 'better-sqlite3';
+import { getDatabase } from '../../../../shared/database/index';
+import { Repository } from '../../domain/aggregates/repository';
+import { IRepositoryRepository } from '../../domain/repositories/iRepositoryRepository';
 
 /**
  * SQLite 仓库存储库实现
@@ -21,7 +21,7 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
     try {
       const db = await this.getDb();
       db.prepare(
-        `INSERT INTO repositories (account_uuid, uuid, name, path, description, createdAt, updatedAt, relatedGoals) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO repositories (account_uuid, uuid, name, path, description, createdAt, updatedAt, relatedGoals) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         accountUuid,
         repository.uuid,
@@ -30,10 +30,10 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
         repository.description,
         repository.createdAt.toISOString(),
         repository.updatedAt.toISOString(),
-        JSON.stringify(repository.relatedGoals || [])
+        JSON.stringify(repository.relatedGoals || []),
       );
     } catch (error) {
-      console.error("添加仓库失败:", error);
+      console.error('添加仓库失败:', error);
       throw error;
     }
   }
@@ -42,7 +42,7 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
     try {
       const db = await this.getDb();
       db.prepare(
-        `UPDATE repositories SET name = ?, path = ?, description = ?, updatedAt = ?, relatedGoals = ? WHERE account_uuid = ? AND uuid = ?`
+        `UPDATE repositories SET name = ?, path = ?, description = ?, updatedAt = ?, relatedGoals = ? WHERE account_uuid = ? AND uuid = ?`,
       ).run(
         repository.name,
         repository.path,
@@ -50,10 +50,10 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
         repository.updatedAt.toISOString(),
         JSON.stringify(repository.relatedGoals || []),
         accountUuid,
-        repository.uuid
+        repository.uuid,
       );
     } catch (error) {
-      console.error("更新仓库失败:", error);
+      console.error('更新仓库失败:', error);
       throw error;
     }
   }
@@ -61,9 +61,12 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
   async removeRepository(accountUuid: string, repositoryId: string): Promise<void> {
     try {
       const db = await this.getDb();
-      db.prepare(`DELETE FROM repositories WHERE account_uuid = ? AND id = ?`).run(accountUuid, repositoryId);
+      db.prepare(`DELETE FROM repositories WHERE account_uuid = ? AND id = ?`).run(
+        accountUuid,
+        repositoryId,
+      );
     } catch (error) {
-      console.error("删除仓库失败:", error);
+      console.error('删除仓库失败:', error);
       throw error;
     }
   }
@@ -77,7 +80,7 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
       if (!row) return null;
       return this.mapRowToRepository(row);
     } catch (error) {
-      console.error("查找仓库失败:", error);
+      console.error('查找仓库失败:', error);
       throw error;
     }
   }
@@ -85,13 +88,12 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
   async findAllRepositories(accountUuid: string): Promise<Repository[]> {
     try {
       const db = await this.getDb();
-      const rows = db.prepare(`SELECT * FROM repositories WHERE account_uuid = ?`).all(accountUuid) as Record<
-        string,
-        any
-      >[];
+      const rows = db
+        .prepare(`SELECT * FROM repositories WHERE account_uuid = ?`)
+        .all(accountUuid) as Record<string, any>[];
       return rows.map((row) => this.mapRowToRepository(row));
     } catch (error) {
-      console.error("查找所有仓库失败:", error);
+      console.error('查找所有仓库失败:', error);
       throw error;
     }
   }

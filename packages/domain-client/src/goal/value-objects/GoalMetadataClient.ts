@@ -2,7 +2,7 @@
  * GoalMetadata 值对象实现 (Client)
  */
 
-import { GoalContracts} from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 import { ValueObject } from '@dailyuse/utils';
 
 type IGoalMetadataClient = GoalContracts.GoalMetadataClient;
@@ -72,7 +72,8 @@ export class GoalMetadataClient extends ValueObject implements IGoalMetadataClie
       [UrgencyLevel.High]: 4,
       [UrgencyLevel.Critical]: 5,
     };
-    const priority = ImportanceLevelMap[this._importance] || 0 + UrgencyLevelMap[this._urgency] || 0;
+    const priority =
+      ImportanceLevelMap[this._importance] || 0 + UrgencyLevelMap[this._urgency] || 0;
     if (priority >= 7) return 'HIGH';
     if (priority >= 5) return 'MEDIUM';
     return 'LOW';

@@ -23,6 +23,7 @@ category: UI组合函数
 `useMessage` 提供了优雅的消息提示和确认框封装，基于 Promise 的 API 设计，支持多种消息类型和场景化快捷方式。
 
 **核心特性**：
+
 - ✅ **Promise 封装** - 异步等待用户确认
 - ✅ **类型安全** - 完整的 TypeScript 支持
 - ✅ **全局单例** - 跨组件访问
@@ -45,7 +46,7 @@ category: UI组合函数
 </template>
 
 <script setup>
-import { DuMessageProvider } from '@dailyuse/ui'
+import { DuMessageProvider } from '@dailyuse/ui';
 </script>
 ```
 
@@ -53,21 +54,21 @@ import { DuMessageProvider } from '@dailyuse/ui'
 
 ```vue
 <script setup lang="ts">
-import { useMessage } from '@dailyuse/ui'
+import { useMessage } from '@dailyuse/ui';
 
-const message = useMessage()
+const message = useMessage();
 
 // 成功提示
-message.success('操作成功')
+message.success('操作成功');
 
 // 错误提示
-message.error('操作失败')
+message.error('操作失败');
 
 // 警告提示
-message.warning('请注意')
+message.warning('请注意');
 
 // 信息提示
-message.info('提示信息')
+message.info('提示信息');
 </script>
 ```
 
@@ -80,25 +81,25 @@ message.info('提示信息')
 #### success - 成功提示
 
 ```typescript
-message.success('保存成功', 3000)  // 3秒后自动关闭
+message.success('保存成功', 3000); // 3秒后自动关闭
 ```
 
 #### error - 错误提示
 
 ```typescript
-message.error('保存失败', 4000)  // 4秒后自动关闭
+message.error('保存失败', 4000); // 4秒后自动关闭
 ```
 
 #### warning - 警告提示
 
 ```typescript
-message.warning('请先保存', 3500)
+message.warning('请先保存', 3500);
 ```
 
 #### info - 信息提示
 
 ```typescript
-message.info('提示信息', 3000)
+message.info('提示信息', 3000);
 ```
 
 ### 2. 确认框
@@ -113,13 +114,13 @@ const confirmed = await message.confirm({
   message: '确定要执行此操作吗？',
   type: 'warning',
   confirmText: '确定',
-  cancelText: '取消'
-})
+  cancelText: '取消',
+});
 
 if (confirmed) {
-  console.log('用户确认')
+  console.log('用户确认');
 } else {
-  console.log('用户取消')
+  console.log('用户取消');
 }
 ```
 
@@ -127,13 +128,13 @@ if (confirmed) {
 
 ```typescript
 try {
-  await message.delConfirm('确定要删除这条记录吗？')
+  await message.delConfirm('确定要删除这条记录吗？');
   // 用户点击确认
-  await deleteApi(id)
-  message.success('删除成功')
+  await deleteApi(id);
+  message.success('删除成功');
 } catch {
   // 用户点击取消
-  console.log('取消删除')
+  console.log('取消删除');
 }
 ```
 
@@ -141,11 +142,11 @@ try {
 
 ```typescript
 try {
-  await message.saveConfirm('确定要保存修改吗？')
-  await saveApi(data)
-  message.success('保存成功')
+  await message.saveConfirm('确定要保存修改吗？');
+  await saveApi(data);
+  message.success('保存成功');
 } catch {
-  console.log('取消保存')
+  console.log('取消保存');
 }
 ```
 
@@ -155,12 +156,12 @@ try {
 // 路由守卫中使用
 onBeforeRouteLeave(async (to, from, next) => {
   if (hasUnsavedChanges.value) {
-    const leave = await message.leaveConfirm()
-    next(leave)
+    const leave = await message.leaveConfirm();
+    next(leave);
   } else {
-    next()
+    next();
   }
-})
+});
 ```
 
 ---
@@ -174,15 +175,15 @@ onBeforeRouteLeave(async (to, from, next) => {
 ```typescript
 const handleDelete = async (id: number) => {
   try {
-    await message.delConfirm('确定要删除吗？')
-    await deleteApi(id)
-    message.success('删除成功')
-    await refreshList()
+    await message.delConfirm('确定要删除吗？');
+    await deleteApi(id);
+    message.success('删除成功');
+    await refreshList();
   } catch {
     // 用户取消，静默处理
-    console.log('用户取消删除')
+    console.log('用户取消删除');
   }
-}
+};
 ```
 
 ### 2. 全局访问
@@ -191,13 +192,13 @@ const handleDelete = async (id: number) => {
 
 ```typescript
 // utils/message.ts
-import { getGlobalMessage } from '@dailyuse/ui'
+import { getGlobalMessage } from '@dailyuse/ui';
 
-export const message = getGlobalMessage()
+export const message = getGlobalMessage();
 
 // 在任何地方使用
-import { message } from '@/utils/message'
-message.success('操作成功')
+import { message } from '@/utils/message';
+message.success('操作成功');
 ```
 
 ### 3. 自定义样式
@@ -208,8 +209,8 @@ message.confirm({
   message: '此操作不可撤销',
   type: 'error',
   confirmText: '我已了解',
-  cancelText: '再想想'
-})
+  cancelText: '再想想',
+});
 ```
 
 ### 4. 链式调用
@@ -217,14 +218,14 @@ message.confirm({
 ```typescript
 const result = await message.confirm({
   title: '确认删除',
-  message: '删除后无法恢复'
-})
+  message: '删除后无法恢复',
+});
 
 if (result) {
-  await deleteApi(id)
-  message.success('删除成功')
+  await deleteApi(id);
+  message.success('删除成功');
 } else {
-  message.info('已取消删除')
+  message.info('已取消删除');
 }
 ```
 
@@ -236,30 +237,28 @@ if (result) {
 
 ```vue
 <script setup lang="ts">
-import { useMessage } from '@dailyuse/ui'
-import { deleteUser } from '@/api/user'
+import { useMessage } from '@dailyuse/ui';
+import { deleteUser } from '@/api/user';
 
-const message = useMessage()
+const message = useMessage();
 
 const handleDelete = async (id: number) => {
   try {
-    await message.delConfirm('确定要删除此用户吗？')
-    
-    await deleteUser(id)
-    message.success('删除成功')
-    
+    await message.delConfirm('确定要删除此用户吗？');
+
+    await deleteUser(id);
+    message.success('删除成功');
+
     // 刷新列表
-    await getList()
+    await getList();
   } catch {
     // 用户取消
   }
-}
+};
 </script>
 
 <template>
-  <v-btn color="error" @click="handleDelete(user.id)">
-    删除
-  </v-btn>
+  <v-btn color="error" @click="handleDelete(user.id)"> 删除 </v-btn>
 </template>
 ```
 
@@ -267,24 +266,24 @@ const handleDelete = async (id: number) => {
 
 ```vue
 <script setup lang="ts">
-import { useMessage } from '@dailyuse/ui'
+import { useMessage } from '@dailyuse/ui';
 
-const message = useMessage()
-const formData = ref({ name: '', email: '' })
+const message = useMessage();
+const formData = ref({ name: '', email: '' });
 
 const handleSubmit = async () => {
   try {
-    await message.saveConfirm('确定要保存修改吗？')
-    
-    await submitForm(formData.value)
-    message.success('保存成功')
-    
+    await message.saveConfirm('确定要保存修改吗？');
+
+    await submitForm(formData.value);
+    message.success('保存成功');
+
     // 返回列表页
-    router.push('/users')
+    router.push('/users');
   } catch {
     // 用户取消
   }
-}
+};
 </script>
 
 <template>
@@ -300,29 +299,29 @@ const handleSubmit = async () => {
 
 ```vue
 <script setup lang="ts">
-import { useMessage } from '@dailyuse/ui'
-import { onBeforeRouteLeave } from 'vue-router'
+import { useMessage } from '@dailyuse/ui';
+import { onBeforeRouteLeave } from 'vue-router';
 
-const message = useMessage()
-const formData = ref({ name: '', email: '' })
-const originalData = ref({ name: '', email: '' })
+const message = useMessage();
+const formData = ref({ name: '', email: '' });
+const originalData = ref({ name: '', email: '' });
 
 const hasUnsavedChanges = computed(() => {
-  return JSON.stringify(formData.value) !== JSON.stringify(originalData.value)
-})
+  return JSON.stringify(formData.value) !== JSON.stringify(originalData.value);
+});
 
 onBeforeRouteLeave(async (to, from, next) => {
   if (hasUnsavedChanges.value) {
     try {
-      await message.leaveConfirm('你有未保存的修改，确定要离开吗？')
-      next()
+      await message.leaveConfirm('你有未保存的修改，确定要离开吗？');
+      next();
     } catch {
-      next(false)
+      next(false);
     }
   } else {
-    next()
+    next();
   }
-})
+});
 </script>
 ```
 
@@ -330,38 +329,33 @@ onBeforeRouteLeave(async (to, from, next) => {
 
 ```vue
 <script setup lang="ts">
-import { useMessage } from '@dailyuse/ui'
+import { useMessage } from '@dailyuse/ui';
 
-const message = useMessage()
-const selectedIds = ref<number[]>([])
+const message = useMessage();
+const selectedIds = ref<number[]>([]);
 
 const handleBatchDelete = async () => {
   if (selectedIds.value.length === 0) {
-    message.warning('请先选择要删除的项目')
-    return
+    message.warning('请先选择要删除的项目');
+    return;
   }
-  
+
   try {
-    await message.delConfirm(
-      `确定要删除选中的 ${selectedIds.value.length} 条记录吗？`,
-      '批量删除'
-    )
-    
-    await batchDeleteApi(selectedIds.value)
-    message.success(`已删除 ${selectedIds.value.length} 条记录`)
-    
-    selectedIds.value = []
-    await getList()
+    await message.delConfirm(`确定要删除选中的 ${selectedIds.value.length} 条记录吗？`, '批量删除');
+
+    await batchDeleteApi(selectedIds.value);
+    message.success(`已删除 ${selectedIds.value.length} 条记录`);
+
+    selectedIds.value = [];
+    await getList();
   } catch {
     // 用户取消
   }
-}
+};
 </script>
 
 <template>
-  <v-btn color="error" @click="handleBatchDelete">
-    批量删除
-  </v-btn>
+  <v-btn color="error" @click="handleBatchDelete"> 批量删除 </v-btn>
 </template>
 ```
 
@@ -372,24 +366,24 @@ const handleBatchDelete = async () => {
 ### useMessage
 
 ```typescript
-function useMessage(): MessageInstance
+function useMessage(): MessageInstance;
 
 interface MessageInstance {
   // 消息提示
-  success(message: string, duration?: number): void
-  error(message: string, duration?: number): void
-  warning(message: string, duration?: number): void
-  info(message: string, duration?: number): void
-  
+  success(message: string, duration?: number): void;
+  error(message: string, duration?: number): void;
+  warning(message: string, duration?: number): void;
+  info(message: string, duration?: number): void;
+
   // 确认框
-  confirm(options: ConfirmOptions): Promise<boolean>
-  delConfirm(message?: string, title?: string): Promise<boolean>
-  saveConfirm(message?: string, title?: string): Promise<boolean>
-  leaveConfirm(message?: string): Promise<boolean>
-  
+  confirm(options: ConfirmOptions): Promise<boolean>;
+  delConfirm(message?: string, title?: string): Promise<boolean>;
+  saveConfirm(message?: string, title?: string): Promise<boolean>;
+  leaveConfirm(message?: string): Promise<boolean>;
+
   // 状态
-  snackbar: Ref<SnackbarState>
-  dialog: Ref<DialogState>
+  snackbar: Ref<SnackbarState>;
+  dialog: Ref<DialogState>;
 }
 ```
 
@@ -397,25 +391,25 @@ interface MessageInstance {
 
 ```typescript
 interface ConfirmOptions {
-  title?: string           // 标题
-  message: string          // 消息内容
-  type?: MessageType       // 类型：success | error | warning | info
-  confirmText?: string     // 确认按钮文字
-  cancelText?: string      // 取消按钮文字
-  persistent?: boolean     // 是否持久化（点击遮罩不关闭）
+  title?: string; // 标题
+  message: string; // 消息内容
+  type?: MessageType; // 类型：success | error | warning | info
+  confirmText?: string; // 确认按钮文字
+  cancelText?: string; // 取消按钮文字
+  persistent?: boolean; // 是否持久化（点击遮罩不关闭）
 }
 ```
 
 ### MessageType
 
 ```typescript
-type MessageType = 'success' | 'error' | 'warning' | 'info'
+type MessageType = 'success' | 'error' | 'warning' | 'info';
 ```
 
 ### getGlobalMessage
 
 ```typescript
-function getGlobalMessage(): MessageInstance
+function getGlobalMessage(): MessageInstance;
 ```
 
 ---
@@ -430,8 +424,8 @@ function getGlobalMessage(): MessageInstance
 
 ## 📝 变更历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
+| 版本  | 日期       | 变更                           |
+| ----- | ---------- | ------------------------------ |
 | 1.0.0 | 2025-10-10 | 初始版本，完整实现消息提示系统 |
 
 ---

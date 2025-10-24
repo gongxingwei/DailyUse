@@ -1,9 +1,25 @@
 <template>
   <div ref="gridContainer" class="h-100 w-100" @contextmenu.prevent="onGridContextMenu">
-    <draggable v-if="items.length > 0" :model-value="items" item-key="id" :animation="200" :disabled="false" ghost-class="ghost"
-      chosen-class="chosen" drag-class="drag" tag="div" class="reminder-grid" @start="onDragStart" @end="onDragEnd">
+    <draggable
+      v-if="items.length > 0"
+      :model-value="items"
+      item-key="id"
+      :animation="200"
+      :disabled="false"
+      ghost-class="ghost"
+      chosen-class="chosen"
+      drag-class="drag"
+      tag="div"
+      class="reminder-grid"
+      @start="onDragStart"
+      @end="onDragEnd"
+    >
       <template #item="{ element }">
-        <div :key="element.uuid" class="grid-item" @contextmenu.prevent="onItemContextMenu($event, element)">
+        <div
+          :key="element.uuid"
+          class="grid-item"
+          @contextmenu.prevent="onItemContextMenu($event, element)"
+        >
           <component :is="getItemComponent(element)" :item="element" />
         </div>
       </template>
@@ -14,14 +30,26 @@
       v-else
       class="reminder-grid empty-grid"
       @contextmenu.prevent="onGridContextMenu"
-      style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 400px;"
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 400px;
+      "
     >
-      <span style="color: #aaa;">暂无提醒，可通过右键菜单添加提醒</span>
+      <span style="color: #aaa">暂无提醒，可通过右键菜单添加提醒</span>
     </div>
 
     <!-- Context Menu -->
-    <ContextMenu :show="contextMenu.show" :x="contextMenu.x" :y="contextMenu.y" :items="contextMenu.items"
-      @select="onContextMenuSelect" @close="closeContextMenu" />
+    <ContextMenu
+      :show="contextMenu.show"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :items="contextMenu.items"
+      @select="onContextMenuSelect"
+      @close="closeContextMenu"
+    />
 
     <!-- ReminderTemplateCard -->
   </div>
@@ -49,10 +77,12 @@ const onStartCreateTemplate = inject<(() => void) | undefined>('onStartCreateTem
 const onStartCreateGroup = inject<(() => void) | undefined>('onStartCreateGroup');
 const onStartEditItem = inject<((item: GridItem) => void) | undefined>('onStartEditItem');
 const onStartDeleteItem = inject<((item: GridItem) => void) | undefined>('onStartDeleteItem');
-const onStartMoveTemplate = inject<((item: ReminderTemplate) => void) | undefined>('onStartMoveTemplate');
+const onStartMoveTemplate = inject<((item: ReminderTemplate) => void) | undefined>(
+  'onStartMoveTemplate',
+);
 
 withDefaults(defineProps<Props>(), {
-  gridSize: 80
+  gridSize: 80,
 });
 
 const gridContainer = ref<HTMLElement>();
@@ -72,13 +102,13 @@ const onGridContextMenu = (event: MouseEvent) => {
     {
       label: '添加提醒',
       icon: 'mdi-bell-plus',
-      action: () => onStartCreateTemplate && onStartCreateTemplate()
+      action: () => onStartCreateTemplate && onStartCreateTemplate(),
     },
     {
       label: '添加提醒分组',
       icon: 'mdi-folder-plus',
-      action: () => onStartCreateGroup && onStartCreateGroup()
-    }
+      action: () => onStartCreateGroup && onStartCreateGroup(),
+    },
   ]);
 };
 
@@ -89,20 +119,20 @@ const onItemContextMenu = (event: MouseEvent, item: GridItem) => {
     {
       label: '编辑',
       icon: 'mdi-pencil',
-      action: () => onStartEditItem && onStartEditItem(item)
+      action: () => onStartEditItem && onStartEditItem(item),
     },
     {
       label: '删除',
       icon: 'mdi-delete',
-      action: () => onStartDeleteItem && onStartDeleteItem(item)
-    }
+      action: () => onStartDeleteItem && onStartDeleteItem(item),
+    },
   ];
 
   if (ReminderTemplate.isReminderTemplate(item)) {
     menuItems.splice(1, 0, {
       label: '移动到组中',
       icon: 'mdi-bell-plus',
-      action: () => onStartMoveTemplate && onStartMoveTemplate(item)
+      action: () => onStartMoveTemplate && onStartMoveTemplate(item),
     });
   }
 
@@ -121,7 +151,6 @@ const onDragStart = () => {
 const onDragEnd = () => {
   // Handle drag end
 };
-
 </script>
 
 <style scoped>
@@ -140,7 +169,6 @@ const onDragEnd = () => {
 
 .grid-item {
   cursor: pointer;
-  
 }
 
 .grid-item.template {

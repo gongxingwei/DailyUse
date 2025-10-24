@@ -13,10 +13,12 @@
 ### 第一轮修改（初始清理）
 
 **domain-server 包导出（2个文件）**:
+
 - ✅ `packages/domain-server/src/goal/index.ts`
 - ✅ `packages/domain-server/src/repository/index.ts`
 
 **apps/api 导入（4个文件）**:
+
 - ✅ `PrismaGoalRepository.ts`
 - ✅ `PrismaGoalFolderRepository.ts`
 - ✅ `PrismaFocusSessionRepository.ts`
@@ -25,6 +27,7 @@
 ### 第二轮修改（深度检查）
 
 **apps/api 额外发现（3个文件）**:
+
 - ✅ `PrismaRepositoryAggregateRepository.ts` - 修复了 5 处别名
   - `RepositoryAggregate as Repository` → `Repository`
   - `ResourceEntity as Resource` → `Resource`
@@ -59,6 +62,7 @@
 ### 移除的别名数量: **15处**
 
 **domain-server 导出别名**: 8处
+
 - Goal as GoalAggregate
 - GoalFolder as GoalFolderAggregate
 - GoalStatistics as GoalStatisticsAggregate
@@ -73,6 +77,7 @@
 - LinkedContent as LinkedContentEntity
 
 **apps/api 导入别名**: 7处
+
 - 5个 Repository 文件中的导入重命名
 - 1个 ApplicationService 文件中的导入重命名
 - 1个 Repository 文件中的额外多处使用
@@ -159,8 +164,8 @@ const contentEntity = LinkedContent.fromPersistenceDTO({...});
 
 ### 2. 命名一致性
 
-| 层级       | 类名   | 导出名          | 导入名 | 一致性     |
-| ---------- | ------ | --------------- | ------ | ---------- |
+| 层级       | 类名   | 导出名          | 导入名 | 一致性      |
+| ---------- | ------ | --------------- | ------ | ----------- |
 | **修改前** | `Goal` | `GoalAggregate` | `Goal` | ❌ 不一致   |
 | **修改后** | `Goal` | `Goal`          | `Goal` | ✅ 完全一致 |
 
@@ -180,7 +185,7 @@ const contentEntity = LinkedContent.fromPersistenceDTO({...});
 ```bash
 # Repository 层（5个文件）
 ✅ PrismaGoalRepository.ts - No errors found
-✅ PrismaGoalFolderRepository.ts - No errors found  
+✅ PrismaGoalFolderRepository.ts - No errors found
 ✅ PrismaFocusSessionRepository.ts - No errors found
 ✅ PrismaRepositoryStatisticsRepository.ts - No errors found
 ✅ PrismaRepositoryAggregateRepository.ts - No errors found
@@ -192,12 +197,13 @@ const contentEntity = LinkedContent.fromPersistenceDTO({...});
 ### 导入检查（全部通过）
 
 使用 `grep` 验证：
+
 ```bash
 # 检查是否还有旧别名
 grep -r "Aggregate as " apps/api/src/**/*.ts
 # 结果: No matches found ✅
 
-grep -r "Entity as " apps/api/src/**/*.ts  
+grep -r "Entity as " apps/api/src/**/*.ts
 # 结果: No matches found ✅
 ```
 
@@ -224,6 +230,7 @@ grep -r "as.*Aggregate\|as.*Entity" packages/domain-server/src/*/index.ts
 - ✅ 应该直接导出类名，保持简洁清晰
 
 理由：
+
 1. DDD 最佳实践：领域对象类名本身就是领域概念
 2. TypeScript 友好：避免重复重命名
 3. 文件路径已足够清晰：domain-server/goal/aggregates/Goal.ts
@@ -302,6 +309,7 @@ fi
 ### 3. 团队培训
 
 向团队成员说明此次变更：
+
 - 为什么移除别名（DDD 最佳实践）
 - 如何正确导出（直接使用类名）
 - 新规范的位置（fullstack.prompt.md）

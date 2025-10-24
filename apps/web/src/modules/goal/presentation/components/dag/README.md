@@ -19,6 +19,7 @@ A Vue 3 component that visualizes Goal-KeyResult relationships as a Directed Acy
 ## Installation
 
 Component is located at:
+
 ```
 apps/web/src/modules/goal/presentation/components/dag/GoalDAGVisualization.vue
 ```
@@ -31,10 +32,7 @@ Dependencies are automatically included in the `@dailyuse/web` package.
 
 ```vue
 <template>
-  <GoalDAGVisualization 
-    :goal-uuid="currentGoal.uuid"
-    @node-click="handleNodeClick"
-  />
+  <GoalDAGVisualization :goal-uuid="currentGoal.uuid" @node-click="handleNodeClick" />
 </template>
 
 <script setup lang="ts">
@@ -63,19 +61,20 @@ const handleNodeClick = (data: { id: string; type: 'goal' | 'kr' }) => {
 
 ## Props
 
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `goalUuid` | `string` | ✅ Yes | - | UUID of the Goal to visualize. Must exist in store. |
+| Prop       | Type     | Required | Default | Description                                         |
+| ---------- | -------- | -------- | ------- | --------------------------------------------------- |
+| `goalUuid` | `string` | ✅ Yes   | -       | UUID of the Goal to visualize. Must exist in store. |
 
 ---
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
+| Event        | Payload                                | Description                                  |
+| ------------ | -------------------------------------- | -------------------------------------------- |
 | `node-click` | `{ id: string, type: 'goal' \| 'kr' }` | Emitted when user clicks a node in the graph |
 
 **Example**:
+
 ```typescript
 {
   id: 'kr-123',  // Node UUID
@@ -95,11 +94,11 @@ None. Component is fully self-contained.
 
 ### Computed Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `hasKeyResults` | `boolean` | True if Goal has at least one KeyResult |
-| `totalWeight` | `number` | Sum of all KeyResult weights (should be 100) |
-| `dagOption` | `EChartsOption` | Complete ECharts configuration object |
+| Property        | Type            | Description                                  |
+| --------------- | --------------- | -------------------------------------------- |
+| `hasKeyResults` | `boolean`       | True if Goal has at least one KeyResult      |
+| `totalWeight`   | `number`        | Sum of all KeyResult weights (should be 100) |
+| `dagOption`     | `EChartsOption` | Complete ECharts configuration object        |
 
 ### Methods
 
@@ -109,15 +108,15 @@ None. Component manages internal state.
 
 #### Private Methods
 
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `getWeightColor` | `weight: number` | `string` | Maps weight value to color hex code |
-| `calculateHierarchicalLayout` | - | `{ nodes, links }` | Computes fixed-position hierarchical layout |
-| `calculateForceLayout` | - | `{ nodes, links }` | Prepares data for force-directed layout |
-| `saveLayout` | `goalUuid: string, positions: Array` | `void` | Saves node positions to localStorage |
-| `loadLayout` | `goalUuid: string` | `Array \| null` | Retrieves saved layout from localStorage |
-| `resetLayout` | - | `void` | Clears custom layout and resets to default |
-| `handleNodeClick` | `params: any` | `void` | Processes ECharts node click events |
+| Method                        | Parameters                           | Returns            | Description                                 |
+| ----------------------------- | ------------------------------------ | ------------------ | ------------------------------------------- |
+| `getWeightColor`              | `weight: number`                     | `string`           | Maps weight value to color hex code         |
+| `calculateHierarchicalLayout` | -                                    | `{ nodes, links }` | Computes fixed-position hierarchical layout |
+| `calculateForceLayout`        | -                                    | `{ nodes, links }` | Prepares data for force-directed layout     |
+| `saveLayout`                  | `goalUuid: string, positions: Array` | `void`             | Saves node positions to localStorage        |
+| `loadLayout`                  | `goalUuid: string`                   | `Array \| null`    | Retrieves saved layout from localStorage    |
+| `resetLayout`                 | -                                    | `void`             | Clears custom layout and resets to default  |
+| `handleNodeClick`             | `params: any`                        | `void`             | Processes ECharts node click events         |
 
 ---
 
@@ -128,12 +127,14 @@ None. Component manages internal state.
 **Best for**: Exploration, discovering relationships, small graphs (< 50 nodes)
 
 **Characteristics**:
+
 - Nodes automatically position based on physics simulation
 - User can drag nodes to custom positions
 - Positions are saved and restored
 - Smooth animations
 
 **Parameters**:
+
 ```typescript
 {
   repulsion: 300,           // Node repulsion force
@@ -149,19 +150,21 @@ None. Component manages internal state.
 **Best for**: Clear hierarchy, presentations, documentation
 
 **Characteristics**:
+
 - Goal node fixed at top (Y=100)
 - KeyResult nodes evenly distributed at bottom (Y=300)
 - Clean vertical alignment
 - Predictable structure
 
 **Calculation**:
+
 ```typescript
 // Goal centered horizontally
-goalX = containerWidth / 2
+goalX = containerWidth / 2;
 
 // KRs evenly spaced
-krSpacing = containerWidth / (krCount + 1)
-krX = krSpacing * (index + 1)
+krSpacing = containerWidth / (krCount + 1);
+krX = krSpacing * (index + 1);
 ```
 
 **Use Case**: When you want to emphasize the Goal → KR hierarchy clearly.
@@ -172,19 +175,19 @@ krX = krSpacing * (index + 1)
 
 ### Node Colors
 
-| Weight Range | Color | Hex Code | Meaning |
-|--------------|-------|----------|---------|
-| 70-100% | Green | `#4CAF50` | High priority/well-weighted |
-| 30-70% | Orange | `#FF9800` | Medium priority |
-| 0-30% | Red | `#F44336` | Low priority/needs attention |
-| Goal | Blue | `#2196F3` | Goal node (always blue) |
+| Weight Range | Color  | Hex Code  | Meaning                      |
+| ------------ | ------ | --------- | ---------------------------- |
+| 70-100%      | Green  | `#4CAF50` | High priority/well-weighted  |
+| 30-70%       | Orange | `#FF9800` | Medium priority              |
+| 0-30%        | Red    | `#F44336` | Low priority/needs attention |
+| Goal         | Blue   | `#2196F3` | Goal node (always blue)      |
 
 ### Edge Colors
 
-| Condition | Color | Hex Code |
-|-----------|-------|----------|
-| Total weight = 100% | Grey | `#999` |
-| Total weight ≠ 100% | Red | `#f44336` |
+| Condition           | Color | Hex Code  |
+| ------------------- | ----- | --------- |
+| Total weight = 100% | Grey  | `#999`    |
+| Total weight ≠ 100% | Red   | `#f44336` |
 
 **Width**: `edge.width = kr.weight / 10` (e.g., 40% weight → 4px width)
 
@@ -192,12 +195,13 @@ krX = krSpacing * (index + 1)
 
 ## LocalStorage Keys
 
-| Key Pattern | Value Type | Purpose |
-|-------------|------------|---------|
-| `dag-layout-${goalUuid}` | `Array<{id, x, y}>` | Saved node positions for specific goal |
-| `dag-layout-type` | `'force' \| 'hierarchical'` | User's last selected layout type |
+| Key Pattern              | Value Type                  | Purpose                                |
+| ------------------------ | --------------------------- | -------------------------------------- |
+| `dag-layout-${goalUuid}` | `Array<{id, x, y}>`         | Saved node positions for specific goal |
+| `dag-layout-type`        | `'force' \| 'hierarchical'` | User's last selected layout type       |
 
 **Example**:
+
 ```json
 // dag-layout-goal-123
 [
@@ -213,18 +217,21 @@ krX = krSpacing * (index + 1)
 The component uses `@vueuse/core`'s `useResizeObserver` to track container size changes.
 
 **Container Constraints**:
+
 - **Minimum Width**: 600px
 - **Minimum Height**: 400px
 - **Default Height**: 600px
 - **Width**: 100% of parent container
 
 **Responsive Actions**:
+
 1. Container resize detected
 2. If hierarchical layout: recalculate node positions proportionally
 3. ECharts `autoresize` triggers chart redraw
 4. Saved layouts scale with container
 
 **Example**:
+
 ```
 Window: 1920x1080 → 1280x720
 Node X: 800 → 533 (scaled by 1280/1920)
@@ -237,15 +244,15 @@ Node Y: 300 → 300 (fixed for hierarchical)
 
 ### Benchmarks
 
-| Node Count | Layout Type | FPS | Status |
-|------------|-------------|-----|--------|
-| 1-50 | Force | 60 | ✅ Smooth |
-| 1-50 | Hierarchical | 60 | ✅ Smooth |
-| 50-100 | Force | 45-60 | ⚠️ Acceptable |
-| 50-100 | Hierarchical | 60 | ✅ Smooth |
-| 100-500 | Force | 30-45 | ⚠️ Sluggish |
-| 100-500 | Hierarchical | 50-60 | ✅ Usable |
-| 500+ | Any | < 30 | ❌ Poor |
+| Node Count | Layout Type  | FPS   | Status        |
+| ---------- | ------------ | ----- | ------------- |
+| 1-50       | Force        | 60    | ✅ Smooth     |
+| 1-50       | Hierarchical | 60    | ✅ Smooth     |
+| 50-100     | Force        | 45-60 | ⚠️ Acceptable |
+| 50-100     | Hierarchical | 60    | ✅ Smooth     |
+| 100-500    | Force        | 30-45 | ⚠️ Sluggish   |
+| 100-500    | Hierarchical | 50-60 | ✅ Usable     |
+| 500+       | Any          | < 30  | ❌ Poor       |
 
 ### Optimization Tips
 
@@ -258,16 +265,17 @@ Node Y: 300 → 300 (fixed for hierarchical)
 
 ## Browser Support
 
-| Browser | Version | Status | Notes |
-|---------|---------|--------|-------|
-| Chrome | 90+ | ✅ Full | Recommended |
-| Edge | 90+ | ✅ Full | Chromium-based |
-| Firefox | 88+ | ✅ Full | - |
-| Safari | 14+ | ✅ Full | - |
-| Mobile Safari | 14+ | ⚠️ Limited | Touch events may conflict |
-| Chrome Android | 90+ | ✅ Full | - |
+| Browser        | Version | Status     | Notes                     |
+| -------------- | ------- | ---------- | ------------------------- |
+| Chrome         | 90+     | ✅ Full    | Recommended               |
+| Edge           | 90+     | ✅ Full    | Chromium-based            |
+| Firefox        | 88+     | ✅ Full    | -                         |
+| Safari         | 14+     | ✅ Full    | -                         |
+| Mobile Safari  | 14+     | ⚠️ Limited | Touch events may conflict |
+| Chrome Android | 90+     | ✅ Full    | -                         |
 
 **Known Issues**:
+
 - Safari < 14: Canvas rendering artifacts
 - Mobile: Drag gestures may conflict with scroll
 
@@ -294,6 +302,7 @@ Node Y: 300 → 300 (fixed for hierarchical)
 ### Roadmap
 
 Future improvements may include:
+
 - SVG rendering mode (ECharts supports this)
 - ARIA live regions for node interactions
 - Keyboard shortcuts for node selection
@@ -324,17 +333,12 @@ const goalId = ref('goal-abc-123');
 ```vue
 <template>
   <div>
-    <GoalDAGVisualization 
-      :goal-uuid="currentGoal.uuid"
-      @node-click="onNodeClick"
-    />
-    
+    <GoalDAGVisualization :goal-uuid="currentGoal.uuid" @node-click="onNodeClick" />
+
     <v-dialog v-model="showDialog">
       <v-card>
         <v-card-title>{{ selectedNode.title }}</v-card-title>
-        <v-card-text>
-          Type: {{ selectedNode.type }}
-        </v-card-text>
+        <v-card-text> Type: {{ selectedNode.type }} </v-card-text>
       </v-card>
     </v-dialog>
   </div>
@@ -346,7 +350,7 @@ const selectedNode = ref({ title: '', type: '' });
 
 const onNodeClick = ({ id, type }) => {
   if (type === 'kr') {
-    const kr = currentGoal.value.keyResults.find(k => k.uuid === id);
+    const kr = currentGoal.value.keyResults.find((k) => k.uuid === id);
     selectedNode.value = { title: kr.title, type: 'KeyResult' };
     showDialog.value = true;
   }
@@ -370,9 +374,9 @@ const dagRef = ref();
 const resetAllLayouts = () => {
   // Clear all goal layouts
   Object.keys(localStorage)
-    .filter(key => key.startsWith('dag-layout-goal-'))
-    .forEach(key => localStorage.removeItem(key));
-  
+    .filter((key) => key.startsWith('dag-layout-goal-'))
+    .forEach((key) => localStorage.removeItem(key));
+
   // Trigger component reset
   if (dagRef.value) {
     dagRef.value.resetLayout();
@@ -390,16 +394,19 @@ const resetAllLayouts = () => {
 Located at: `GoalDAGVisualization.spec.ts`
 
 **Run tests**:
+
 ```bash
 pnpm test:run GoalDAGVisualization.spec.ts
 ```
 
 **Coverage**:
+
 - ✅ 19 test suites
 - ✅ 40+ test cases
 - ✅ ~85% code coverage
 
 **Key test areas**:
+
 - Rendering states
 - Layout calculations
 - Color mapping
@@ -412,11 +419,13 @@ pnpm test:run GoalDAGVisualization.spec.ts
 Located at: `apps/web/e2e/dag-visualization.spec.ts`
 
 **Run tests**:
+
 ```bash
 pnpm test:e2e dag-visualization.spec.ts
 ```
 
 **Scenarios**:
+
 - Component visibility
 - Layout toggling
 - User interactions
@@ -433,11 +442,13 @@ pnpm test:e2e dag-visualization.spec.ts
 **Symptoms**: Empty space where chart should be
 
 **Causes**:
+
 1. Goal has no KeyResults
 2. ECharts not loaded
 3. Container has zero height
 
 **Solutions**:
+
 ```typescript
 // Check Goal data
 console.log('Goal:', currentGoal.value);
@@ -453,11 +464,13 @@ console.log('Container size:', container.getBoundingBox());
 **Symptoms**: Custom positions lost on refresh
 
 **Causes**:
+
 1. localStorage disabled/full
 2. Incorrect goal UUID
 3. Browser privacy mode
 
 **Solutions**:
+
 ```typescript
 // Test localStorage
 try {
@@ -474,11 +487,13 @@ try {
 **Symptoms**: Slow rendering, low FPS
 
 **Causes**:
+
 1. Too many nodes (> 100)
 2. Force layout with many nodes
 3. Browser resource constraints
 
 **Solutions**:
+
 1. Switch to hierarchical layout
 2. Reduce animation duration
 3. Paginate/filter KeyResults
@@ -491,11 +506,7 @@ try {
 
 ```typescript
 import { GraphChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-} from 'echarts/components';
+import { TitleComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 ```
 
@@ -557,6 +568,7 @@ pnpm test:coverage --project=web
 ### Code Style
 
 Follow existing patterns:
+
 - Vue 3 Composition API
 - TypeScript with type safety
 - Vuetify 3 components

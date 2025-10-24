@@ -8,16 +8,11 @@
     <v-card-title class="d-flex align-center">
       <v-icon class="mr-2">mdi-chart-box</v-icon>
       对比统计分析
-      
+
       <v-spacer />
-      
+
       <!-- 视图切换 -->
-      <v-btn-toggle
-        v-model="viewMode"
-        density="compact"
-        mandatory
-        divided
-      >
+      <v-btn-toggle v-model="viewMode" density="compact" mandatory divided>
         <v-btn value="table" size="small">
           <v-icon>mdi-table</v-icon>
         </v-btn>
@@ -35,17 +30,9 @@
             <thead>
               <tr>
                 <th class="text-left font-weight-bold">指标</th>
-                <th
-                  v-for="goal in goals"
-                  :key="goal.uuid"
-                  class="text-left"
-                >
+                <th v-for="goal in goals" :key="goal.uuid" class="text-left">
                   <div class="d-flex align-center">
-                    <v-chip
-                      size="x-small"
-                      :color="goal.color || 'primary'"
-                      class="mr-2"
-                    />
+                    <v-chip size="x-small" :color="goal.color || 'primary'" class="mr-2" />
                     <span class="text-subtitle-2">{{ goal.title }}</span>
                   </div>
                 </th>
@@ -55,10 +42,7 @@
               <!-- 关键结果数量 -->
               <tr>
                 <td class="font-weight-medium">关键结果数量</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`kr-count-${goal.uuid}`"
-                >
+                <td v-for="goal in goals" :key="`kr-count-${goal.uuid}`">
                   <v-chip size="small" color="primary" variant="outlined">
                     {{ getKRCount(goal) }} 个
                   </v-chip>
@@ -68,10 +52,7 @@
               <!-- 整体进度 -->
               <tr>
                 <td class="font-weight-medium">整体进度</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`progress-${goal.uuid}`"
-                >
+                <td v-for="goal in goals" :key="`progress-${goal.uuid}`">
                   <div class="d-flex align-center">
                     <v-progress-linear
                       :model-value="getProgress(goal)"
@@ -90,10 +71,7 @@
               <!-- 权重总和 -->
               <tr>
                 <td class="font-weight-medium">权重总和</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`weight-${goal.uuid}`"
-                >
+                <td v-for="goal in goals" :key="`weight-${goal.uuid}`">
                   <v-chip
                     size="small"
                     :color="getTotalWeight(goal) === 100 ? 'success' : 'error'"
@@ -107,27 +85,16 @@
               <!-- 平均权重 -->
               <tr>
                 <td class="font-weight-medium">平均权重</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`avg-weight-${goal.uuid}`"
-                >
-                  <span class="text-body-2">
-                    {{ getAverageWeight(goal) }}%
-                  </span>
+                <td v-for="goal in goals" :key="`avg-weight-${goal.uuid}`">
+                  <span class="text-body-2"> {{ getAverageWeight(goal) }}% </span>
                 </td>
               </tr>
 
               <!-- 状态 -->
               <tr>
                 <td class="font-weight-medium">状态</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`status-${goal.uuid}`"
-                >
-                  <v-chip
-                    size="small"
-                    :color="getStatusColor(goal)"
-                  >
+                <td v-for="goal in goals" :key="`status-${goal.uuid}`">
+                  <v-chip size="small" :color="getStatusColor(goal)">
                     {{ getStatusText(goal) }}
                   </v-chip>
                 </td>
@@ -136,11 +103,7 @@
               <!-- 创建时间 -->
               <tr>
                 <td class="font-weight-medium">创建时间</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`created-${goal.uuid}`"
-                  class="text-caption"
-                >
+                <td v-for="goal in goals" :key="`created-${goal.uuid}`" class="text-caption">
                   {{ formatDate(goal.createdAt) }}
                 </td>
               </tr>
@@ -148,11 +111,7 @@
               <!-- 更新时间 -->
               <tr>
                 <td class="font-weight-medium">最后更新</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`updated-${goal.uuid}`"
-                  class="text-caption"
-                >
+                <td v-for="goal in goals" :key="`updated-${goal.uuid}`" class="text-caption">
                   {{ formatDate(goal.updatedAt) }}
                 </td>
               </tr>
@@ -160,13 +119,8 @@
               <!-- 时间跨度 -->
               <tr>
                 <td class="font-weight-medium">活跃天数</td>
-                <td
-                  v-for="goal in goals"
-                  :key="`days-${goal.uuid}`"
-                >
-                  <span class="text-body-2">
-                    {{ getActiveDays(goal) }} 天
-                  </span>
+                <td v-for="goal in goals" :key="`days-${goal.uuid}`">
+                  <span class="text-body-2"> {{ getActiveDays(goal) }} 天 </span>
                 </td>
               </tr>
             </tbody>
@@ -180,21 +134,15 @@
           <!-- 关键结果数量对比 -->
           <v-col cols="12" md="6">
             <div class="chart-card pa-4">
-              <div class="text-subtitle-2 mb-3 font-weight-bold">
-                关键结果数量对比
-              </div>
+              <div class="text-subtitle-2 mb-3 font-weight-bold">关键结果数量对比</div>
               <div class="d-flex align-center justify-space-around">
-                <div
-                  v-for="goal in goals"
-                  :key="`kr-chart-${goal.uuid}`"
-                  class="text-center"
-                >
+                <div v-for="goal in goals" :key="`kr-chart-${goal.uuid}`" class="text-center">
                   <div
                     class="stat-circle"
-                    :style="{ 
+                    :style="{
                       backgroundColor: goal.color || '#2196F3',
                       width: `${Math.max(60, getKRCount(goal) * 10)}px`,
-                      height: `${Math.max(60, getKRCount(goal) * 10)}px`
+                      height: `${Math.max(60, getKRCount(goal) * 10)}px`,
                     }"
                   >
                     <div class="stat-value">{{ getKRCount(goal) }}</div>
@@ -208,25 +156,13 @@
           <!-- 进度对比 -->
           <v-col cols="12" md="6">
             <div class="chart-card pa-4">
-              <div class="text-subtitle-2 mb-3 font-weight-bold">
-                进度对比
-              </div>
-              <div
-                v-for="goal in goals"
-                :key="`progress-chart-${goal.uuid}`"
-                class="mb-3"
-              >
+              <div class="text-subtitle-2 mb-3 font-weight-bold">进度对比</div>
+              <div v-for="goal in goals" :key="`progress-chart-${goal.uuid}`" class="mb-3">
                 <div class="d-flex align-center mb-1">
-                  <v-chip
-                    size="x-small"
-                    :color="goal.color || 'primary'"
-                    class="mr-2"
-                  />
+                  <v-chip size="x-small" :color="goal.color || 'primary'" class="mr-2" />
                   <span class="text-caption">{{ goal.title }}</span>
                   <v-spacer />
-                  <span class="text-caption font-weight-bold">
-                    {{ getProgress(goal) }}%
-                  </span>
+                  <span class="text-caption font-weight-bold"> {{ getProgress(goal) }}% </span>
                 </div>
                 <v-progress-linear
                   :model-value="getProgress(goal)"
@@ -241,9 +177,7 @@
           <!-- 权重分布 -->
           <v-col cols="12">
             <div class="chart-card pa-4">
-              <div class="text-subtitle-2 mb-3 font-weight-bold">
-                权重分布分析
-              </div>
+              <div class="text-subtitle-2 mb-3 font-weight-bold">权重分布分析</div>
               <v-row>
                 <v-col
                   v-for="goal in goals"
@@ -251,10 +185,7 @@
                   :cols="12 / goals.length"
                 >
                   <div class="text-center mb-2">
-                    <v-chip
-                      size="small"
-                      :color="goal.color || 'primary'"
-                    >
+                    <v-chip size="small" :color="goal.color || 'primary'">
                       {{ goal.title }}
                     </v-chip>
                   </div>
@@ -292,13 +223,13 @@
 
       <!-- 汇总洞察 -->
       <v-divider class="my-4" />
-      
+
       <div class="insights-section">
         <div class="text-subtitle-2 mb-3 font-weight-bold">
           <v-icon class="mr-2" size="small">mdi-lightbulb-on</v-icon>
           对比洞察
         </div>
-        
+
         <v-row>
           <v-col cols="12" md="4">
             <v-card variant="outlined" class="pa-3">
@@ -324,11 +255,7 @@
             <v-card variant="outlined" class="pa-3">
               <div class="text-caption text-grey mb-1">KR 数量最多</div>
               <div class="d-flex align-center">
-                <v-chip
-                  size="small"
-                  :color="getMostKRsGoal()?.color || 'primary'"
-                  class="mr-2"
-                />
+                <v-chip size="small" :color="getMostKRsGoal()?.color || 'primary'" class="mr-2" />
                 <span class="text-body-2 font-weight-bold">
                   {{ getMostKRsGoal()?.title || '-' }}
                 </span>
@@ -344,18 +271,12 @@
             <v-card variant="outlined" class="pa-3">
               <div class="text-caption text-grey mb-1">活跃时间最长</div>
               <div class="d-flex align-center">
-                <v-chip
-                  size="small"
-                  :color="getOldestGoal()?.color || 'warning'"
-                  class="mr-2"
-                />
+                <v-chip size="small" :color="getOldestGoal()?.color || 'warning'" class="mr-2" />
                 <span class="text-body-2 font-weight-bold">
                   {{ getOldestGoal()?.title || '-' }}
                 </span>
                 <v-spacer />
-                <span class="text-h6 text-warning">
-                  {{ getActiveDays(getOldestGoal()) }}天
-                </span>
+                <span class="text-h6 text-warning"> {{ getActiveDays(getOldestGoal()) }}天 </span>
               </div>
             </v-card>
           </v-col>
@@ -414,20 +335,20 @@ const getActiveDays = (goal: any): number => {
 
 const getStatusColor = (goal: any): string => {
   const colorMap: Record<string, string> = {
-    'NOT_STARTED': 'grey',
-    'IN_PROGRESS': 'primary',
-    'COMPLETED': 'success',
-    'ARCHIVED': 'warning',
+    NOT_STARTED: 'grey',
+    IN_PROGRESS: 'primary',
+    COMPLETED: 'success',
+    ARCHIVED: 'warning',
   };
   return colorMap[goal.status] || 'default';
 };
 
 const getStatusText = (goal: any): string => {
   const textMap: Record<string, string> = {
-    'NOT_STARTED': '未开始',
-    'IN_PROGRESS': '进行中',
-    'COMPLETED': '已完成',
-    'ARCHIVED': '已归档',
+    NOT_STARTED: '未开始',
+    IN_PROGRESS: '进行中',
+    COMPLETED: '已完成',
+    ARCHIVED: '已归档',
   };
   return textMap[goal.status] || goal.status;
 };
@@ -452,22 +373,18 @@ const formatDate = (timestamp: number | null | undefined): string => {
 // Insights
 const getHighestProgressGoal = () => {
   if (!props.goals || props.goals.length === 0) return null;
-  return props.goals.reduce((max, goal) => 
-    getProgress(goal) > getProgress(max) ? goal : max
-  );
+  return props.goals.reduce((max, goal) => (getProgress(goal) > getProgress(max) ? goal : max));
 };
 
 const getMostKRsGoal = () => {
   if (!props.goals || props.goals.length === 0) return null;
-  return props.goals.reduce((max, goal) => 
-    getKRCount(goal) > getKRCount(max) ? goal : max
-  );
+  return props.goals.reduce((max, goal) => (getKRCount(goal) > getKRCount(max) ? goal : max));
 };
 
 const getOldestGoal = () => {
   if (!props.goals || props.goals.length === 0) return null;
-  return props.goals.reduce((oldest, goal) => 
-    (goal.createdAt || 0) < (oldest.createdAt || 0) ? goal : oldest
+  return props.goals.reduce((oldest, goal) =>
+    (goal.createdAt || 0) < (oldest.createdAt || 0) ? goal : oldest,
   );
 };
 </script>

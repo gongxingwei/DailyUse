@@ -5,33 +5,49 @@
       <v-alert-title>无法加载模板</v-alert-title>
       <div>没有找到正在编辑的任务模板，请重新选择或创建模板。</div>
       <template #append>
-        <v-btn variant="text" @click="handleClose">
-          关闭
-        </v-btn>
+        <v-btn variant="text" @click="handleClose"> 关闭 </v-btn>
       </template>
     </v-alert>
 
     <!-- 正常表单内容 -->
     <v-form v-else ref="formRef" class="task-template-form">
       <!-- 统一使用 @update:model-value 事件 -->
-      <BasicInfoSection :model-value="taskTemplateBeingEdited" @update:validation="updateBasicValidation"
-        @update:model-value="handleTemplateUpdate" />
+      <BasicInfoSection
+        :model-value="taskTemplateBeingEdited"
+        @update:validation="updateBasicValidation"
+        @update:model-value="handleTemplateUpdate"
+      />
 
-      <TimeConfigSection :model-value="taskTemplateBeingEdited" @update:validation="updateTimeValidation"
-        @update:model-value="handleTemplateUpdate" />
+      <TimeConfigSection
+        :model-value="taskTemplateBeingEdited"
+        @update:validation="updateTimeValidation"
+        @update:model-value="handleTemplateUpdate"
+      />
 
-      <RecurrenceSection :model-value="taskTemplateBeingEdited" @update:validation="updateRecurrenceValidation"
-        @update:model-value="handleTemplateUpdate" />
+      <RecurrenceSection
+        :model-value="taskTemplateBeingEdited"
+        @update:validation="updateRecurrenceValidation"
+        @update:model-value="handleTemplateUpdate"
+      />
 
-      <ReminderSection :model-value="taskTemplateBeingEdited" @update:validation="updateReminderValidation"
-        @update:model-value="handleTemplateUpdate" />
+      <ReminderSection
+        :model-value="taskTemplateBeingEdited"
+        @update:validation="updateReminderValidation"
+        @update:model-value="handleTemplateUpdate"
+      />
 
       <!-- 移除 SchedulingPolicySection，调度配置已经在其他模块中处理 -->
 
-      <KeyResultLinksSection :model-value="taskTemplateBeingEdited" @update:model-value="handleTemplateUpdate" />
+      <KeyResultLinksSection
+        :model-value="taskTemplateBeingEdited"
+        @update:model-value="handleTemplateUpdate"
+      />
 
-      <MetadataSection :model-value="taskTemplateBeingEdited" @update:validation="updateMetadataValidation"
-        @update:model-value="handleTemplateUpdate" />
+      <MetadataSection
+        :model-value="taskTemplateBeingEdited"
+        @update:validation="updateMetadataValidation"
+        @update:model-value="handleTemplateUpdate"
+      />
     </v-form>
   </div>
 </template>
@@ -64,7 +80,7 @@ const props = withDefaults(defineProps<Props>(), {
 interface Emits {
   'update:modelValue': [value: TaskTemplate];
   'update:validation': [validation: { isValid: boolean }];
-  'close': [];
+  close: [];
 }
 
 const emit = defineEmits<Emits>();
@@ -79,7 +95,7 @@ const {
   updateTimeValidation,
   updateRecurrenceValidation,
   updateReminderValidation,
-  updateMetadataValidation
+  updateMetadataValidation,
 } = useTaskTemplateForm();
 
 // ===== 计算属性 =====
@@ -96,14 +112,18 @@ const handleClose = (): void => {
 
 // ===== 监听器 =====
 // 监听验证状态变化，通知父组件
-watch(isFormValid, (newValue) => {
-  emit('update:validation', { isValid: newValue });
-}, { immediate: true });
+watch(
+  isFormValid,
+  (newValue) => {
+    emit('update:validation', { isValid: newValue });
+  },
+  { immediate: true },
+);
 
 // ===== 暴露给父组件的方法 =====
 defineExpose({
   validate: validateForm,
   isValid: isFormValid,
-  formRef
+  formRef,
 });
 </script>

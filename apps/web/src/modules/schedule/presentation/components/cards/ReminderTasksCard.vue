@@ -63,12 +63,7 @@
                 <!-- 操作按钮 -->
                 <v-menu>
                   <template v-slot:activator="{ props }">
-                    <v-btn
-                      icon="mdi-dots-vertical"
-                      variant="text"
-                      size="small"
-                      v-bind="props"
-                    />
+                    <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props" />
                   </template>
                   <v-list>
                     <v-list-item

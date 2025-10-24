@@ -296,7 +296,7 @@ export function useFormValidation(options: UseFormValidationOptions) {
     const fieldConfig = config.fields.find((field) => field.name === fieldName);
     if (!fieldConfig) return [];
 
-    return fieldConfig.rules.map( async (rule) => {
+    return fieldConfig.rules.map(async (rule) => {
       return async (value: any) => {
         try {
           if ('validator' in rule && typeof rule.validator === 'function') {

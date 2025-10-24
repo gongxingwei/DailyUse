@@ -1,11 +1,22 @@
 <!-- 自定义弹窗组件 - Web适配版 -->
 <template>
-  <v-dialog v-model="dialogVisible" :width="width" :persistent="!closeOnClickMask" transition="dialog-transition">
+  <v-dialog
+    v-model="dialogVisible"
+    :width="width"
+    :persistent="!closeOnClickMask"
+    transition="dialog-transition"
+  >
     <v-card>
       <!-- 标题区域 -->
       <v-card-title v-if="title || showClose" class="d-flex justify-space-between align-center">
         <span>{{ title }}</span>
-        <v-btn v-if="showClose" icon="mdi-close" variant="text" size="small" @click="handleClose"></v-btn>
+        <v-btn
+          v-if="showClose"
+          icon="mdi-close"
+          variant="text"
+          size="small"
+          @click="handleClose"
+        ></v-btn>
       </v-card-title>
 
       <!-- 内容区域 -->
@@ -22,14 +33,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 interface Props {
-  visible: boolean
-  title?: string
-  width?: string | number
-  showClose?: boolean
-  closeOnClickMask?: boolean
+  visible: boolean;
+  title?: string;
+  width?: string | number;
+  showClose?: boolean;
+  closeOnClickMask?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -37,30 +48,30 @@ const props = withDefaults(defineProps<Props>(), {
   title: '',
   width: '50%',
   showClose: true,
-  closeOnClickMask: true
-})
+  closeOnClickMask: true,
+});
 
 const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void
-  (e: 'close'): void
-}>()
+  (e: 'update:visible', value: boolean): void;
+  (e: 'close'): void;
+}>();
 
 // 双向绑定对话框显示状态
 const dialogVisible = computed({
   get: () => props.visible,
   set: (value) => {
-    emit('update:visible', value)
+    emit('update:visible', value);
     if (!value) {
-      emit('close')
+      emit('close');
     }
-  }
-})
+  },
+});
 
 // 处理关闭
 const handleClose = () => {
-  emit('update:visible', false)
-  emit('close')
-}
+  emit('update:visible', false);
+  emit('close');
+};
 </script>
 
 <style scoped>

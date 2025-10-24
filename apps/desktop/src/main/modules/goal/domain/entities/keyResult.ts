@@ -1,6 +1,6 @@
-import { Entity } from "@dailyuse/utils";
-import type { IKeyResult } from "@common/modules/goal";
-import { isValid } from "date-fns";
+import { Entity } from '@dailyuse/utils';
+import type { IKeyResult } from '@common/modules/goal';
+import { isValid } from 'date-fns';
 
 /**
  * 关键结果领域实体
@@ -38,7 +38,7 @@ export class KeyResult extends Entity implements IKeyResult {
     this._lifecycle = {
       createdAt: now,
       updatedAt: now,
-      status: "active",
+      status: 'active',
     };
   }
 
@@ -47,7 +47,7 @@ export class KeyResult extends Entity implements IKeyResult {
     return this._name;
   }
   set name(value: string) {
-    if (!value.trim()) throw new Error("关键结果名称不能为空");
+    if (!value.trim()) throw new Error('关键结果名称不能为空');
     this._name = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -64,7 +64,7 @@ export class KeyResult extends Entity implements IKeyResult {
     return this._targetValue;
   }
   set targetValue(value: number) {
-    if (value <= this._startValue) throw new Error("目标值必须大于起始值");
+    if (value <= this._startValue) throw new Error('目标值必须大于起始值');
     this._targetValue = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -73,14 +73,14 @@ export class KeyResult extends Entity implements IKeyResult {
     return this._currentValue;
   }
   set currentValue(value: number) {
-    if (value < 0) throw new Error("当前值不能为负数");
+    if (value < 0) throw new Error('当前值不能为负数');
     this._currentValue = value;
     this._lifecycle.updatedAt = new Date();
     // 如果达到目标值，标记为完成
-    if (this.isCompleted && this._lifecycle.status === "active") {
-      this._lifecycle.status = "completed";
-    } else if (!this.isCompleted && this._lifecycle.status === "completed") {
-      this._lifecycle.status = "active";
+    if (this.isCompleted && this._lifecycle.status === 'active') {
+      this._lifecycle.status = 'completed';
+    } else if (!this.isCompleted && this._lifecycle.status === 'completed') {
+      this._lifecycle.status = 'active';
     }
   }
 
@@ -96,7 +96,7 @@ export class KeyResult extends Entity implements IKeyResult {
     return this._weight;
   }
   set weight(value: number) {
-    if (value < 0 || value > 10) throw new Error("权重必须在 0-10 之间");
+    if (value < 0 || value > 10) throw new Error('权重必须在 0-10 之间');
     this._weight = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -110,7 +110,8 @@ export class KeyResult extends Entity implements IKeyResult {
    */
   get progress(): number {
     if (this._targetValue === this._startValue) return 0;
-    const progress = (this._currentValue - this._startValue) / (this._targetValue - this._startValue);
+    const progress =
+      (this._currentValue - this._startValue) / (this._targetValue - this._startValue);
     return Math.max(0, Math.min(100, progress * 100));
   }
 
@@ -128,7 +129,8 @@ export class KeyResult extends Entity implements IKeyResult {
    */
   get weightedProgress(): number {
     if (this._targetValue === this._startValue) return 0;
-    const progress = (this._currentValue - this._startValue) / (this._targetValue - this._startValue);
+    const progress =
+      (this._currentValue - this._startValue) / (this._targetValue - this._startValue);
     return Math.max(0, Math.min(100, progress * 100 * (this._weight / 10)));
   }
 
@@ -136,8 +138,15 @@ export class KeyResult extends Entity implements IKeyResult {
    * 判断对象是否为 KeyResult 或 IKeyResult
    */
   static isKeyResult(obj: any): obj is KeyResult | IKeyResult {
-    return obj instanceof KeyResult ||
-      (obj && typeof obj === 'object' && 'uuid' in obj && 'name' in obj && 'startValue' in obj && 'targetValue' in obj);
+    return (
+      obj instanceof KeyResult ||
+      (obj &&
+        typeof obj === 'object' &&
+        'uuid' in obj &&
+        'name' in obj &&
+        'startValue' in obj &&
+        'targetValue' in obj)
+    );
   }
 
   /**
@@ -162,11 +171,11 @@ export class KeyResult extends Entity implements IKeyResult {
     } else {
       // 默认创建一个空的关键结果
       return new KeyResult({
-        name: "",
+        name: '',
         startValue: 0,
         targetValue: 1,
         currentValue: 0,
-        calculationMethod: "sum",
+        calculationMethod: 'sum',
         weight: 1,
       });
     }
@@ -202,9 +211,13 @@ export class KeyResult extends Entity implements IKeyResult {
       weight: data.weight,
     });
     keyResult._lifecycle = {
-      createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
-      updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
-      status: data.lifecycle.status || "active",
+      createdAt: isValid(data.lifecycle.createdAt)
+        ? new Date(data.lifecycle.createdAt)
+        : new Date(),
+      updatedAt: isValid(data.lifecycle.updatedAt)
+        ? new Date(data.lifecycle.updatedAt)
+        : new Date(),
+      status: data.lifecycle.status || 'active',
     };
     return keyResult;
   }
@@ -222,5 +235,4 @@ export class KeyResult extends Entity implements IKeyResult {
     newKeyResult._lifecycle = this._lifecycle;
     return newKeyResult;
   }
-
 }

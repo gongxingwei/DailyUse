@@ -5,12 +5,15 @@ import type {
   LogoutResult,
   RememberMeTokenAuthenticationRequest,
   RememberMeTokenAuthenticationResponse,
-} from "../../domain/types";
-import { useAuthenticationStore } from "../../presentation/stores/authenticationStore";
-import { authenticationIpcClient } from "../../infrastructure/ipcs/authenticationIpcClient";
+} from '../../domain/types';
+import { useAuthenticationStore } from '../../presentation/stores/authenticationStore';
+import { authenticationIpcClient } from '../../infrastructure/ipcs/authenticationIpcClient';
 // 事件系统
-import { eventBus } from "@dailyuse/utils";
-import type { UserLoggedInEvent, UserLoggedInEventPayload,  } from "../../domain/events/authenticationEvents";
+import { eventBus } from '@dailyuse/utils';
+import type {
+  UserLoggedInEvent,
+  UserLoggedInEventPayload,
+} from '../../domain/events/authenticationEvents';
 
 /**
  * 认证服务
@@ -18,9 +21,7 @@ import type { UserLoggedInEvent, UserLoggedInEventPayload,  } from "../../domain
  */
 export class AuthenticationService {
   private static instance: AuthenticationService;
-  private _authenticationStore: ReturnType<
-    typeof useAuthenticationStore
-  > | null = null;
+  private _authenticationStore: ReturnType<typeof useAuthenticationStore> | null = null;
 
   constructor() {}
 
@@ -42,13 +43,11 @@ export class AuthenticationService {
    * 用户登录(用密码)
    */
   async passwordAuthentication(
-    credentials: PasswordAuthenticationRequest
+    credentials: PasswordAuthenticationRequest,
   ): Promise<ApiResponse<PasswordAuthenticationResponse>> {
-    console.log('[authenticationService]: passwordAuthentication 函数调用')
+    console.log('[authenticationService]: passwordAuthentication 函数调用');
     try {
-      const response = await authenticationIpcClient.passwordAuthentication(
-        credentials
-      );
+      const response = await authenticationIpcClient.passwordAuthentication(credentials);
       if (response.success && response.data) {
         this.authenticationStore.$patch({
           username: response.data.username,
@@ -56,21 +55,22 @@ export class AuthenticationService {
           token: response.data.token,
           accountUuid: response.data.accountUuid,
         });
-        console.log("登录成功")
+        console.log('登录成功');
         await authenticationIpcClient.loginSuccessEvent();
-        
       }
       return response;
     } catch (error) {
-      console.error("登录失败:", error);
+      console.error('登录失败:', error);
       return {
         success: false,
-        message: "登录失败，请稍后重试",
+        message: '登录失败，请稍后重试',
       };
     }
   }
 
-  async getQuickLoginAccounts(): Promise<Array<{ accountUuid: string; username: string; token: string }>> {
+  async getQuickLoginAccounts(): Promise<
+    Array<{ accountUuid: string; username: string; token: string }>
+  > {
     try {
       const response = await authenticationIpcClient.getQuickLoginAccounts();
       return response.data || [];
@@ -82,15 +82,13 @@ export class AuthenticationService {
 
   /**
    * 用户登录（记住我令牌）
-   * @returns 
+   * @returns
    */
   async rememberMeTokenAuthentication(
-    request: RememberMeTokenAuthenticationRequest
+    request: RememberMeTokenAuthenticationRequest,
   ): Promise<ApiResponse<RememberMeTokenAuthenticationResponse>> {
     try {
-      const response = await authenticationIpcClient.rememberMeTokenAuthentication(
-        request
-      );
+      const response = await authenticationIpcClient.rememberMeTokenAuthentication(request);
       if (response.success && response.data && response.data.token && response.data.accountUuid) {
         this.authenticationStore.$patch({
           username: response.data.username,
@@ -107,10 +105,10 @@ export class AuthenticationService {
       }
       return response;
     } catch (error) {
-      console.error("登录失败:", error);
+      console.error('登录失败:', error);
       return {
         success: false,
-        message: "登录失败，请稍后重试",
+        message: '登录失败，请稍后重试',
       };
     }
   }
@@ -129,10 +127,10 @@ export class AuthenticationService {
       }
       return response;
     } catch (error) {
-      console.error("获取认证信息失败:", error);
+      console.error('获取认证信息失败:', error);
       return {
         success: false,
-        message: "获取认证信息失败，请稍后重试",
+        message: '获取认证信息失败，请稍后重试',
         data: undefined,
       };
     }
@@ -146,7 +144,7 @@ export class AuthenticationService {
         sessionUuid: this.authenticationStore.sessionUuid!,
         accountUuid: this.authenticationStore.accountUuid!,
         logoutType: 'manual',
-        reason: "用户主动注销",
+        reason: '用户主动注销',
       });
       if (response.success) {
         this.authenticationStore.$reset();
@@ -154,23 +152,23 @@ export class AuthenticationService {
       }
       return response;
     } catch (error) {
-      console.error("注销失败:", error);
+      console.error('注销失败:', error);
       return {
         success: false,
-        message: "注销失败，请稍后重试",
+        message: '注销失败，请稍后重试',
         data: undefined,
       };
     }
   }
 
   private async publishUserLoggedInEvent(eventData: UserLoggedInEventPayload) {
-   const event: UserLoggedInEvent = {
-     eventType: "UserLoggedIn",
-     aggregateId: eventData.accountUuid,
-     occurredOn: new Date(),
-     payload: eventData,
-   };
-   await eventBus.publish(event);
+    const event: UserLoggedInEvent = {
+      eventType: 'UserLoggedIn',
+      aggregateId: eventData.accountUuid,
+      occurredOn: new Date(),
+      payload: eventData,
+    };
+    await eventBus.publish(event);
   }
 }
 

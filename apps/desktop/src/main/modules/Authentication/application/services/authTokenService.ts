@@ -1,22 +1,14 @@
-
-import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
-import { ITokenRepository } from "../../domain/repositories/authenticationRepository";
+import { AuthenticationContainer } from '../../infrastructure/di/authenticationContainer';
+import { ITokenRepository } from '../../domain/repositories/authenticationRepository';
 
 // domainServices
-import { tokenService } from "../../domain/services/tokenService";
-
-
+import { tokenService } from '../../domain/services/tokenService';
 
 export class AuthTokenService {
   private static instance: AuthTokenService;
   private tokenRepository: ITokenRepository;
 
-
-  constructor(
-
-    tokenRepository: ITokenRepository
-  ) {
-
+  constructor(tokenRepository: ITokenRepository) {
     this.tokenRepository = tokenRepository;
   }
   public static async getInstance(): Promise<AuthTokenService> {
@@ -32,25 +24,31 @@ export class AuthTokenService {
     return new AuthTokenService(tokenRepository);
   }
 
-    /**
-     * 验证 Token 是否有效
-     * @param tokenValue Token 字符串
-     * @returns 如果有效返回 true，否则 false
-     */
-    public static async validateToken(accountUuid: string, tokenValue: string): Promise<boolean> {
-        const instance = await AuthTokenService.getInstance();
-        const result = await tokenService.isTokenValid(accountUuid, tokenValue, instance.tokenRepository);
-        if (!result) {
-            return false;
-        }
-        return true;
+  /**
+   * 验证 Token 是否有效
+   * @param tokenValue Token 字符串
+   * @returns 如果有效返回 true，否则 false
+   */
+  public static async validateToken(accountUuid: string, tokenValue: string): Promise<boolean> {
+    const instance = await AuthTokenService.getInstance();
+    const result = await tokenService.isTokenValid(
+      accountUuid,
+      tokenValue,
+      instance.tokenRepository,
+    );
+    if (!result) {
+      return false;
     }
-
-    
+    return true;
+  }
 }
 
 export function withAuth(
-  handler: (event: Electron.IpcMainInvokeEvent, args: any[], auth: { token?: string; accountUuid?: string }) => Promise<any>
+  handler: (
+    event: Electron.IpcMainInvokeEvent,
+    args: any[],
+    auth: { token?: string; accountUuid?: string },
+  ) => Promise<any>,
 ) {
   return async (event: Electron.IpcMainInvokeEvent, ...args: any[]) => {
     const lastArg = args[args.length - 1];

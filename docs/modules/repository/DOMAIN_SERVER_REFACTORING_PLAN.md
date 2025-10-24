@@ -1,4 +1,5 @@
 # Repository Module Domain-Server Refactoring Plan
+
 # Repository 模块 Domain-Server 层重构计划
 
 ## 📋 重构目标
@@ -28,6 +29,7 @@
 ## 🏗️ 基础类结构
 
 ### AggregateRoot (from @dailyuse/utils)
+
 ```typescript
 export abstract class AggregateRoot extends Entity {
   private _domainEvents: DomainEvent[] = [];
@@ -44,6 +46,7 @@ export abstract class AggregateRoot extends Entity {
 ```
 
 ### Entity (from @dailyuse/utils)
+
 ```typescript
 export abstract class Entity {
   protected constructor(protected readonly _uuid: string) {}
@@ -61,6 +64,7 @@ export abstract class Entity {
 ```
 
 ### ValueObject (from @dailyuse/utils)
+
 ```typescript
 export abstract class ValueObject {
   abstract equals(other: ValueObject): boolean;
@@ -74,11 +78,12 @@ export abstract class ValueObject {
 ### 1. 聚合根：RepositoryAggregate → Repository
 
 **重构前**:
+
 ```typescript
 export class RepositoryAggregate implements IRepositoryServer {
   private _uuid: string;
   // ...
-  
+
   private constructor(params: {
     uuid: string;
     // ...
@@ -100,12 +105,13 @@ export class RepositoryAggregate implements IRepositoryServer {
 ```
 
 **重构后**:
+
 ```typescript
 import { AggregateRoot } from '@dailyuse/utils';
 
 export class Repository extends AggregateRoot implements IRepositoryServer {
   // 移除 private _uuid: string; (已在基类中)
-  
+
   private constructor(params: {
     uuid: string;
     // ...
@@ -129,6 +135,7 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
 ```
 
 **关键变更**:
+
 - ✅ 继承 `AggregateRoot`
 - ✅ 使用 `super(uuid)` 初始化
 - ✅ 使用 `Repository.generateUUID()` 生成 UUID
@@ -141,11 +148,12 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
 ### 2. 实体：ResourceEntity → Resource
 
 **重构前**:
+
 ```typescript
 export class ResourceEntity implements IResourceServer {
   private _uuid: string;
   // ...
-  
+
   private constructor(params: {
     uuid: string;
     // ...
@@ -166,12 +174,13 @@ export class ResourceEntity implements IResourceServer {
 ```
 
 **重构后**:
+
 ```typescript
 import { Entity } from '@dailyuse/utils';
 
 export class Resource extends Entity implements IResourceServer {
   // 移除 private _uuid: string;
-  
+
   private constructor(params: {
     uuid: string;
     // ...
@@ -190,6 +199,7 @@ export class Resource extends Entity implements IResourceServer {
 ```
 
 **关键变更**:
+
 - ✅ 继承 `Entity`
 - ✅ 使用 `super(uuid)` 初始化
 - ✅ 使用 `Resource.generateUUID()` 生成 UUID
@@ -198,6 +208,7 @@ export class Resource extends Entity implements IResourceServer {
 - ✅ 类名改为 `Resource`
 
 **同样适用于**:
+
 - `RepositoryExplorerEntity` → `RepositoryExplorer`
 - `ResourceReferenceEntity` → `ResourceReference`
 - `LinkedContentEntity` → `LinkedContent`
@@ -207,6 +218,7 @@ export class Resource extends Entity implements IResourceServer {
 ### 3. 值对象：RepositoryConfig, RepositoryStats
 
 **重构前**:
+
 ```typescript
 export class RepositoryConfig {
   private readonly _enableGit: boolean;
@@ -223,6 +235,7 @@ export class RepositoryConfig {
 ```
 
 **重构后**:
+
 ```typescript
 import { ValueObject } from '@dailyuse/utils';
 
@@ -252,6 +265,7 @@ export class RepositoryConfig extends ValueObject {
 ```
 
 **关键变更**:
+
 - ✅ 继承 `ValueObject`
 - ✅ 添加 `super()` 调用
 - ✅ 实现 `equals()` 方法（抽象方法）
@@ -294,12 +308,14 @@ export class RepositoryConfig extends ValueObject {
 ### 导入语句变更
 
 **之前**:
+
 ```typescript
 import { RepositoryAggregate } from '@dailyuse/domain-server/repository';
 import { ResourceEntity } from '@dailyuse/domain-server/repository';
 ```
 
 **之后**:
+
 ```typescript
 import { Repository } from '@dailyuse/domain-server/repository';
 import { Resource } from '@dailyuse/domain-server/repository';
@@ -308,6 +324,7 @@ import { Resource } from '@dailyuse/domain-server/repository';
 ### 类型引用变更
 
 所有使用这些类的地方都需要更新：
+
 - `RepositoryAggregate` → `Repository`
 - `ResourceEntity` → `Resource`
 - 其他类名后缀移除
@@ -333,6 +350,7 @@ import { Resource } from '@dailyuse/domain-server/repository';
 ## 🚀 执行步骤
 
 ### 步骤 1: 重构聚合根
+
 1. 重命名文件 `RepositoryAggregate.ts` → `Repository.ts`
 2. 类名改为 `Repository`
 3. 继承 `AggregateRoot`
@@ -340,6 +358,7 @@ import { Resource } from '@dailyuse/domain-server/repository';
 5. 使用 `super(uuid)` 和 `generateUUID()`
 
 ### 步骤 2: 重构实体
+
 1. 重命名 4 个实体文件
 2. 类名移除 `Entity` 后缀
 3. 继承 `Entity`
@@ -347,17 +366,20 @@ import { Resource } from '@dailyuse/domain-server/repository';
 5. 使用 `super(uuid)` 和 `generateUUID()`
 
 ### 步骤 3: 重构值对象
+
 1. 修改 `RepositoryConfig.ts` 和 `RepositoryStats.ts`
 2. 继承 `ValueObject`
 3. 实现 `equals()` 方法
 4. 添加 `super()` 调用
 
 ### 步骤 4: 更新引用
+
 1. 更新 `RepositoryDomainService.ts` 中的类名引用
 2. 更新 `IRepositoryRepository.ts` 中的类名引用
 3. 更新 `index.ts` 导出
 
 ### 步骤 5: 验证
+
 1. 运行 TypeScript 编译器
 2. 检查所有错误
 3. 运行测试（如果存在）
@@ -378,15 +400,18 @@ import { Resource } from '@dailyuse/domain-server/repository';
 ## 📌 重构优先级
 
 **高优先级** (立即重构):
+
 - ✅ 修复 `toServerDTO` 参数问题 - 已完成
 - ✅ contracts 添加值对象定义 - 已完成
 - 🔄 聚合根继承 `AggregateRoot` - 进行中
 
 **中优先级** (后续重构):
+
 - 实体继承 `Entity`
 - 值对象继承 `ValueObject`
 
 **低优先级** (可选):
+
 - 移除类名后缀（破坏性变更，影响范围大）
 
 ---

@@ -217,6 +217,7 @@ corepack use pnpm@latest
 ```
 
 该命令会：
+
 1. 下载指定版本的 pnpm
 2. 在 `package.json` 中自动添加 `packageManager` 字段
 

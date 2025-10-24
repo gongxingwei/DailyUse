@@ -15,6 +15,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 到达/离开特定位置触发提醒
 - ✅ 地理围栏（Geofence）
 - ✅ 常用地点管理
@@ -81,7 +82,7 @@ export interface LocationReminderServerDTO {
   readonly locationName: string;
   readonly latitude: number;
   readonly longitude: number;
-  readonly radius: number;              // 米
+  readonly radius: number; // 米
   readonly triggerType: 'enter' | 'exit';
   readonly timeConstraints?: {
     readonly daysOfWeek?: number[];
@@ -105,4 +106,3 @@ export interface LocationReminderServerDTO {
 ---
 
 **文档状态**: ✅ Ready
-

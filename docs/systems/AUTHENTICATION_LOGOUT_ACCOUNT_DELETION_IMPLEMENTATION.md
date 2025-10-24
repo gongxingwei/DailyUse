@@ -3,6 +3,7 @@
 ## 概述
 
 本次更新为 Authentication 和 Account 模块添加了以下功能：
+
 1. ✅ 用户登出（单个会话和全部会话）
 2. ✅ 账户停用/删除时自动清理认证数据
 3. ✅ 事件驱动的模块间协作
@@ -14,6 +15,7 @@
 ### 1. 用户登出功能
 
 #### API 端点
+
 - **POST** `/api/v1/auth/logout`
   - **请求参数**:
     ```typescript
@@ -51,6 +53,7 @@ async logoutAll(accountUuid: string): Promise<TResponse<{ sessionsClosed: number
 ```
 
 **执行步骤**：
+
 1. 查找并验证会话
 2. 终止会话（更新 `isActive` 为 `false`）
 3. 撤销相关令牌
@@ -61,6 +64,7 @@ async logoutAll(accountUuid: string): Promise<TResponse<{ sessionsClosed: number
 ### 2. 账户停用/删除功能增强
 
 #### API 端点（已存在，功能增强）
+
 - **POST** `/api/v1/accounts/:id/deactivate` - 停用账户
 - **DELETE** `/api/v1/accounts/:id` - 删除账户（软删除）
 
@@ -87,6 +91,7 @@ async deleteAccount(id: string): Promise<boolean>
 ```
 
 **事件流程**：
+
 ```
 Account Module                  Event Bus                  Authentication Module
      |                              |                              |
@@ -110,6 +115,7 @@ Account Module                  Event Bus                  Authentication Module
 更新了 `ISessionRepository` 和 `ITokenRepository` 接口，添加了清理方法：
 
 **ISessionRepository**:
+
 ```typescript
 interface ISessionRepository {
   terminateSession(sessionId: string): Promise<void>;
@@ -120,6 +126,7 @@ interface ISessionRepository {
 ```
 
 **ITokenRepository**:
+
 ```typescript
 interface ITokenRepository {
   revokeToken(tokenValue: string, reason?: string): Promise<void>;
@@ -155,11 +162,13 @@ eventBus.on('AccountDeleted', async (event) => {
 ## 文件修改清单
 
 ### 新增文件
+
 - 无
 
 ### 修改文件
 
 #### Authentication 模块
+
 1. **packages/domain-server/src/authentication/repositories/IAuthenticationRepository.ts**
    - ✅ 添加 `terminateSession`, `terminateAllByAccount` 到 `ISessionRepository`
    - ✅ 添加 `revokeToken`, `revokeAllTokensByAccount` 到 `ITokenRepository`
@@ -176,6 +185,7 @@ eventBus.on('AccountDeleted', async (event) => {
    - ✅ 添加 `AccountDeleted` 事件监听
 
 #### Account 模块
+
 5. **apps/api/src/modules/account/application/services/AccountApplicationService.ts**
    - ✅ 增强 `deactivateAccount()` - 添加事件发布
    - ✅ 增强 `deleteAccount()` - 添加事件发布
@@ -185,6 +195,7 @@ eventBus.on('AccountDeleted', async (event) => {
 ## 数据流图
 
 ### Logout 流程
+
 ```
 Client
   |
@@ -212,6 +223,7 @@ Response: { success: true, data: { sessionsClosed: 1 } }
 ```
 
 ### Account Deactivation 流程
+
 ```
 Client
   |
@@ -262,6 +274,7 @@ All authentication data cleaned up
 ## 路由配置
 
 所有路由已正确配置在：
+
 - `apps/api/src/modules/authentication/interface/http/routes.ts`
 - `apps/api/src/modules/account/interface/http/routes.ts`
 
@@ -272,6 +285,7 @@ All authentication data cleaned up
 ### 发布的事件
 
 #### SessionTerminated
+
 ```typescript
 {
   eventType: 'SessionTerminated',
@@ -288,6 +302,7 @@ All authentication data cleaned up
 ```
 
 #### AllSessionsTerminated
+
 ```typescript
 {
   eventType: 'AllSessionsTerminated',
@@ -304,6 +319,7 @@ All authentication data cleaned up
 ```
 
 #### AccountDeactivated
+
 ```typescript
 {
   eventType: 'AccountDeactivated',
@@ -319,6 +335,7 @@ All authentication data cleaned up
 ```
 
 #### AccountDeleted
+
 ```typescript
 {
   eventType: 'AccountDeleted',
@@ -340,6 +357,7 @@ All authentication data cleaned up
 ### 手动测试步骤
 
 #### 1. 测试单个会话登出
+
 ```bash
 # 1. 登录获取 sessionId
 POST /api/v1/auth/login
@@ -360,6 +378,7 @@ GET /api/v1/auth/sessions/:accountUuid
 ```
 
 #### 2. 测试登出所有会话
+
 ```bash
 # 1. 多次登录创建多个会话
 POST /api/v1/auth/login  # 第一次
@@ -379,6 +398,7 @@ GET /api/v1/auth/sessions/:accountUuid
 ```
 
 #### 3. 测试账户停用时自动清理
+
 ```bash
 # 1. 登录创建会话
 POST /api/v1/auth/login
@@ -392,6 +412,7 @@ GET /api/v1/auth/sessions/:accountUuid
 ```
 
 #### 4. 测试账户删除时自动清理
+
 ```bash
 # 1. 登录创建会话
 POST /api/v1/auth/login
@@ -411,11 +432,13 @@ GET /api/v1/auth/sessions/:accountUuid
 ✅ **通过** - 未引入新的类型错误
 
 运行命令：
+
 ```bash
 cd apps/api && npx tsc --noEmit
 ```
 
 结果：
+
 - Authentication 模块: 0 errors
 - Account 模块: 0 errors (新增代码部分)
 - 现有模块的一些错误不在本次修改范围内
@@ -425,17 +448,20 @@ cd apps/api && npx tsc --noEmit
 ## 遵循的开发规范
 
 ### 1. DDD 架构
+
 - ✅ Domain 层定义领域对象和仓储接口
 - ✅ Application 层实现业务逻辑
 - ✅ Infrastructure 层实现技术细节
 - ✅ Interface 层处理 HTTP 请求
 
 ### 2. 事件驱动
+
 - ✅ 使用 EventBus 进行模块间通信
 - ✅ 发布领域事件触发副作用
 - ✅ 解耦模块依赖
 
 ### 3. 导入规范
+
 - ✅ 使用 `XxxContracts` 命名空间导入
 - ✅ 使用 `type XxxDTO = XxxContracts.XxxDTO` 创建类型别名
 - ✅ 示例：
@@ -445,11 +471,13 @@ cd apps/api && npx tsc --noEmit
   ```
 
 ### 4. 响应格式
+
 - ✅ 使用统一的 `ResponseBuilder`
 - ✅ 成功: `{ success: true, data: {...}, message: "..." }`
 - ✅ 失败: `{ success: false, message: "...", code: "..." }`
 
 ### 5. 日志记录
+
 - ✅ 使用 `createLogger('ModuleName')` 创建 logger
 - ✅ 在关键操作前后记录日志
 - ✅ 包含必要的上下文信息
@@ -459,19 +487,23 @@ cd apps/api && npx tsc --noEmit
 ## 未来增强计划
 
 ### 1. MFA 设备管理
+
 - 停用/删除账户时自动删除 MFA 设备
 - 添加到 `logoutAll()` 方法中
 
 ### 2. Token 刷新
+
 - 实现 `refreshToken()` 方法
 - 支持令牌轮换策略
 
 ### 3. 会话管理
+
 - 实现 `getSessions()` - 获取用户所有会话
 - 实现 `terminateSession()` - 终止指定会话
 - 添加会话过期自动清理定时任务
 
 ### 4. 安全增强
+
 - 密码修改时强制登出所有会话
 - 检测异常登录自动终止会话
 - 添加并发登录限制
@@ -481,6 +513,7 @@ cd apps/api && npx tsc --noEmit
 ## 总结
 
 本次更新成功实现了：
+
 1. ✅ 完整的用户登出功能（单个/全部会话）
 2. ✅ 账户停用/删除时自动清理认证数据
 3. ✅ 事件驱动的模块协作机制

@@ -13,9 +13,7 @@
               <v-icon class="mr-2">mdi-check-decagram</v-icon>
               STORY-024: 依赖验证演示
             </h1>
-            <p class="text-body-2 text-medium-emphasis">
-              循环依赖检测、依赖规则验证、自动状态更新
-            </p>
+            <p class="text-body-2 text-medium-emphasis">循环依赖检测、依赖规则验证、自动状态更新</p>
           </div>
 
           <v-btn
@@ -33,12 +31,10 @@
           <v-col cols="12" md="4">
             <v-card>
               <v-card-text class="text-center pa-6">
-                <v-icon size="48" color="error" class="mb-3">
-                  mdi-alert-octagon
-                </v-icon>
+                <v-icon size="48" color="error" class="mb-3"> mdi-alert-octagon </v-icon>
                 <div class="text-h6 mb-2">循环依赖检测</div>
                 <div class="text-body-2 text-medium-emphasis">
-                  DFS算法检测依赖循环<br/>
+                  DFS算法检测依赖循环<br />
                   时间复杂度 O(V+E)
                 </div>
               </v-card-text>
@@ -48,12 +44,10 @@
           <v-col cols="12" md="4">
             <v-card>
               <v-card-text class="text-center pa-6">
-                <v-icon size="48" color="warning" class="mb-3">
-                  mdi-shield-check
-                </v-icon>
+                <v-icon size="48" color="warning" class="mb-3"> mdi-shield-check </v-icon>
                 <div class="text-h6 mb-2">依赖规则验证</div>
                 <div class="text-body-2 text-medium-emphasis">
-                  防止自依赖、重复依赖<br/>
+                  防止自依赖、重复依赖<br />
                   链深度警告（>5层）
                 </div>
               </v-card-text>
@@ -63,12 +57,10 @@
           <v-col cols="12" md="4">
             <v-card>
               <v-card-text class="text-center pa-6">
-                <v-icon size="48" color="success" class="mb-3">
-                  mdi-auto-fix
-                </v-icon>
+                <v-icon size="48" color="success" class="mb-3"> mdi-auto-fix </v-icon>
                 <div class="text-h6 mb-2">自动状态更新</div>
                 <div class="text-body-2 text-medium-emphasis">
-                  基于依赖状态计算<br/>
+                  基于依赖状态计算<br />
                   BFS级联更新
                 </div>
               </v-card-text>
@@ -84,11 +76,7 @@
               <v-card-title>
                 <div class="d-flex justify-space-between align-center w-100">
                   <span>演示任务列表</span>
-                  <v-btn
-                    size="small"
-                    variant="text"
-                    @click="loadDemoData"
-                  >
+                  <v-btn size="small" variant="text" @click="loadDemoData">
                     <v-icon start>mdi-refresh</v-icon>
                     重置
                   </v-btn>
@@ -114,11 +102,7 @@
                     </v-list-item-title>
 
                     <v-list-item-subtitle>
-                      <v-chip
-                        :color="getStatusColor(task.status)"
-                        size="x-small"
-                        variant="flat"
-                      >
+                      <v-chip :color="getStatusColor(task.status)" size="x-small" variant="flat">
                         {{ task.status }}
                       </v-chip>
                     </v-list-item-subtitle>
@@ -135,17 +119,11 @@
                     <v-icon class="mr-2" size="small">mdi-timeline-text</v-icon>
                     事件日志
                   </span>
-                  <v-btn
-                    size="x-small"
-                    variant="text"
-                    @click="eventLog = []"
-                  >
-                    清空
-                  </v-btn>
+                  <v-btn size="x-small" variant="text" @click="eventLog = []"> 清空 </v-btn>
                 </div>
               </v-card-title>
 
-              <v-card-text style="max-height: 300px; overflow-y: auto;">
+              <v-card-text style="max-height: 300px; overflow-y: auto">
                 <div v-if="eventLog.length === 0" class="text-center text-medium-emphasis py-4">
                   暂无事件
                 </div>
@@ -195,9 +173,7 @@
                   <li class="mb-2">
                     <strong>查看事件：</strong>观察左下方的事件日志，查看状态变化
                   </li>
-                  <li class="mb-2">
-                    <strong>可视化：</strong>点击右上角"查看依赖图"按钮查看 DAG
-                  </li>
+                  <li class="mb-2"><strong>可视化：</strong>点击右上角"查看依赖图"按钮查看 DAG</li>
                 </ol>
               </v-card-text>
             </v-card>
@@ -215,11 +191,8 @@
             <v-btn icon="mdi-close" variant="text" @click="showDAG = false" />
           </div>
         </v-card-title>
-        <v-card-text style="height: 600px;">
-          <TaskDAGVisualization
-            :tasks="tasks"
-            :dependencies="dependencies"
-          />
+        <v-card-text style="height: 600px">
+          <TaskDAGVisualization :tasks="tasks" :dependencies="dependencies" />
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -364,20 +337,26 @@ const loadDemoData = () => {
 
 const handleDependencyAdded = (dep: TaskDependencyClientDTO) => {
   dependencies.value.push(dep);
-  addEventLog(`依赖已添加: ${getTaskTitle(dep.predecessorTaskUuid)} → ${getTaskTitle(dep.successorTaskUuid)}`, 'success');
+  addEventLog(
+    `依赖已添加: ${getTaskTitle(dep.predecessorTaskUuid)} → ${getTaskTitle(dep.successorTaskUuid)}`,
+    'success',
+  );
 };
 
 const handleDependencyDeleted = (depUuid: string) => {
-  const dep = dependencies.value.find(d => d.uuid === depUuid);
-  dependencies.value = dependencies.value.filter(d => d.uuid !== depUuid);
-  
+  const dep = dependencies.value.find((d) => d.uuid === depUuid);
+  dependencies.value = dependencies.value.filter((d) => d.uuid !== depUuid);
+
   if (dep) {
-    addEventLog(`依赖已删除: ${getTaskTitle(dep.predecessorTaskUuid)} → ${getTaskTitle(dep.successorTaskUuid)}`, 'warning');
+    addEventLog(
+      `依赖已删除: ${getTaskTitle(dep.predecessorTaskUuid)} → ${getTaskTitle(dep.successorTaskUuid)}`,
+      'warning',
+    );
   }
 };
 
 const getTaskTitle = (uuid: string): string => {
-  const task = tasks.value.find(t => t.uuid === uuid);
+  const task = tasks.value.find((t) => t.uuid === uuid);
   return task?.title || uuid;
 };
 
@@ -429,11 +408,11 @@ const setupEventListeners = () => {
   unsubscribeStatus = taskAutoStatusService.onStatusChanged((event) => {
     addEventLog(
       `状态变更: ${getTaskTitle(event.taskUuid)} ${event.oldStatus} → ${event.newStatus}`,
-      'info'
+      'info',
     );
 
     // Update local task status
-    const task = tasks.value.find(t => t.uuid === event.taskUuid);
+    const task = tasks.value.find((t) => t.uuid === event.taskUuid);
     if (task) {
       task.status = event.newStatus;
     }
@@ -441,17 +420,14 @@ const setupEventListeners = () => {
 
   // Task ready events
   unsubscribeReady = taskAutoStatusService.onTaskReady((event) => {
-    addEventLog(
-      `✅ 任务已就绪: ${getTaskTitle(event.taskUuid)} 可以开始执行`,
-      'success'
-    );
+    addEventLog(`✅ 任务已就绪: ${getTaskTitle(event.taskUuid)} 可以开始执行`, 'success');
   });
 
   // Task blocked events
   unsubscribeBlocked = taskAutoStatusService.onTaskBlocked((event) => {
     addEventLog(
       `🔒 任务被阻塞: ${getTaskTitle(event.taskUuid)} (等待 ${event.blockingTasks.length} 个前置任务)`,
-      'warning'
+      'warning',
     );
   });
 };

@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
  */
 export enum WindowType {
   LOGIN = 'login',
-  MAIN = 'main'
+  MAIN = 'main',
 }
 
 /**
@@ -85,7 +85,6 @@ export interface LoginWindowEvents extends WindowEvents {
   'login-success': (userData: any) => void;
   'login-failed': (error: string) => void;
   'login-cancelled': () => void;
-  
 }
 
 /**

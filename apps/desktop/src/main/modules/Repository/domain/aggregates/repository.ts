@@ -1,5 +1,5 @@
-import { AggregateRoot } from "@dailyuse/utils";
-import type { IRepository } from "../types";
+import { AggregateRoot } from '@dailyuse/utils';
+import type { IRepository } from '../types';
 
 export interface RepositoryProps {
   name: string;
@@ -69,9 +69,9 @@ export class Repository extends AggregateRoot implements IRepository {
     return (
       obj instanceof Repository ||
       (obj &&
-        typeof obj.uuid === "string" &&
-        typeof obj.name === "string" &&
-        typeof obj.path === "string")
+        typeof obj.uuid === 'string' &&
+        typeof obj.name === 'string' &&
+        typeof obj.path === 'string')
     );
   }
 
@@ -93,9 +93,9 @@ export class Repository extends AggregateRoot implements IRepository {
       return Repository.fromDTO(obj);
     }
     return new Repository({
-      name: "随机仓库",
-      path: "",
-      description: "这是一个随机仓库",
+      name: '随机仓库',
+      path: '',
+      description: '这是一个随机仓库',
       relatedGoals: [],
     });
   }

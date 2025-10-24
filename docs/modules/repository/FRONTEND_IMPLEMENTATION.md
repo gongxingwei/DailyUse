@@ -28,11 +28,13 @@ category: 模块实现
   - `docs/packages/ui/components/` - UI 包组件文档
 
 **新建文档**:
+
 - `防抖节流工具` - 完整的防抖节流 API 文档
 - `加载状态管理` - LoadingState 系统文档
 - `useMessage` - 消息提示 Composable 文档
 
 **文档特性**:
+
 - ✅ 使用 Obsidian 元信息标签（frontmatter）
 - ✅ 包含 created 和 updated 时间
 - ✅ 详细的使用示例和最佳实践
@@ -41,13 +43,13 @@ category: 模块实现
 ### 2. 基础设施层
 
 **已有实现**:
+
 - ✅ `repositoryApiClient.ts` - 完整的 REST API 客户端
   - Repository CRUD
   - 资源管理
   - Git 操作
   - 同步功能
   - 搜索功能
-  
 - ✅ `repositoryStore.ts` - Pinia 状态管理
   - 仓库和资源缓存
   - 选中状态管理
@@ -59,9 +61,11 @@ category: 模块实现
 **新建组件**:
 
 #### 1. RepositoryManagementDialog.vue
+
 **位置**: `presentation/components/dialogs/`
 
 **功能**:
+
 - ✅ 显示所有仓库列表
 - ✅ 创建新仓库（弹出子对话框）
 - ✅ 删除仓库（带确认）
@@ -70,29 +74,35 @@ category: 模块实现
 - ✅ 设置按钮（占位）
 
 **特点**:
+
 - 使用 Vuetify Dialog
 - 表单验证
 - 加载状态管理
 - 消息提示集成
 
 #### 2. RepoHeader.vue
+
 **位置**: `presentation/components/`
 
 **功能**:
+
 - ✅ 视图切换按钮（预览/管理）
 - ✅ 搜索框（带防抖）
 - ✅ 刷新按钮
 - ✅ 更多操作菜单（同步、导出、导入）
 
 **特点**:
+
 - 响应式布局
 - 防抖搜索
 - 加载状态
 
 #### 3. RepositoryPage.vue
+
 **位置**: `presentation/views/`
 
 **功能**:
+
 - ✅ Obsidian 风格的整体布局
 - ✅ 左侧边栏
   - 顶部搜索框
@@ -105,6 +115,7 @@ category: 模块实现
   - 管理视图（卡片网格）
 
 **管理视图特性**:
+
 - ✅ 卡片式展示资源
 - ✅ 支持点击选择
 - ✅ 支持操作菜单（编辑/删除）
@@ -144,11 +155,13 @@ category: 模块实现
 ### 视图模式
 
 **1. 预览编辑视图** (Preview)
+
 - 用途：查看和编辑文件内容
 - 状态：占位，等待 Editor 模块实现
 - 特点：类似 Obsidian 的编辑器界面
 
 **2. 管理视图** (Manage)
+
 - 用途：文件和文件夹的管理操作
 - 展示：卡片网格布局
 - 功能：
@@ -162,6 +175,7 @@ category: 模块实现
 ## 🔌 技术栈
 
 ### 核心库
+
 - **Vue 3** - Composition API
 - **Vuetify 3** - UI 组件库
 - **Pinia** - 状态管理
@@ -171,6 +185,7 @@ category: 模块实现
 - **@dailyuse/domain-client** - 领域实体
 
 ### 设计模式
+
 - **DDD** - 领域驱动设计
 - **Clean Architecture** - 分层架构
   - Infrastructure (API Client)
@@ -199,10 +214,7 @@ import { RepositoryPage } from '@/modules/repository/presentation/views'
 
 ```vue
 <template>
-  <RepositoryManagementDialog
-    v-model="dialogOpen"
-    @repository-selected="handleSelect"
-  />
+  <RepositoryManagementDialog v-model="dialogOpen" @repository-selected="handleSelect" />
 </template>
 
 <script setup>
@@ -219,21 +231,21 @@ function handleSelect(uuid: string) {
 ### 3. 使用 Repository Store
 
 ```typescript
-import { useRepositoryStore } from '@/modules/repository/presentation/stores'
+import { useRepositoryStore } from '@/modules/repository/presentation/stores';
 
-const repositoryStore = useRepositoryStore()
+const repositoryStore = useRepositoryStore();
 
 // 获取所有仓库
-const repositories = repositoryStore.getAllRepositories
+const repositories = repositoryStore.getAllRepositories;
 
 // 选择仓库
-repositoryStore.setSelectedRepository(uuid)
+repositoryStore.setSelectedRepository(uuid);
 
 // 搜索仓库
-const results = repositoryStore.searchRepositories('keyword')
+const results = repositoryStore.searchRepositories('keyword');
 
 // 获取统计信息
-const stats = repositoryStore.getRepositoryStatistics
+const stats = repositoryStore.getRepositoryStatistics;
 ```
 
 ---
@@ -241,18 +253,21 @@ const stats = repositoryStore.getRepositoryStatistics
 ## 🚧 待完成功能
 
 ### 高优先级
+
 - [ ] 文件树层级渲染（当前仅显示扁平列表）
 - [ ] 创建资源功能
 - [ ] 编辑资源功能
 - [ ] 批量操作（选择、删除、移动）
 
 ### 中优先级
+
 - [ ] 拖拽排序
 - [ ] 导入导出实现
 - [ ] 同步功能实现
 - [ ] Git 操作 UI
 
 ### 低优先级
+
 - [ ] 标签管理
 - [ ] 收藏夹功能
 - [ ] 最近使用记录
@@ -263,12 +278,14 @@ const stats = repositoryStore.getRepositoryStatistics
 ## 🔗 关联模块
 
 ### 依赖模块
+
 - **@dailyuse/utils** - 工具函数
 - **@dailyuse/ui** - UI 组件
 - **@dailyuse/contracts** - 类型定义
 - **@dailyuse/domain-client** - 领域实体
 
 ### 被依赖模块（预期）
+
 - **Editor 模块** - 文件编辑功能
 - **Goal 模块** - 目标关联
 - **Task 模块** - 任务关联
@@ -278,11 +295,13 @@ const stats = repositoryStore.getRepositoryStatistics
 ## 📝 开发规范
 
 ### 命名规范
+
 - 组件：PascalCase（`RepositoryManagementDialog.vue`）
 - 文件：camelCase（`repositoryStore.ts`）
 - 常量：UPPER_SNAKE_CASE（`REPOSITORY_STATUS`）
 
 ### 目录结构
+
 ```
 modules/repository/
 ├── infrastructure/        # 基础设施层
@@ -298,6 +317,7 @@ modules/repository/
 ```
 
 ### 组件职责
+
 - **Dialog 组件** - 独立的对话框功能
 - **View 组件** - 页面级组件
 - **功能组件** - 可复用的业务组件

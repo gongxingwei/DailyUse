@@ -1,8 +1,8 @@
 // src/modules/Task/utils/taskTemplateFactory.ts
 import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import { addMinutes } from 'date-fns';
-import { ImportanceLevel } from "@dailyuse/contracts";
-import { UrgencyLevel } from "@dailyuse/contracts";
+import { ImportanceLevel } from '@dailyuse/contracts';
+import { UrgencyLevel } from '@dailyuse/contracts';
 import { v4 as uuidv4 } from 'uuid';
 
 export class TaskMetaTemplateFactory {
@@ -19,13 +19,13 @@ export class TaskMetaTemplateFactory {
         baseTime: {
           start: new Date(),
           end: addMinutes(new Date(), 60), // 默认持续时间为60分钟
-          duration: 60 // 默认持续时间为60分钟
+          duration: 60, // 默认持续时间为60分钟
         },
         recurrence: {
           type: 'none',
         },
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        dstHandling: 'ignore'
+        dstHandling: 'ignore',
       },
       defaultReminderConfig: {
         enabled: false,
@@ -33,16 +33,16 @@ export class TaskMetaTemplateFactory {
         snooze: {
           enabled: false,
           interval: 5,
-          maxCount: 1
-        }
+          maxCount: 1,
+        },
       },
       defaultMetadata: {
         category: 'general',
         tags: [],
         importance: ImportanceLevel.Moderate,
         urgency: UrgencyLevel.Medium,
-        estimatedDuration: 60
-      }
+        estimatedDuration: 60,
+      },
     });
   }
 
@@ -59,43 +59,45 @@ export class TaskMetaTemplateFactory {
         baseTime: {
           start: new Date(),
           end: addMinutes(new Date(), 30), // 默认持续时间为30分钟
-          duration: 30
+          duration: 30,
         },
         recurrence: {
           type: 'daily',
           interval: 1,
           endCondition: {
             type: 'count',
-            count: 21
-          }
+            count: 21,
+          },
         },
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        dstHandling: 'ignore'
+        dstHandling: 'ignore',
       },
       defaultReminderConfig: {
         enabled: true,
-        alerts: [{
-          uuid: uuidv4(),
-          timing: {
-            type: 'relative',
-            minutesBefore: 15
+        alerts: [
+          {
+            uuid: uuidv4(),
+            timing: {
+              type: 'relative',
+              minutesBefore: 15,
+            },
+            type: 'notification',
+            message: '是时候培养好习惯了！',
           },
-          type: 'notification',
-          message: '是时候培养好习惯了！'
-        }],
+        ],
         snooze: {
           enabled: true,
           interval: 5,
-          maxCount: 3
-        }
+          maxCount: 3,
+        },
       },
       defaultMetadata: {
         category: 'habit',
         tags: ['习惯', '自我提升'],
         importance: ImportanceLevel.Moderate,
         urgency: UrgencyLevel.Medium,
-        estimatedDuration: 30
-      }
+        estimatedDuration: 30,
+      },
     });
   }
 
@@ -111,13 +113,13 @@ export class TaskMetaTemplateFactory {
         type: 'timed',
         baseTime: {
           start: new Date(),
-          duration: 60
+          duration: 60,
         },
         recurrence: {
           type: 'none',
         },
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        dstHandling: 'ignore'
+        dstHandling: 'ignore',
       },
       defaultReminderConfig: {
         enabled: true,
@@ -126,34 +128,34 @@ export class TaskMetaTemplateFactory {
             uuid: uuidv4(),
             timing: {
               type: 'relative',
-              minutesBefore: 60
+              minutesBefore: 60,
             },
             type: 'notification',
-            message: '1小时后有重要事件'
+            message: '1小时后有重要事件',
           },
           {
             uuid: uuidv4(),
             timing: {
               type: 'relative',
-              minutesBefore: 15
+              minutesBefore: 15,
             },
             type: 'notification',
-            message: '15分钟后事件开始'
-          }
+            message: '15分钟后事件开始',
+          },
         ],
         snooze: {
           enabled: false,
           interval: 5,
-          maxCount: 1
-        }
+          maxCount: 1,
+        },
       },
       defaultMetadata: {
         category: 'event',
         tags: ['事件', '约会'],
         importance: ImportanceLevel.Important,
         urgency: UrgencyLevel.High,
-        estimatedDuration: 60
-      }
+        estimatedDuration: 60,
+      },
     });
   }
 
@@ -170,13 +172,13 @@ export class TaskMetaTemplateFactory {
         baseTime: {
           start: new Date(),
           end: addMinutes(new Date(), 120), // 默认持续时间为2小时
-          duration: 120
+          duration: 120,
         },
         recurrence: {
           type: 'none',
         },
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        dstHandling: 'ignore'
+        dstHandling: 'ignore',
       },
       defaultReminderConfig: {
         enabled: true,
@@ -185,34 +187,34 @@ export class TaskMetaTemplateFactory {
             uuid: uuidv4(),
             timing: {
               type: 'relative',
-              minutesBefore: 1440 // 1天前
+              minutesBefore: 1440, // 1天前
             },
             type: 'notification',
-            message: '任务截止日期临近！'
+            message: '任务截止日期临近！',
           },
           {
             uuid: uuidv4(),
             timing: {
               type: 'relative',
-              minutesBefore: 120 // 2小时前
+              minutesBefore: 120, // 2小时前
             },
             type: 'notification',
-            message: '任务即将到期，请尽快完成！'
-          }
+            message: '任务即将到期，请尽快完成！',
+          },
         ],
         snooze: {
           enabled: true,
           interval: 30,
-          maxCount: 2
-        }
+          maxCount: 2,
+        },
       },
       defaultMetadata: {
         category: 'deadline',
         tags: ['截止', '紧急'],
         importance: ImportanceLevel.Important,
         urgency: UrgencyLevel.High,
-        estimatedDuration: 180
-      }
+        estimatedDuration: 180,
+      },
     });
   }
 
@@ -229,15 +231,15 @@ export class TaskMetaTemplateFactory {
         baseTime: {
           start: new Date(),
           end: addMinutes(new Date(), 60), // 默认持续时间为60分钟
-          duration: 60
+          duration: 60,
         },
         recurrence: {
           type: 'weekly',
           interval: 1,
-          endCondition: { type: 'never' }
+          endCondition: { type: 'never' },
         },
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        dstHandling: 'ignore'
+        dstHandling: 'ignore',
       },
       defaultReminderConfig: {
         enabled: true,
@@ -246,35 +248,34 @@ export class TaskMetaTemplateFactory {
             uuid: uuidv4(),
             timing: {
               type: 'relative',
-              minutesBefore: 15
+              minutesBefore: 15,
             },
             type: 'notification',
-            message: '会议即将开始，请准备相关材料'
+            message: '会议即将开始，请准备相关材料',
           },
           {
             uuid: uuidv4(),
             timing: {
               type: 'relative',
-              minutesBefore: 5
+              minutesBefore: 5,
             },
             type: 'notification',
-            message: '会议马上开始！'
-          }
+            message: '会议马上开始！',
+          },
         ],
         snooze: {
           enabled: false,
           interval: 5,
-          maxCount: 1
-        }
+          maxCount: 1,
+        },
       },
       defaultMetadata: {
         category: 'meeting',
         tags: ['会议', '团队'],
         importance: ImportanceLevel.Moderate,
         urgency: UrgencyLevel.Medium,
-        estimatedDuration: 60
-      }
+        estimatedDuration: 60,
+      },
     });
   }
-  
 }

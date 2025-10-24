@@ -43,9 +43,11 @@ E2E (End-to-End) 测试是质量保障的最后一道防线，模拟真实用户
 ## ✅ Acceptance Criteria
 
 ### AC-1: Task Dependency System E2E Tests ✅
+
 **Given** Task 模块已实现依赖功能 (STORY-022-025)  
 **When** 运行 E2E 测试套件  
-**Then** 
+**Then**
+
 - ✅ 创建任务依赖 (finish-to-start, start-to-start, etc.)
 - ✅ 检测并阻止循环依赖
 - ✅ DAG 可视化正确渲染
@@ -54,18 +56,22 @@ E2E (End-to-End) 测试是质量保障的最后一道防线，模拟真实用户
 - ✅ 导出 DAG 为 PNG/JSON
 
 ### AC-2: Drag & Drop E2E Tests ✅
+
 **Given** STORY-027 拖放功能已实现  
 **When** 运行拖放相关测试  
 **Then**
+
 - ✅ 拖动任务卡片可重排序
 - ✅ 拖放任务到另一任务可创建依赖
 - ✅ 视觉反馈正确显示 (valid/invalid drop zone)
 - ✅ Undo/Redo 功能正常
 
 ### AC-3: Command Palette E2E Tests ✅
+
 **Given** STORY-026 命令面板已实现  
 **When** 运行命令面板测试  
 **Then**
+
 - ✅ Ctrl/Cmd + K 打开命令面板
 - ✅ 模糊搜索可找到 goals, tasks, reminders
 - ✅ 快速操作可执行 (create, edit, delete)
@@ -73,27 +79,33 @@ E2E (End-to-End) 测试是质量保障的最后一道防线，模拟真实用户
 - ✅ 最近项目历史记录正确
 
 ### AC-4: Goal System E2E Tests ✅
+
 **Given** Sprint 3 完成的 Goal 模块功能  
 **When** 运行 Goal 相关测试  
 **Then**
+
 - ✅ Goal DAG 可视化正确
 - ✅ Goal 对比功能正常
 - ✅ KR 权重调整被记录
 - ✅ Goal 导出/导入正常
 
 ### AC-5: CI/CD Integration ✅
+
 **Given** E2E 测试套件完成  
 **When** 提交代码到 GitHub  
 **Then**
+
 - ✅ CI 自动运行 E2E 测试
 - ✅ 测试失败阻止合并
 - ✅ 测试报告自动生成
 - ✅ 覆盖率报告可查看
 
 ### AC-6: Test Quality Standards ✅
+
 **Given** 所有 E2E 测试  
 **When** 审查测试代码质量  
 **Then**
+
 - ✅ 每个测试都有清晰的场景描述
 - ✅ 使用 Page Object Model 模式
 - ✅ 测试数据独立，不相互依赖
@@ -121,18 +133,18 @@ apps/web/e2e/
 
 ### 测试覆盖缺口分析
 
-| 模块 | 功能 | 现有测试 | 缺失测试 | 优先级 |
-|------|------|----------|----------|--------|
-| Task Dependency | 创建依赖 | ❌ | 需要 | P0 |
-| Task Dependency | 循环检测 | ❌ | 需要 | P0 |
-| Task Dependency | DAG 可视化 | ❌ | 需要 | P0 |
-| Task Dependency | 关键路径 | ❌ | 需要 | P1 |
-| Drag & Drop | 拖放重排序 | ❌ | 需要 | P1 |
-| Drag & Drop | 拖放创建依赖 | ❌ | 需要 | P0 |
-| Command Palette | 搜索 | ❌ | 需要 | P1 |
-| Command Palette | 快捷操作 | ❌ | 需要 | P1 |
-| Goal | DAG 对比 | ⚠️ 部分 | 补充 | P2 |
-| Goal | 导出/导入 | ❌ | 需要 | P2 |
+| 模块            | 功能         | 现有测试 | 缺失测试 | 优先级 |
+| --------------- | ------------ | -------- | -------- | ------ |
+| Task Dependency | 创建依赖     | ❌       | 需要     | P0     |
+| Task Dependency | 循环检测     | ❌       | 需要     | P0     |
+| Task Dependency | DAG 可视化   | ❌       | 需要     | P0     |
+| Task Dependency | 关键路径     | ❌       | 需要     | P1     |
+| Drag & Drop     | 拖放重排序   | ❌       | 需要     | P1     |
+| Drag & Drop     | 拖放创建依赖 | ❌       | 需要     | P0     |
+| Command Palette | 搜索         | ❌       | 需要     | P1     |
+| Command Palette | 快捷操作     | ❌       | 需要     | P1     |
+| Goal            | DAG 对比     | ⚠️ 部分  | 补充     | P2     |
+| Goal            | 导出/导入    | ❌       | 需要     | P2     |
 
 **总计**: 需要新增 **15+ 测试场景**
 
@@ -143,12 +155,14 @@ apps/web/e2e/
 ### Test Framework & Tools
 
 **Primary**: Playwright
+
 - Cross-browser testing (Chromium, Firefox, WebKit)
 - 自动等待机制
 - 强大的选择器引擎
 - 内置截图和视频录制
 
 **Utilities**:
+
 - `@playwright/test`: 测试运行器
 - `playwright-core`: 浏览器自动化
 - `dotenv`: 环境变量管理
@@ -207,8 +221,8 @@ export class TaskPage {
     await this.page.fill('[name="title"]', taskData.title);
     // ... fill other fields
     await this.page.click('[type="submit"]');
-    await this.page.waitForResponse(resp => 
-      resp.url().includes('/api/tasks') && resp.status() === 201
+    await this.page.waitForResponse(
+      (resp) => resp.url().includes('/api/tasks') && resp.status() === 201,
     );
   }
 
@@ -225,9 +239,7 @@ export class TaskPage {
   }
 
   async expectDependencyExists(source: string, target: string) {
-    const depLine = this.page.locator(
-      `[data-dependency="${source}->${target}"]`
-    );
+    const depLine = this.page.locator(`[data-dependency="${source}->${target}"]`);
     await expect(depLine).toBeVisible();
   }
 }
@@ -240,6 +252,7 @@ export class TaskPage {
 ### 1. Task Dependency CRUD (5 scenarios)
 
 #### Scenario 1.1: Create Finish-to-Start Dependency
+
 ```gherkin
 Given 用户创建了任务 "Design API" 和 "Implement API"
 When 用户为 "Implement API" 添加依赖 "Design API" (finish-to-start)
@@ -249,6 +262,7 @@ And DAG 中显示连线从 "Design API" 到 "Implement API"
 ```
 
 #### Scenario 1.2: Detect Circular Dependency
+
 ```gherkin
 Given 任务依赖链: A -> B -> C
 When 用户尝试添加依赖 C -> A
@@ -258,6 +272,7 @@ And 显示循环路径: C -> A -> B -> C
 ```
 
 #### Scenario 1.3: Delete Dependency Updates Status
+
 ```gherkin
 Given "Task B" 依赖 "Task A" (blocked)
 When 用户删除该依赖
@@ -267,6 +282,7 @@ And DAG 中连线消失
 ```
 
 #### Scenario 1.4: Update Dependency Type
+
 ```gherkin
 Given 依赖 A -> B (finish-to-start)
 When 用户修改为 start-to-start
@@ -275,6 +291,7 @@ And DAG 中连线样式变化
 ```
 
 #### Scenario 1.5: Bulk Dependency Creation
+
 ```gherkin
 Given 用户选中 3 个任务
 When 用户批量添加依赖到 "Milestone Task"
@@ -287,6 +304,7 @@ And DAG 正确显示多条连线
 ### 2. DAG Visualization (3 scenarios)
 
 #### Scenario 2.1: Render Task DAG
+
 ```gherkin
 Given 存在 5 个任务，包含 4 条依赖
 When 用户打开 DAG 可视化
@@ -296,6 +314,7 @@ And 布局清晰无重叠
 ```
 
 #### Scenario 2.2: Highlight Critical Path
+
 ```gherkin
 Given 任务依赖链: A(3d) -> B(2d) -> C(4d) 和 A -> D(1d) -> C
 When 用户点击 "显示关键路径"
@@ -304,6 +323,7 @@ And 节点颜色变为红色
 ```
 
 #### Scenario 2.3: Export DAG as PNG
+
 ```gherkin
 Given DAG 已渲染
 When 用户点击 "导出为 PNG"
@@ -316,6 +336,7 @@ And PNG 包含完整的 DAG 图像
 ### 3. Drag & Drop (3 scenarios)
 
 #### Scenario 3.1: Drag to Reorder Tasks
+
 ```gherkin
 Given 任务列表: [Task A, Task B, Task C]
 When 用户拖动 Task C 到第一位
@@ -324,6 +345,7 @@ And 顺序被持久化
 ```
 
 #### Scenario 3.2: Drag to Create Dependency
+
 ```gherkin
 Given 任务 A 和 B 不存在依赖
 When 用户拖动 Task B 到 Task A 上
@@ -333,6 +355,7 @@ And 显示成功通知
 ```
 
 #### Scenario 3.3: Invalid Drop Visual Feedback
+
 ```gherkin
 Given Task A 已依赖 Task B
 When 用户拖动 Task A 到 Task B 上 (会形成循环)
@@ -346,6 +369,7 @@ And 显示错误提示
 ### 4. Command Palette (4 scenarios)
 
 #### Scenario 4.1: Open Command Palette
+
 ```gherkin
 Given 用户在任意页面
 When 用户按下 Cmd+K (Mac) 或 Ctrl+K (Windows)
@@ -354,6 +378,7 @@ And 输入框自动聚焦
 ```
 
 #### Scenario 4.2: Search Goals and Navigate
+
 ```gherkin
 Given 存在 Goal "Complete Sprint 4"
 When 用户输入 "sprint"
@@ -363,6 +388,7 @@ Then 导航到 Goal 详情页
 ```
 
 #### Scenario 4.3: Quick Create Task
+
 ```gherkin
 Given 命令面板已打开
 When 用户输入 "create task"
@@ -372,6 +398,7 @@ Then 打开任务创建对话框
 ```
 
 #### Scenario 4.4: Recent Items History
+
 ```gherkin
 Given 用户最近访问了 Goal A, Task B, Reminder C
 When 用户打开命令面板
@@ -386,6 +413,7 @@ And 按访问时间倒序排列
 ### Phase 1: Infrastructure Setup (2 hours)
 
 **Tasks**:
+
 - [ ] Install Playwright dependencies
 - [ ] Configure `playwright.config.ts`
 - [ ] Set up test database seeding
@@ -393,6 +421,7 @@ And 按访问时间倒序排列
 - [ ] Add `data-testid` attributes to components
 
 **Deliverables**:
+
 ```typescript
 // playwright.config.ts
 export default defineConfig({
@@ -424,12 +453,14 @@ export default defineConfig({
 ### Phase 2: Task Dependency Tests (4 hours)
 
 **Files to Create**:
+
 1. `task-dependency-crud.spec.ts` (5 scenarios)
 2. `task-dependency-validation.spec.ts` (循环检测)
 3. `task-dag-visualization.spec.ts` (DAG 渲染)
 4. `task-critical-path.spec.ts` (关键路径)
 
 **Example Test**:
+
 ```typescript
 // apps/web/e2e/task/task-dependency-crud.spec.ts
 import { test, expect } from '@playwright/test';
@@ -455,7 +486,7 @@ test.describe('Task Dependency CRUD', () => {
     // Assert
     await taskPage.expectDependencyExists('Design API', 'Implement API');
     await expect(page.getByText('"Implement API" 现在依赖于 "Design API"')).toBeVisible();
-    
+
     // Check status update
     const implTask = taskPage.taskCard('Implement API');
     await expect(implTask.locator('[data-status="blocked"]')).toBeVisible();
@@ -475,7 +506,7 @@ test.describe('Task Dependency CRUD', () => {
     // Assert
     await expect(page.getByText('会形成循环依赖')).toBeVisible();
     await expect(page.getByText('循环路径: Task C → Task A → Task B → Task C')).toBeVisible();
-    
+
     // Verify dependency was NOT created
     await taskPage.expectDependencyNotExists('Task C', 'Task A');
   });
@@ -493,19 +524,19 @@ test.describe('Task Dependency CRUD', () => {
 ```typescript
 test('should create dependency via drag and drop', async ({ page }) => {
   const taskPage = new TaskPage(page);
-  
+
   await taskPage.createTask(createTestTask('Task A'));
   await taskPage.createTask(createTestTask('Task B'));
 
   // Drag Task B onto Task A
   const taskB = taskPage.taskCard('Task B');
   const taskA = taskPage.taskCard('Task A');
-  
+
   await taskB.dragTo(taskA);
-  
+
   // Wait for drop animation and API call
-  await page.waitForResponse(resp => 
-    resp.url().includes('/api/task-dependencies') && resp.status() === 201
+  await page.waitForResponse(
+    (resp) => resp.url().includes('/api/task-dependencies') && resp.status() === 201,
   );
 
   // Verify dependency created
@@ -515,7 +546,7 @@ test('should create dependency via drag and drop', async ({ page }) => {
 
 test('should show invalid drop feedback for circular dependency', async ({ page }) => {
   const taskPage = new TaskPage(page);
-  
+
   // Create A -> B dependency
   await taskPage.createTask(createTestTask('Task A'));
   await taskPage.createTask(createTestTask('Task B'));
@@ -524,7 +555,7 @@ test('should show invalid drop feedback for circular dependency', async ({ page 
   // Try to drag A onto B (circular)
   const taskA = taskPage.taskCard('Task A');
   const taskB = taskPage.taskCard('Task B');
-  
+
   await taskA.hover();
   await page.mouse.down();
   await taskB.hover();
@@ -532,9 +563,9 @@ test('should show invalid drop feedback for circular dependency', async ({ page 
   // Check invalid drop feedback
   await expect(taskB).toHaveClass(/invalid-drop/);
   await expect(page.locator('.drop-zone-indicator.invalid')).toBeVisible();
-  
+
   await page.mouse.up();
-  
+
   // Verify dependency was NOT created
   await taskPage.expectDependencyNotExists('Task B', 'Task A');
 });
@@ -549,15 +580,15 @@ test('should show invalid drop feedback for circular dependency', async ({ page 
 ```typescript
 test('should open command palette with keyboard shortcut', async ({ page }) => {
   await page.goto('/');
-  
+
   // Press Cmd+K (Mac) or Ctrl+K (Windows)
   const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
   await page.keyboard.press(`${modifier}+KeyK`);
-  
+
   // Verify palette opened
   const palette = page.getByTestId('command-palette');
   await expect(palette).toBeVisible();
-  
+
   // Verify input focused
   const input = palette.locator('input[type="text"]');
   await expect(input).toBeFocused();
@@ -565,19 +596,19 @@ test('should open command palette with keyboard shortcut', async ({ page }) => {
 
 test('should search and navigate to goal', async ({ page }) => {
   await page.goto('/');
-  
+
   // Open palette
   await page.keyboard.press('Control+KeyK');
-  
+
   // Search
   await page.fill('[data-testid="command-palette-input"]', 'complete sprint');
-  
+
   // Wait for search results
   await page.waitForSelector('[data-testid="search-result-goal"]');
-  
+
   // Select first result
   await page.keyboard.press('Enter');
-  
+
   // Verify navigation
   await expect(page).toHaveURL(/\/goals\/[a-f0-9-]+/);
 });
@@ -606,7 +637,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -652,11 +683,13 @@ jobs:
 ### Phase 6: Test Reports & Documentation (1 hour)
 
 **Generate HTML Report**:
+
 ```bash
 pnpm exec playwright show-report
 ```
 
 **Coverage Report**:
+
 ```typescript
 // Add to playwright.config.ts
 export default defineConfig({
@@ -675,12 +708,12 @@ export default defineConfig({
 
 ### Quantitative Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Test Coverage | ≥80% | Critical user flows covered |
-| Execution Time | <10 min | Full suite on CI |
-| Pass Rate | ≥95% | On main branch |
-| Flaky Test Rate | <5% | Failed then passed without code change |
+| Metric          | Target  | Measurement                            |
+| --------------- | ------- | -------------------------------------- |
+| Test Coverage   | ≥80%    | Critical user flows covered            |
+| Execution Time  | <10 min | Full suite on CI                       |
+| Pass Rate       | ≥95%    | On main branch                         |
+| Flaky Test Rate | <5%     | Failed then passed without code change |
 
 ### Qualitative Metrics
 
@@ -695,27 +728,33 @@ export default defineConfig({
 ## 🐛 Known Issues & Mitigations
 
 ### Issue 1: Test Flakiness
+
 **Symptom**: Tests fail intermittently  
 **Cause**: Async operations, race conditions  
 **Mitigation**:
+
 - Use Playwright's auto-waiting
 - Avoid fixed `sleep()`, use `waitFor()` instead
 - Increase timeout for slow operations
 - Run tests in isolation
 
 ### Issue 2: Slow Test Execution
+
 **Symptom**: Tests take too long  
 **Cause**: Sequential execution, heavy setup  
 **Mitigation**:
+
 - Run tests in parallel (Playwright workers)
 - Reuse browser context when possible
 - Optimize database seeding
 - Use test sharding for CI
 
 ### Issue 3: Screenshot Overload
+
 **Symptom**: CI artifacts too large  
 **Cause**: Screenshot on every test  
 **Mitigation**:
+
 - Only screenshot on failure
 - Compress images
 - Limit retention to 7 days
@@ -725,6 +764,7 @@ export default defineConfig({
 ## 🔗 Dependencies
 
 ### Prerequisite Stories
+
 - ✅ STORY-022: Task Dependency Data Model
 - ✅ STORY-023: Task DAG Visualization
 - ✅ STORY-024: Dependency Validation
@@ -733,6 +773,7 @@ export default defineConfig({
 - ✅ STORY-027: Drag & Drop
 
 ### Technical Dependencies
+
 - Playwright 1.40+
 - Test database with seed data
 - `data-testid` attributes on components
@@ -751,12 +792,14 @@ export default defineConfig({
 ## 📈 Progress Tracking
 
 ### Day 1: Infrastructure & Task Tests (4 hours)
+
 - [x] Set up Playwright config
 - [x] Create Page Object Models
 - [ ] Write Task dependency tests (5 scenarios)
 - [ ] Write DAG visualization tests
 
 ### Day 2: UX Tests & CI (4 hours)
+
 - [ ] Write Drag & Drop tests
 - [ ] Write Command Palette tests
 - [ ] Configure CI/CD pipeline
@@ -773,6 +816,7 @@ export default defineConfig({
 ---
 
 **Next Steps**:
+
 1. ✅ Create story planning document (this file)
 2. ⏳ Set up Playwright infrastructure
 3. ⏳ Write first batch of tests
@@ -781,4 +825,4 @@ export default defineConfig({
 
 ---
 
-*Let's build comprehensive E2E test coverage to ensure quality! 🧪*
+_Let's build comprehensive E2E test coverage to ensure quality! 🧪_

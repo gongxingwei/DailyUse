@@ -39,19 +39,19 @@ export const passwordValidationRules: ValidationRule[] = [
 ```typescript
 // 传统Vuetify格式（保持原有接口不变）
 export const usernameRules = [
-  (v: string) => !!v || "用户名不能为空",
-  (v: string) => v.length >= 3 || "用户名长度不能少于3个字符",
-  (v: string) => v.length <= 20 || "用户名长度不能超过20个字符",
-  (v: string) => /^[a-zA-Z0-9_]+$/.test(v) || "用户名只能包含字母、数字和下划线",
+  (v: string) => !!v || '用户名不能为空',
+  (v: string) => v.length >= 3 || '用户名长度不能少于3个字符',
+  (v: string) => v.length <= 20 || '用户名长度不能超过20个字符',
+  (v: string) => /^[a-zA-Z0-9_]+$/.test(v) || '用户名只能包含字母、数字和下划线',
 ];
 
 export const passwordRules = [
-  (v: string) => !!v || "密码不能为空",
-  (v: string) => v.length >= 8 || "密码长度不能少于8个字符",
-  (v: string) => v.length <= 20 || "密码长度不能超过20个字符",
-  (v: string) => /[a-z]/.test(v) || "密码必须包含小写字母",
-  (v: string) => /[A-Z]/.test(v) || "密码必须包含大写字母",
-  (v: string) => /\d/.test(v) || "密码必须包含数字",
+  (v: string) => !!v || '密码不能为空',
+  (v: string) => v.length >= 8 || '密码长度不能少于8个字符',
+  (v: string) => v.length <= 20 || '密码长度不能超过20个字符',
+  (v: string) => /[a-z]/.test(v) || '密码必须包含小写字母',
+  (v: string) => /[A-Z]/.test(v) || '密码必须包含大写字母',
+  (v: string) => /\d/.test(v) || '密码必须包含数字',
 ];
 ```
 
@@ -67,22 +67,17 @@ export const passwordRules = [
 // import { usernameRules, passwordRules } from '../../validations/accountFormRules';
 
 // 新的导入路径
-import { usernameRules, passwordRules } from '../../../../shared/utils/validations/accountFormRules';
+import {
+  usernameRules,
+  passwordRules,
+} from '../../../../shared/utils/validations/accountFormRules';
 
 // 其他代码保持不变
 </script>
 
 <template>
-  <v-text-field 
-    v-model="username"
-    :rules="usernameRules"
-    label="用户名"
-  />
-  <v-text-field 
-    v-model="password"
-    :rules="passwordRules"
-    label="密码"
-  />
+  <v-text-field v-model="username" :rules="usernameRules" label="用户名" />
+  <v-text-field v-model="password" :rules="passwordRules" label="密码" />
 </template>
 ```
 
@@ -97,27 +92,32 @@ import { registrationFormConfig } from '../../../../shared/utils/validations/acc
 import { computed } from 'vue';
 
 // 创建表单校验
-const { state: formState, methods: formMethods, handleFieldFocus, handleFieldBlur } = useFormValidation({
+const {
+  state: formState,
+  methods: formMethods,
+  handleFieldFocus,
+  handleFieldBlur,
+} = useFormValidation({
   config: registrationFormConfig,
   initialValues: {
     username: '',
     password: '',
     email: '',
-    confirmPassword: ''
+    confirmPassword: '',
   },
   validateOnChange: true,
-  validateOnBlur: true
+  validateOnBlur: true,
 });
 
 // 创建计算属性处理v-model
 const usernameValue = computed({
   get: () => formState.fields.username?.value.value || '',
-  set: (val) => formMethods.setFieldValue('username', val)
+  set: (val) => formMethods.setFieldValue('username', val),
 });
 
 const passwordValue = computed({
   get: () => formState.fields.password?.value.value || '',
-  set: (val) => formMethods.setFieldValue('password', val)
+  set: (val) => formMethods.setFieldValue('password', val),
 });
 
 // 表单提交
@@ -127,7 +127,7 @@ const handleSubmit = async () => {
     // 提交表单数据
     console.log('表单数据:', {
       username: usernameValue.value,
-      password: passwordValue.value
+      password: passwordValue.value,
     });
   }
 };
@@ -135,30 +135,30 @@ const handleSubmit = async () => {
 
 <template>
   <v-form @submit.prevent="handleSubmit">
-    <v-text-field 
+    <v-text-field
       v-model="usernameValue"
-      :error-messages="formState.fields.username?.error.value ? [formState.fields.username.error.value] : []"
+      :error-messages="
+        formState.fields.username?.error.value ? [formState.fields.username.error.value] : []
+      "
       :loading="formState.fields.username?.validating.value"
       label="用户名"
       @blur="handleFieldBlur('username')"
       @focus="handleFieldFocus('username')"
     />
-    
-    <v-text-field 
+
+    <v-text-field
       v-model="passwordValue"
-      :error-messages="formState.fields.password?.error.value ? [formState.fields.password.error.value] : []"
+      :error-messages="
+        formState.fields.password?.error.value ? [formState.fields.password.error.value] : []
+      "
       :loading="formState.fields.password?.validating.value"
       label="密码"
       type="password"
       @blur="handleFieldBlur('password')"
       @focus="handleFieldFocus('password')"
     />
-    
-    <v-btn 
-      type="submit" 
-      :disabled="!formState.valid.value"
-      :loading="formState.validating.value"
-    >
+
+    <v-btn type="submit" :disabled="!formState.valid.value" :loading="formState.validating.value">
       提交
     </v-btn>
   </v-form>
@@ -253,6 +253,7 @@ BuiltinValidators.json(message?)
 ## 优势对比
 
 ### 传统Vuetify校验
+
 - ✅ 简单易用
 - ✅ 与现有代码兼容
 - ❌ 功能有限
@@ -260,6 +261,7 @@ BuiltinValidators.json(message?)
 - ❌ 缺乏异步校验支持
 
 ### 通用校验系统
+
 - ✅ 功能强大（异步校验、防抖、事件系统）
 - ✅ 类型安全
 - ✅ 跨框架复用

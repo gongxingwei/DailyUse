@@ -7,18 +7,19 @@
 创建了完整的基础设施层实现，包括：
 
 #### 1.1 Prisma 持久化
+
 - **PrismaRepositoryRepository**: 实现 `IRepositoryRepository` 接口
   - ✅ 所有 CRUD 操作（create, read, update, delete）
   - ✅ 事务支持
   - ✅ 级联操作（子实体）
   - ✅ 错误处理和转换
-  
 - **RepositoryMapper**: 领域对象与 Prisma 模型之间的转换
   - ✅ `toDomain()`: Prisma模型 → 领域对象
   - ✅ `toPrisma()`: 领域对象 → Prisma模型
   - ✅ 使用 `fromPersistenceDTO()` 静态工厂方法
 
 #### 1.2 Git 服务
+
 - **GitService**: 封装 Git 操作
   - ✅ 初始化仓库（`initRepository`）
   - ✅ 获取状态（`getStatus`）
@@ -28,6 +29,7 @@
   - 📝 备注：使用占位实现，实际需要集成 simple-git 库
 
 #### 1.3 文件系统服务
+
 - **FileSystemService**: 文件系统操作抽象
   - ✅ 目录扫描（`scanDirectory`）支持递归、过滤
   - ✅ 文件统计（`getStats`）
@@ -38,6 +40,7 @@
 ### 2. ✅ 领域服务（Domain Service）
 
 **RepositoryDomainService** 已有完整实现：
+
 - ✅ 创建仓库（`createRepository`）- 包含路径验证
 - ✅ 获取仓库（`getRepository`）- 自动更新访问时间
 - ✅ 更新配置（`updateRepositoryConfig`）
@@ -50,15 +53,18 @@
 - ✅ 查询方法（`getRepositoriesByAccount`, `getRepositoryByPath`）
 
 创建了示例测试文件：
+
 - 📝 `RepositoryDomainService.test.ts` - 展示如何测试领域服务
 
 ### 3. 📝 Domain-Client 层
 
 创建了框架和设计文档：
+
 - 📄 `Repository.ts` - 客户端聚合根模板
 - 📝 包含 UI 辅助方法的设计（格式化、显示文本、颜色、图标）
 
 **设计的客户端特性**：
+
 - 计算属性：`createdAtRelative`, `statusText`, `typeText` 等
 - 状态查询：`isActive`, `isArchived`, `isSyncing` 等
 - 格式化方法：日期、大小、计数等
@@ -108,6 +114,7 @@ packages/domain-server/src/repository/
 ### 必要的后续任务
 
 1. **更新 Prisma Schema**
+
    ```prisma
    model Repository {
      uuid          String   @id @default(cuid())
@@ -126,12 +133,13 @@ packages/domain-server/src/repository/
      createdAt     DateTime @default(now()) @map("created_at")
      updatedAt     DateTime @updatedAt @map("updated_at")
      account       Account  @relation(...)
-     
+
      @@map("repositories")
    }
    ```
 
 2. **安装依赖**
+
    ```bash
    pnpm add simple-git  # Git 操作
    ```
@@ -173,25 +181,25 @@ packages/domain-server/src/repository/
 
 ## 测试覆盖
 
-| 模块 | 测试文件 | 状态 |
-|------|---------|------|
-| 聚合根 | RepositoryAggregate.test.ts | ✅ 33 tests pass |
-| 值对象 | RepositoryConfig.test.ts | ✅ 16 tests pass |
-| 值对象 | SyncStatus.test.ts | ✅ 27 tests pass |
-| 值对象 | GitInfo.test.ts | ✅ 32 tests pass |
-| 领域服务 | RepositoryDomainService.test.ts | 📝 示例 |
-| **总计** | **4 files** | **✅ 108 tests pass** |
+| 模块     | 测试文件                        | 状态                  |
+| -------- | ------------------------------- | --------------------- |
+| 聚合根   | RepositoryAggregate.test.ts     | ✅ 33 tests pass      |
+| 值对象   | RepositoryConfig.test.ts        | ✅ 16 tests pass      |
+| 值对象   | SyncStatus.test.ts              | ✅ 27 tests pass      |
+| 值对象   | GitInfo.test.ts                 | ✅ 32 tests pass      |
+| 领域服务 | RepositoryDomainService.test.ts | 📝 示例               |
+| **总计** | **4 files**                     | **✅ 108 tests pass** |
 
 ## 使用示例
 
 ### 创建仓库
 
 ```typescript
-import { 
-  RepositoryDomainService, 
+import {
+  RepositoryDomainService,
   PrismaRepositoryRepository,
   GitService,
-  FileSystemService 
+  FileSystemService,
 } from '@dailyuse/domain-server/repository';
 
 // 注入依赖
@@ -254,29 +262,37 @@ console.log(`Total files: ${stats.totalFiles}`);
 ## 架构决策记录
 
 ### ADR-001: 值对象的持久化策略
+
 **决策**: 使用 JSON 字符串存储值对象在数据库中
-**理由**: 
+**理由**:
+
 - 简化 schema 设计
 - 值对象作为整体存储，符合其不可变特性
 - 便于版本控制和迁移
 
 ### ADR-002: 子实体的延迟加载
+
 **决策**: 默认不加载子实体，通过 `includeChildren` 选项控制
 **理由**:
+
 - 提高查询性能
 - 减少不必要的数据传输
 - 遵循聚合根边界原则
 
 ### ADR-003: Git 服务抽象
+
 **决策**: 创建独立的 GitService 而不是直接在聚合根中调用 simple-git
 **理由**:
+
 - 关注点分离
 - 便于测试（mock GitService）
 - 可以更换底层 Git 实现
 
 ### ADR-004: 错误处理策略
+
 **决策**: 基础设施层捕获技术异常，转换为领域友好的错误消息
 **理由**:
+
 - 隐藏实现细节
 - 统一错误格式
 - 便于上层处理
@@ -284,6 +300,7 @@ console.log(`Total files: ${stats.totalFiles}`);
 ## 注意事项
 
 ⚠️ **重要提醒**:
+
 1. Prisma schema 需要更新才能使用 `PrismaRepositoryRepository`
 2. GitService 目前是占位实现，需要集成 simple-git
 3. 子实体（Resource, Explorer）的持久化逻辑未完成

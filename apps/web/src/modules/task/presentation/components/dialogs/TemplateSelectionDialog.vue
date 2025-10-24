@@ -1,77 +1,66 @@
 <template>
-    <v-dialog :model-value="visible" max-width="800" persistent>
-        <v-card class="template-selection-dialog">
-            <v-card-title class="dialog-header">
-                <v-icon color="primary" class="mr-2">mdi-view-grid-plus</v-icon>
-                选择任务模板类型
-            </v-card-title>
+  <v-dialog :model-value="visible" max-width="800" persistent>
+    <v-card class="template-selection-dialog">
+      <v-card-title class="dialog-header">
+        <v-icon color="primary" class="mr-2">mdi-view-grid-plus</v-icon>
+        选择任务模板类型
+      </v-card-title>
 
-            <v-card-text class="template-grid">
-                <!-- 加载状态 -->
-                <div v-if="loading" class="text-center pa-8">
-                    <v-progress-circular 
-                        color="primary" 
-                        indeterminate 
-                        size="48"
-                        class="mb-4"
-                    />
-                    <p class="text-body-1">正在加载模板...</p>
-                </div>
+      <v-card-text class="template-grid">
+        <!-- 加载状态 -->
+        <div v-if="loading" class="text-center pa-8">
+          <v-progress-circular color="primary" indeterminate size="48" class="mb-4" />
+          <p class="text-body-1">正在加载模板...</p>
+        </div>
 
-                <!-- 无数据状态 -->
-                <div v-else-if="metaTemplates.length === 0" class="text-center pa-8">
-                    <v-icon size="64" color="grey" class="mb-4">mdi-folder-open-outline</v-icon>
-                    <p class="text-body-1 text-medium-emphasis">暂无可用模板</p>
-                    <v-btn color="primary" variant="text" @click="loadMetaTemplates">
-                        重新加载
-                    </v-btn>
-                </div>
+        <!-- 无数据状态 -->
+        <div v-else-if="metaTemplates.length === 0" class="text-center pa-8">
+          <v-icon size="64" color="grey" class="mb-4">mdi-folder-open-outline</v-icon>
+          <p class="text-body-1 text-medium-emphasis">暂无可用模板</p>
+          <v-btn color="primary" variant="text" @click="loadMetaTemplates"> 重新加载 </v-btn>
+        </div>
 
-                <!-- 模板列表 -->
-                <v-card 
-                    v-else
-                    v-for="metaTemplate in metaTemplates" 
-                    :key="metaTemplate.uuid" 
-                    class="template-type-card"
-                    :class="{ 'selected': selectedmetaTemplateUuid === metaTemplate.uuid }" 
-                    elevation="2" 
-                    hover
-                    @click="selectMetaTemplate(metaTemplate.uuid)"
-                >
-                    <v-card-text class="text-center pa-4">
-                        <v-avatar :color="getMetaTemplateColor(metaTemplate.name)" size="64" class="mb-3">
-                            <v-icon size="32" color="white">
-                                {{ getMetaTemplateIcon(metaTemplate.name) }}
-                            </v-icon>
-                        </v-avatar>
+        <!-- 模板列表 -->
+        <v-card
+          v-else
+          v-for="metaTemplate in metaTemplates"
+          :key="metaTemplate.uuid"
+          class="template-type-card"
+          :class="{ selected: selectedmetaTemplateUuid === metaTemplate.uuid }"
+          elevation="2"
+          hover
+          @click="selectMetaTemplate(metaTemplate.uuid)"
+        >
+          <v-card-text class="text-center pa-4">
+            <v-avatar :color="getMetaTemplateColor(metaTemplate.name)" size="64" class="mb-3">
+              <v-icon size="32" color="white">
+                {{ getMetaTemplateIcon(metaTemplate.name) }}
+              </v-icon>
+            </v-avatar>
 
-                        <h3 class="text-h6 mb-2">{{ metaTemplate.name }}</h3>
-                        <p class="text-body-2 text-medium-emphasis">
-                            {{ metaTemplate.description }}
-                        </p>
-
-                        
-                    </v-card-text>
-                </v-card>
-            </v-card-text>
-
-            <v-card-actions class="dialog-actions">
-                <v-spacer />
-                <v-btn variant="text" @click="handleCancel">
-                    取消
-                </v-btn>
-                <v-btn 
-                    color="primary" 
-                    variant="elevated" 
-                    :disabled="!selectedmetaTemplateUuid" 
-                    @click="confirmSelection"
-                >
-                    继续创建
-                </v-btn>
-            </v-card-actions>
+            <h3 class="text-h6 mb-2">{{ metaTemplate.name }}</h3>
+            <p class="text-body-2 text-medium-emphasis">
+              {{ metaTemplate.description }}
+            </p>
+          </v-card-text>
         </v-card>
-        <TaskTemplateDialog ref="taskTemplateDialogRef" />
-    </v-dialog>
+      </v-card-text>
+
+      <v-card-actions class="dialog-actions">
+        <v-spacer />
+        <v-btn variant="text" @click="handleCancel"> 取消 </v-btn>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          :disabled="!selectedmetaTemplateUuid"
+          @click="confirmSelection"
+        >
+          继续创建
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+    <TaskTemplateDialog ref="taskTemplateDialogRef" />
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -80,8 +69,6 @@ import { TaskMetaTemplate } from '@dailyuse/domain-client';
 import { useTaskStore } from '@/modules/task/presentation/stores/taskStore';
 // components
 import TaskTemplateDialog from './TaskTemplateDialog.vue';
-
-
 
 const taskStore = useTaskStore();
 const visible = ref(false);
@@ -93,133 +80,142 @@ const loading = ref(false);
 const taskTemplateDialogRef = ref<InstanceType<typeof TaskTemplateDialog> | null>(null);
 
 onMounted(async () => {
-    await loadMetaTemplates();
+  await loadMetaTemplates();
 });
 
 const loadMetaTemplates = async () => {
-    try {
-        loading.value = true;
-        const metaTemplate = taskStore.getAllTaskMetaTemplates;
-        metaTemplates.value = metaTemplate;
-    } catch (error) {
-        console.error('获取元模板失败:', error);
-        metaTemplates.value = [];
-    } finally {
-        loading.value = false;
-    }
+  try {
+    loading.value = true;
+    const metaTemplate = taskStore.getAllTaskMetaTemplates;
+    metaTemplates.value = metaTemplate;
+  } catch (error) {
+    console.error('获取元模板失败:', error);
+    metaTemplates.value = [];
+  } finally {
+    loading.value = false;
+  }
 };
 
 const selectMetaTemplate = (metaTemplateUuid: string) => {
-    selectedmetaTemplateUuid.value = metaTemplateUuid;
+  selectedmetaTemplateUuid.value = metaTemplateUuid;
 };
 
 const confirmSelection = () => {
-    if (selectedmetaTemplateUuid.value) {
-        taskTemplateDialogRef?.value?.openForCreationWithMetaTemplateUuid(selectedmetaTemplateUuid.value);
-        visible.value = false;
-    }
+  if (selectedmetaTemplateUuid.value) {
+    taskTemplateDialogRef?.value?.openForCreationWithMetaTemplateUuid(
+      selectedmetaTemplateUuid.value,
+    );
+    visible.value = false;
+  }
 };
 
 const getMetaTemplateColor = (category: string): string => {
-    const colorMap: Record<string, string> = {
-        'general': 'grey',
-        'habit': 'green',
-        'work': 'blue',
-        'event': 'orange',
-        'deadline': 'red',
-        'meeting': 'purple'
-    };
-    return colorMap[category] || 'grey';
+  const colorMap: Record<string, string> = {
+    general: 'grey',
+    habit: 'green',
+    work: 'blue',
+    event: 'orange',
+    deadline: 'red',
+    meeting: 'purple',
+  };
+  return colorMap[category] || 'grey';
 };
 
 const getMetaTemplateIcon = (category: string): string => {
-    const iconMap: Record<string, string> = {
-        'general': 'mdi-file-outline',
-        'habit': 'mdi-repeat',
-        'work': 'mdi-briefcase',
-        'event': 'mdi-calendar-star',
-        'deadline': 'mdi-clock-alert',
-        'meeting': 'mdi-account-group'
-    };
-    return iconMap[category] || 'mdi-file-outline';
+  const iconMap: Record<string, string> = {
+    general: 'mdi-file-outline',
+    habit: 'mdi-repeat',
+    work: 'mdi-briefcase',
+    event: 'mdi-calendar-star',
+    deadline: 'mdi-clock-alert',
+    meeting: 'mdi-account-group',
+  };
+  return iconMap[category] || 'mdi-file-outline';
 };
 
 // 重置选择当对话框关闭时
-watch(() => visible, (newVal) => {
+watch(
+  () => visible,
+  (newVal) => {
     if (!newVal) {
-        selectedmetaTemplateUuid.value = '';
+      selectedmetaTemplateUuid.value = '';
     }
-});
+  },
+);
 
 const handleCancel = () => {
-    closeDialog();
+  closeDialog();
 };
 
 // 工具函数
 const openDialog = () => {
-    visible.value = true;
+  visible.value = true;
 };
 
 const closeDialog = () => {
-    visible.value = false;
-    selectedmetaTemplateUuid.value = '';
+  visible.value = false;
+  selectedmetaTemplateUuid.value = '';
 };
 
 defineExpose({
-    openDialog,
+  openDialog,
 });
 </script>
 
 <style scoped>
 .template-selection-dialog {
-    border-radius: 16px;
+  border-radius: 16px;
 }
 
 .dialog-header {
-    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.1), rgba(var(--v-theme-secondary), 0.05));
-    border-bottom: 1px solid rgba(var(--v-theme-outline), 0.12);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.1),
+    rgba(var(--v-theme-secondary), 0.05)
+  );
+  border-bottom: 1px solid rgba(var(--v-theme-outline), 0.12);
 }
 
 .template-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    padding: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
 }
 
 .template-type-card {
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
 }
 
 .template-type-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .template-type-card.selected {
-    border-color: rgb(var(--v-theme-primary));
-    background: rgba(var(--v-theme-primary), 0.05);
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.05);
 }
 
 .template-features {
-    min-height: 40px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+  min-height: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .dialog-actions {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(var(--v-theme-outline), 0.12);
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(var(--v-theme-outline), 0.12);
 }
 
 @media (max-width: 768px) {
-    .template-grid {
-        grid-template-columns: 1fr;
-        padding: 1rem;
-    }
+  .template-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
 }
 </style>

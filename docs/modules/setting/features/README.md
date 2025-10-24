@@ -1,14 +1,8 @@
 # Setting 模块功能文档# Setting 模块功能构思
 
-
-
 本目录收录 Setting 模块的所有 Feature Spec 文档。本文件汇总 Setting 模块所有“超越 CRUD”的功能点，分阶段（MVP/MMP/未来）列出，并链接详细文档。
 
-
-
 ## 📋 功能列表## MVP
-
-
 
 | 编号 | 功能名称 | 优先级 | 文档 |1. 多端同步与备份（[01-multidevice-sync.md](./01-multidevice-sync.md)）
 
@@ -18,11 +12,7 @@
 
 | SETTING-002 | 数据导入导出 | P2 | [02-import-export.md](./02-import-export.md) |4. 通知与隐私偏好（[04-notification-privacy.md](./04-notification-privacy.md)）
 
-
-
 ## 📊 统计信息## MMP
-
-
 
 - **总功能数**: 25. 自动化规则与场景（[05-automation-rule.md](./05-automation-rule.md)）
 
@@ -43,8 +33,9 @@
 - 设置变更历史
 
 ### 数据导入导出 (P2)
+
 支持 JSON/CSV/Markdown 格式的数据备份与迁移
 
 ---
 
-*最后更新: 2025-10-21*
+_最后更新: 2025-10-21_

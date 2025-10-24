@@ -1,9 +1,11 @@
 # Domain-Server Repository Module Refactoring Script
+
 # 领域层-服务端 Repository 模块重构脚本
 
 ## 📋 重构概览
 
 本脚本详细说明如何重构 domain-server/repository 模块：
+
 1. 聚合根、实体继承基础类（AggregateRoot, Entity）
 2. 值对象继承 ValueObject
 3. 移除类名后缀（Aggregate, Entity）
@@ -18,6 +20,7 @@
 **文件**: `aggregates/RepositoryAggregate.ts` → `aggregates/Repository.ts`
 
 **关键变更**:
+
 1. 类名: `RepositoryAggregate` → `Repository`
 2. 继承: `implements IRepositoryServer` → `extends AggregateRoot implements IRepositoryServer`
 3. 移除 `private _uuid: string` 字段
@@ -28,12 +31,14 @@
 ### 步骤 2: 重构实体 (Resource, RepositoryExplorer, ResourceReference, LinkedContent)
 
 **文件重命名**:
+
 - `entities/ResourceEntity.ts` → `entities/Resource.ts`
 - `entities/RepositoryExplorerEntity.ts` → `entities/RepositoryExplorer.ts`
 - `entities/ResourceReferenceEntity.ts` → `entities/ResourceReference.ts`
 - `entities/LinkedContentEntity.ts` → `entities/LinkedContent.ts`
 
 **关键变更** (每个实体):
+
 1. 类名: 移除 `Entity` 后缀
 2. 继承: `implements IXxxServer` → `extends Entity implements IXxxServer`
 3. 移除 `private _uuid: string` 字段
@@ -43,11 +48,13 @@
 
 ### 步骤 3: 重构值对象 (RepositoryConfig, RepositoryStats)
 
-**文件**: 
+**文件**:
+
 - `value-objects/RepositoryConfig.ts`
 - `value-objects/RepositoryStats.ts`
 
 **关键变更**:
+
 1. 继承: `export class RepositoryConfig` → `export class RepositoryConfig extends ValueObject`
 2. 构造函数: 添加 `super()`
 3. 实现 `equals()` 方法（抽象方法）
@@ -56,10 +63,12 @@
 ### 步骤 4: 更新服务和仓储接口
 
 **文件**:
+
 - `services/RepositoryDomainService.ts`
 - `repositories/IRepositoryRepository.ts`
 
 **关键变更**:
+
 - 所有 `RepositoryAggregate` → `Repository`
 - 所有 `ResourceEntity` → `Resource`
 - 所有 `RepositoryExplorerEntity` → `RepositoryExplorer`
@@ -71,6 +80,7 @@
 **文件**: `index.ts`
 
 **变更**:
+
 ```typescript
 // 旧导出
 export { RepositoryAggregate } from './aggregates/RepositoryAggregate';

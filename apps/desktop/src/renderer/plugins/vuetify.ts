@@ -1,9 +1,9 @@
-import 'vuetify/styles'
-import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
-import '@mdi/font/css/materialdesignicons.css'
-import { VDateInput } from 'vuetify/labs/VDateInput'
+import 'vuetify/styles';
+import { createVuetify } from 'vuetify';
+import * as components from 'vuetify/components';
+import * as directives from 'vuetify/directives';
+import '@mdi/font/css/materialdesignicons.css';
+import { VDateInput } from 'vuetify/labs/VDateInput';
 
 const vuetify = createVuetify({
   components: {
@@ -23,19 +23,19 @@ const vuetify = createVuetify({
           background: '#FFFFFF', // 背景色
           surface: '#dae2df', // 表色
           'on-surface': '#000000', // 文字颜色
-          primary: '#1867C0',      // 主要颜色
-          secondary: '#5CBBF6',    // 次要颜色
-          accent: '#4CAF50',       // 强调色
-          error: '#FF5252',        // 错误颜色
-          info: '#2196F3',         // 信息颜色
-          success: '#4CAF50',      // 成功颜色
-          warning: '#FFC107',      // 警告颜色
+          primary: '#1867C0', // 主要颜色
+          secondary: '#5CBBF6', // 次要颜色
+          accent: '#4CAF50', // 强调色
+          error: '#FF5252', // 错误颜色
+          info: '#2196F3', // 信息颜色
+          success: '#4CAF50', // 成功颜色
+          warning: '#FFC107', // 警告颜色
           // 滚动条相关颜色
           'scrollbar-thumb': 'rgba(0, 0, 0, 0.2)',
           'scrollbar-thumb-hover': 'rgba(0, 0, 0, 0.3)',
           'surface-variant': 'rgba(0, 0, 0, 0.1)',
-          'on-surface-variant': 'rgba(0, 0, 0, 0.7)'
-        }
+          'on-surface-variant': 'rgba(0, 0, 0, 0.7)',
+        },
       },
       dark: {
         colors: {
@@ -57,12 +57,12 @@ const vuetify = createVuetify({
           button: '#c4c4c4',
           // 颜色
           'deep-blue': '#0d47a1', // 深蓝色
-          'blue': '#2196F3', // 蓝色
+          blue: '#2196F3', // 蓝色
           'light-blue': '#bbdefb', // 浅蓝色
           'deep-red': '#b71c1c', // 深红色
-          'red': '#f44336', // 红色
+          red: '#f44336', // 红色
           'light-red': '#ef5350', // 浅红色
-        }
+        },
       },
       blueGreen: {
         colors: {
@@ -98,14 +98,13 @@ const vuetify = createVuetify({
           'surface-container': 'rgb(35, 41, 42)',
           'surface-container-high': 'rgb(46, 52, 53)',
           'surface-container-highest': 'rgb(57, 63, 64)',
-          
+
           'scrollbar-thumb': 'rgba(255, 255, 255, 0.2)',
           'scrollbar-thumb-hover': 'rgba(255, 255, 255, 0.3)',
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
+});
 
-})
-
-export default vuetify
+export default vuetify;

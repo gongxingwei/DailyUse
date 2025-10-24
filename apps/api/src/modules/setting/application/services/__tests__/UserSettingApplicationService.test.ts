@@ -76,7 +76,7 @@ describe('UserSettingApplicationService', () => {
       vi.mocked(mockRepository.existsByAccountUuid).mockResolvedValue(true);
 
       await expect(service.createUserSetting(request)).rejects.toThrow(
-        'User setting already exists'
+        'User setting already exists',
       );
     });
   });
@@ -96,7 +96,7 @@ describe('UserSettingApplicationService', () => {
       vi.mocked(mockRepository.findById).mockResolvedValue(null);
 
       await expect(service.getUserSettingByUuid('uuid-123')).rejects.toThrow(
-        'User setting not found'
+        'User setting not found',
       );
     });
   });
@@ -114,9 +114,9 @@ describe('UserSettingApplicationService', () => {
     it('should throw error when not found', async () => {
       vi.mocked(mockRepository.findByAccountUuid).mockResolvedValue(null);
 
-      await expect(
-        service.getUserSettingByAccountUuid('account-123')
-      ).rejects.toThrow('User setting not found');
+      await expect(service.getUserSettingByAccountUuid('account-123')).rejects.toThrow(
+        'User setting not found',
+      );
     });
   });
 
@@ -211,9 +211,7 @@ describe('UserSettingApplicationService', () => {
     it('should throw error if user setting does not exist', async () => {
       vi.mocked(mockRepository.exists).mockResolvedValue(false);
 
-      await expect(service.deleteUserSetting('uuid-123')).rejects.toThrow(
-        'User setting not found'
-      );
+      await expect(service.deleteUserSetting('uuid-123')).rejects.toThrow('User setting not found');
     });
   });
 

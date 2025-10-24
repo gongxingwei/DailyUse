@@ -77,10 +77,7 @@
 
       <!-- 快速筛选 -->
       <div class="mt-4">
-        <v-chip-group
-          v-model="selectedFilter"
-          column
-        >
+        <v-chip-group v-model="selectedFilter" column>
           <v-chip
             filter
             variant="outlined"
@@ -97,12 +94,7 @@
           >
             已完成
           </v-chip>
-          <v-chip
-            filter
-            variant="outlined"
-            prepend-icon="mdi-star"
-            @click="filterByImportant"
-          >
+          <v-chip filter variant="outlined" prepend-icon="mdi-star" @click="filterByImportant">
             重要目标
           </v-chip>
         </v-chip-group>
@@ -111,17 +103,8 @@
 
     <v-card-actions>
       <v-spacer />
-      <v-btn
-        variant="text"
-        @click="clearSelection"
-      >
-        清空选择
-      </v-btn>
-      <v-btn
-        color="primary"
-        :disabled="!canStartComparison"
-        @click="startComparison"
-      >
+      <v-btn variant="text" @click="clearSelection"> 清空选择 </v-btn>
+      <v-btn color="primary" :disabled="!canStartComparison" @click="startComparison">
         <v-icon start>mdi-eye</v-icon>
         开始对比
       </v-btn>
@@ -163,7 +146,7 @@ const availableGoals = computed(() => {
   return goalStore.getAllGoals.filter((goal: any) => {
     // 过滤掉已删除的目标
     if (goal.deletedAt) return false;
-    
+
     // 应用筛选条件
     if (selectedFilter.value === 0) {
       // 进行中
@@ -175,7 +158,7 @@ const availableGoals = computed(() => {
       // 重要目标
       return goal.importance === 'HIGH' || goal.importance === 'CRITICAL';
     }
-    
+
     return true;
   });
 });
@@ -187,22 +170,22 @@ const canStartComparison = computed(() => {
 // Methods
 const addGoal = (goalUuid: string | null) => {
   if (!goalUuid) return;
-  
+
   const goal = goalStore.getGoalByUuid(goalUuid);
   if (!goal || isGoalSelected(goalUuid)) return;
-  
+
   if (selectedGoals.value.length >= props.maxGoals) {
     return;
   }
-  
+
   selectedGoals.value.push(goal);
   searchQuery.value = null;
-  
+
   emit('update:selection', selectedGoals.value);
 };
 
 const removeGoal = (goalUuid: string) => {
-  const index = selectedGoals.value.findIndex(g => g.uuid === goalUuid);
+  const index = selectedGoals.value.findIndex((g) => g.uuid === goalUuid);
   if (index !== -1) {
     selectedGoals.value.splice(index, 1);
     emit('update:selection', selectedGoals.value);
@@ -210,7 +193,7 @@ const removeGoal = (goalUuid: string) => {
 };
 
 const isGoalSelected = (goalUuid: string): boolean => {
-  return selectedGoals.value.some(g => g.uuid === goalUuid);
+  return selectedGoals.value.some((g) => g.uuid === goalUuid);
 };
 
 const clearSelection = () => {
@@ -243,30 +226,30 @@ const getGoalColor = (goal: any): string => {
 
 const getStatusIcon = (goal: any): string => {
   const iconMap: Record<string, string> = {
-    'NOT_STARTED': 'mdi-circle-outline',
-    'IN_PROGRESS': 'mdi-clock-outline',
-    'COMPLETED': 'mdi-check-circle',
-    'ARCHIVED': 'mdi-archive',
+    NOT_STARTED: 'mdi-circle-outline',
+    IN_PROGRESS: 'mdi-clock-outline',
+    COMPLETED: 'mdi-check-circle',
+    ARCHIVED: 'mdi-archive',
   };
   return iconMap[goal.status] || 'mdi-target';
 };
 
 const getStatusColor = (goal: any): string => {
   const colorMap: Record<string, string> = {
-    'NOT_STARTED': 'grey',
-    'IN_PROGRESS': 'primary',
-    'COMPLETED': 'success',
-    'ARCHIVED': 'warning',
+    NOT_STARTED: 'grey',
+    IN_PROGRESS: 'primary',
+    COMPLETED: 'success',
+    ARCHIVED: 'warning',
   };
   return colorMap[goal.status] || 'default';
 };
 
 const getStatusText = (goal: any): string => {
   const textMap: Record<string, string> = {
-    'NOT_STARTED': '未开始',
-    'IN_PROGRESS': '进行中',
-    'COMPLETED': '已完成',
-    'ARCHIVED': '已归档',
+    NOT_STARTED: '未开始',
+    IN_PROGRESS: '进行中',
+    COMPLETED: '已完成',
+    ARCHIVED: '已归档',
   };
   return textMap[goal.status] || goal.status;
 };

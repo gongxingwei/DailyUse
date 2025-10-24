@@ -1,5 +1,5 @@
 import type { Database } from 'better-sqlite3';
-import { getDatabase } from "../../../../shared/database/index";
+import { getDatabase } from '../../../../shared/database/index';
 import type { ITaskMetaTemplateRepository } from '../../domain/repositories/iTaskMetaTemplateRepository';
 import { TaskMetaTemplate } from '../../domain/aggregates/taskMetaTemplate';
 
@@ -37,7 +37,7 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
       default_reminder_config: JSON.stringify(metaTemplateDTO.defaultReminderConfig),
       default_metadata: JSON.stringify(metaTemplateDTO.defaultMetadata),
       created_at: metaTemplateDTO.lifecycle.createdAt,
-      updated_at: metaTemplateDTO.lifecycle.updatedAt
+      updated_at: metaTemplateDTO.lifecycle.updatedAt,
     };
   }
 
@@ -65,7 +65,7 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
     return TaskMetaTemplate.fromDTO(metaTemplateData);
   }
 
- /**
+  /**
    * 保存 TaskMetaTemplate
    */
   async save(accountUuid: string, metaTemplate: TaskMetaTemplate): Promise<TaskMetaTemplate> {
@@ -81,9 +81,18 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
     `);
 
     stmt.run(
-      record.uuid, record.account_uuid, record.name, record.description, record.category_uuid,
-      record.icon, record.color, record.default_time_config, record.default_reminder_config,
-      record.default_metadata, record.created_at, record.updated_at
+      record.uuid,
+      record.account_uuid,
+      record.name,
+      record.description,
+      record.category_uuid,
+      record.icon,
+      record.color,
+      record.default_time_config,
+      record.default_reminder_config,
+      record.default_metadata,
+      record.created_at,
+      record.updated_at,
     );
 
     return metaTemplate;
@@ -104,7 +113,7 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
     if (record) {
       return this.mapRowToTaskMetaTemplate(record);
     } else {
-      return []as any;
+      return [] as any;
     }
   }
 
@@ -120,7 +129,7 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
     `);
 
     const records = stmt.all(accountUuid);
-    return records.map(record => this.mapRowToTaskMetaTemplate(record));
+    return records.map((record) => this.mapRowToTaskMetaTemplate(record));
   }
 
   /**
@@ -135,7 +144,7 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
     `);
 
     const records = stmt.all(accountUuid, category);
-    return records.map(record => this.mapRowToTaskMetaTemplate(record));
+    return records.map((record) => this.mapRowToTaskMetaTemplate(record));
   }
 
   /**
@@ -154,11 +163,19 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
     `);
 
     stmt.run(
-      record.name, record.description, record.category_uuid,
-      record.icon, record.color, record.default_time_config, record.default_reminder_config,
-      record.default_metadata, record.created_at, record.updated_at,
+      record.name,
+      record.description,
+      record.category_uuid,
+      record.icon,
+      record.color,
+      record.default_time_config,
+      record.default_reminder_config,
+      record.default_metadata,
+      record.created_at,
+      record.updated_at,
 
-      record.uuid, record.account_uuid
+      record.uuid,
+      record.account_uuid,
     );
 
     return metaTemplate;

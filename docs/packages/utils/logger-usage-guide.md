@@ -66,7 +66,7 @@ logger.LoggerFactory.configure({
       colorize: true,
       timestamp: true,
     }),
-    
+
     // 文件输出（仅 Node.js）
     new logger.FileTransport({
       filename: './logs/app.log',
@@ -165,18 +165,20 @@ await LoggerFactory.closeAll();
 
 ```typescript
 new ConsoleTransport({
-  level: LogLevel.DEBUG,    // 最小日志级别
-  colorize: true,           // 启用颜色（Node.js 彩色文本，浏览器 CSS）
-  timestamp: true,          // 显示时间戳
+  level: LogLevel.DEBUG, // 最小日志级别
+  colorize: true, // 启用颜色（Node.js 彩色文本，浏览器 CSS）
+  timestamp: true, // 显示时间戳
 });
 ```
 
 **Node.js 输出**：
+
 ```
 2024-01-15T10:30:00.000Z [INFO] [UserService] User logged in
 ```
 
 **浏览器输出**：
+
 ```
 2024-01-15T10:30:00.000Z [INFO] [UserService] User logged in
   Metadata: { userId: 123, username: 'john' }
@@ -190,16 +192,24 @@ new ConsoleTransport({
 new FileTransport({
   filename: './logs/app.log',
   level: LogLevel.INFO,
-  json: true,  // JSON 格式
+  json: true, // JSON 格式
 });
 ```
 
 **JSON 格式输出**：
+
 ```json
-{"timestamp":"2024-01-15T10:30:00.000Z","level":"info","message":"User logged in","context":"UserService","metadata":{"userId":123}}
+{
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "level": "info",
+  "message": "User logged in",
+  "context": "UserService",
+  "metadata": { "userId": 123 }
+}
 ```
 
 **文本格式输出**：
+
 ```
 2024-01-15T10:30:00.000Z [INFO] [UserService] User logged in {"userId":123}
 ```
@@ -219,7 +229,7 @@ export class GoalApplicationService {
 
   async createGoal(dto: CreateGoalDto) {
     this.logger.info('Creating goal', { title: dto.title });
-    
+
     try {
       const goal = await this.goalDomainService.createGoal(dto);
       this.logger.info('Goal created successfully', { goalId: goal.id });
@@ -243,7 +253,7 @@ const logger = createLogger('GoalActions');
 export function useGoalActions() {
   const createGoal = async (data: CreateGoalInput) => {
     logger.debug('Creating goal from UI', { data });
-    
+
     try {
       const result = await goalApi.create(data);
       logger.info('Goal created', { goalId: result.id });
@@ -290,13 +300,13 @@ mainLogger.info('Electron app started');
 
 ## 日志级别
 
-| 级别 | 值 | 用途 |
-|------|-----|------|
-| ERROR | 0 | 错误信息（最高优先级） |
-| WARN | 1 | 警告信息 |
-| INFO | 2 | 常规信息 |
-| HTTP | 3 | HTTP 请求日志 |
-| DEBUG | 4 | 调试信息（最低优先级） |
+| 级别  | 值  | 用途                   |
+| ----- | --- | ---------------------- |
+| ERROR | 0   | 错误信息（最高优先级） |
+| WARN  | 1   | 警告信息               |
+| INFO  | 2   | 常规信息               |
+| HTTP  | 3   | HTTP 请求日志          |
+| DEBUG | 4   | 调试信息（最低优先级） |
 
 **级别过滤规则**：设置为 `INFO` 时，只记录 ERROR、WARN、INFO 级别的日志。
 
@@ -365,7 +375,7 @@ export class RemoteTransport implements LogTransport {
 
 // 使用
 logger.LoggerFactory.addTransport(
-  new RemoteTransport('https://api.example.com/logs', logger.LogLevel.ERROR)
+  new RemoteTransport('https://api.example.com/logs', logger.LogLevel.ERROR),
 );
 ```
 
@@ -433,7 +443,7 @@ await logger.LoggerFactory.closeAll();
 完整类型定义请参考：
 
 ```typescript
-packages/utils/src/logger/types.ts
+packages / utils / src / logger / types.ts;
 ```
 
 ---

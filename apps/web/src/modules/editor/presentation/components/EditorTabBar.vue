@@ -9,27 +9,42 @@
   - 拖拽排序（可选）
 -->
 <template>
-    <div class="editor-tab-bar">
-        <v-tabs v-model="activeTabIndex" class="tabs-container" density="compact" show-arrows>
-            <v-tab v-for="(tab, index) in tabs" :key="tab.uuid" :value="index" class="editor-tab"
-                @click="handleTabClick(tab)">
-                <div class="tab-content">
-                    <!-- 文件类型图标 -->
-                    <v-icon :icon="getFileIcon(tab.fileType)" size="small" class="mr-2" />
+  <div class="editor-tab-bar">
+    <v-tabs v-model="activeTabIndex" class="tabs-container" density="compact" show-arrows>
+      <v-tab
+        v-for="(tab, index) in tabs"
+        :key="tab.uuid"
+        :value="index"
+        class="editor-tab"
+        @click="handleTabClick(tab)"
+      >
+        <div class="tab-content">
+          <!-- 文件类型图标 -->
+          <v-icon :icon="getFileIcon(tab.fileType)" size="small" class="mr-2" />
 
-                    <!-- 标签标题 -->
-                    <span class="tab-title">{{ tab.title }}</span>
+          <!-- 标签标题 -->
+          <span class="tab-title">{{ tab.title }}</span>
 
-                    <!-- 未保存标识 -->
-                    <v-icon v-if="tab.isDirty" icon="mdi-circle" size="x-small" class="dirty-indicator ml-1" />
+          <!-- 未保存标识 -->
+          <v-icon
+            v-if="tab.isDirty"
+            icon="mdi-circle"
+            size="x-small"
+            class="dirty-indicator ml-1"
+          />
 
-                    <!-- 关闭按钮 -->
-                    <v-btn icon="mdi-close" variant="plain" size="x-small" class="close-btn ml-2"
-                        @click.stop="handleTabClose(tab)" />
-                </div>
-            </v-tab>
-        </v-tabs>
-    </div>
+          <!-- 关闭按钮 -->
+          <v-btn
+            icon="mdi-close"
+            variant="plain"
+            size="x-small"
+            class="close-btn ml-2"
+            @click.stop="handleTabClose(tab)"
+          />
+        </div>
+      </v-tab>
+    </v-tabs>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -39,34 +54,34 @@ import { ref, computed, watch } from 'vue';
  * 标签页数据结构
  */
 export interface EditorTab {
-    uuid: string;
-    title: string;
-    fileType: 'markdown' | 'image' | 'video' | 'audio';
-    filePath: string;
-    content?: string;
-    isDirty: boolean;
-    isPinned?: boolean;
+  uuid: string;
+  title: string;
+  fileType: 'markdown' | 'image' | 'video' | 'audio';
+  filePath: string;
+  content?: string;
+  isDirty: boolean;
+  isPinned?: boolean;
 }
 
 /**
  * Props
  */
 interface Props {
-    tabs: EditorTab[];
-    activeTab?: string; // 当前激活的标签 uuid
+  tabs: EditorTab[];
+  activeTab?: string; // 当前激活的标签 uuid
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    activeTab: undefined,
+  activeTab: undefined,
 });
 
 /**
  * Emits
  */
 interface Emits {
-    (e: 'tab-click', tab: EditorTab): void;
-    (e: 'tab-close', tab: EditorTab): void;
-    (e: 'update:activeTab', uuid: string): void;
+  (e: 'tab-click', tab: EditorTab): void;
+  (e: 'tab-close', tab: EditorTab): void;
+  (e: 'update:activeTab', uuid: string): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -75,100 +90,100 @@ const emit = defineEmits<Emits>();
  * 当前激活的标签索引
  */
 const activeTabIndex = computed({
-    get: () => {
-        if (!props.activeTab) return 0;
-        return props.tabs.findIndex((tab) => tab.uuid === props.activeTab);
-    },
-    set: (index: number) => {
-        const tab = props.tabs[index];
-        if (tab) {
-            emit('update:activeTab', tab.uuid);
-        }
-    },
+  get: () => {
+    if (!props.activeTab) return 0;
+    return props.tabs.findIndex((tab) => tab.uuid === props.activeTab);
+  },
+  set: (index: number) => {
+    const tab = props.tabs[index];
+    if (tab) {
+      emit('update:activeTab', tab.uuid);
+    }
+  },
 });
 
 /**
  * 处理标签点击
  */
 function handleTabClick(tab: EditorTab) {
-    emit('tab-click', tab);
+  emit('tab-click', tab);
 }
 
 /**
  * 处理标签关闭
  */
 function handleTabClose(tab: EditorTab) {
-    emit('tab-close', tab);
+  emit('tab-close', tab);
 }
 
 /**
  * 根据文件类型获取图标
  */
 function getFileIcon(fileType: string): string {
-    const iconMap: Record<string, string> = {
-        markdown: 'mdi-language-markdown',
-        image: 'mdi-image',
-        video: 'mdi-video',
-        audio: 'mdi-music',
-    };
-    return iconMap[fileType] || 'mdi-file';
+  const iconMap: Record<string, string> = {
+    markdown: 'mdi-language-markdown',
+    image: 'mdi-image',
+    video: 'mdi-video',
+    audio: 'mdi-music',
+  };
+  return iconMap[fileType] || 'mdi-file';
 }
 </script>
 
 <style scoped lang="scss">
 .editor-tab-bar {
-    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-    background-color: rgb(var(--v-theme-surface));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background-color: rgb(var(--v-theme-surface));
 }
 
 .tabs-container {
-    :deep(.v-tab) {
-        min-width: 120px;
-        max-width: 200px;
-        text-transform: none;
+  :deep(.v-tab) {
+    min-width: 120px;
+    max-width: 200px;
+    text-transform: none;
 
-        &:hover {
-            background-color: rgba(var(--v-theme-on-surface), 0.05);
+    &:hover {
+      background-color: rgba(var(--v-theme-on-surface), 0.05);
 
-            .close-btn {
-                opacity: 1;
-            }
-        }
+      .close-btn {
+        opacity: 1;
+      }
     }
+  }
 }
 
 .tab-content {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 0 8px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 8px;
 }
 
 .tab-title {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 13px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
 }
 
 .dirty-indicator {
-    color: rgb(var(--v-theme-warning));
+  color: rgb(var(--v-theme-warning));
 }
 
 .close-btn {
-    opacity: 0;
-    transition: opacity 0.2s;
+  opacity: 0;
+  transition: opacity 0.2s;
 
-    &:hover {
-        background-color: rgba(var(--v-theme-on-surface), 0.1);
-    }
+  &:hover {
+    background-color: rgba(var(--v-theme-on-surface), 0.1);
+  }
 }
 
 // 激活的标签始终显示关闭按钮
 :deep(.v-tab--selected) {
-    .close-btn {
-        opacity: 1;
-    }
+  .close-btn {
+    opacity: 1;
+  }
 }
 </style>

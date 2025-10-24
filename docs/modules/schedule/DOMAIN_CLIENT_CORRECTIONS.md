@@ -6,11 +6,11 @@
 
 ### 1. 字段名称不匹配
 
-| 我的实现 | Contracts 定义 | 说明 |
-|---------|---------------|------|
-| `executionInfo` | `execution` | ❌ 字段名错误 |
-| `nextRunAt/lastRunAt` | 在 `execution` 内部 | ❌ 位置错误 |
-| `isActive()` 等 | 应该是 getter 属性，不是方法 | ❌ 接口定义错误 |
+| 我的实现              | Contracts 定义               | 说明            |
+| --------------------- | ---------------------------- | --------------- |
+| `executionInfo`       | `execution`                  | ❌ 字段名错误   |
+| `nextRunAt/lastRunAt` | 在 `execution` 内部          | ❌ 位置错误     |
+| `isActive()` 等       | 应该是 getter 属性，不是方法 | ❌ 接口定义错误 |
 
 ### 2. ScheduleTaskClient 接口定义（从 contracts）
 
@@ -28,7 +28,7 @@ export interface ScheduleTaskClient {
 
   // 值对象（Client 版本）- 注意这里是 execution，不是 executionInfo
   schedule: ScheduleConfigClientDTO;
-  execution: ExecutionInfoClientDTO;  // ⭐ 关键：是 execution
+  execution: ExecutionInfoClientDTO; // ⭐ 关键：是 execution
   retryPolicy: RetryPolicyClientDTO;
   metadata: TaskMetadataClientDTO;
 
@@ -41,14 +41,14 @@ export interface ScheduleTaskClient {
   statusColor: string;
   sourceModuleDisplay: string;
   enabledDisplay: string;
-  nextRunAtFormatted: string;        // ⭐ 不是 string | null
+  nextRunAtFormatted: string; // ⭐ 不是 string | null
   lastRunAtFormatted: string;
   executionSummary: string;
   healthStatus: string;
   isOverdue: boolean;
 
   // 业务方法
-  isActive(): boolean;                // ⭐ 是方法，不是 getter
+  isActive(): boolean; // ⭐ 是方法，不是 getter
   isPaused(): boolean;
   isCompleted(): boolean;
   isFailed(): boolean;
@@ -96,53 +96,58 @@ export class ScheduleTask extends AggregateRoot implements IScheduleTaskClient {
   private _sourceEntityId: string;
   private _status: ScheduleTaskStatus;
   private _enabled: boolean;
-  
+
   // 值对象
   private _schedule: ScheduleConfig;
-  private _execution: ExecutionInfo;  // ⭐ 改名为 _execution
+  private _execution: ExecutionInfo; // ⭐ 改名为 _execution
   private _retryPolicy: RetryPolicy;
   private _metadata: TaskMetadata;
-  
+
   // 时间戳
   private _createdAt: number;
   private _updatedAt: number;
-  
+
   // 子实体
-  private _executions: ScheduleExecution[];  // ⭐ 注意是 ScheduleExecution，不是 TaskExecution
+  private _executions: ScheduleExecution[]; // ⭐ 注意是 ScheduleExecution，不是 TaskExecution
 
   // ===== Getter 属性 =====
-  
+
   // 值对象返回 DTO
-  public get execution(): ExecutionInfoClientDTO {  // ⭐ 改名为 execution
+  public get execution(): ExecutionInfoClientDTO {
+    // ⭐ 改名为 execution
     return this._execution.toClientDTO();
   }
-  
+
   // UI 辅助属性（必须返回非 null 值）
-  public get nextRunAtFormatted(): string {  // ⭐ 不能是 null
+  public get nextRunAtFormatted(): string {
+    // ⭐ 不能是 null
     if (!this._execution.nextRunAt) return '未安排';
     return this.formatRelativeTime(this._execution.nextRunAt.getTime());
   }
-  
-  public get lastRunAtFormatted(): string {  // ⭐ 不能是 null
+
+  public get lastRunAtFormatted(): string {
+    // ⭐ 不能是 null
     if (!this._execution.lastRunAt) return '从未执行';
     return this.formatRelativeTime(this._execution.lastRunAt.getTime());
   }
-  
+
   // ===== 业务方法（⭐ 是方法，不是 getter）=====
-  
-  public isActive(): boolean {  // ⭐ 方法，不是 get isActive()
+
+  public isActive(): boolean {
+    // ⭐ 方法，不是 get isActive()
     return this._status === SC.ScheduleTaskStatus.ACTIVE && this._enabled;
   }
-  
+
   public isPaused(): boolean {
     return this._status === SC.ScheduleTaskStatus.PAUSED || !this._enabled;
   }
-  
+
   // ... 其他方法
-  
+
   // ===== 状态转换方法（返回新实例，符合不可变原则）=====
-  
-  public pause(): ScheduleTask {  // ⭐ 返回 ScheduleTask
+
+  public pause(): ScheduleTask {
+    // ⭐ 返回 ScheduleTask
     if (this._status !== SC.ScheduleTaskStatus.ACTIVE) {
       throw new Error('只有活跃的任务才能暂停');
     }
@@ -152,49 +157,47 @@ export class ScheduleTask extends AggregateRoot implements IScheduleTaskClient {
     cloned._updatedAt = Date.now();
     return cloned;
   }
-  
+
   // ===== DTO 转换 =====
-  
+
   public toServerDTO(): ScheduleTaskServerDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuid,
       // ...
       schedule: this._schedule.toServerDTO(),
-      execution: this._execution.toServerDTO(),  // ⭐ execution
+      execution: this._execution.toServerDTO(), // ⭐ execution
       retryPolicy: this._retryPolicy.toServerDTO(),
       metadata: this._metadata.toServerDTO(),
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
     };
   }
-  
+
   public toClientDTO(): ScheduleTaskClientDTO {
     return {
       uuid: this._uuid,
       // ... 所有基础字段
       schedule: this._schedule.toClientDTO(),
-      execution: this._execution.toClientDTO(),  // ⭐ execution
+      execution: this._execution.toClientDTO(), // ⭐ execution
       retryPolicy: this._retryPolicy.toClientDTO(),
       metadata: this._metadata.toClientDTO(),
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
-      
+
       // UI 辅助属性（必须全部提供）
       statusDisplay: this.statusDisplay,
       statusColor: this.statusColor,
       sourceModuleDisplay: this.sourceModuleDisplay,
       enabledDisplay: this.enabledDisplay,
-      nextRunAtFormatted: this.nextRunAtFormatted,  // ⭐ 非 null
+      nextRunAtFormatted: this.nextRunAtFormatted, // ⭐ 非 null
       lastRunAtFormatted: this.lastRunAtFormatted,
       executionSummary: this.executionSummary,
       healthStatus: this.healthStatus,
       isOverdue: this.isOverdue,
-      
+
       // 子实体（可选）
-      executions: this._executions.length > 0 
-        ? this._executions.map((e) => e.toClientDTO()) 
-        : null,
+      executions: this._executions.length > 0 ? this._executions.map((e) => e.toClientDTO()) : null,
     };
   }
 }
@@ -238,8 +241,8 @@ export enum SourceModule {
   TASK = 'task',
   GOAL = 'goal',
   NOTIFICATION = 'notification',
-  SYSTEM = 'system',      // ⭐ 缺失
-  CUSTOM = 'custom',      // ⭐ 缺失
+  SYSTEM = 'system', // ⭐ 缺失
+  CUSTOM = 'custom', // ⭐ 缺失
 }
 ```
 

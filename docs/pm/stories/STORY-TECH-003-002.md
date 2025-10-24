@@ -4,7 +4,7 @@
 **Sprint**: Sprint 3  
 **Story Points**: 2 SP  
 **Priority**: P1  
-**Status**: 📋 Ready  
+**Status**: 📋 Ready
 
 ---
 
@@ -28,6 +28,7 @@
 ## 🛠️ Technical Approach
 
 Fix the following failing tests:
+
 1. `EditorTab.toPersistenceDTO` - Check nullable fields
 2. `EditorGroup.toPersistenceDTO` - Fix nested DTO conversion
 3. `EditorSession.toPersistenceDTO` - Handle undefined state

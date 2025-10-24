@@ -1,18 +1,27 @@
 import { test, expect } from '@playwright/test';
 import { CommandPalettePage } from '../page-objects/CommandPalettePage';
 import { TaskPage } from '../page-objects/TaskPage';
-import { login, navigateToTasks, createTestTask, cleanupTask, openCommandPalette, searchInCommandPalette, closeCommandPalette, TEST_USER } from '../helpers/testHelpers';
+import {
+  login,
+  navigateToTasks,
+  createTestTask,
+  cleanupTask,
+  openCommandPalette,
+  searchInCommandPalette,
+  closeCommandPalette,
+  TEST_USER,
+} from '../helpers/testHelpers';
 
 /**
  * Command Palette E2E Tests
- * 
+ *
  * Tests the global command palette functionality:
  * - Opening/closing with keyboard shortcut
  * - Searching for tasks, goals, and commands
  * - Keyboard navigation (arrow keys, enter)
  * - Recent items history
  * - Quick actions (create, navigate)
- * 
+ *
  * Covers: STORY-026 (Command Palette)
  */
 test.describe('Command Palette', () => {
@@ -29,7 +38,7 @@ test.describe('Command Palette', () => {
 
     // Login
     await login(page, TEST_USER.username, TEST_USER.password);
-    
+
     console.log('✅ Setup complete\n');
   });
 
@@ -39,11 +48,7 @@ test.describe('Command Palette', () => {
     console.log('========================================\n');
 
     // Clean up test tasks
-    const testTasks = [
-      'E2E CMD - Important Task',
-      'E2E CMD - Urgent Task',
-      'E2E CMD - Quick Task',
-    ];
+    const testTasks = ['E2E CMD - Important Task', 'E2E CMD - Urgent Task', 'E2E CMD - Quick Task'];
 
     await navigateToTasks(page);
 
@@ -58,7 +63,7 @@ test.describe('Command Palette', () => {
 
   /**
    * Scenario 5.1: Open and Close Command Palette
-   * 
+   *
    * Given: User is on any page
    * When: User presses Ctrl+K (or Cmd+K on Mac)
    * Then: Command palette opens
@@ -108,7 +113,7 @@ test.describe('Command Palette', () => {
 
   /**
    * Scenario 5.2: Search for Tasks
-   * 
+   *
    * Given: Multiple tasks exist
    * When: User opens command palette and types task name
    * Then: Matching tasks appear in results
@@ -120,7 +125,7 @@ test.describe('Command Palette', () => {
 
     // Arrange: Create test tasks
     console.log('Step 1: Creating test tasks...');
-    
+
     await navigateToTasks(page);
     await taskPage.createTask(createTestTask('E2E CMD - Important Task', { duration: 120 }));
     await taskPage.createTask(createTestTask('E2E CMD - Urgent Task', { duration: 90 }));
@@ -146,7 +151,7 @@ test.describe('Command Palette', () => {
 
     // Assert: Results are displayed
     console.log('Step 3: Verifying search results...');
-    
+
     const resultsCount = await commandPalette.getSearchResultCount();
     expect(resultsCount).toBeGreaterThanOrEqual(3);
     console.log(`✅ Found ${resultsCount} results\n`);
@@ -154,15 +159,17 @@ test.describe('Command Palette', () => {
     // Assert: Search stats are shown
     const stats = await commandPalette.getSearchStats();
     if (stats && stats.count > 0) {
-      console.log(`Search stats: ${stats.count} results${stats.time ? ` in ${stats.time}ms` : ''}\n`);
+      console.log(
+        `Search stats: ${stats.count} results${stats.time ? ` in ${stats.time}ms` : ''}\n`,
+      );
     }
 
     // Act: Navigate with keyboard
     console.log('Step 4: Testing keyboard navigation...');
-    
+
     await commandPalette.pressArrowDown();
     await page.waitForTimeout(200);
-    
+
     await commandPalette.pressArrowDown();
     await page.waitForTimeout(200);
 
@@ -198,7 +205,7 @@ test.describe('Command Palette', () => {
 
   /**
    * Scenario 5.3: Recent Items History
-   * 
+   *
    * Given: User has accessed several items
    * When: User opens command palette without searching
    * Then: Recent items are displayed
@@ -209,7 +216,7 @@ test.describe('Command Palette', () => {
 
     // Arrange: Create and access tasks
     console.log('Step 1: Creating tasks...');
-    
+
     await navigateToTasks(page);
     await taskPage.createTask(createTestTask('E2E CMD - Important Task', { duration: 120 }));
     await taskPage.createTask(createTestTask('E2E CMD - Urgent Task', { duration: 90 }));
@@ -218,7 +225,7 @@ test.describe('Command Palette', () => {
 
     // Access tasks via command palette to add to history
     console.log('Step 2: Accessing tasks to build history...');
-    
+
     // Access task 1
     await openCommandPalette(page);
     await searchInCommandPalette(page, 'Important');
@@ -245,7 +252,7 @@ test.describe('Command Palette', () => {
 
     // Assert: Recent items section is visible
     const hasRecentItems = await commandPalette.hasRecentItems();
-    
+
     if (hasRecentItems) {
       console.log('✅ Recent items displayed\n');
 
@@ -269,7 +276,6 @@ test.describe('Command Palette', () => {
       console.log(`║  Recent Items: ${recentCount}                                          ║`);
       console.log('║  Quick Access: ✅                                          ║');
       console.log('╚════════════════════════════════════════════════════════════╝\n');
-      
     } else {
       console.log('⚠️  Recent items feature not yet implemented\n');
       console.log('This is acceptable - recent items may be future feature\n');
@@ -287,7 +293,7 @@ test.describe('Command Palette', () => {
 
   /**
    * Scenario 5.4: Command Mode
-   * 
+   *
    * Given: Command palette is open
    * When: User types ">" to enter command mode
    * Then: Available commands are displayed
@@ -335,20 +341,20 @@ test.describe('Command Palette', () => {
     // Try to execute a command (if available)
     if (filteredCount > 0) {
       console.log('Step 4: Executing command...');
-      
+
       // Navigate to first command
       await commandPalette.pressArrowDown();
       await page.waitForTimeout(200);
-      
+
       // Screenshot: Command selected
       await page.screenshot({ path: 'test-results/57-cmd-mode-selected.png', fullPage: true });
-      
+
       // Press Enter to execute
       await commandPalette.pressEnter();
       await page.waitForTimeout(500);
-      
+
       console.log('✅ Command executed\n');
-      
+
       // Screenshot: After command execution
       await page.screenshot({ path: 'test-results/58-cmd-mode-executed.png', fullPage: true });
     }
@@ -365,7 +371,7 @@ test.describe('Command Palette', () => {
 
   /**
    * Scenario 5.5: Quick Actions
-   * 
+   *
    * Given: Command palette is open
    * When: User uses quick action shortcuts
    * Then: Quick actions are executed (create task, navigate, etc.)
@@ -393,7 +399,6 @@ test.describe('Command Palette', () => {
       // Cancel the dialog
       await page.keyboard.press('Escape');
       await page.waitForTimeout(300);
-
     } catch (error) {
       console.log('⚠️  Quick task creation not available or requires different approach\n');
     }
@@ -410,7 +415,6 @@ test.describe('Command Palette', () => {
       await page.screenshot({ path: 'test-results/61-quick-navigate.png', fullPage: true });
 
       console.log('✅ Quick navigation triggered\n');
-
     } catch (error) {
       console.log('⚠️  Quick navigation not available\n');
     }
@@ -429,7 +433,7 @@ test.describe('Command Palette', () => {
 
   /**
    * Scenario 5.6: Fuzzy Search
-   * 
+   *
    * Given: Tasks with various names exist
    * When: User types partial or fuzzy matches
    * Then: Relevant results are returned
@@ -439,7 +443,7 @@ test.describe('Command Palette', () => {
 
     // Arrange: Create tasks with searchable names
     console.log('Step 1: Creating tasks...');
-    
+
     await navigateToTasks(page);
     await taskPage.createTask(createTestTask('E2E CMD - Important Task', { duration: 60 }));
 
@@ -458,10 +462,10 @@ test.describe('Command Palette', () => {
 
     // Assert: Check if results include the task
     const resultsCount = await commandPalette.getSearchResultCount();
-    
+
     if (resultsCount > 0) {
       console.log(`✅ Fuzzy search found ${resultsCount} results\n`);
-      
+
       console.log('╔════════════════════════════════════════════════════════════╗');
       console.log('║  ✅ Test Passed: Fuzzy Search                             ║');
       console.log('╠════════════════════════════════════════════════════════════╣');
@@ -470,18 +474,17 @@ test.describe('Command Palette', () => {
       console.log(`║  Results: ${resultsCount}                                              ║`);
       console.log('║  Fuzzy Matching: ✅                                        ║');
       console.log('╚════════════════════════════════════════════════════════════╝\n');
-      
     } else {
       console.log('⚠️  Fuzzy search may not be implemented (exact match only)\n');
-      
+
       // Try exact search to verify
       await commandPalette.clearSearch();
       await searchInCommandPalette(page, 'Important');
       await page.waitForTimeout(500);
-      
+
       const exactResults = await commandPalette.getSearchResultCount();
       console.log(`Exact search results: ${exactResults}\n`);
-      
+
       console.log('╔════════════════════════════════════════════════════════════╗');
       console.log('║  ✅ Test Passed: Fuzzy Search Check                       ║');
       console.log('╠════════════════════════════════════════════════════════════╣');

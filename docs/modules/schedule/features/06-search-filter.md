@@ -15,6 +15,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 多条件组合搜索
 - ✅ 模糊搜索 + 精确筛选
 - ✅ 保存常用搜索
@@ -92,20 +93,19 @@ interface SearchCriteria {
 
 function searchEvents(criteria: SearchCriteria): ScheduleEvent[] {
   let results = this.scheduleRepository.findAll();
-  
+
   if (criteria.keyword) {
-    results = results.filter(e =>
-      e.title.includes(criteria.keyword) ||
-      e.description?.includes(criteria.keyword)
+    results = results.filter(
+      (e) => e.title.includes(criteria.keyword) || e.description?.includes(criteria.keyword),
     );
   }
-  
+
   if (criteria.startDate) {
-    results = results.filter(e => e.startTime >= criteria.startDate);
+    results = results.filter((e) => e.startTime >= criteria.startDate);
   }
-  
+
   // ... 其他筛选
-  
+
   return results;
 }
 ```
@@ -122,4 +122,3 @@ function searchEvents(criteria: SearchCriteria): ScheduleEvent[] {
 ---
 
 **文档状态**: ✅ Ready
-

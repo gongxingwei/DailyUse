@@ -1,6 +1,6 @@
-import { Entity } from "@dailyuse/utils";
-import type { IGoalRecord } from "@common/modules/goal";
-import { isValid } from "date-fns";
+import { Entity } from '@dailyuse/utils';
+import type { IGoalRecord } from '@common/modules/goal';
+import { isValid } from 'date-fns';
 
 /**
  * 记录领域实体
@@ -13,7 +13,7 @@ export class GoalRecord extends Entity implements IGoalRecord {
   private _value: number;
 
   private _note?: string;
-  private _lifecycle: IGoalRecord["lifecycle"];
+  private _lifecycle: IGoalRecord['lifecycle'];
 
   constructor(params: {
     uuid?: string;
@@ -40,7 +40,7 @@ export class GoalRecord extends Entity implements IGoalRecord {
     return this._goalUuid;
   }
   set goalUuid(value: string) {
-    if (!value.trim()) throw new Error("目标ID不能为空");
+    if (!value.trim()) throw new Error('目标ID不能为空');
     this._goalUuid = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -49,7 +49,7 @@ export class GoalRecord extends Entity implements IGoalRecord {
     return this._keyResultUuid;
   }
   set keyResultUuid(value: string) {
-    if (!value.trim()) throw new Error("关键结果ID不能为空");
+    if (!value.trim()) throw new Error('关键结果ID不能为空');
     this._keyResultUuid = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -58,7 +58,7 @@ export class GoalRecord extends Entity implements IGoalRecord {
     return this._value;
   }
   set value(val: number) {
-    if (val < 0) throw new Error("记录值不能为负数");
+    if (val < 0) throw new Error('记录值不能为负数');
     this._value = val;
     this._lifecycle.updatedAt = new Date();
   }
@@ -71,7 +71,7 @@ export class GoalRecord extends Entity implements IGoalRecord {
     this._lifecycle.updatedAt = new Date();
   }
 
-  get lifecycle(): IGoalRecord["lifecycle"] {
+  get lifecycle(): IGoalRecord['lifecycle'] {
     return this._lifecycle;
   }
 
@@ -93,11 +93,11 @@ export class GoalRecord extends Entity implements IGoalRecord {
     return (
       obj instanceof GoalRecord ||
       (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "goalUuid" in obj &&
-        "keyResultUuid" in obj &&
-        "value" in obj)
+        typeof obj === 'object' &&
+        'uuid' in obj &&
+        'goalUuid' in obj &&
+        'keyResultUuid' in obj &&
+        'value' in obj)
     );
   }
 
@@ -122,7 +122,7 @@ export class GoalRecord extends Entity implements IGoalRecord {
       return rec instanceof GoalRecord ? rec : GoalRecord.fromDTO(rec);
     } else {
       // 默认创建一个空记录
-      return GoalRecord.forCreate("", "");
+      return GoalRecord.forCreate('', '');
     }
   }
 
@@ -152,8 +152,12 @@ export class GoalRecord extends Entity implements IGoalRecord {
       note: data.note,
     });
     record._lifecycle = {
-      createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
-      updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
+      createdAt: isValid(data.lifecycle.createdAt)
+        ? new Date(data.lifecycle.createdAt)
+        : new Date(),
+      updatedAt: isValid(data.lifecycle.updatedAt)
+        ? new Date(data.lifecycle.updatedAt)
+        : new Date(),
     };
     return record;
   }

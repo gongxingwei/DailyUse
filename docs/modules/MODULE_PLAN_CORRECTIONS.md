@@ -38,7 +38,7 @@ export class Goal extends AggregateRoot {
   // ===== To 方法 =====
   public toServerDTO(includeChildren = false): GoalServerDTO;
   public toPersistenceDTO(): GoalPersistenceDTO;
-  
+
   // ===== From 静态方法 =====
   public static fromServerDTO(dto: GoalServerDTO): Goal;
   public static fromPersistenceDTO(dto: GoalPersistenceDTO): Goal;
@@ -52,7 +52,7 @@ export class GoalClient extends AggregateRoot {
   // ===== To 方法 =====
   public toServerDTO(includeChildren = false): GoalServerDTO;
   public toClientDTO(includeChildren = false): GoalClientDTO;
-  
+
   // ===== From 静态方法 =====
   public static fromServerDTO(dto: GoalServerDTO): GoalClient;
   public static fromClientDTO(dto: GoalClientDTO): GoalClient;
@@ -73,15 +73,16 @@ export class GoalClient extends AggregateRoot {
 // Contracts 层
 export interface GoalPersistenceDTO {
   uuid: string;
-  account_uuid: string;  // 数据库使用 snake_case
+  account_uuid: string; // 数据库使用 snake_case
   title: string;
   // ... 其他字段
-  created_at: number;    // 数据库字段名
+  created_at: number; // 数据库字段名
   updated_at: number;
 }
 ```
 
 **注意**:
+
 - PersistenceDTO 使用 `snake_case` 字段名（数据库规范）
 - 日期字段为 `number` 类型（timestamp）
 - JSON 字段需要序列化为 `string`
@@ -93,27 +94,30 @@ export interface GoalPersistenceDTO {
 **问题**: Reminder 模块包含 `Archived` 归档状态，应统一为逻辑删除
 
 **修正前**:
+
 ```typescript
 export enum ReminderTemplateStatus {
   Draft = 'draft',
   Active = 'active',
   Paused = 'paused',
-  Archived = 'archived',  // ❌ 应该删除
+  Archived = 'archived', // ❌ 应该删除
   Deleted = 'deleted',
 }
 ```
 
 **修正后**:
+
 ```typescript
 export enum ReminderTemplateStatus {
   Draft = 'draft',
   Active = 'active',
   Paused = 'paused',
-  Deleted = 'deleted',     // ✅ 逻辑删除
+  Deleted = 'deleted', // ✅ 逻辑删除
 }
 ```
 
 **生命周期变更**:
+
 ```
 修正前: draft → active ⇄ paused → archived → deleted
 修正后: draft → active ⇄ paused → deleted
@@ -129,27 +133,27 @@ export enum ReminderTemplateStatus {
 
 ```typescript
 export class Goal extends AggregateRoot {
-  private _status: GoalStatus;  // 包含 Deleted 状态
+  private _status: GoalStatus; // 包含 Deleted 状态
   private _deletedAt: Date | null;
-  
+
   // 逻辑删除方法
   public softDelete(): void {
     this._status = GoalStatus.Deleted;
     this._deletedAt = new Date();
     this.markAsModified();
-    
+
     this.addDomainEvent({
       eventType: 'GoalDeleted',
       // ...
     });
   }
-  
+
   // 恢复方法
   public restore(): void {
     if (this._status !== GoalStatus.Deleted) {
       throw new Error('Only deleted goals can be restored');
     }
-    this._status = GoalStatus.Active;  // 或其他合适的状态
+    this._status = GoalStatus.Active; // 或其他合适的状态
     this._deletedAt = null;
     this.markAsModified();
   }
@@ -162,16 +166,16 @@ export class Goal extends AggregateRoot {
 export interface IGoalRepository {
   // 基本方法返回包含已删除的
   findByUuid(uuid: string): Promise<Goal | null>;
-  
+
   // 软删除
   softDelete(uuid: string): Promise<void>;
-  
+
   // 恢复
   restore(uuid: string): Promise<void>;
-  
+
   // 物理删除（谨慎使用）
   hardDelete(uuid: string): Promise<void>;
-  
+
   // 查询时默认过滤已删除
   findByAccountUuid(accountUuid: string, includeDeleted?: boolean): Promise<Goal[]>;
 }
@@ -198,17 +202,17 @@ export class KeyResult extends Entity {
       // ... 其他字段
     };
   }
-  
+
   public toPersistenceDTO(): KeyResultPersistenceDTO {
     return {
       id: this._id,
-      goal_uuid: this._goalUuid,  // snake_case
+      goal_uuid: this._goalUuid, // snake_case
       title: this._title,
       // ... 其他字段
       created_at: this._createdAt.getTime(),
     };
   }
-  
+
   // ===== From 静态方法 =====
   public static fromServerDTO(dto: KeyResultServerDTO): KeyResult {
     return new KeyResult({
@@ -217,7 +221,7 @@ export class KeyResult extends Entity {
       // ...
     });
   }
-  
+
   public static fromPersistenceDTO(dto: KeyResultPersistenceDTO): KeyResult {
     return new KeyResult({
       id: dto.id,
@@ -236,7 +240,7 @@ export class KeyResultClient extends Entity {
   public toServerDTO(): KeyResultServerDTO {
     // 同 Server 层
   }
-  
+
   public toClientDTO(): KeyResultClientDTO {
     return {
       id: this._id,
@@ -247,14 +251,14 @@ export class KeyResultClient extends Entity {
       isOverdue: this.isOverdue(),
     };
   }
-  
+
   // ===== From 静态方法 =====
   public static fromServerDTO(dto: KeyResultServerDTO): KeyResultClient {
     return new KeyResultClient({
       // ...
     });
   }
-  
+
   public static fromClientDTO(dto: KeyResultClientDTO): KeyResultClient {
     return new KeyResultClient({
       // ...
@@ -270,8 +274,11 @@ export class KeyResultClient extends Entity {
 每个模块规划文档的第 9 章需要补充以下小节：
 
 #### 9.1 枚举 ✅ (已有)
+
 #### 9.2 Server DTO ✅ (已有)
+
 #### 9.3 Client DTO ✅ (已有，需重命名)
+
 #### 9.4 **Persistence DTO** ❌ (需新增)
 
 ```typescript
@@ -281,18 +288,18 @@ export interface GoalPersistenceDTO {
   account_uuid: string;
   title: string;
   description: string | null;
-  
+
   start_date: number | null;
   end_date: number | null;
-  reminder_days: string;  // JSON.stringify(number[])
-  
+  reminder_days: string; // JSON.stringify(number[])
+
   importance: string;
   urgency: string;
-  tags: string;           // JSON.stringify(string[])
-  custom_fields: string;  // JSON.stringify(Record<string, any>)
-  
+  tags: string; // JSON.stringify(string[])
+  custom_fields: string; // JSON.stringify(Record<string, any>)
+
   folder_uuid: string | null;
-  
+
   status: string;
   created_at: number;
   updated_at: number;
@@ -307,24 +314,25 @@ export interface KeyResultPersistenceDTO {
   goal_uuid: string;
   title: string;
   description: string | null;
-  
+
   target_value: number;
   current_value: number;
   unit: string;
   value_type: string;
-  
+
   start_date: number | null;
   target_date: number | null;
-  
+
   is_completed: boolean;
   completed_at: number | null;
-  
+
   created_at: number;
   updated_at: number;
 }
 ```
 
 #### 9.5 API Request/Response DTO ✅ (已有)
+
 #### 9.6 创建参数类型 ✅ (已有)
 
 ---
@@ -412,12 +420,14 @@ Remove-Item -Recurse -Force apps/web/src/modules/task
 ```
 
 **为什么要删除**:
+
 1. ✅ 这是早期项目，不需要向后兼容
 2. ✅ 避免新旧代码混淆
 3. ✅ 强制按照新规划从零实现
 4. ✅ 保持代码库整洁
 
 **保留**:
+
 - ✅ Repository 模块（作为参考）
 - ✅ Schedule 模块（已完成的架构）
 - ✅ 配置文件和工具函数
@@ -455,4 +465,3 @@ Remove-Item -Recurse -Force apps/web/src/modules/task
 **修正版本**: v1.1  
 **修正日期**: 2025-10-13  
 **修正人**: GitHub Copilot
-

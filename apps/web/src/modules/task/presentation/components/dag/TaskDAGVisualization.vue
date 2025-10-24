@@ -5,7 +5,13 @@
         <div class="d-flex align-center gap-2">
           <v-icon color="primary">mdi-graph-outline</v-icon>
           <span class="text-h6">任务依赖关系图</span>
-          <v-chip v-if="hasCriticalPath" color="error" size="small" variant="flat" data-testid="critical-path-chip">
+          <v-chip
+            v-if="hasCriticalPath"
+            color="error"
+            size="small"
+            variant="flat"
+            data-testid="critical-path-chip"
+          >
             关键路径: {{ criticalPathDuration }}分钟
           </v-chip>
         </div>
@@ -63,7 +69,12 @@
       </v-card-title>
 
       <v-card-text>
-        <div ref="containerRef" class="dag-container" :class="{ compact }" data-testid="dag-container">
+        <div
+          ref="containerRef"
+          class="dag-container"
+          :class="{ compact }"
+          data-testid="dag-container"
+        >
           <v-chart
             ref="chartRef"
             class="chart"
@@ -120,11 +131,7 @@ import { useResizeObserver } from '@vueuse/core';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
 import { GraphChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-} from 'echarts/components';
+import { TitleComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
 import { useEChartsTheme, getEChartsThemeColors } from '@/shared/composables/useEChartsTheme';
@@ -132,7 +139,10 @@ import { useEChartsTheme, getEChartsThemeColors } from '@/shared/composables/use
 import { TaskContracts } from '@dailyuse/contracts';
 import type { TaskForDAG } from '@/modules/task/types/task-dag.types';
 import { taskDependencyGraphService } from '@/modules/task/application/services/TaskDependencyGraphService';
-import type { GraphData, CriticalPathResult } from '@/modules/task/application/services/TaskDependencyGraphService';
+import type {
+  GraphData,
+  CriticalPathResult,
+} from '@/modules/task/application/services/TaskDependencyGraphService';
 import ExportDialog from '@/modules/goal/presentation/components/dag/ExportDialog.vue';
 import type { ExportOptions } from '@/modules/goal/application/services/DAGExportService';
 import { dagExportService } from '@/modules/goal/application/services/DAGExportService';
@@ -142,13 +152,7 @@ type TaskClientDTO = TaskForDAG;
 type TaskDependencyClientDTO = TaskContracts.TaskDependencyClientDTO;
 
 // 注册 ECharts 组件
-use([
-  GraphChart,
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  CanvasRenderer,
-]);
+use([GraphChart, TitleComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
 
 // Props
 interface Props {
@@ -204,20 +208,14 @@ const dependencyTypeLegend = [
 
 // Computed
 const graphData = computed<GraphData>(() => {
-  return taskDependencyGraphService.transformToGraphData(
-    props.tasks,
-    props.dependencies
-  );
+  return taskDependencyGraphService.transformToGraphData(props.tasks, props.dependencies);
 });
 
 const criticalPath = computed<CriticalPathResult>(() => {
   if (!showCriticalPath.value) {
     return { path: [], duration: 0, edges: [] };
   }
-  return taskDependencyGraphService.calculateCriticalPath(
-    props.tasks,
-    props.dependencies
-  );
+  return taskDependencyGraphService.calculateCriticalPath(props.tasks, props.dependencies);
 });
 
 const hasCriticalPath = computed(() => {
@@ -233,7 +231,7 @@ const criticalPathDuration = computed(() => {
 
 const displayGraphData = computed<GraphData>(() => {
   let data = { ...graphData.value };
-  
+
   if (showCriticalPath.value && hasCriticalPath.value) {
     data = taskDependencyGraphService.highlightCriticalPath(data, criticalPath.value);
   }
@@ -242,10 +240,8 @@ const displayGraphData = computed<GraphData>(() => {
   if (layoutType.value === 'force') {
     const savedPositions = loadLayout();
     if (savedPositions && savedPositions.length > 0) {
-      const positionMap = new Map(
-        savedPositions.map(p => [p.id, { x: p.x, y: p.y }])
-      );
-      data.nodes.forEach(node => {
+      const positionMap = new Map(savedPositions.map((p) => [p.id, { x: p.x, y: p.y }]));
+      data.nodes.forEach((node) => {
         const pos = positionMap.get(node.id);
         if (pos) {
           node.x = pos.x;
@@ -276,7 +272,7 @@ const dagOption = computed<EChartsOption>(() => {
             MEDIUM: '#FAAD14',
             LOW: '#52C41A',
           };
-          
+
           let html = `
             <div style="padding: 8px;">
               <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">
@@ -322,11 +318,15 @@ const dagOption = computed<EChartsOption>(() => {
               <div style="margin-top: 8px;">
                 <span style="color: #666;">标签:</span>
                 <div style="margin-top: 4px;">
-                  ${task.tags.map((tag: string) => `
+                  ${task.tags
+                    .map(
+                      (tag: string) => `
                     <span style="display: inline-block; background: #f0f0f0; padding: 2px 8px; border-radius: 4px; margin-right: 4px; margin-top: 4px; font-size: 12px;">
                       ${tag}
                     </span>
-                  `).join('')}
+                  `,
+                    )
+                    .join('')}
                 </div>
               </div>
             `;
@@ -350,7 +350,7 @@ const dagOption = computed<EChartsOption>(() => {
             FF: '完成-完成',
             SF: '开始-完成',
           };
-          
+
           let html = `
             <div style="padding: 8px;">
               <div style="font-weight: bold; margin-bottom: 4px;">
@@ -373,7 +373,7 @@ const dagOption = computed<EChartsOption>(() => {
       },
     },
     legend: {
-      data: categories.map(c => c.name),
+      data: categories.map((c) => c.name),
       bottom: 10,
       show: !props.compact,
     },
@@ -426,11 +426,11 @@ const dagOption = computed<EChartsOption>(() => {
 // Methods
 const calculateHierarchicalLayout = () => {
   const { nodes, edges } = displayGraphData.value;
-  
+
   // 拓扑排序计算层级
   const { sorted, hasCycle } = taskDependencyGraphService.topologicalSort(
     props.tasks,
-    props.dependencies
+    props.dependencies,
   );
 
   if (hasCycle) {
@@ -441,16 +441,16 @@ const calculateHierarchicalLayout = () => {
   // 计算每个节点的层级
   const levels = new Map<string, number>();
   const inDegree = new Map<string, number>();
-  
+
   // 初始化入度
-  props.tasks.forEach(task => inDegree.set(task.uuid, 0));
-  props.dependencies.forEach(dep => {
+  props.tasks.forEach((task) => inDegree.set(task.uuid, 0));
+  props.dependencies.forEach((dep) => {
     inDegree.set(dep.successorTaskUuid, (inDegree.get(dep.successorTaskUuid) || 0) + 1);
   });
 
   // BFS 计算层级
   const queue: Array<{ uuid: string; level: number }> = [];
-  props.tasks.forEach(task => {
+  props.tasks.forEach((task) => {
     if (inDegree.get(task.uuid) === 0) {
       queue.push({ uuid: task.uuid, level: 0 });
       levels.set(task.uuid, 0);
@@ -458,8 +458,8 @@ const calculateHierarchicalLayout = () => {
   });
 
   const adjacencyList = new Map<string, string[]>();
-  props.tasks.forEach(task => adjacencyList.set(task.uuid, []));
-  props.dependencies.forEach(dep => {
+  props.tasks.forEach((task) => adjacencyList.set(task.uuid, []));
+  props.dependencies.forEach((dep) => {
     const successors = adjacencyList.get(dep.predecessorTaskUuid) || [];
     successors.push(dep.successorTaskUuid);
     adjacencyList.set(dep.predecessorTaskUuid, successors);
@@ -468,16 +468,16 @@ const calculateHierarchicalLayout = () => {
   while (queue.length > 0) {
     const { uuid, level } = queue.shift()!;
     const successors = adjacencyList.get(uuid) || [];
-    
-    successors.forEach(successor => {
+
+    successors.forEach((successor) => {
       const currentLevel = levels.get(successor) || 0;
       levels.set(successor, Math.max(currentLevel, level + 1));
-      
+
       const newInDegree = (inDegree.get(successor) || 0) - 1;
       inDegree.set(successor, newInDegree);
-      
+
       if (newInDegree === 0) {
-        queue.push({ uuid: successor, level: (levels.get(successor) || 0) });
+        queue.push({ uuid: successor, level: levels.get(successor) || 0 });
       }
     });
   }
@@ -496,7 +496,7 @@ const calculateHierarchicalLayout = () => {
   const maxLevel = Math.max(...Array.from(levels.values()));
   const levelHeight = height / (maxLevel + 2);
 
-  return nodes.map(node => {
+  return nodes.map((node) => {
     const level = levels.get(node.id) || 0;
     const nodesInLevel = levelNodes.get(level) || [];
     const indexInLevel = nodesInLevel.indexOf(node.id);
@@ -516,7 +516,7 @@ const toggleCriticalPath = () => {
 
 const handleNodeClick = (params: any) => {
   if (params.dataType === 'node') {
-    const task = props.tasks.find(t => t.uuid === params.data.id);
+    const task = props.tasks.find((t) => t.uuid === params.data.id);
     if (task) {
       emit('node-click', task);
     }
@@ -547,7 +547,7 @@ const resetLayout = () => {
   try {
     localStorage.removeItem('task-dag-layout');
     hasCustomLayout.value = false;
-    
+
     // 强制重新渲染
     if (chartRef.value) {
       nextTick(() => {
@@ -585,14 +585,11 @@ const handleExport = async (options: ExportOptions) => {
         break;
     }
 
-    const filename = dagExportService.generateFilename(
-      'task-dag',
-      options.format
-    );
+    const filename = dagExportService.generateFilename('task-dag', options.format);
     dagExportService.downloadBlob(blob, filename);
 
     exportDialog.value?.close();
-    
+
     console.log(`Successfully exported ${options.format.toUpperCase()}: ${filename}`);
   } catch (error) {
     console.error('Export failed:', error);
@@ -605,7 +602,7 @@ watch(chartRef, (chart) => {
   if (chart && layoutType.value === 'force') {
     const instance = chart.chart;
     if (!instance) return;
-    
+
     instance.on('graphRoam', (params: any) => {
       if (params.type === 'graphRoam') {
         setTimeout(() => {
@@ -628,10 +625,10 @@ watch(chartRef, (chart) => {
           if (series) {
             const zoom = series.zoom || 1;
             const center = series.center || [0, 0];
-            
+
             currentZoom.value = zoom;
             currentCenter.value = center as [number, number];
-            
+
             emit('viewport-change', {
               zoom,
               center: center as [number, number],
@@ -656,10 +653,10 @@ watch(layoutType, (newType) => {
 useResizeObserver(containerRef, (entries) => {
   const entry = entries[0];
   const { width, height } = entry.contentRect;
-  
+
   if (width > 0 && height > 0) {
     containerSize.value = { width, height };
-    
+
     if (layoutType.value === 'hierarchical') {
       nextTick(() => {
         if (chartRef.value) {
@@ -679,16 +676,21 @@ const updateViewport = (viewport: { zoom: number; center: [number, number] }) =>
   try {
     const instance = chartRef.value.chart;
     if (!instance) return;
-    
+
     const currentOption = instance.getOption() as any;
-    
-    instance.setOption({
-      series: [{
-        ...currentOption.series[0],
-        zoom: viewport.zoom,
-        center: viewport.center,
-      }],
-    }, { notMerge: false, lazyUpdate: false });
+
+    instance.setOption(
+      {
+        series: [
+          {
+            ...currentOption.series[0],
+            zoom: viewport.zoom,
+            center: viewport.center,
+          },
+        ],
+      },
+      { notMerge: false, lazyUpdate: false },
+    );
 
     currentZoom.value = viewport.zoom;
     currentCenter.value = viewport.center;

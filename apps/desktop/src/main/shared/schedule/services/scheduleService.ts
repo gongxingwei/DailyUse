@@ -1,7 +1,5 @@
-import nodeSchedule from "node-schedule";
-import { BrowserWindow } from "electron";
-
-
+import nodeSchedule from 'node-schedule';
+import { BrowserWindow } from 'electron';
 
 export interface ScheduleTask {
   type: string;
@@ -37,10 +35,10 @@ export class ScheduleService {
   }
 
   private constructor() {}
-  
+
   private getValidWindow(): BrowserWindow | null {
     const windows = BrowserWindow.getAllWindows();
-    return windows.find(win => !win.isDestroyed()) || null;
+    return windows.find((win) => !win.isDestroyed()) || null;
   }
 
   /**
@@ -68,27 +66,27 @@ export class ScheduleService {
       } else {
         return {
           success: false,
-          message: "必须提供 cron 表达式或具体时间"
+          message: '必须提供 cron 表达式或具体时间',
         };
       }
 
       if (!job) {
         return {
           success: false,
-          message: "调度任务创建失败"
+          message: '调度任务创建失败',
         };
       }
 
       this.scheduleJobs.set(options.uuid, job);
       return {
         success: true,
-        message: `调度任务 ${options.uuid} 创建成功`
+        message: `调度任务 ${options.uuid} 创建成功`,
       };
     } catch (error) {
       console.error('Failed to create schedule:', error);
       return {
         success: false,
-        message: `调度任务创建失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message: `调度任务创建失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -104,17 +102,17 @@ export class ScheduleService {
         this.scheduleJobs.delete(uuid);
         return {
           success: true,
-          message: `调度任务 ${uuid} 已取消`
+          message: `调度任务 ${uuid} 已取消`,
         };
       }
       return {
         success: false,
-        message: `调度任务 ${uuid} 不存在`
+        message: `调度任务 ${uuid} 不存在`,
       };
     } catch (error) {
       return {
         success: false,
-        message: `取消调度任务失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message: `取消调度任务失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -149,7 +147,7 @@ export class ScheduleService {
 
     return {
       exists: true,
-      nextInvocation: job.nextInvocation()
+      nextInvocation: job.nextInvocation(),
     };
   }
 
@@ -162,7 +160,7 @@ export class ScheduleService {
       try {
         win.webContents.send('schedule-triggered', {
           uuid,
-          task
+          task,
         });
       } catch (error) {
         console.error('Failed to send schedule-triggered event:', error);

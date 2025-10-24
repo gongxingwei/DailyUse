@@ -30,7 +30,7 @@ Scenario: 选择时间点进行对比
   And 每行一个 KeyResult
   And 每列一个时间点的权重
   And 高亮权重增加（绿色）和减少（红色）
-  
+
 Scenario: 显示权重变化趋势
   When 对比多个时间点
   Then 每个 KR 行应显示趋势指示器

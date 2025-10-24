@@ -9,7 +9,7 @@
 ```
 认证模块 (Authentication)
     ↓ 发布事件
-事件总线 (EventBus) 
+事件总线 (EventBus)
     ↓ 传递事件
 账户模块 (Account)
     ↓ 调用API
@@ -19,11 +19,12 @@
 ## 实现流程
 
 ### 1. 用户登录成功
+
 ```typescript
 // apps/web/src/modules/authentication/application/services/AuthApplicationService.ts
 async login(request: AuthByPasswordForm) {
   // ... 登录逻辑
-  
+
   // 发布用户登录成功事件
   publishUserLoggedInEvent({
     accountUuid: response.data.accountUuid,
@@ -38,6 +39,7 @@ async login(request: AuthByPasswordForm) {
 ```
 
 ### 2. 账户模块监听事件
+
 ```typescript
 // apps/web/src/modules/account/application/events/accountEventHandlers.ts
 export class AccountEventHandlers {
@@ -48,13 +50,13 @@ export class AccountEventHandlers {
 
   private static async handleUserLoggedIn(payload: UserLoggedInEventPayload): Promise<void> {
     const accountStore = useAccountStore();
-    
+
     // 1. 设置 accountUuid
     accountStore.setAccountUuid(payload.accountUuid);
-    
+
     // 2. 通过 API 获取完整账户信息
     const accountInfo = await AccountApiService.getAccountById(payload.accountUuid);
-    
+
     // 3. 保存到 store
     accountStore.setAccount(accountInfo);
   }
@@ -62,6 +64,7 @@ export class AccountEventHandlers {
 ```
 
 ### 3. 应用启动时初始化
+
 ```typescript
 // apps/web/src/main.ts
 import { AppInitializationManager } from './shared/initialization/AppInitializationManager';
@@ -75,45 +78,52 @@ AppInitializationManager.initializeApp().then(() => {
 ## 关键文件说明
 
 ### 事件定义
+
 - **`apps/web/src/modules/authentication/application/events/authEvents.ts`**: 定义认证相关事件类型和发布函数
 
 ### 事件处理器
+
 - **`apps/web/src/modules/account/application/events/accountEventHandlers.ts`**: 账户模块事件处理器，监听登录事件并获取账户信息
 
 ### 初始化管理
+
 - **`apps/web/src/shared/initialization/AppInitializationManager.ts`**: 应用初始化管理器，负责设置事件监听器
 
 ### 状态管理
+
 - **`apps/web/src/modules/account/presentation/stores/useAccountStore.ts`**: 账户状态管理，保存账户信息
 
 ## 事件类型
 
 ### AUTH_EVENTS
+
 ```typescript
 export const AUTH_EVENTS = {
-  USER_LOGGED_IN: 'auth:user-logged-in',        // 用户登录成功
-  USER_LOGGED_OUT: 'auth:user-logged-out',      // 用户登出
-  AUTH_STATE_CHANGED: 'auth:state-changed',     // 认证状态变更
-  TOKEN_REFRESHED: 'auth:token-refreshed',      // Token刷新
+  USER_LOGGED_IN: 'auth:user-logged-in', // 用户登录成功
+  USER_LOGGED_OUT: 'auth:user-logged-out', // 用户登出
+  AUTH_STATE_CHANGED: 'auth:state-changed', // 认证状态变更
+  TOKEN_REFRESHED: 'auth:token-refreshed', // Token刷新
 } as const;
 ```
 
 ### 事件负载类型
+
 ```typescript
 export interface UserLoggedInEventPayload {
-  accountUuid: string;    // 账户UUID
-  username: string;       // 用户名
-  sessionUuid: string;    // 会话UUID
-  accessToken: string;    // 访问令牌
-  refreshToken?: string;  // 刷新令牌
-  expiresIn?: number;     // 过期时间
-  loginTime: Date;        // 登录时间
+  accountUuid: string; // 账户UUID
+  username: string; // 用户名
+  sessionUuid: string; // 会话UUID
+  accessToken: string; // 访问令牌
+  refreshToken?: string; // 刷新令牌
+  expiresIn?: number; // 过期时间
+  loginTime: Date; // 登录时间
 }
 ```
 
 ## 使用方法
 
 ### 1. 发布事件
+
 ```typescript
 import { publishUserLoggedInEvent } from '../modules/authentication';
 
@@ -127,6 +137,7 @@ publishUserLoggedInEvent({
 ```
 
 ### 2. 监听事件
+
 ```typescript
 import { eventBus, AUTH_EVENTS } from '@dailyuse/utils';
 
@@ -137,6 +148,7 @@ eventBus.on(AUTH_EVENTS.USER_LOGGED_IN, async (payload) => {
 ```
 
 ### 3. 双向通信
+
 ```typescript
 // 注册处理器
 eventBus.handle('get-user-profile', async (payload) => {
@@ -150,6 +162,7 @@ const profile = await eventBus.invoke('get-user-profile', { userId: '123' });
 ## 测试
 
 运行事件系统测试：
+
 ```typescript
 import { EventSystemTester } from './shared/testing/EventSystemTester';
 

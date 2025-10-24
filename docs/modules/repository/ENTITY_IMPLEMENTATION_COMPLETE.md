@@ -26,9 +26,11 @@
 ## 📁 实现的文件清单
 
 ### 1. **ResourceEntity.ts** (465 行)
+
 **用途**: 资源实体，管理仓库中的文件/文档
 
 **核心特性**:
+
 - 私有字段 + 公共 getter（封装）
 - 子实体集合:
   - `_references: ResourceReferenceEntity[]` - 资源引用
@@ -63,6 +65,7 @@
   - `toPersistenceDTO()` - 转换为持久化格式
 
 **依赖**:
+
 - `ResourceReferenceEntity` - 引用实体
 - `LinkedContentEntity` - 链接内容实体
 - `@dailyuse/contracts` - 合约定义
@@ -70,9 +73,11 @@
 ---
 
 ### 2. **ResourceReferenceEntity.ts** (180 行)
+
 **用途**: 资源引用实体，管理资源之间的引用关系
 
 **核心特性**:
+
 - 私有字段 + 公共 getter
 - 属性:
   - `uuid`, `sourceResourceUuid`, `targetResourceUuid`
@@ -94,6 +99,7 @@
   - `toPersistenceDTO()` - 转换为持久化格式
 
 **特点**:
+
 - 轻量级实体（无子实体集合）
 - 清晰的引用关系管理
 - 验证状态追踪
@@ -101,9 +107,11 @@
 ---
 
 ### 3. **LinkedContentEntity.ts** (250 行)
+
 **用途**: 链接内容实体，管理资源的外部链接（URL）
 
 **核心特性**:
+
 - 私有字段 + 公共 getter
 - 属性:
   - `uuid`, `resourceUuid`, `title`, `url`
@@ -129,6 +137,7 @@
   - `toPersistenceDTO()` - 转换为持久化格式
 
 **特点**:
+
 - 外部内容管理
 - 可访问性追踪
 - 缓存生命周期管理
@@ -136,9 +145,11 @@
 ---
 
 ### 4. **RepositoryExplorerEntity.ts** (360 行)
+
 **用途**: 仓库浏览器实体，管理仓库浏览状态和导航
 
 **核心特性**:
+
 - 私有字段 + 公共 getter
 - 属性:
   - `uuid`, `repositoryUuid`, `accountUuid`
@@ -178,6 +189,7 @@
   - `toPersistenceDTO()` - 转换为持久化格式
 
 **特点**:
+
 - 完整的导航系统（前进/后退）
 - 路径管理（固定/最近）
 - 过滤器和视图配置
@@ -192,6 +204,7 @@
 **新增/取消注释的代码**:
 
 1. **导入更新** (第 9-10 行):
+
 ```typescript
 // 从 type-only 改为 concrete import
 import { ResourceEntity } from '../entities/ResourceEntity';
@@ -199,6 +212,7 @@ import { RepositoryExplorerEntity } from '../entities/RepositoryExplorerEntity';
 ```
 
 2. **子实体工厂方法** (取消注释):
+
 ```typescript
 // 第 175-203 行
 public createResource(params: {
@@ -229,6 +243,7 @@ public createExplorer(params: {
 ```
 
 3. **子实体管理方法更新** (添加类型检查):
+
 ```typescript
 // 第 206-280 行
 public addResource(resource: ResourceEntity): void {
@@ -251,11 +266,12 @@ public removeResource(resourceUuid: string): ResourceEntity | null {
 ```
 
 4. **递归子实体创建** (fromServerDTO 中取消注释):
+
 ```typescript
 // 第 450-465 行
 if (dto.resources) {
-  repository._resources = dto.resources.map(resourceDto =>
-    ResourceEntity.fromServerDTO(resourceDto)
+  repository._resources = dto.resources.map((resourceDto) =>
+    ResourceEntity.fromServerDTO(resourceDto),
   );
 }
 
@@ -268,53 +284,59 @@ if (dto.explorer) {
 
 ## 📊 代码统计
 
-| 文件 | 行数 | 状态 | 核心功能 |
-|------|------|------|----------|
-| `RepositoryAggregate.ts` | 510 | ✅ 完成 | 聚合根，管理整个仓库生命周期 |
-| `ResourceEntity.ts` | 465 | ✅ 完成 | 资源实体，子实体管理 |
-| `ResourceReferenceEntity.ts` | 180 | ✅ 完成 | 资源引用实体 |
-| `LinkedContentEntity.ts` | 250 | ✅ 完成 | 链接内容实体 |
-| `RepositoryExplorerEntity.ts` | 360 | ✅ 完成 | 浏览器实体，导航系统 |
-| `RepositoryDomainService.ts` | 250+ | ✅ 完成 | 领域服务，业务编排 |
-| `IRepositoryRepository.ts` | 90 | ✅ 完成 | 仓储接口 |
-| `RepositoryConfig.ts` | 120 | ✅ 完成 | 配置值对象 |
-| `RepositoryStats.ts` | 100 | ✅ 完成 | 统计值对象 |
-| `index.ts` | 50 | ✅ 完成 | 模块导出 |
-| **总计** | **~2,500+** | **✅ 生产就绪** | **完整的领域层实现** |
+| 文件                          | 行数        | 状态            | 核心功能                     |
+| ----------------------------- | ----------- | --------------- | ---------------------------- |
+| `RepositoryAggregate.ts`      | 510         | ✅ 完成         | 聚合根，管理整个仓库生命周期 |
+| `ResourceEntity.ts`           | 465         | ✅ 完成         | 资源实体，子实体管理         |
+| `ResourceReferenceEntity.ts`  | 180         | ✅ 完成         | 资源引用实体                 |
+| `LinkedContentEntity.ts`      | 250         | ✅ 完成         | 链接内容实体                 |
+| `RepositoryExplorerEntity.ts` | 360         | ✅ 完成         | 浏览器实体，导航系统         |
+| `RepositoryDomainService.ts`  | 250+        | ✅ 完成         | 领域服务，业务编排           |
+| `IRepositoryRepository.ts`    | 90          | ✅ 完成         | 仓储接口                     |
+| `RepositoryConfig.ts`         | 120         | ✅ 完成         | 配置值对象                   |
+| `RepositoryStats.ts`          | 100         | ✅ 完成         | 统计值对象                   |
+| `index.ts`                    | 50          | ✅ 完成         | 模块导出                     |
+| **总计**                      | **~2,500+** | **✅ 生产就绪** | **完整的领域层实现**         |
 
 ---
 
 ## 🎨 DDD 模式实现
 
 ### 1. **聚合根模式**
+
 - ✅ 聚合根包含子实体集合（`_resources[]`, `_explorer`）
 - ✅ 只暴露聚合根给外部（不暴露单独的子实体仓储）
 - ✅ 通过聚合根管理子实体的生命周期
 - ✅ 递归加载子实体（`fromServerDTO` 中）
 
 ### 2. **工厂方法模式**
+
 - ✅ `create()` - 创建新实体
 - ✅ `fromServerDTO()` - 从 DTO 反序列化
 - ✅ `fromPersistenceDTO()` - 从持久化层反序列化
 - ✅ 私有构造函数 - 强制使用工厂方法
 
 ### 3. **值对象模式**
+
 - ✅ 不可变（`Object.freeze()`）
 - ✅ `with()` 方法 - 创建修改副本
 - ✅ `equals()` 方法 - 值比较
 - ✅ `toContract()` / `fromContract()` - 转换方法
 
 ### 4. **封装模式**
+
 - ✅ 私有字段（`_xxx`）
 - ✅ 公共 getter（只读访问）
 - ✅ 业务方法修改状态（而不是直接设置器）
 
 ### 5. **类型安全**
+
 - ✅ `instanceof` 检查在所有 `add` 方法中
 - ✅ TypeScript 严格类型
 - ✅ 接口实现（`implements IXxxServer`）
 
 ### 6. **递归转换**
+
 - ✅ `toServerDTO(includeChildren?: boolean)` - 可选的子实体转换
 - ✅ `fromServerDTO()` - 自动递归创建子实体
 - ✅ 懒加载支持（`includeChildren = false`）
@@ -395,6 +417,7 @@ const rehydrated = RepositoryAggregate.fromServerDTO(dto);
 ### TypeScript 编译器缓存问题
 
 **现象**:
+
 ```
 Cannot find module './ResourceReferenceEntity' or its corresponding type declarations.
 Cannot find module './LinkedContentEntity' or its corresponding type declarations.
@@ -403,17 +426,20 @@ Cannot find module '../entities/RepositoryExplorerEntity' or its corresponding t
 ```
 
 **原因**:
+
 - TypeScript LSP 服务器缓存过期
 - 所有文件实际存在且正确导出
 - 单独编译每个文件时无错误
 
 **解决方案**:
+
 1. **VS Code 重新加载窗口**: `Ctrl+Shift+P` → "Reload Window"
 2. **重启 TypeScript 服务器**: `Ctrl+Shift+P` → "TypeScript: Restart TS Server"
 3. **清理 nx 缓存**: `pnpm nx reset`
 4. **重新安装依赖**: `pnpm install`
 
 **验证**:
+
 ```bash
 # 检查文件存在
 ls packages/domain-server/src/repository/entities/
@@ -468,6 +494,7 @@ ls packages/domain-server/src/repository/entities/
 ## 🔜 下一步行动
 
 ### 优先级 1: 修复 TypeScript 缓存（立即）
+
 ```bash
 # 在 VS Code 中执行
 Ctrl+Shift+P → "TypeScript: Restart TS Server"
@@ -476,6 +503,7 @@ Ctrl+Shift+P → "TypeScript: Restart TS Server"
 ### 优先级 2: domain-client 实现（下一个主要任务）
 
 **需要实现的模块**:
+
 1. **Client 聚合根**:
    - `RepositoryClientAggregate` (镜像 server 结构)
    - UI 特定方法（格式化、排序、搜索等）
@@ -498,6 +526,7 @@ Ctrl+Shift+P → "TypeScript: Restart TS Server"
 ### 优先级 3: 完成剩余值对象（低优先级）
 
 **需要实现**:
+
 - `SyncStatus` - 同步状态值对象
 - `GitInfo` - Git 信息值对象
 - `ResourceMetadata` - 资源元数据值对象
@@ -509,6 +538,7 @@ Ctrl+Shift+P → "TypeScript: Restart TS Server"
 ### 优先级 4: 基础设施层（未来）
 
 **需要实现**:
+
 1. **仓储实现**:
    - `RepositoryRepositoryImpl` (实现 `IRepositoryRepository`)
    - 使用 Prisma/TypeORM 等 ORM
@@ -524,6 +554,7 @@ Ctrl+Shift+P → "TypeScript: Restart TS Server"
 ### 优先级 5: 领域事件（未来）
 
 **需要实现**:
+
 1. 取消注释 `RepositoryDomainService` 中的事件发布代码
 2. 实现事件总线
 3. 添加事件处理器
@@ -533,6 +564,7 @@ Ctrl+Shift+P → "TypeScript: Restart TS Server"
 ### 优先级 6: 单元测试（未来）
 
 **需要测试**:
+
 - 所有实体的工厂方法
 - 所有实体的业务方法
 - 子实体管理方法

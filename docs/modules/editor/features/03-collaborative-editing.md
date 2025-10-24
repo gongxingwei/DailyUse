@@ -15,6 +15,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 多人实时编辑
 - ✅ 光标位置显示
 - ✅ 冲突自动解决
@@ -60,16 +61,12 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
 const ydoc = new Y.Doc();
-const provider = new WebsocketProvider(
-  'wss://your-server.com',
-  'document-uuid',
-  ydoc
-);
+const provider = new WebsocketProvider('wss://your-server.com', 'document-uuid', ydoc);
 
 const ytext = ydoc.getText('content');
 
 // 监听远程变更
-ytext.observe(event => {
+ytext.observe((event) => {
   console.log('远程修改:', event.changes);
   updateEditor(event.changes);
 });
@@ -121,4 +118,3 @@ ytext.insert(0, 'Hello ');
 ---
 
 **文档状态**: ✅ Ready
-

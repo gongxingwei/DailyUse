@@ -4,7 +4,7 @@
 **Sprint**: Sprint 3  
 **Story Points**: 3 SP  
 **Priority**: P1  
-**Status**: 📋 Ready  
+**Status**: 📋 Ready
 
 ---
 
@@ -32,11 +32,7 @@
 <template>
   <v-container fluid class="multi-goal-view">
     <v-row>
-      <v-col
-        v-for="goal in selectedGoals"
-        :key="goal.uuid"
-        :cols="12 / selectedGoals.length"
-      >
+      <v-col v-for="goal in selectedGoals" :key="goal.uuid" :cols="12 / selectedGoals.length">
         <goal-dag-visualization
           :goal-id="goal.uuid"
           :sync-viewport="true"
@@ -44,7 +40,7 @@
         />
       </v-col>
     </v-row>
-    
+
     <comparison-stats-panel :goals="selectedGoals" />
   </v-container>
 </template>

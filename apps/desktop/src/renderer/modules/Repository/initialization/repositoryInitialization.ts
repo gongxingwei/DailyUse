@@ -1,6 +1,9 @@
-import { InitializationManager, InitializationPhase, InitializationTask } from '@main/shared/initialization/initializationManager';
+import {
+  InitializationManager,
+  InitializationPhase,
+  InitializationTask,
+} from '@main/shared/initialization/initializationManager';
 import { getRepositoryApplicationService } from '../application/services/repositoryApplicationService';
-
 
 const repositorySyncStatusRask: InitializationTask = {
   name: 'repository-sync-status',
@@ -12,13 +15,12 @@ const repositorySyncStatusRask: InitializationTask = {
     const repositoryService = getRepositoryApplicationService();
     repositoryService.syncAllState();
     console.log('✓ Repository sync status handlers registered');
-  }
+  },
 };
-
 
 export function registerRepositoryInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
   manager.registerTask(repositorySyncStatusRask);
-  
+
   console.log('Repository module initialization tasks registered');
 }

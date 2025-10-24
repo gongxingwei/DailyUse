@@ -14,7 +14,7 @@ export interface WeightStrategy {
 
 /**
  * AI 权重推荐服务（基于规则引擎）
- * 
+ *
  * 职责：
  * - 分析 KeyResult 标题关键词
  * - 生成 3 种权重分配策略
@@ -25,36 +25,86 @@ export class WeightRecommendationService {
    * 高优先级关键词（权重 +20）
    */
   private readonly HIGH_PRIORITY_KEYWORDS = [
-    'critical', 'urgent', 'important', 'key', 'core', 'essential',
-    'critical', 'vital', 'primary', 'main',
-    '关键', '核心', '重要', '紧急', '主要', '首要'
+    'critical',
+    'urgent',
+    'important',
+    'key',
+    'core',
+    'essential',
+    'critical',
+    'vital',
+    'primary',
+    'main',
+    '关键',
+    '核心',
+    '重要',
+    '紧急',
+    '主要',
+    '首要',
   ];
 
   /**
    * 业务价值关键词（权重 +15）
    */
   private readonly BUSINESS_VALUE_KEYWORDS = [
-    'revenue', 'sales', 'customer', 'user', 'profit', 'growth',
-    'market', 'conversion', 'retention',
-    '收入', '营收', '销售', '客户', '用户', '增长', '市场', '转化'
+    'revenue',
+    'sales',
+    'customer',
+    'user',
+    'profit',
+    'growth',
+    'market',
+    'conversion',
+    'retention',
+    '收入',
+    '营收',
+    '销售',
+    '客户',
+    '用户',
+    '增长',
+    '市场',
+    '转化',
   ];
 
   /**
    * 效率提升关键词（权重 +10）
    */
   private readonly EFFICIENCY_KEYWORDS = [
-    'reduce', 'improve', 'optimize', 'automate', 'streamline',
-    'efficiency', 'performance', 'speed',
-    '减少', '改进', '优化', '自动化', '提升', '效率', '性能'
+    'reduce',
+    'improve',
+    'optimize',
+    'automate',
+    'streamline',
+    'efficiency',
+    'performance',
+    'speed',
+    '减少',
+    '改进',
+    '优化',
+    '自动化',
+    '提升',
+    '效率',
+    '性能',
   ];
 
   /**
    * 创新探索关键词（权重 +5）
    */
   private readonly INNOVATION_KEYWORDS = [
-    'new', 'innovation', 'experiment', 'pilot', 'explore',
-    'research', 'prototype', 'poc',
-    '新', '创新', '试验', '探索', '研究', '原型'
+    'new',
+    'innovation',
+    'experiment',
+    'pilot',
+    'explore',
+    'research',
+    'prototype',
+    'poc',
+    '新',
+    '创新',
+    '试验',
+    '探索',
+    '研究',
+    '原型',
   ];
 
   /**
@@ -79,7 +129,7 @@ export class WeightRecommendationService {
    * 计算 KeyResult 优先级分数（基于关键词分析）
    */
   private calculatePriorities(keyResults: KeyResult[]): number[] {
-    return keyResults.map(kr => {
+    return keyResults.map((kr) => {
       let score = 50; // 基础分数
       const title = kr.title.toLowerCase();
 
@@ -111,7 +161,7 @@ export class WeightRecommendationService {
    * 检查文本是否包含关键词
    */
   private containsKeywords(text: string, keywords: string[]): boolean {
-    return keywords.some(keyword => text.includes(keyword.toLowerCase()));
+    return keywords.some((keyword) => text.includes(keyword.toLowerCase()));
   }
 
   /**
@@ -120,7 +170,7 @@ export class WeightRecommendationService {
    */
   private balancedStrategy(count: number): WeightStrategy {
     const baseWeight = Math.floor(100 / count);
-    const remainder = 100 - (baseWeight * count);
+    const remainder = 100 - baseWeight * count;
 
     const weights = Array(count).fill(baseWeight);
     weights[0] += remainder; // 余数加到第一个
@@ -139,18 +189,15 @@ export class WeightRecommendationService {
    * 策略 2: 聚焦策略
    * 适用场景：根据关键词识别核心 KR
    */
-  private focusedStrategy(
-    keyResults: KeyResult[],
-    priorities: number[]
-  ): WeightStrategy {
+  private focusedStrategy(keyResults: KeyResult[], priorities: number[]): WeightStrategy {
     // 按优先级分数分配权重
     const total = priorities.reduce((sum, p) => sum + p, 0);
-    const weights = priorities.map(p => Math.round((p / total) * 100));
+    const weights = priorities.map((p) => Math.round((p / total) * 100));
 
     // 调整确保总和为 100
     const sum = weights.reduce((a, b) => a + b, 0);
     if (sum !== 100) {
-      weights[0] += (100 - sum);
+      weights[0] += 100 - sum;
     }
 
     // 找出最高权重的 KR 索引
@@ -171,10 +218,7 @@ export class WeightRecommendationService {
    * 策略 3: 阶梯策略
    * 适用场景：明确的优先级顺序
    */
-  private steppedStrategy(
-    keyResults: KeyResult[],
-    priorities: number[]
-  ): WeightStrategy {
+  private steppedStrategy(keyResults: KeyResult[], priorities: number[]): WeightStrategy {
     const count = keyResults.length;
 
     // 创建优先级排序映射
@@ -183,14 +227,12 @@ export class WeightRecommendationService {
       .sort((a, b) => b.priority - a.priority);
 
     // 使用等差数列分配权重：第一名最多，逐级递减
-    const step = Math.floor(100 / (count * (count + 1) / 2));
-    const tempWeights = priorityIndexes.map((_, i) =>
-      (count - i) * step
-    );
+    const step = Math.floor(100 / ((count * (count + 1)) / 2));
+    const tempWeights = priorityIndexes.map((_, i) => (count - i) * step);
 
     // 调整确保总和为 100
     const sum = tempWeights.reduce((a, b) => a + b, 0);
-    tempWeights[0] += (100 - sum);
+    tempWeights[0] += 100 - sum;
 
     // 映射回原始顺序
     const weights = new Array(count).fill(0);
@@ -199,9 +241,7 @@ export class WeightRecommendationService {
     });
 
     // 找出排名
-    const topRank = priorityIndexes.findIndex(
-      item => item.index === priorityIndexes[0].index
-    );
+    const topRank = priorityIndexes.findIndex((item) => item.index === priorityIndexes[0].index);
 
     return {
       name: 'stepped',
@@ -221,7 +261,8 @@ export class WeightRecommendationService {
     if (priorities.length <= 1) return 50;
 
     const mean = priorities.reduce((a, b) => a + b, 0) / priorities.length;
-    const variance = priorities.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / priorities.length;
+    const variance =
+      priorities.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / priorities.length;
 
     // 方差映射到置信度 (0-100)
     // 方差 0 → 低置信度 50
@@ -244,7 +285,7 @@ export class WeightRecommendationService {
       };
     }
 
-    if (weights.some(w => w < 0 || w > 100)) {
+    if (weights.some((w) => w < 0 || w > 100)) {
       return {
         valid: false,
         error: '每个权重必须在 0-100% 之间',
@@ -258,10 +299,7 @@ export class WeightRecommendationService {
    * 应用策略到 KeyResult 数组（直接修改对象，不返回新数组）
    * 注意：此方法会直接修改传入的 keyResults 对象
    */
-  applyStrategy(
-    keyResults: any[],
-    strategy: WeightStrategy
-  ): void {
+  applyStrategy(keyResults: any[], strategy: WeightStrategy): void {
     keyResults.forEach((kr, index) => {
       if (strategy.weights[index] !== undefined) {
         kr.weight = strategy.weights[index];

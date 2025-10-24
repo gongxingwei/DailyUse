@@ -11,12 +11,14 @@ DailyUse uses **Neon PostgreSQL** as the primary database for development and pr
 **Sign up**: [https://neon.tech](https://neon.tech)
 
 **Free Tier Limits**:
+
 - 0.5 GB storage
 - 10 GB data transfer/month
 - Unlimited projects
 - Autosuspend after 5 minutes of inactivity
 
 **Connection String Format**:
+
 ```
 postgresql://USER:PASSWORD@HOST.neon.tech/DATABASE?sslmode=require
 ```
@@ -24,11 +26,13 @@ postgresql://USER:PASSWORD@HOST.neon.tech/DATABASE?sslmode=require
 ### 2. Environment Configuration
 
 **Root `.env` file** (`/dailyuse/.env`):
+
 ```env
 DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@YOUR_HOST.neon.tech/dailyuse?sslmode=require"
 ```
 
 **API `.env` file** (`/apps/api/.env`):
+
 ```env
 PORT=3888
 DB_PROVIDER="postgresql"
@@ -43,6 +47,7 @@ REFRESH_TOKEN_SECRET=dev-refresh-secret
 ```
 
 ⚠️ **Important**: Both files need `DATABASE_URL` because:
+
 - Root `.env`: Used by Prisma CLI commands from root
 - `apps/api/.env`: Used by the API server at runtime
 
@@ -77,6 +82,7 @@ pnpm prisma:reset
 **Cause**: Missing `.env` file in root directory
 
 **Solution**:
+
 ```bash
 # Create root .env file
 cp apps/api/.env .env
@@ -86,7 +92,8 @@ cp apps/api/.env .env
 
 **Cause**: Trying to run Prisma from `apps/api` directory
 
-**Solution**: 
+**Solution**:
+
 ```bash
 # ❌ Wrong
 cd apps/api && pnpm prisma db push
@@ -98,11 +105,13 @@ pnpm db:push  # from root
 ### Issue 3: Connection timeout to Neon
 
 **Causes**:
+
 1. Network firewall blocking PostgreSQL port (5432)
 2. Invalid connection string
 3. Database suspended (Neon auto-suspends after 5 min)
 
 **Solutions**:
+
 ```bash
 # Test connection with psql
 psql 'postgresql://USER:PASSWORD@HOST.neon.tech/DATABASE?sslmode=require'
@@ -135,19 +144,22 @@ DATABASE_URL="postgresql://admin:password@localhost:5432/dailyuse?schema=public"
 
 **Windows**: [PostgreSQL Installer](https://www.postgresql.org/download/windows/)
 
-**macOS**: 
+**macOS**:
+
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
 ```
 
 **Linux**:
+
 ```bash
 sudo apt install postgresql postgresql-contrib
 sudo systemctl start postgresql
 ```
 
 **Create Database**:
+
 ```sql
 CREATE DATABASE dailyuse;
 CREATE USER admin WITH PASSWORD 'password';
@@ -159,12 +171,14 @@ GRANT ALL PRIVILEGES ON DATABASE dailyuse TO admin;
 Current schema includes:
 
 ### Core Entities
+
 - **User**: Authentication and profile
 - **Goal**: OKR-style goals with time periods
 - **KeyResult**: Measurable outcomes for goals
 - **KeyResultWeightSnapshot**: Historical weight changes (Sprint 2a)
 
 ### Relationships
+
 ```
 User (1) ──< (N) Goal
 Goal (1) ──< (N) KeyResult
@@ -174,12 +188,14 @@ KeyResult (1) ──< (N) KeyResultWeightSnapshot
 ## Migrations
 
 **Development**: Use `db:push` for rapid iteration
+
 ```bash
 # Push schema changes without creating migration file
 pnpm db:push
 ```
 
 **Production**: Use `prisma:migrate` for tracked changes
+
 ```bash
 # Create migration
 pnpm prisma:migrate
@@ -215,11 +231,13 @@ http://localhost:5555
 Neon provides two endpoints:
 
 **Direct Connection** (for migrations):
+
 ```
 ep-dry-bar-a18hfly2.ap-southeast-1.aws.neon.tech
 ```
 
 **Pooled Connection** (for app, recommended):
+
 ```
 ep-dry-bar-a18hfly2-pooler.ap-southeast-1.aws.neon.tech
 ```
@@ -249,6 +267,7 @@ DATABASE_URL="postgresql://...@branch-name.neon.tech/..."
 **Neon Dashboard**: [https://console.neon.tech](https://console.neon.tech)
 
 Metrics available:
+
 - Storage usage
 - Data transfer
 - Active connections
@@ -260,6 +279,7 @@ Metrics available:
 Neon automatically creates backups every 24 hours (retained for 7 days on free tier).
 
 **Manual backup**:
+
 ```bash
 # Export schema and data
 pg_dump 'postgresql://USER:PASSWORD@HOST.neon.tech/DATABASE' > backup.sql

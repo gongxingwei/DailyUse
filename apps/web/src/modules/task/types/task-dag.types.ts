@@ -46,14 +46,16 @@ export function taskTemplateToDAG(template: TaskContracts.TaskTemplateClientDTO)
  */
 export function taskInstanceToDAG(
   instance: TaskContracts.TaskInstanceClientDTO,
-  template?: TaskContracts.TaskTemplateClientDTO
+  template?: TaskContracts.TaskTemplateClientDTO,
 ): TaskForDAG {
   return {
     uuid: instance.uuid,
     title: template?.title || `Task ${instance.uuid.slice(0, 8)}`,
     description: template?.description,
     status: instance.status,
-    priority: template ? mapImportanceUrgencyToPriority(template.importance, template.urgency) : 'MEDIUM',
+    priority: template
+      ? mapImportanceUrgencyToPriority(template.importance, template.urgency)
+      : 'MEDIUM',
     importance: template?.importance,
     urgency: template?.urgency,
     estimatedMinutes: extractEstimatedMinutes(instance.timeConfig),
@@ -68,17 +70,17 @@ export function taskInstanceToDAG(
  */
 function mapImportanceUrgencyToPriority(
   importance: string,
-  urgency: string
+  urgency: string,
 ): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
   // 紧急且重要 -> CRITICAL
   if (importance === 'HIGH' && urgency === 'HIGH') return 'CRITICAL';
-  
+
   // 重要或紧急 -> HIGH
   if (importance === 'HIGH' || urgency === 'HIGH') return 'HIGH';
-  
+
   // 中等 -> MEDIUM
   if (importance === 'MEDIUM' || urgency === 'MEDIUM') return 'MEDIUM';
-  
+
   // 其他 -> LOW
   return 'LOW';
 }
@@ -88,13 +90,13 @@ function mapImportanceUrgencyToPriority(
  */
 function extractEstimatedMinutes(timeConfig: any): number | undefined {
   if (!timeConfig) return undefined;
-  
+
   // 根据实际的 timeConfig 结构提取
   // TODO: 根据实际的 TaskTimeConfig 结构调整
   if (typeof timeConfig === 'object' && timeConfig.estimatedMinutes) {
     return timeConfig.estimatedMinutes;
   }
-  
+
   // 默认估算：如果有具体时间配置，估算为 30 分钟
   return 30;
 }

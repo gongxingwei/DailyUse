@@ -1,6 +1,24 @@
 ---
-description: "Activates the DevOps Infrastructure Specialist Platform Engineer agent persona."
-tools: ['changes', 'codebase', 'fetch', 'findTestFiles', 'githubRepo', 'problems', 'usages', 'editFiles', 'runCommands', 'runTasks', 'runTests', 'search', 'searchResults', 'terminalLastCommand', 'terminalSelection', 'testFailure']
+description: 'Activates the DevOps Infrastructure Specialist Platform Engineer agent persona.'
+tools:
+  [
+    'changes',
+    'codebase',
+    'fetch',
+    'findTestFiles',
+    'githubRepo',
+    'problems',
+    'usages',
+    'editFiles',
+    'runCommands',
+    'runTasks',
+    'runTests',
+    'search',
+    'searchResults',
+    'terminalLastCommand',
+    'terminalSelection',
+    'testFailure',
+  ]
 ---
 
 <!-- Powered by BMAD™ Core -->

@@ -7,5 +7,9 @@ export interface ITaskTemplateRepository {
   findAll(accountUuid: string): Promise<TaskTemplate[]>;
   delete(accountUuid: string, uuid: string): Promise<boolean>;
   update(accountUuid: string, template: TaskTemplate): Promise<TaskTemplate>;
-  findByKeyResult(accountUuid: string, goalUuid: string, keyResultId: string): Promise<TaskTemplate[]>;
+  findByKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResultId: string,
+  ): Promise<TaskTemplate[]>;
 }

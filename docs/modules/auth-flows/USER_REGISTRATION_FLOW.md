@@ -15,6 +15,7 @@
 ### 1.1 业务目标
 
 用户通过提供基本信息（用户名、邮箱、密码）创建新账号，系统需要：
+
 - 验证信息的唯一性和合法性
 - 创建账户主体（Account）
 - 创建认证凭证（AuthCredential）
@@ -52,6 +53,7 @@
 #### Account 模块 (packages/domain-server/account/)
 
 **聚合根**: `Account`
+
 - 属性:
   - `uuid`: 账户唯一标识
   - `username`: 用户名（唯一）
@@ -66,6 +68,7 @@
   - `createdAt`, `updatedAt`, `lastActiveAt`
 
 **领域服务**: `AccountDomainService`
+
 - 职责:
   - 验证用户名/邮箱唯一性
   - 创建 Account 聚合根
@@ -73,6 +76,7 @@
   - 管理账户状态
 
 **仓储接口**: `IAccountRepository`
+
 ```typescript
 interface IAccountRepository {
   save(account: Account): Promise<void>;
@@ -87,6 +91,7 @@ interface IAccountRepository {
 #### Authentication 模块 (packages/domain-server/authentication/)
 
 **聚合根**: `AuthCredential`
+
 - 属性:
   - `uuid`: 凭证唯一标识
   - `accountUuid`: 关联的账户 UUID（外键）
@@ -97,6 +102,7 @@ interface IAccountRepository {
   - `status`: 凭证状态（ACTIVE, SUSPENDED, EXPIRED, REVOKED）
 
 **领域服务**: `AuthenticationDomainService`
+
 - 职责:
   - 创建密码凭证
   - 验证密码强度
@@ -104,6 +110,7 @@ interface IAccountRepository {
   - 管理登录失败计数
 
 **仓储接口**: `IAuthCredentialRepository`
+
 ```typescript
 interface IAuthCredentialRepository {
   save(credential: AuthCredential): Promise<void>;
@@ -123,19 +130,21 @@ interface IAuthCredentialRepository {
 **核心用例**: `registerUser()`
 
 **输入 DTO**:
+
 ```typescript
 interface RegisterUserRequest {
-  username: string;        // 3-20 字符，字母数字下划线
-  email: string;          // 有效邮箱格式
-  password: string;       // 8-64 字符，至少包含大小写字母和数字
-  displayName?: string;   // 可选，默认使用 username
-  timezone?: string;      // 可选，默认 UTC
-  language?: string;      // 可选，默认 en
-  agreeToTerms: boolean;  // 必须同意条款
+  username: string; // 3-20 字符，字母数字下划线
+  email: string; // 有效邮箱格式
+  password: string; // 8-64 字符，至少包含大小写字母和数字
+  displayName?: string; // 可选，默认使用 username
+  timezone?: string; // 可选，默认 UTC
+  language?: string; // 可选，默认 en
+  agreeToTerms: boolean; // 必须同意条款
 }
 ```
 
 **输出 DTO**:
+
 ```typescript
 interface RegisterUserResponse {
   account: AccountClientDTO;
@@ -145,6 +154,7 @@ interface RegisterUserResponse {
 ```
 
 **职责**:
+
 1. 参数验证（格式、长度、必填项）
 2. 业务规则验证（唯一性检查）
 3. 密码加密（使用 bcrypt/argon2）
@@ -160,11 +170,13 @@ interface RegisterUserResponse {
 #### 仓储实现 (apps/api/modules/account/infrastructure/repositories/)
 
 **PrismaAccountRepository**:
+
 - 实现 `IAccountRepository` 接口
 - 使用 Prisma ORM 操作数据库
 - DTO 映射：`toPersistenceDTO()` / `fromPersistenceDTO()`
 
 **PrismaAuthCredentialRepository**:
+
 - 实现 `IAuthCredentialRepository` 接口
 - 使用 Prisma ORM 操作数据库
 - DTO 映射：处理密码等敏感字段
@@ -180,24 +192,24 @@ model Account {
   phone_number    String?  @unique
   phone_verified  Boolean  @default(false)
   status          String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED, DELETED
-  
+
   // JSON 字段
   profile         Json
   preferences     Json
   storage         Json
   security        Json
   stats           Json
-  
+
   // 时间戳
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
   last_active_at  DateTime?
   deleted_at      DateTime?
-  
+
   // 关联关系
   auth_credential AuthCredential?
   sessions        AuthSession[]
-  
+
   @@map("accounts")
 }
 
@@ -205,27 +217,27 @@ model AuthCredential {
   uuid                  String   @id @default(uuid())
   account_uuid          String   @unique
   type                  String   // PASSWORD, API_KEY, BIOMETRIC, etc.
-  
+
   // 密码凭证（JSON）
   password_credential   Json?
-  
+
   // 双因素认证
   two_factor            Json?
-  
+
   // 安全策略
   security              Json
   status                String   @default("ACTIVE")
-  
+
   // 时间戳
   created_at            DateTime @default(now())
   updated_at            DateTime @updatedAt
   last_used_at          DateTime?
   expires_at            DateTime?
   revoked_at            DateTime?
-  
+
   // 关联关系
   account               Account  @relation(fields: [account_uuid], references: [uuid], onDelete: Cascade)
-  
+
   @@map("auth_credentials")
 }
 ```
@@ -384,7 +396,10 @@ export default router;
 ```typescript
 // RegistrationApplicationService.ts
 import { Account, AccountDomainService, type IAccountRepository } from '@dailyuse/domain-server';
-import { AuthenticationDomainService, type IAuthCredentialRepository } from '@dailyuse/domain-server';
+import {
+  AuthenticationDomainService,
+  type IAuthCredentialRepository,
+} from '@dailyuse/domain-server';
 import { AccountContracts } from '@dailyuse/contracts';
 import { createLogger, eventBus } from '@dailyuse/utils';
 import { AccountContainer } from '../../infrastructure/di/AccountContainer';
@@ -420,10 +435,7 @@ export class RegistrationApplicationService {
   private accountRepo: IAccountRepository;
   private credentialRepo: IAuthCredentialRepository;
 
-  private constructor(
-    accountRepo: IAccountRepository,
-    credentialRepo: IAuthCredentialRepository,
-  ) {
+  private constructor(accountRepo: IAccountRepository, credentialRepo: IAuthCredentialRepository) {
     this.accountRepo = accountRepo;
     this.credentialRepo = credentialRepo;
     this.accountDomainService = new AccountDomainService(accountRepo);
@@ -440,16 +452,14 @@ export class RegistrationApplicationService {
     const accRepo = accountRepo || accountContainer.getAccountRepository();
     const credRepo = credentialRepo || authContainer.getAuthCredentialRepository();
 
-    RegistrationApplicationService.instance = new RegistrationApplicationService(
-      accRepo,
-      credRepo,
-    );
+    RegistrationApplicationService.instance = new RegistrationApplicationService(accRepo, credRepo);
     return RegistrationApplicationService.instance;
   }
 
   static async getInstance(): Promise<RegistrationApplicationService> {
     if (!RegistrationApplicationService.instance) {
-      RegistrationApplicationService.instance = await RegistrationApplicationService.createInstance();
+      RegistrationApplicationService.instance =
+        await RegistrationApplicationService.createInstance();
     }
     return RegistrationApplicationService.instance;
   }
@@ -554,7 +564,9 @@ export class RegistrationApplicationService {
     }
 
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      throw new Error('Password must contain at least one uppercase letter, one lowercase letter, and one number.');
+      throw new Error(
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
+      );
     }
   }
 
@@ -590,13 +602,13 @@ export class RegistrationApplicationService {
   private async sendVerificationEmail(email: string, accountUuid: string): Promise<void> {
     // TODO: 集成邮件服务（SendGrid, AWS SES, etc.）
     logger.info('Sending verification email', { email, accountUuid });
-    
+
     // 生成验证令牌
     const verificationToken = Math.random().toString(36).substring(2, 15);
-    
+
     // 存储令牌到 Redis 或数据库（24小时过期）
     // await redis.setex(`email_verification:${accountUuid}`, 86400, verificationToken);
-    
+
     // 发送邮件
     // await emailService.send({
     //   to: email,
@@ -617,6 +629,7 @@ export class RegistrationApplicationService {
 Account 和 Authentication 的领域服务已在现有代码中实现，主要方法：
 
 **AccountDomainService.createAccount()**:
+
 ```typescript
 public async createAccount(params: {
   username: string;
@@ -626,7 +639,7 @@ public async createAccount(params: {
   language?: string;
 }): Promise<Account> {
   // 验证唯一性（已在应用层完成）
-  
+
   // 创建 Account 聚合根
   const account = Account.create({
     username: params.username,
@@ -641,6 +654,7 @@ public async createAccount(params: {
 ```
 
 **AuthenticationDomainService.createPasswordCredential()**:
+
 ```typescript
 async createPasswordCredential(params: {
   accountUuid: string;
@@ -669,14 +683,14 @@ async createPasswordCredential(params: {
 
 ### 4.1 业务异常
 
-| 错误代码 | HTTP 状态 | 描述 | 处理方式 |
-|---------|---------|------|---------|
-| `USERNAME_EXISTS` | 409 | 用户名已存在 | 提示用户更换用户名 |
-| `EMAIL_EXISTS` | 409 | 邮箱已被注册 | 提示用户更换邮箱或找回密码 |
-| `INVALID_USERNAME` | 400 | 用户名格式不合法 | 提示格式要求 |
-| `INVALID_EMAIL` | 400 | 邮箱格式不合法 | 提示正确格式 |
-| `WEAK_PASSWORD` | 400 | 密码强度不足 | 提示密码要求 |
-| `TERMS_NOT_ACCEPTED` | 400 | 未同意条款 | 要求用户同意 |
+| 错误代码             | HTTP 状态 | 描述             | 处理方式                   |
+| -------------------- | --------- | ---------------- | -------------------------- |
+| `USERNAME_EXISTS`    | 409       | 用户名已存在     | 提示用户更换用户名         |
+| `EMAIL_EXISTS`       | 409       | 邮箱已被注册     | 提示用户更换邮箱或找回密码 |
+| `INVALID_USERNAME`   | 400       | 用户名格式不合法 | 提示格式要求               |
+| `INVALID_EMAIL`      | 400       | 邮箱格式不合法   | 提示正确格式               |
+| `WEAK_PASSWORD`      | 400       | 密码强度不足     | 提示密码要求               |
+| `TERMS_NOT_ACCEPTED` | 400       | 未同意条款       | 要求用户同意               |
 
 ### 4.2 技术异常
 
@@ -752,14 +766,12 @@ describe('RegistrationApplicationService', () => {
 ```typescript
 describe('Registration API Integration', () => {
   it('POST /api/auth/register - should register new user', async () => {
-    const response = await request(app)
-      .post('/api/auth/register')
-      .send({
-        username: 'testuser',
-        email: 'test@example.com',
-        password: 'Password123',
-        agreeToTerms: true,
-      });
+    const response = await request(app).post('/api/auth/register').send({
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'Password123',
+      agreeToTerms: true,
+    });
 
     expect(response.status).toBe(201);
     expect(response.body.data.account.username).toBe('testuser');
@@ -809,6 +821,6 @@ describe('Registration API Integration', () => {
 
 ## 10. 变更历史
 
-| 版本 | 日期 | 作者 | 变更说明 |
-|-----|------|------|---------|
-| 1.0 | 2025-10-17 | AI Assistant | 初始版本 |
+| 版本 | 日期       | 作者         | 变更说明 |
+| ---- | ---------- | ------------ | -------- |
+| 1.0  | 2025-10-17 | AI Assistant | 初始版本 |

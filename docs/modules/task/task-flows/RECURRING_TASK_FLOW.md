@@ -49,13 +49,13 @@
 
 ```typescript
 interface RecurrenceRuleParams {
-  frequency: RecurrenceFrequency;      // DAILY | WEEKLY | MONTHLY | YEARLY | CUSTOM
-  interval: number;                    // 间隔（默认1）
-  byWeekday?: number[] | null;         // 周几重复（0=周日, 1=周一, ..., 6=周六）
-  byMonthDay?: number[] | null;        // 每月几号重复（1-31）
-  byMonth?: number[] | null;           // 每年几月重复（1-12）
-  count?: number | null;               // 重复次数（null 表示无限）
-  until?: number | null;               // 重复截止日期（timestamp, null 表示无限）
+  frequency: RecurrenceFrequency; // DAILY | WEEKLY | MONTHLY | YEARLY | CUSTOM
+  interval: number; // 间隔（默认1）
+  byWeekday?: number[] | null; // 周几重复（0=周日, 1=周一, ..., 6=周六）
+  byMonthDay?: number[] | null; // 每月几号重复（1-31）
+  byMonth?: number[] | null; // 每年几月重复（1-12）
+  count?: number | null; // 重复次数（null 表示无限）
+  until?: number | null; // 重复截止日期（timestamp, null 表示无限）
 }
 ```
 
@@ -96,7 +96,7 @@ export class RecurrenceRule {
       if (params.byWeekday.length === 0) {
         throw new Error('byWeekday 不能为空数组');
       }
-      if (params.byWeekday.some(day => day < 0 || day > 6)) {
+      if (params.byWeekday.some((day) => day < 0 || day > 6)) {
         throw new Error('byWeekday 必须在 0-6 之间');
       }
       if (params.frequency !== RecurrenceFrequency.WEEKLY) {
@@ -109,7 +109,7 @@ export class RecurrenceRule {
       if (params.byMonthDay.length === 0) {
         throw new Error('byMonthDay 不能为空数组');
       }
-      if (params.byMonthDay.some(day => day < 1 || day > 31)) {
+      if (params.byMonthDay.some((day) => day < 1 || day > 31)) {
         throw new Error('byMonthDay 必须在 1-31 之间');
       }
       if (params.frequency !== RecurrenceFrequency.MONTHLY) {
@@ -122,7 +122,7 @@ export class RecurrenceRule {
       if (params.byMonth.length === 0) {
         throw new Error('byMonth 不能为空数组');
       }
-      if (params.byMonth.some(month => month < 1 || month > 12)) {
+      if (params.byMonth.some((month) => month < 1 || month > 12)) {
         throw new Error('byMonth 必须在 1-12 之间');
       }
       if (params.frequency !== RecurrenceFrequency.YEARLY) {
@@ -245,7 +245,7 @@ export class RecurrenceRule {
   public getNextOccurrence(afterDate: number): number | null {
     const occurrences = this.getOccurrencesUntil(
       afterDate + 1,
-      afterDate + 365 * 24 * 60 * 60 * 1000 // 搜索未来一年
+      afterDate + 365 * 24 * 60 * 60 * 1000, // 搜索未来一年
     );
 
     return occurrences.length > 0 ? occurrences[0] : null;
@@ -302,37 +302,28 @@ export class RecurrenceRule {
 
     switch (this._frequency) {
       case RecurrenceFrequency.DAILY:
-        description = this._interval === 1 
-          ? '每天' 
-          : `每 ${this._interval} 天`;
+        description = this._interval === 1 ? '每天' : `每 ${this._interval} 天`;
         break;
 
       case RecurrenceFrequency.WEEKLY:
         if (this._byWeekday) {
           const days = this._byWeekday
             .sort()
-            .map(d => ['日', '一', '二', '三', '四', '五', '六'][d])
+            .map((d) => ['日', '一', '二', '三', '四', '五', '六'][d])
             .join('、');
-          description = this._interval === 1
-            ? `每周${days}`
-            : `每 ${this._interval} 周的${days}`;
+          description = this._interval === 1 ? `每周${days}` : `每 ${this._interval} 周的${days}`;
         } else {
-          description = this._interval === 1 
-            ? '每周' 
-            : `每 ${this._interval} 周`;
+          description = this._interval === 1 ? '每周' : `每 ${this._interval} 周`;
         }
         break;
 
       case RecurrenceFrequency.MONTHLY:
         if (this._byMonthDay) {
           const days = this._byMonthDay.sort().join('、');
-          description = this._interval === 1
-            ? `每月 ${days} 号`
-            : `每 ${this._interval} 月的 ${days} 号`;
+          description =
+            this._interval === 1 ? `每月 ${days} 号` : `每 ${this._interval} 月的 ${days} 号`;
         } else {
-          description = this._interval === 1 
-            ? '每月' 
-            : `每 ${this._interval} 月`;
+          description = this._interval === 1 ? '每月' : `每 ${this._interval} 月`;
         }
         break;
 
@@ -468,7 +459,7 @@ export class TaskRecurrenceScheduler {
   constructor(
     private taskTemplateRepository: ITaskTemplateRepository,
     private taskInstanceRepository: ITaskInstanceRepository,
-    private reminderService: IReminderService
+    private reminderService: IReminderService,
   ) {}
 
   // 每日凌晨2点执行
@@ -477,11 +468,11 @@ export class TaskRecurrenceScheduler {
 
     // 1. 获取所有激活的重复任务模板
     const activeTemplates = await this.taskTemplateRepository.findByStatus(
-      TaskTemplateStatus.ACTIVE
+      TaskTemplateStatus.ACTIVE,
     );
 
     const recurringTemplates = activeTemplates.filter(
-      t => t.taskType !== TaskType.ONE_TIME && t.recurrenceRule !== null
+      (t) => t.taskType !== TaskType.ONE_TIME && t.recurrenceRule !== null,
     );
 
     console.log(`[RecurrenceScheduler] 找到 ${recurringTemplates.length} 个循环任务模板`);
@@ -502,10 +493,7 @@ export class TaskRecurrenceScheduler {
         results.skipped += result.skipped;
       } catch (error) {
         results.failed++;
-        console.error(
-          `[RecurrenceScheduler] 模板 "${template.title}" 生成实例失败:`,
-          error
-        );
+        console.error(`[RecurrenceScheduler] 模板 "${template.title}" 生成实例失败:`, error);
       }
     }
 
@@ -513,7 +501,7 @@ export class TaskRecurrenceScheduler {
   }
 
   private async generateInstancesForTemplate(
-    template: TaskTemplate
+    template: TaskTemplate,
   ): Promise<{ generated: number; skipped: number }> {
     const now = Date.now();
     const endDate = now + template.generateAheadDays * 24 * 60 * 60 * 1000;
@@ -522,20 +510,16 @@ export class TaskRecurrenceScheduler {
     const existingInstances = await this.taskInstanceRepository.findByTemplateAndDateRange(
       template.uuid,
       now,
-      endDate
+      endDate,
     );
 
-    const existingDates = new Set(
-      existingInstances.map(i => this.normalizeDate(i.instanceDate))
-    );
+    const existingDates = new Set(existingInstances.map((i) => this.normalizeDate(i.instanceDate)));
 
     // 2. 计算需要生成的日期
     const occurrences = template.recurrenceRule!.getOccurrencesUntil(now, endDate);
 
     // 3. 过滤已存在的日期
-    const newDates = occurrences.filter(
-      date => !existingDates.has(this.normalizeDate(date))
-    );
+    const newDates = occurrences.filter((date) => !existingDates.has(this.normalizeDate(date)));
 
     // 4. 生成实例
     const instances: TaskInstance[] = [];
@@ -551,10 +535,7 @@ export class TaskRecurrenceScheduler {
       // 6. 创建提醒
       for (const instance of instances) {
         if (template.reminderConfig) {
-          await this.reminderService.createTaskReminders(
-            instance,
-            template.reminderConfig
-          );
+          await this.reminderService.createTaskReminders(instance, template.reminderConfig);
         }
       }
 
@@ -564,7 +545,7 @@ export class TaskRecurrenceScheduler {
     }
 
     console.log(
-      `[RecurrenceScheduler] 模板 "${template.title}": 生成 ${instances.length} 个实例，跳过 ${existingDates.size} 个`
+      `[RecurrenceScheduler] 模板 "${template.title}": 生成 ${instances.length} 个实例，跳过 ${existingDates.size} 个`,
     );
 
     return {
@@ -601,10 +582,7 @@ export class TaskRecurrenceScheduler {
 <template>
   <div class="recurrence-config">
     <el-form-item label="重复频率" prop="frequency">
-      <el-select 
-        v-model="localRule.frequency"
-        @change="handleFrequencyChange"
-      >
+      <el-select v-model="localRule.frequency" @change="handleFrequencyChange">
         <el-option label="每日" value="DAILY" />
         <el-option label="每周" value="WEEKLY" />
         <el-option label="每月" value="MONTHLY" />
@@ -613,21 +591,14 @@ export class TaskRecurrenceScheduler {
     </el-form-item>
 
     <el-form-item label="重复间隔">
-      <el-input-number
-        v-model="localRule.interval"
-        :min="1"
-        :max="365"
-      />
+      <el-input-number v-model="localRule.interval" :min="1" :max="365" />
       <span class="ml-2 text-gray-500">
         {{ getIntervalLabel() }}
       </span>
     </el-form-item>
 
     <!-- 每周：选择星期几 -->
-    <el-form-item 
-      v-if="localRule.frequency === 'WEEKLY'"
-      label="重复星期"
-    >
+    <el-form-item v-if="localRule.frequency === 'WEEKLY'" label="重复星期">
       <el-checkbox-group v-model="localRule.byWeekday">
         <el-checkbox :label="0">日</el-checkbox>
         <el-checkbox :label="1">一</el-checkbox>
@@ -640,40 +611,16 @@ export class TaskRecurrenceScheduler {
     </el-form-item>
 
     <!-- 每月：选择日期 -->
-    <el-form-item 
-      v-if="localRule.frequency === 'MONTHLY'"
-      label="重复日期"
-    >
-      <el-select 
-        v-model="localRule.byMonthDay"
-        multiple
-        placeholder="选择日期"
-      >
-        <el-option 
-          v-for="day in 31" 
-          :key="day"
-          :label="`${day} 号`"
-          :value="day"
-        />
+    <el-form-item v-if="localRule.frequency === 'MONTHLY'" label="重复日期">
+      <el-select v-model="localRule.byMonthDay" multiple placeholder="选择日期">
+        <el-option v-for="day in 31" :key="day" :label="`${day} 号`" :value="day" />
       </el-select>
     </el-form-item>
 
     <!-- 每年：选择月份 -->
-    <el-form-item 
-      v-if="localRule.frequency === 'YEARLY'"
-      label="重复月份"
-    >
-      <el-select 
-        v-model="localRule.byMonth"
-        multiple
-        placeholder="选择月份"
-      >
-        <el-option 
-          v-for="month in 12" 
-          :key="month"
-          :label="`${month} 月`"
-          :value="month"
-        />
+    <el-form-item v-if="localRule.frequency === 'YEARLY'" label="重复月份">
+      <el-select v-model="localRule.byMonth" multiple placeholder="选择月份">
+        <el-option v-for="month in 12" :key="month" :label="`${month} 月`" :value="month" />
       </el-select>
     </el-form-item>
 
@@ -689,12 +636,7 @@ export class TaskRecurrenceScheduler {
     </el-form-item>
 
     <el-form-item v-if="endType === 'count'">
-      <el-input-number
-        v-model="localRule.count"
-        :min="1"
-        :max="1000"
-        placeholder="次数"
-      />
+      <el-input-number v-model="localRule.count" :min="1" :max="1000" placeholder="次数" />
       <span class="ml-2 text-gray-500">次</span>
     </el-form-item>
 
@@ -708,14 +650,8 @@ export class TaskRecurrenceScheduler {
     </el-form-item>
 
     <!-- 预览 -->
-    <el-alert
-      type="info"
-      :closable="false"
-      show-icon
-    >
-      <template #title>
-        重复规则预览
-      </template>
+    <el-alert type="info" :closable="false" show-icon>
+      <template #title> 重复规则预览 </template>
       <div class="rule-preview">
         {{ ruleDescription }}
       </div>
@@ -767,9 +703,13 @@ if (props.modelValue) {
 }
 
 // 监听变化
-watch(localRule, (newValue) => {
-  emit('update:modelValue', { ...newValue });
-}, { deep: true });
+watch(
+  localRule,
+  (newValue) => {
+    emit('update:modelValue', { ...newValue });
+  },
+  { deep: true },
+);
 
 watch(endType, (newValue) => {
   if (newValue === 'never') {
@@ -795,20 +735,19 @@ const ruleDescription = computed(() => {
 
   switch (localRule.value.frequency) {
     case 'DAILY':
-      desc = localRule.value.interval === 1 
-        ? '每天' 
-        : `每 ${localRule.value.interval} 天`;
+      desc = localRule.value.interval === 1 ? '每天' : `每 ${localRule.value.interval} 天`;
       break;
 
     case 'WEEKLY':
       if (localRule.value.byWeekday.length > 0) {
         const days = localRule.value.byWeekday
           .sort()
-          .map(d => ['日', '一', '二', '三', '四', '五', '六'][d])
+          .map((d) => ['日', '一', '二', '三', '四', '五', '六'][d])
           .join('、');
-        desc = localRule.value.interval === 1
-          ? `每周${days}`
-          : `每 ${localRule.value.interval} 周的${days}`;
+        desc =
+          localRule.value.interval === 1
+            ? `每周${days}`
+            : `每 ${localRule.value.interval} 周的${days}`;
       } else {
         desc = '请选择重复的星期';
       }
@@ -817,9 +756,10 @@ const ruleDescription = computed(() => {
     case 'MONTHLY':
       if (localRule.value.byMonthDay.length > 0) {
         const days = localRule.value.byMonthDay.sort().join('、');
-        desc = localRule.value.interval === 1
-          ? `每月 ${days} 号`
-          : `每 ${localRule.value.interval} 月的 ${days} 号`;
+        desc =
+          localRule.value.interval === 1
+            ? `每月 ${days} 号`
+            : `每 ${localRule.value.interval} 月的 ${days} 号`;
       } else {
         desc = '请选择重复的日期';
       }

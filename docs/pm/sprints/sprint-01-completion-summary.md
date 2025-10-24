@@ -12,6 +12,7 @@
 ## ✅ 已完成的 Story
 
 ### STORY-001: 合约与领域模型 (2 SP)
+
 **状态**: ✅ 已完成  
 **提交**: f9f5f249, ba1b1dd3
 
@@ -21,6 +22,7 @@
 - 添加了单元测试
 
 ### STORY-002: 应用服务实现 (3 SP)
+
 **状态**: ✅ 已完成  
 **提交**: f9f5f249
 
@@ -30,6 +32,7 @@
 - 快捷操作方法（主题、语言、快捷键）
 
 ### STORY-003: 基础设施与仓储 (3 SP)
+
 **状态**: ✅ 已完成  
 **提交**: 5d592d84, c8090620
 
@@ -39,6 +42,7 @@
 - 仓储集成测试
 
 ### STORY-004: API 端点 (2 SP)
+
 **状态**: ✅ 已完成  
 **提交**: c8090620
 
@@ -48,30 +52,33 @@
 - 错误处理
 
 ### STORY-005: 客户端服务 (3 SP)
+
 **状态**: ✅ 已完成  
 **提交**: 27e73a54, dff8b8c1
 
 **重要重构**: 替换自定义事件发射器为共享的 `CrossPlatformEventBus`
 
 #### 实现内容:
+
 1. **事件系统集成**
    - 使用 `@dailyuse/utils` 的 `CrossPlatformEventBus`
    - 类型安全的事件枚举 (`UserSettingEventType`)
    - 事件数据类型映射 (`UserSettingEventData`)
 
 2. **事件类型**
+
    ```typescript
-   THEME_CHANGED
-   LANGUAGE_CHANGED
-   NOTIFICATIONS_CHANGED
-   SHORTCUTS_CHANGED
-   PRIVACY_CHANGED
-   WORKFLOW_CHANGED
-   EXPERIMENTAL_CHANGED
-   SETTING_UPDATED
-   SETTING_CREATED
-   SETTING_DELETED
-   ERROR
+   THEME_CHANGED;
+   LANGUAGE_CHANGED;
+   NOTIFICATIONS_CHANGED;
+   SHORTCUTS_CHANGED;
+   PRIVACY_CHANGED;
+   WORKFLOW_CHANGED;
+   EXPERIMENTAL_CHANGED;
+   SETTING_UPDATED;
+   SETTING_CREATED;
+   SETTING_DELETED;
+   ERROR;
    ```
 
 3. **便捷方法**
@@ -88,6 +95,7 @@
    - 利用经过验证的工具
 
 ### STORY-006: UI - 外观设置 (2 SP)
+
 **状态**: ✅ 已完成  
 **提交**: d919517f
 
@@ -97,10 +105,12 @@
 - 响应式设计
 
 ### STORY-007: UI - 通知设置 (3 SP)
+
 **状态**: ✅ 已完成  
 **提交**: 27e73a54, a0888095
 
 #### 功能特性:
+
 1. **通知控制**
    - 主开关（启用/禁用）
    - 渠道选择（推送、邮件、短信）
@@ -130,15 +140,18 @@
    - 向后兼容（@ts-ignore 用于待定字段）
 
 #### 组件结构:
+
 ```vue
 <NotificationSettings :auto-save="true" />
 ```
 
 ### STORY-008: UI - 快捷键设置 (3 SP)
+
 **状态**: ✅ 已完成  
 **提交**: cee253c7
 
 #### 增强功能:
+
 1. **冲突检测**
    - 实时冲突检测算法
    - 可视化冲突指示器
@@ -166,6 +179,7 @@
    - 禁用状态处理
 
 #### 预定义快捷键:
+
 - 新建任务 (Ctrl+N)
 - 新建目标 (Ctrl+G)
 - 新建日程 (Ctrl+E)
@@ -178,12 +192,14 @@
 - 打开设置 (Ctrl+,)
 
 ### STORY-009: E2E 测试 (2 SP)
+
 **状态**: ✅ 已完成  
 **提交**: 097ff3ae
 
 #### 测试文件 (5个):
 
 **1. appearance.spec.ts (8 tests)**
+
 - 显示外观设置
 - 切换主题 (light/dark/auto)
 - 保存主题偏好
@@ -193,6 +209,7 @@
 - 自动保存模式处理
 
 **2. notifications.spec.ts (10 tests)**
+
 - 显示通知设置
 - 切换通知开/关
 - 显示通知渠道
@@ -205,6 +222,7 @@
 - 通知关闭时禁用渠道选择
 
 **3. shortcuts.spec.ts (11 tests)**
+
 - 显示快捷键设置
 - 切换快捷键开/关
 - 显示预定义快捷键
@@ -218,6 +236,7 @@
 - 在 Mac 上显示平台特定符号
 
 **4. persistence.spec.ts (9 tests)**
+
 - 页面重新加载后持久化主题
 - 页面重新加载后持久化通知设置
 - 页面重新加载后持久化快捷键
@@ -229,6 +248,7 @@
 - 内存中缓存设置以快速访问
 
 **5. error-handling.spec.ts (11 tests)**
+
 - 优雅处理网络错误
 - 自动重试失败的请求
 - 显示无效输入的验证错误
@@ -242,6 +262,7 @@
 - 处理并发保存操作
 
 **测试统计**:
+
 - **总测试用例**: 49
 - **覆盖率**: 所有 Sprint 1 用户设置功能
 - **框架**: Playwright with TypeScript
@@ -250,6 +271,7 @@
 ## 🔄 重要重构
 
 ### 事件系统统一
+
 **提交**: dff8b8c1
 
 - 删除了自定义 `UserSettingEventEmitter.ts`
@@ -259,6 +281,7 @@
 - 简化事件系统同时保持所有功能
 
 ### Vuetify 架构
+
 **提交**: d919517f
 
 - 所有组件都使用 Vuetify
@@ -269,7 +292,9 @@
 ## 📊 技术债务与改进
 
 ### 待定的后端合约更新
+
 在 `NotificationSettings.vue` 中:
+
 ```typescript
 // 注意：这些字段可能还未在后端DTO中定义
 // @ts-ignore - 等待后端合约更新
@@ -280,11 +305,13 @@ notificationsEnabled: notificationsEnabled.value,
 **解决方案**: 在下一个 Sprint 更新 `UpdatePrivacyRequest` 接口
 
 ### TypeScript 类型覆盖
+
 - 所有服务都有类型
 - 所有组件都有类型
 - 完整的合约类型定义
 
 ### 测试覆盖
+
 - **单元测试**: UserSettingApplicationService
 - **集成测试**: PrismaUserSettingRepository
 - **E2E 测试**: 49 个测试用例
@@ -315,7 +342,9 @@ dff8b8c1 refactor(setting): replace custom event emitter with shared CrossPlatfo
 ## 🎯 下一步行动
 
 ### 立即行动:
+
 1. **运行 E2E 测试**:
+
    ```bash
    pnpm --filter web exec playwright test e2e/user-settings
    ```
@@ -339,6 +368,7 @@ dff8b8c1 refactor(setting): replace custom event emitter with shared CrossPlatfo
    ```
 
 ### 未来迭代:
+
 1. **后端合约增强**:
    - 在 `UpdatePrivacyRequest` 中添加通知特定字段
    - 创建专用的 `NotificationSettings` DTO

@@ -22,36 +22,44 @@
 ## ✅ Acceptance Criteria
 
 ### AC-1: API Response Caching Implemented
+
 **Given** frequently accessed endpoints exist  
 **When** the same request is made multiple times  
 **Then**
+
 - Response should be served from cache (if still valid)
 - Cache TTL (Time To Live) should be configurable
 - Cache invalidation should work on data updates
 - Response time should be < 50ms for cached responses
 
 ### AC-2: Database Query Optimization
+
 **Given** API endpoints query the database  
 **When** analyzing query performance  
 **Then**
+
 - N+1 query problems should be eliminated
 - Eager loading should be used where appropriate
 - Database indexes should exist on frequently queried fields
 - Query execution time should be < 100ms for 95th percentile
 
 ### AC-3: Performance Monitoring
+
 **Given** API endpoints are running in production  
 **When** monitoring performance metrics  
 **Then**
+
 - Response times should be tracked per endpoint
 - Slow query logging should be enabled
 - Performance metrics should be accessible
 - Alerts should trigger for degraded performance (> 500ms)
 
 ### AC-4: API Response Time Targets Met
+
 **Given** optimizations are implemented  
 **When** measuring API performance  
 **Then**
+
 - 95th percentile response time: < 200ms
 - 99th percentile response time: < 500ms
 - Average response time: < 100ms
@@ -175,6 +183,7 @@
 ## 👨‍💻 Dev Notes
 
 ### Previous Story Insights
+
 - STORY-022 to 027: Task dependency system implemented with complex DAG queries
 - STORY-029: E2E tests added, providing test coverage baseline
 - Performance considerations mentioned but not yet optimized
@@ -183,9 +192,11 @@
 ### Technical Context
 
 #### 🏗️ Backend Architecture
+
 [Source: docs/architecture/FRONTEND_ARCHITECTURE_GUIDE.md + Project structure]
 
 **API Structure**:
+
 - Location: `apps/api/src/`
 - Framework: Express.js
 - ORM: Prisma
@@ -193,11 +204,13 @@
 - Architecture: Clean Architecture (Controllers → Services → Repositories)
 
 **Existing Middleware**:
+
 - Authentication middleware
 - Error handling middleware
 - Logging middleware (exists)
 
 **Performance-Critical Endpoints**:
+
 - `/api/v1/goals` - List goals with key results
 - `/api/v1/tasks` - List tasks with dependencies
 - `/api/v1/tasks/dependency-graph` - Complex DAG queries
@@ -206,6 +219,7 @@
 #### 📦 File Locations for New Code
 
 **Cache Infrastructure**:
+
 ```
 apps/api/src/infrastructure/cache/
 ├── RedisClient.ts          (new)
@@ -213,6 +227,7 @@ apps/api/src/infrastructure/cache/
 ```
 
 **Middleware**:
+
 ```
 apps/api/src/middleware/
 ├── cache.middleware.ts      (new)
@@ -220,6 +235,7 @@ apps/api/src/middleware/
 ```
 
 **Metrics Endpoint**:
+
 ```
 apps/api/src/modules/metrics/
 ├── controllers/MetricsController.ts  (new)
@@ -227,22 +243,25 @@ apps/api/src/modules/metrics/
 ```
 
 **Tests**:
+
 ```
 apps/api/src/infrastructure/cache/__tests__/RedisClient.spec.ts
 apps/api/src/middleware/__tests__/cache.middleware.spec.ts
 ```
 
 #### 🔧 Redis Integration
+
 [Source: Node.js best practices + ioredis documentation]
 
 **Redis Client Setup**:
+
 ```typescript
 // apps/api/src/infrastructure/cache/RedisClient.ts
 import Redis from 'ioredis';
 
 export class RedisClient {
   private client: Redis;
-  
+
   constructor() {
     this.client = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
@@ -250,16 +269,16 @@ export class RedisClient {
       password: process.env.REDIS_PASSWORD,
       retryStrategy: (times) => Math.min(times * 50, 2000),
     });
-    
+
     this.client.on('error', (err) => {
       console.error('Redis error:', err);
     });
   }
-  
+
   async get(key: string): Promise<string | null> {
     return await this.client.get(key);
   }
-  
+
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     if (ttlSeconds) {
       await this.client.setex(key, ttlSeconds, value);
@@ -267,11 +286,11 @@ export class RedisClient {
       await this.client.set(key, value);
     }
   }
-  
+
   async del(key: string): Promise<void> {
     await this.client.del(key);
   }
-  
+
   async delPattern(pattern: string): Promise<void> {
     const keys = await this.client.keys(pattern);
     if (keys.length > 0) {
@@ -282,6 +301,7 @@ export class RedisClient {
 ```
 
 **Cache Middleware Example**:
+
 ```typescript
 // apps/api/src/middleware/cache.middleware.ts
 export const cacheMiddleware = (ttl: number = 300) => {
@@ -289,31 +309,33 @@ export const cacheMiddleware = (ttl: number = 300) => {
     if (req.method !== 'GET') {
       return next();
     }
-    
+
     const cacheKey = `api:${req.originalUrl}`;
     const cached = await redis.get(cacheKey);
-    
+
     if (cached) {
       res.setHeader('X-Cache-Status', 'HIT');
       return res.json(JSON.parse(cached));
     }
-    
+
     const originalJson = res.json.bind(res);
     res.json = (body: any) => {
       redis.set(cacheKey, JSON.stringify(body), ttl);
       res.setHeader('X-Cache-Status', 'MISS');
       return originalJson(body);
     };
-    
+
     next();
   };
 };
 ```
 
 #### 🗄️ Prisma Query Optimization
+
 [Source: Prisma documentation + Project Prisma schema]
 
 **N+1 Problem Example**:
+
 ```typescript
 // ❌ BAD: N+1 queries
 const goals = await prisma.goal.findMany();
@@ -332,6 +354,7 @@ const goals = await prisma.goal.findMany({
 ```
 
 **Index Creation**:
+
 ```prisma
 // In schema.prisma
 model Goal {
@@ -339,7 +362,7 @@ model Goal {
   accountUuid String
   status      String
   createdAt   DateTime @default(now())
-  
+
   @@index([accountUuid])           // Single column index
   @@index([accountUuid, status])   // Composite index
   @@index([createdAt])             // For sorting/filtering
@@ -347,6 +370,7 @@ model Goal {
 ```
 
 **Select Optimization**:
+
 ```typescript
 // ❌ BAD: Fetch all fields (large payload)
 const goals = await prisma.goal.findMany();
@@ -370,50 +394,53 @@ const goals = await prisma.goal.findMany({
 ```
 
 #### 📊 Performance Monitoring
+
 [Source: Node.js performance best practices]
 
 **Performance Middleware**:
+
 ```typescript
 // apps/api/src/middleware/performance.middleware.ts
 export const performanceMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     const logLevel = duration > 300 ? 'warn' : 'info';
-    
+
     console[logLevel](`[PERF] ${req.method} ${req.originalUrl} - ${duration}ms`);
-    
+
     // Store metrics for dashboard
     metricsStore.recordRequest(req.originalUrl, duration);
   });
-  
+
   next();
 };
 ```
 
 **Metrics Storage** (Simple in-memory approach):
+
 ```typescript
 class MetricsStore {
   private metrics: Map<string, number[]> = new Map();
-  
+
   recordRequest(endpoint: string, duration: number) {
     if (!this.metrics.has(endpoint)) {
       this.metrics.set(endpoint, []);
     }
     this.metrics.get(endpoint)!.push(duration);
-    
+
     // Keep last 1000 requests
     const values = this.metrics.get(endpoint)!;
     if (values.length > 1000) {
       values.shift();
     }
   }
-  
+
   getStats(endpoint: string) {
     const values = this.metrics.get(endpoint) || [];
     if (values.length === 0) return null;
-    
+
     const sorted = [...values].sort((a, b) => a - b);
     return {
       count: values.length,
@@ -428,37 +455,40 @@ class MetricsStore {
 ```
 
 #### 🔍 Performance Testing Tools
+
 [Source: Industry standard tools]
 
 **Artillery** (Load testing):
+
 ```yaml
 # artillery-config.yml
 config:
   target: 'http://localhost:3888'
   phases:
     - duration: 60
-      arrivalRate: 10  # 10 requests/second
+      arrivalRate: 10 # 10 requests/second
 scenarios:
-  - name: "API Load Test"
+  - name: 'API Load Test'
     flow:
       - get:
-          url: "/api/v1/goals"
+          url: '/api/v1/goals'
       - get:
-          url: "/api/v1/tasks"
+          url: '/api/v1/tasks'
 ```
 
 **k6** (Alternative):
+
 ```javascript
 // load-test.js
 import http from 'k6/http';
 import { check } from 'k6';
 
 export let options = {
-  vus: 50,  // 50 virtual users
+  vus: 50, // 50 virtual users
   duration: '30s',
 };
 
-export default function() {
+export default function () {
   let res = http.get('http://localhost:3888/api/v1/goals');
   check(res, {
     'status is 200': (r) => r.status === 200,
@@ -468,9 +498,11 @@ export default function() {
 ```
 
 #### ⚙️ Environment Variables
+
 [Source: Project .env pattern]
 
 **Required Environment Variables**:
+
 ```env
 # Redis Configuration
 REDIS_HOST=localhost
@@ -484,27 +516,32 @@ SLOW_QUERY_THRESHOLD_MS=100
 ```
 
 #### 🧪 Testing Strategy
+
 [Source: Project testing patterns]
 
 **Unit Tests**:
+
 - Test RedisClient methods
 - Test cache middleware logic
 - Test metrics store calculations
 - Mock Redis and Prisma clients
 
 **Integration Tests**:
+
 - Test cached endpoint returns same data
 - Test cache invalidation on updates
 - Test database query optimization (measure query count)
 - Test performance middleware logs correctly
 
 **Performance Tests**:
+
 - Baseline performance test (before optimization)
 - Post-optimization performance test
 - Load test with concurrent requests
 - Verify response time targets met
 
 #### ⚠️ Technical Constraints
+
 - Redis must be available (add to docker-compose if needed)
 - Caching must not cache user-specific data without proper key isolation
 - Cache invalidation must be bulletproof (prefer shorter TTL over stale data)
@@ -512,18 +549,22 @@ SLOW_QUERY_THRESHOLD_MS=100
 - Database indexes must not slow down write operations significantly
 
 #### 🎯 Success Metrics
+
 **Quantitative**:
+
 - Response time reduced by ≥40% on average
 - Cache hit rate ≥60% for frequently accessed endpoints
 - Database query count reduced by ≥30%
 - Zero N+1 query patterns remaining
 
 **Qualitative**:
+
 - Improved perceived performance for users
 - Reduced database load
 - Better scalability for future growth
 
 #### 📚 Implementation Order Priority
+
 1. **Performance Analysis** (Task 1) - Must know baseline
 2. **Query Optimization** (Task 3) - Biggest impact, no external dependencies
 3. **Monitoring** (Task 4) - Needed to verify improvements
@@ -536,18 +577,21 @@ SLOW_QUERY_THRESHOLD_MS=100
 ## 📊 Testing
 
 ### Unit Tests
+
 - ✅ RedisClient operations
 - ✅ Cache middleware logic
 - ✅ Metrics calculations
 - ✅ Performance logging
 
 ### Integration Tests
+
 - ✅ Cached endpoint behavior
 - ✅ Cache invalidation
 - ✅ Query optimization (measure query count)
 - ✅ End-to-end caching flow
 
 ### Performance Tests
+
 - ✅ Baseline measurements
 - ✅ Post-optimization measurements
 - ✅ Load testing (50-100 concurrent users)
@@ -557,17 +601,18 @@ SLOW_QUERY_THRESHOLD_MS=100
 
 ## 🔄 Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2024-10-24 | 1.0 | Initial story creation | Bob (Scrum Master) |
-| 2024-10-24 | 1.1 | Phase 1: Performance monitoring implemented | James (Dev Agent) |
-| 2024-10-24 | 1.2 | Phase 2: Database query optimization implemented | James (Dev Agent) |
+| Date       | Version | Description                                      | Author             |
+| ---------- | ------- | ------------------------------------------------ | ------------------ |
+| 2024-10-24 | 1.0     | Initial story creation                           | Bob (Scrum Master) |
+| 2024-10-24 | 1.1     | Phase 1: Performance monitoring implemented      | James (Dev Agent)  |
+| 2024-10-24 | 1.2     | Phase 2: Database query optimization implemented | James (Dev Agent)  |
 
 ---
 
 ## 👨‍💻 Dev Agent Record
 
 ### Agent Model Used
+
 - GitHub Copilot
 - Implementation Date: 2024-10-24 (Phase 1 & 2)
 - Development Time: ~4 hours total
@@ -608,6 +653,7 @@ SLOW_QUERY_THRESHOLD_MS=100
 ### Progress Status
 
 **Completed** ✅:
+
 - AC-3: Performance Monitoring (100%)
   - ✅ Response times tracked per endpoint
   - ✅ Slow query logging enabled
@@ -615,6 +661,7 @@ SLOW_QUERY_THRESHOLD_MS=100
   - ✅ Degradation alerts (console warnings for >300ms)
 
 **In Progress** 🔄:
+
 - AC-2: Database Query Optimization (20%)
   - ✅ Prisma logging enabled for analysis
   - 🔜 Identify N+1 queries
@@ -622,6 +669,7 @@ SLOW_QUERY_THRESHOLD_MS=100
   - 🔜 Optimize slow queries
 
 **Pending** 🔜:
+
 - AC-1: Redis Caching (0%)
   - Requires Redis dependency installation
   - Deferred to Phase 2 (optional)
@@ -629,11 +677,13 @@ SLOW_QUERY_THRESHOLD_MS=100
   - Will be validated after query optimization
 
 ### Git Commit
+
 - **Commit Hash**: b54c2d3c
 - **Message**: "feat(api): add performance monitoring (STORY-030 Phase 1)"
 - **Files Changed**: 4 files, +221/-2 lines
 
 ### Next Steps
+
 1. Analyze slow queries using Prisma logs
 2. Add database indexes for frequently queried fields
 3. Optimize identified N+1 query patterns
@@ -652,15 +702,12 @@ SLOW_QUERY_THRESHOLD_MS=100
      - `@@index([accountUuid, folderUuid])` - Folder-based filtering
      - `@@index([createdAt])` - Sorting by creation date
      - `@@index([targetDate])` - Deadline-based queries
-   
    - **KeyResult Model** (1 new index):
      - `@@index([goalUuid, createdAt])` - Timeline queries
-   
    - **TaskTemplate Model** (3 new indexes):
      - `@@index([accountUuid, status])` - Filtered template queries
      - `@@index([accountUuid, taskType])` - Type-based filtering
      - `@@index([accountUuid, deletedAt])` - Soft-delete queries
-   
    - **TaskInstance Model** (3 new indexes):
      - `@@index([templateUuid, instanceDate])` - Timeline/calendar queries
      - `@@index([accountUuid, status])` - Filtered instance queries
@@ -687,6 +734,7 @@ SLOW_QUERY_THRESHOLD_MS=100
 ### Progress Status (Updated)
 
 **Completed** ✅:
+
 - AC-3: Performance Monitoring (100%)
   - ✅ Response times tracked per endpoint
   - ✅ Slow query logging enabled
@@ -701,6 +749,7 @@ SLOW_QUERY_THRESHOLD_MS=100
   - ✅ Migration applied to database
 
 **Pending** 🔜:
+
 - AC-1: Redis Caching (0%)
   - Optional/deferred enhancement
   - Will implement only if response time targets not met
@@ -709,11 +758,13 @@ SLOW_QUERY_THRESHOLD_MS=100
   - Cannot verify without running API server
 
 ### Git Commits
+
 - **Phase 1 Commit**: b54c2d3c - Performance monitoring implementation
 - **Phase 1 Docs**: e00925dd - Documentation update
 - **Phase 2 Commit**: b5e88dcc - Database query optimization (11 indexes)
 
 ### Next Steps (Phase 3)
+
 1. **Verify Performance Improvements**:
    - Fix API server dependency issues (tsx module not found)
    - Start API server and test endpoints
@@ -741,6 +792,7 @@ SLOW_QUERY_THRESHOLD_MS=100
 ### Phase 1: Performance Monitoring
 
 **Manual Testing** ✅:
+
 - ✅ Middleware logs request durations correctly
 - ✅ `X-Response-Time` header present in responses
 - ✅ Metrics endpoint returns valid JSON
@@ -748,12 +800,14 @@ SLOW_QUERY_THRESHOLD_MS=100
 - ✅ No performance degradation from monitoring
 
 **Functional Testing**:
+
 - ✅ `/api/v1/metrics/performance` accessible (with auth)
 - ✅ Returns summary, slow endpoints, and all metrics
 - ✅ Metrics persist across requests
 - ✅ Percentile calculations accurate
 
 **Known Issues**:
+
 - None identified
 
 ---

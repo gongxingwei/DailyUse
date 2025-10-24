@@ -7,12 +7,14 @@
 ## 📋 完成的功能
 
 ### ✅ 1. 分析 Reminder 模块结构
+
 - **ReminderTemplate 聚合根**: 管理提醒模板的完整生命周期
 - **状态变化机制**: `enabled`, `selfEnabled`, `timeConfig`, `priority` 等关键状态
 - **事件系统**: 基于 AggregateRoot 的领域事件发布机制
 - **时间配置**: 支持 daily, weekly, monthly, absolute, custom, relative 等多种模式
 
 ### ✅ 2. 设计 Reminder-Schedule 集成架构
+
 - **事件驱动架构**: 基于领域事件的解耦通信
 - **优雅同步策略**: 状态变化 → 事件发布 → Schedule 响应 → 调度更新
 - **错误恢复机制**: 重试策略、死信队列、健康检查
@@ -21,6 +23,7 @@
 ### ✅ 3. 实现 ReminderTemplate 聚合根扩展
 
 **新增的业务方法**:
+
 ```typescript
 // 状态变化时发布事件
 toggleEnabled(enabled: boolean, context?: { accountUuid: string }): void
@@ -39,6 +42,7 @@ getScheduleSyncStatus(): { needsSync: boolean; reason?: string }
 ```
 
 **发布的领域事件**:
+
 - `ReminderTemplateStatusChanged`: 启用状态变化
 - `ReminderTemplateTimeConfigChanged`: 时间配置变化
 - `ReminderTemplateDeleted`: 模板删除
@@ -48,30 +52,32 @@ getScheduleSyncStatus(): { needsSync: boolean; reason?: string }
 ### ✅ 4. 实现 ReminderScheduleIntegrationService
 
 **核心功能**:
+
 ```typescript
 class ReminderScheduleIntegrationService {
   // 状态变化处理
-  async handleTemplateStatusChange(params): Promise<{ success: boolean; scheduleTaskId?: string }>
-  async handleTemplateTimeConfigChange(params): Promise<{ success: boolean }>
-  async handleTemplateDeleted(params): Promise<{ success: boolean }>
-  
+  async handleTemplateStatusChange(params): Promise<{ success: boolean; scheduleTaskId?: string }>;
+  async handleTemplateTimeConfigChange(params): Promise<{ success: boolean }>;
+  async handleTemplateDeleted(params): Promise<{ success: boolean }>;
+
   // Schedule 系统交互
-  async createScheduleForTemplate(params): Promise<{ success: boolean; scheduleTaskId?: string }>
-  async cancelScheduleForTemplate(params): Promise<{ success: boolean }>
-  
+  async createScheduleForTemplate(params): Promise<{ success: boolean; scheduleTaskId?: string }>;
+  async cancelScheduleForTemplate(params): Promise<{ success: boolean }>;
+
   // 批量操作
-  async batchSyncTemplates(params): Promise<{ successCount: number; failedCount: number }>
-  async batchCancelTemplates(params): Promise<{ successCount: number; failedCount: number }>
-  
+  async batchSyncTemplates(params): Promise<{ successCount: number; failedCount: number }>;
+  async batchCancelTemplates(params): Promise<{ successCount: number; failedCount: number }>;
+
   // 时间计算
-  private calculateNextTriggerTime(timeConfig): Date | null
-  private calculateDailyTrigger(timeConfig, baseTime): Date
-  private calculateWeeklyTrigger(timeConfig, baseTime): Date
+  private calculateNextTriggerTime(timeConfig): Date | null;
+  private calculateDailyTrigger(timeConfig, baseTime): Date;
+  private calculateWeeklyTrigger(timeConfig, baseTime): Date;
   // ... 其他时间计算方法
 }
 ```
 
 **类型映射**:
+
 - `ReminderPriority` → `SchedulePriority`
 - `NotificationSettings` → `AlertMethod[]`
 - `ReminderTimeConfig` → Schedule `RecurrenceRule`
@@ -79,16 +85,18 @@ class ReminderScheduleIntegrationService {
 ### ✅ 5. 实现 Schedule 事件处理器扩展
 
 **新增的事件处理器**:
+
 ```typescript
 // 扩展 ScheduleEventHandlers.registerReminderEventHandlers()
-eventBus.on('ReminderTemplateStatusChanged', handler)
-eventBus.on('ReminderTemplateTimeConfigChanged', handler)
-eventBus.on('ReminderTemplateDeleted', handler)
-eventBus.on('ReminderTemplateBatchUpdated', handler)
-eventBus.on('ReminderTemplateSyncRequested', handler)
+eventBus.on('ReminderTemplateStatusChanged', handler);
+eventBus.on('ReminderTemplateTimeConfigChanged', handler);
+eventBus.on('ReminderTemplateDeleted', handler);
+eventBus.on('ReminderTemplateBatchUpdated', handler);
+eventBus.on('ReminderTemplateSyncRequested', handler);
 ```
 
 **处理流程**:
+
 1. 监听 ReminderTemplate 领域事件
 2. 调用 ReminderScheduleIntegrationService 处理
 3. 与 Schedule 系统交互（创建/取消调度）
@@ -97,6 +105,7 @@ eventBus.on('ReminderTemplateSyncRequested', handler)
 ### ✅ 6. 实现状态同步和错误恢复
 
 **ReminderScheduleSyncManager** 核心特性:
+
 - **同步队列管理**: 优先级队列、并发控制、批量处理
 - **重试机制**: 指数退避算法、最大重试次数、超时控制
 - **健康检查**: 定期检查僵尸任务、清理过期任务、重启队列处理
@@ -104,45 +113,50 @@ eventBus.on('ReminderTemplateSyncRequested', handler)
 - **监控统计**: 队列状态、处理时间、错误率、同步历史
 
 **关键方法**:
+
 ```typescript
 class ReminderScheduleSyncManager {
   // 队列管理
-  async enqueueSync(params): Promise<string>
-  private async processSyncQueue(): Promise<void>
-  private async executeSync(task): Promise<void>
-  
+  async enqueueSync(params): Promise<string>;
+  private async processSyncQueue(): Promise<void>;
+  private async executeSync(task): Promise<void>;
+
   // 错误处理
-  private async handleSyncError(task, error): Promise<void>
-  private calculateRetryDelay(retryCount): number
-  
+  private async handleSyncError(task, error): Promise<void>;
+  private calculateRetryDelay(retryCount): number;
+
   // 状态恢复
-  async performFullStateRecovery(params): Promise<RecoveryResult>
-  async performIncrementalSync(params): Promise<void>
-  
+  async performFullStateRecovery(params): Promise<RecoveryResult>;
+  async performIncrementalSync(params): Promise<void>;
+
   // 监控统计
-  getSyncStats(): SyncStats
-  getTemplateSyncStatus(templateUuid): TemplateStatus
+  getSyncStats(): SyncStats;
+  getTemplateSyncStatus(templateUuid): TemplateStatus;
 }
 ```
 
 ## 🏗️ 架构设计亮点
 
 ### 1. **事件驱动解耦**
+
 - ReminderTemplate 聚合根专注业务逻辑，发布领域事件
 - ScheduleEventHandlers 监听事件，协调跨模块操作
 - ReminderScheduleIntegrationService 处理具体的 Schedule 交互
 
 ### 2. **优雅的状态同步**
+
 - 状态变化时立即发布事件，不阻塞业务流程
 - 异步队列处理同步任务，支持重试和错误恢复
 - 批量操作优化，避免频繁的网络调用
 
 ### 3. **完善的错误处理**
+
 - 多层次错误处理：业务层验证、集成层重试、同步层恢复
 - 指数退避重试策略，避免系统过载
 - 死信队列处理最终失败的任务
 
 ### 4. **可监控性**
+
 - 详细的同步状态统计和历史记录
 - 实时的队列状态和处理进度监控
 - 错误率和性能指标跟踪
@@ -153,16 +167,21 @@ class ReminderScheduleSyncManager {
 
 ```typescript
 // 在 ReminderTemplate 聚合根中
-const template = new ReminderTemplate({ /* 参数 */ });
+const template = new ReminderTemplate({
+  /* 参数 */
+});
 
 // 启用模板 - 自动触发 Schedule 同步
 template.toggleEnabled(true, { accountUuid: 'user-123' });
 
 // 更新时间配置 - 自动重新调度
-template.updateTimeConfig({
-  type: 'daily',
-  times: ['09:00', '18:00'],
-}, { accountUuid: 'user-123' });
+template.updateTimeConfig(
+  {
+    type: 'daily',
+    times: ['09:00', '18:00'],
+  },
+  { accountUuid: 'user-123' },
+);
 
 // 删除模板 - 自动取消调度
 template.markForDeletion({ accountUuid: 'user-123' });

@@ -1,5 +1,5 @@
-import type { DomainEvent } from "@dailyuse/utils";
-import type { KeyResultLink } from "@common/modules/task/types/task";
+import type { DomainEvent } from '@dailyuse/utils';
+import type { KeyResultLink } from '@common/modules/task/types/task';
 export interface TaskCompletedEventPayload {
   accountUuid: string;
   taskId: string;

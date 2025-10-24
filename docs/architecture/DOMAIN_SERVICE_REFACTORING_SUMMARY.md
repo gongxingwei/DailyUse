@@ -9,6 +9,7 @@
 ### 重构前的问题
 
 **反模式（Anti-pattern）**：
+
 - ❌ DomainService 注入了 Repository 依赖
 - ❌ DomainService 调用 `repository.save()` 进行持久化
 - ❌ DomainService 调用 `repository.find*()` 进行查询
@@ -30,10 +31,10 @@ export class AccountDomainService {
     }
 
     const account = Account.create(params);
-    
+
     // 调用 Repository 持久化
     await this.accountRepo.save(account);
-    
+
     return account;
   }
 }
@@ -42,6 +43,7 @@ export class AccountDomainService {
 ### 重构后的最佳实践
 
 **正确模式（Best Practice）**：
+
 - ✅ DomainService 不再注入 Repository
 - ✅ DomainService 只创建聚合根对象并返回
 - ✅ DomainService 只负责复杂业务规则验证
@@ -79,7 +81,7 @@ export class AccountDomainService {
 export class RegistrationApplicationService {
   constructor(
     private readonly accountRepo: IAccountRepository,
-    private readonly domainService: AccountDomainService
+    private readonly domainService: AccountDomainService,
   ) {}
 
   async registerUser(request) {
@@ -108,29 +110,29 @@ export class RegistrationApplicationService {
 
 **重构内容**：
 
-| 序号 | 方法名 | 重构前 | 重构后 |
-|-----|--------|--------|--------|
-| 1 | `createAccount()` | ❌ 查询 + 创建 + 持久化 | ✅ 验证 + 创建 + 返回 |
-| 2 | `getAccount()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 3 | `getAccountByUsername()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 4 | `getAccountByEmail()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 5 | `updateAccountProfile()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 6 | `updateEmail()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 7 | `verifyEmail()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 8 | `recordLogin()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 9 | `deactivateAccount()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 10 | `deleteAccount()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 11 | `listAccounts()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
+| 序号 | 方法名                   | 重构前                  | 重构后                             |
+| ---- | ------------------------ | ----------------------- | ---------------------------------- |
+| 1    | `createAccount()`        | ❌ 查询 + 创建 + 持久化 | ✅ 验证 + 创建 + 返回              |
+| 2    | `getAccount()`           | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 3    | `getAccountByUsername()` | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 4    | `getAccountByEmail()`    | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 5    | `updateAccountProfile()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 6    | `updateEmail()`          | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 7    | `verifyEmail()`          | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 8    | `recordLogin()`          | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 9    | `deactivateAccount()`    | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 10   | `deleteAccount()`        | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 11   | `listAccounts()`         | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
 
 **新增方法**（业务规则验证）：
 
-| 方法名 | 职责 | 类型 |
-|--------|------|------|
-| `validateAccountCreation()` | 验证账户创建的业务规则 | private |
-| `validateEmailUpdate()` | 验证邮箱更新的业务规则 | public |
-| `validateProfileUpdate()` | 验证资料更新的业务规则 | public |
-| `canPerformSensitiveOperation()` | 检查是否可以执行敏感操作 | public |
-| `canDeleteAccount()` | 检查是否可以删除账户 | public |
+| 方法名                           | 职责                     | 类型    |
+| -------------------------------- | ------------------------ | ------- |
+| `validateAccountCreation()`      | 验证账户创建的业务规则   | private |
+| `validateEmailUpdate()`          | 验证邮箱更新的业务规则   | public  |
+| `validateProfileUpdate()`        | 验证资料更新的业务规则   | public  |
+| `canPerformSensitiveOperation()` | 检查是否可以执行敏感操作 | public  |
+| `canDeleteAccount()`             | 检查是否可以删除账户     | public  |
 
 **重构对比**：
 
@@ -140,9 +142,9 @@ export class AccountDomainService {
   constructor(private readonly accountRepo: IAccountRepository) {}
 
   async updateAccountProfile(uuid, profile): Promise<Account> {
-    const account = await this.getAccount(uuid);  // ❌ 查询
+    const account = await this.getAccount(uuid); // ❌ 查询
     account.updateProfile(profile);
-    await this.accountRepo.save(account);          // ❌ 持久化
+    await this.accountRepo.save(account); // ❌ 持久化
     return account;
   }
 }
@@ -156,7 +158,7 @@ export class AccountDomainService {
     if (profile.displayName?.length < 1) {
       throw new Error('Display name cannot be empty');
     }
-    
+
     // 检查账户状态
     if (account.status === 'DELETED') {
       throw new Error('Cannot update profile for deleted account');
@@ -169,16 +171,16 @@ export class AccountApplicationService {
   async updateProfile(uuid, profile) {
     // 1. 查询账户
     const account = await this.accountRepo.findById(uuid);
-    
+
     // 2. DomainService 验证业务规则
     this.domainService.validateProfileUpdate(account, profile);
-    
+
     // 3. 修改聚合根
     account.updateProfile(profile);
-    
+
     // 4. 持久化
     await this.accountRepo.save(account);
-    
+
     return account;
   }
 }
@@ -190,51 +192,51 @@ export class AccountApplicationService {
 
 **重构内容**：
 
-| 序号 | 方法名 | 重构前 | 重构后 |
-|-----|--------|--------|--------|
-| 1 | `createPasswordCredential()` | ❌ 查询 + 创建 + 持久化 | ✅ 验证 + 创建 + 返回 |
-| 2 | `createSession()` | ❌ 创建 + 持久化 | ✅ 验证 + 创建 + 返回 |
-| 3 | `getCredential()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 4 | `getCredentialByAccountUuid()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 5 | `verifyPassword()` | ❌ 查询 + 验证 | ✅ 只验证（接收已查询的对象） |
-| 6 | `changePassword()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 7 | `recordFailedLogin()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 8 | `resetFailedAttempts()` | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 9 | `isCredentialLocked()` | ❌ 查询 + 检查 | ✅ 只检查（接收已查询的对象） |
-| 10 | `generateRememberMeToken()` | ❌ 查询 + 生成 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 11 | `verifyRememberMeToken()` | ❌ 查询 + 验证 | ✅ 只验证（接收已查询的对象） |
-| 12 | `refreshRememberMeToken()` | ❌ 查询 + 刷新 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 13 | `revokeRememberMeToken()` | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 14 | `revokeAllRememberMeTokens()` | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 15 | `generateApiKey()` | ❌ 查询 + 生成 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 16 | `revokeApiKey()` | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 17 | `enableTwoFactor()` | ❌ 查询 + 启用 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 18 | `disableTwoFactor()` | ❌ 查询 + 禁用 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 19 | `verifyTwoFactorCode()` | ❌ 查询 + 验证 | ✅ 只验证（接收已查询的对象） |
-| 20 | `getSession()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 21 | `getSessionByAccessToken()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 22 | `getSessionByRefreshToken()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 23 | `refreshAccessToken()` | ❌ 查询 + 刷新 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 24 | `refreshRefreshToken()` | ❌ 查询 + 刷新 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 25 | `validateSession()` | ❌ 查询 + 验证 | ✅ 只验证（接收已查询的对象） |
-| 26 | `recordActivity()` | ❌ 查询 + 记录 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 27 | `revokeSession()` | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 28 | `revokeAllSessions()` | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
-| 29 | `getActiveSessions()` | ❌ 查询 Repository | 🗑️ 删除（移到 ApplicationService） |
-| 30 | `cleanupExpiredSessions()` | ❌ 查询 + 删除 | 🗑️ 删除（移到 ApplicationService） |
-| 31 | `cleanupExpiredCredentials()` | ❌ 查询 + 删除 | 🗑️ 删除（移到 ApplicationService） |
+| 序号 | 方法名                         | 重构前                  | 重构后                             |
+| ---- | ------------------------------ | ----------------------- | ---------------------------------- |
+| 1    | `createPasswordCredential()`   | ❌ 查询 + 创建 + 持久化 | ✅ 验证 + 创建 + 返回              |
+| 2    | `createSession()`              | ❌ 创建 + 持久化        | ✅ 验证 + 创建 + 返回              |
+| 3    | `getCredential()`              | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 4    | `getCredentialByAccountUuid()` | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 5    | `verifyPassword()`             | ❌ 查询 + 验证          | ✅ 只验证（接收已查询的对象）      |
+| 6    | `changePassword()`             | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 7    | `recordFailedLogin()`          | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 8    | `resetFailedAttempts()`        | ❌ 查询 + 修改 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 9    | `isCredentialLocked()`         | ❌ 查询 + 检查          | ✅ 只检查（接收已查询的对象）      |
+| 10   | `generateRememberMeToken()`    | ❌ 查询 + 生成 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 11   | `verifyRememberMeToken()`      | ❌ 查询 + 验证          | ✅ 只验证（接收已查询的对象）      |
+| 12   | `refreshRememberMeToken()`     | ❌ 查询 + 刷新 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 13   | `revokeRememberMeToken()`      | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 14   | `revokeAllRememberMeTokens()`  | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 15   | `generateApiKey()`             | ❌ 查询 + 生成 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 16   | `revokeApiKey()`               | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 17   | `enableTwoFactor()`            | ❌ 查询 + 启用 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 18   | `disableTwoFactor()`           | ❌ 查询 + 禁用 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 19   | `verifyTwoFactorCode()`        | ❌ 查询 + 验证          | ✅ 只验证（接收已查询的对象）      |
+| 20   | `getSession()`                 | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 21   | `getSessionByAccessToken()`    | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 22   | `getSessionByRefreshToken()`   | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 23   | `refreshAccessToken()`         | ❌ 查询 + 刷新 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 24   | `refreshRefreshToken()`        | ❌ 查询 + 刷新 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 25   | `validateSession()`            | ❌ 查询 + 验证          | ✅ 只验证（接收已查询的对象）      |
+| 26   | `recordActivity()`             | ❌ 查询 + 记录 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 27   | `revokeSession()`              | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 28   | `revokeAllSessions()`          | ❌ 查询 + 撤销 + 持久化 | 🗑️ 删除（移到 ApplicationService） |
+| 29   | `getActiveSessions()`          | ❌ 查询 Repository      | 🗑️ 删除（移到 ApplicationService） |
+| 30   | `cleanupExpiredSessions()`     | ❌ 查询 + 删除          | 🗑️ 删除（移到 ApplicationService） |
+| 31   | `cleanupExpiredCredentials()`  | ❌ 查询 + 删除          | 🗑️ 删除（移到 ApplicationService） |
 
 **新增方法**（业务规则验证）：
 
-| 方法名 | 职责 | 类型 |
-|--------|------|------|
+| 方法名                                 | 职责                       | 类型    |
+| -------------------------------------- | -------------------------- | ------- |
 | `validatePasswordCredentialCreation()` | 验证密码凭证创建的业务规则 | private |
-| `validateSessionCreation()` | 验证会话创建的业务规则 | private |
-| `validatePasswordStrength()` | 验证密码强度 | public |
-| `shouldLockCredential()` | 锁定策略验证 | public |
-| `shouldExtendSession()` | 会话延长策略 | public |
-| `isRefreshTokenExpired()` | 刷新令牌过期检查 | public |
-| `requiresTwoFactor()` | 检查是否需要双因素认证 | public |
+| `validateSessionCreation()`            | 验证会话创建的业务规则     | private |
+| `validatePasswordStrength()`           | 验证密码强度               | public  |
+| `shouldLockCredential()`               | 锁定策略验证               | public  |
+| `shouldExtendSession()`                | 会话延长策略               | public  |
+| `isRefreshTokenExpired()`              | 刷新令牌过期检查           | public  |
+| `requiresTwoFactor()`                  | 检查是否需要双因素认证     | public  |
 
 **代码减少**：421 行 → 267 行（减少 154 行，-36.6%）
 
@@ -242,29 +244,29 @@ export class AccountApplicationService {
 
 ### 文件变化
 
-| 文件 | 重构前 | 重构后 | 变化 | 变化率 |
-|------|--------|--------|------|--------|
-| `AccountDomainService.ts` | 142 行 | 145 行 | +3 行 | +2.1% |
-| `AuthenticationDomainService.ts` | 421 行 | 267 行 | -154 行 | -36.6% |
-| **总计** | **563 行** | **412 行** | **-151 行** | **-26.8%** |
+| 文件                             | 重构前     | 重构后     | 变化        | 变化率     |
+| -------------------------------- | ---------- | ---------- | ----------- | ---------- |
+| `AccountDomainService.ts`        | 142 行     | 145 行     | +3 行       | +2.1%      |
+| `AuthenticationDomainService.ts` | 421 行     | 267 行     | -154 行     | -36.6%     |
+| **总计**                         | **563 行** | **412 行** | **-151 行** | **-26.8%** |
 
 ### 方法变化
 
-| 模块 | 重构前方法数 | 删除/移动 | 新增 | 重构后方法数 |
-|------|-------------|-----------|------|------------|
-| Account | 11 | 10 | 5 | 6 |
-| Authentication | 31 | 27 | 7 | 11 |
-| **总计** | **42** | **37** | **12** | **17** |
+| 模块           | 重构前方法数 | 删除/移动 | 新增   | 重构后方法数 |
+| -------------- | ------------ | --------- | ------ | ------------ |
+| Account        | 11           | 10        | 5      | 6            |
+| Authentication | 31           | 27        | 7      | 11           |
+| **总计**       | **42**       | **37**    | **12** | **17**       |
 
 ### 职责分离
 
-| 职责类型 | 重构前 | 重构后 |
-|----------|--------|--------|
-| 创建聚合根 | ✅ DomainService | ✅ DomainService |
-| 业务规则验证 | ✅ DomainService | ✅ DomainService |
-| 查询 Repository | ❌ DomainService | ✅ ApplicationService |
+| 职责类型          | 重构前           | 重构后                |
+| ----------------- | ---------------- | --------------------- |
+| 创建聚合根        | ✅ DomainService | ✅ DomainService      |
+| 业务规则验证      | ✅ DomainService | ✅ DomainService      |
+| 查询 Repository   | ❌ DomainService | ✅ ApplicationService |
 | 持久化 Repository | ❌ DomainService | ✅ ApplicationService |
-| 事务管理 | ❌ 不支持 | ✅ ApplicationService |
+| 事务管理          | ❌ 不支持        | ✅ ApplicationService |
 
 ## 🎯 重构收益
 
@@ -305,8 +307,8 @@ expect(account.email).toBe('test@example.com');
 
 ```typescript
 // ❌ 无法传递事务上下文
-await domainService.createAccount(params);  // 独立事务
-await domainService.updateProfile(uuid, profile);  // 独立事务
+await domainService.createAccount(params); // 独立事务
+await domainService.updateProfile(uuid, profile); // 独立事务
 ```
 
 **重构后**（支持事务）：
@@ -315,11 +317,11 @@ await domainService.updateProfile(uuid, profile);  // 独立事务
 // ✅ 可以传递事务上下文
 await prisma.$transaction(async (tx) => {
   const account = domainService.createAccount(params);
-  await accountRepo.save(account, tx);  // 事务上下文
-  
+  await accountRepo.save(account, tx); // 事务上下文
+
   domainService.validateProfileUpdate(account, profile);
   account.updateProfile(profile);
-  await accountRepo.save(account, tx);  // 同一事务
+  await accountRepo.save(account, tx); // 同一事务
 });
 ```
 
@@ -329,15 +331,15 @@ await prisma.$transaction(async (tx) => {
 
 ```typescript
 // ❌ 无法单独复用验证逻辑
-await domainService.createAccount(params);  // 包含验证 + 持久化
+await domainService.createAccount(params); // 包含验证 + 持久化
 ```
 
 **重构后**（逻辑解耦）：
 
 ```typescript
 // ✅ 可以单独复用验证逻辑
-domainService.validateAccountCreation(params);  // 只验证
-const account = domainService.createAccount(params);  // 创建聚合根
+domainService.validateAccountCreation(params); // 只验证
+const account = domainService.createAccount(params); // 创建聚合根
 // 可以选择何时何地持久化
 ```
 

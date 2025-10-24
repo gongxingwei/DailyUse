@@ -6,10 +6,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type {
-  IWeightSnapshotRepository,
-  SnapshotQueryResult,
-} from '@dailyuse/domain-server';
+import type { IWeightSnapshotRepository, SnapshotQueryResult } from '@dailyuse/domain-server';
 import { KeyResultWeightSnapshot } from '@dailyuse/domain-server';
 import { PrismaWeightSnapshotMapper } from '../mappers/PrismaWeightSnapshotMapper';
 

@@ -14,6 +14,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 ```
 
 **错误原因**：
+
 - `apps/desktop/tsconfig.json` 启用了 `composite: true`
 - `packages/contracts/tsconfig.json` 设置了 `composite: false`
 - TypeScript 要求：如果 A 引用 B（通过 references），且 A 是 composite 项目，那么 B 也必须是 composite 项目
@@ -22,17 +23,17 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 
 你的项目中存在三种打包工具：
 
-| 包 | 打包工具 | Composite 设置 | 冲突情况 |
-|---|---------|---------------|---------|
-| `contracts` | tsup (esbuild) | ❌ `false` | 注释说与 tsup --dts 不兼容 |
-| `domain-core` | tsup (esbuild) | ❌ `false` | 注释说与 tsup --dts 不兼容 |
-| `domain-server` | tsup (esbuild) | ❌ `false` | 注释说与 tsup --dts 不兼容 |
-| `utils` | tsup (esbuild) | ❌ `false` | 注释说与 tsup --dts 不兼容 |
-| `ui` | Vite + vue-tsc | ✅ `true` | 无冲突 |
-| `assets` | 无（纯资源） | ✅ `true` | 无冲突 |
-| `desktop` | Vite (Electron) | ✅ `true` | **引用 contracts 导致错误** |
-| `web` | Vite | ✅ `true` | **引用 contracts 导致错误** |
-| `api` | tsup/tsc | ✅ `true` | **引用 contracts 导致错误** |
+| 包              | 打包工具        | Composite 设置 | 冲突情况                    |
+| --------------- | --------------- | -------------- | --------------------------- |
+| `contracts`     | tsup (esbuild)  | ❌ `false`     | 注释说与 tsup --dts 不兼容  |
+| `domain-core`   | tsup (esbuild)  | ❌ `false`     | 注释说与 tsup --dts 不兼容  |
+| `domain-server` | tsup (esbuild)  | ❌ `false`     | 注释说与 tsup --dts 不兼容  |
+| `utils`         | tsup (esbuild)  | ❌ `false`     | 注释说与 tsup --dts 不兼容  |
+| `ui`            | Vite + vue-tsc  | ✅ `true`      | 无冲突                      |
+| `assets`        | 无（纯资源）    | ✅ `true`      | 无冲突                      |
+| `desktop`       | Vite (Electron) | ✅ `true`      | **引用 contracts 导致错误** |
+| `web`           | Vite            | ✅ `true`      | **引用 contracts 导致错误** |
+| `api`           | tsup/tsc        | ✅ `true`      | **引用 contracts 导致错误** |
 
 ---
 
@@ -41,12 +42,14 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 ### 核心理念
 
 **关键认知**：
+
 1. **tsc 的 composite 用于类型检查和引用关系**，不是用于打包
 2. **打包工具（tsup、Vite）负责生成 .js 文件**
 3. **类型声明文件（.d.ts）可以由 tsc 或打包工具生成**
 4. **`composite: true` 不会与 tsup/Vite 冲突！**
 
 **误解澄清**：
+
 - ❌ "composite 与 tsup --dts 不兼容" ← **这是错误的**
 - ✅ composite 与 `incremental: true` 在某些打包配置下可能有问题
 - ✅ 但 composite **不影响** tsup/Vite 的打包过程
@@ -80,6 +83,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 ### 配置策略
 
 **所有包都启用 `composite: true`**，理由：
+
 1. ✅ 支持跨包类型热更新
 2. ✅ 增量编译，提升性能
 3. ✅ 清晰的依赖关系图
@@ -102,10 +106,10 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
     // ============================================================
     // ✅ 启用 Composite（关键修改）
     // ============================================================
-    
-    "composite": true,  // ✅ 启用项目引用
+
+    "composite": true, // ✅ 启用项目引用
     "incremental": true, // ✅ 启用增量编译
-    
+
     // 生成类型声明文件
     "declaration": true,
     "declarationMap": true,
@@ -114,16 +118,16 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
     // ============================================================
     // 库环境配置
     // ============================================================
-    
+
     "lib": ["ES2020"],
-    
+
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+    },
   },
 
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
 }
 ```
 
@@ -148,7 +152,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
   },
   "scripts": {
     "clean": "rimraf dist",
-    
+
     // 🔑 关键：类型检查和打包分离
     "typecheck": "tsc --build",
     "build": "pnpm typecheck && tsup src/index.ts --dts --format esm --target es2020 --out-dir dist",
@@ -158,6 +162,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 ```
 
 **工作流程**：
+
 1. `tsc --build` 生成 `.d.ts` 和 `.tsbuildinfo`（用于类型检查和引用）
 2. `tsup` 生成优化的 `.js` 文件（用于运行时）
 3. 两者互不干扰
@@ -180,7 +185,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
         "cwd": "packages/contracts"
       }
     },
-    
+
     // 🔑 打包 target（依赖 typecheck）
     "build": {
       "executor": "nx:run-commands",
@@ -191,7 +196,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
         "cwd": "packages/contracts"
       }
     },
-    
+
     // 🔑 开发模式
     "dev": {
       "executor": "nx:run-commands",
@@ -204,7 +209,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
         "cwd": "packages/contracts"
       }
     },
-    
+
     "lint": {
       "executor": "@nx/eslint:lint"
     }
@@ -241,22 +246,29 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
     "paths": {
       "@/*": ["./src/*"],
       "@electron/*": ["./electron/*"],
-      "@common/*": ["./common/*"]
-    }
+      "@common/*": ["./common/*"],
+    },
   },
 
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "electron/**/*", "common/**/*"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "electron/**/*",
+    "common/**/*",
+  ],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
 
   // ✅ 引用依赖（现在 contracts 也是 composite 了）
   "references": [
     { "path": "./tsconfig.node.json" },
     { "path": "../../packages/contracts" },
-    
+
     { "path": "../../packages/domain-client" },
     { "path": "../../packages/utils" },
-    { "path": "../../packages/ui" }
-  ]
+    { "path": "../../packages/ui" },
+  ],
 }
 ```
 
@@ -285,8 +297,8 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
     "moduleResolution": "Node",
 
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+    },
   },
 
   "include": ["src/**/*"],
@@ -295,10 +307,10 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
   // ✅ 恢复 references（之前被注释掉了）
   "references": [
     { "path": "../../packages/contracts" },
-    
+
     { "path": "../../packages/domain-server" },
-    { "path": "../../packages/utils" }
-  ]
+    { "path": "../../packages/utils" },
+  ],
 }
 ```
 
@@ -316,14 +328,15 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 - [x] `packages/utils/tsconfig.json`
 
 修改内容：
+
 ```jsonc
 {
   "compilerOptions": {
-    "composite": true,      // ❌ false → ✅ true
-    "incremental": true,    // ❌ false → ✅ true
+    "composite": true, // ❌ false → ✅ true
+    "incremental": true, // ❌ false → ✅ true
     "declaration": true,
-    "declarationMap": true
-  }
+    "declarationMap": true,
+  },
 }
 ```
 
@@ -335,10 +348,10 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 {
   "references": [
     { "path": "../../packages/contracts" },
-    
+
     { "path": "../../packages/domain-server" },
-    { "path": "../../packages/utils" }
-  ]
+    { "path": "../../packages/utils" },
+  ],
 }
 ```
 
@@ -441,7 +454,8 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 
 ### Q1: tsup --dts 和 tsc 生成的 .d.ts 有什么区别？
 
-**A**: 
+**A**:
+
 - **tsc**: 严格按照 TypeScript 语义生成，支持 project references
 - **tsup --dts**: 使用 [@microsoft/api-extractor](https://api-extractor.com/)，可能会丢失一些复杂类型信息
 
@@ -450,13 +464,15 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 ### Q2: composite: true 会影响打包性能吗？
 
 **A**: 不会！
+
 - `composite: true` 只影响 tsc 的类型检查和 .d.ts 生成
 - tsup/Vite 等打包工具**不使用** tsc 的 composite 功能
 - 它们直接读取源码进行打包
 
 ### Q3: 为什么要分离 typecheck 和 build？
 
-**A**: 
+**A**:
+
 1. **明确职责**：类型检查和代码打包是两个独立的过程
 2. **性能优化**：可以并行运行类型检查和打包
 3. **缓存利用**：Nx 可以分别缓存 typecheck 和 build 的结果
@@ -465,6 +481,7 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 ### Q4: 开发时是否每次都要运行 typecheck？
 
 **A**: 不需要！
+
 - **开发模式**：只运行 `tsc --build --watch` 监听类型变化
 - **CI/CD**：执行完整的 `typecheck` + `build`
 - **IDE**：自动进行类型检查（基于 tsconfig.json）
@@ -472,6 +489,7 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 ### Q5: incremental: true 和 composite: true 的关系？
 
 **A**:
+
 - `composite: true` 自动启用 `incremental: true`
 - `incremental` 生成 `.tsbuildinfo` 用于缓存编译信息
 - 两者配合实现增量编译和跨项目引用
@@ -491,7 +509,8 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 }
 ```
 
-**A**: 
+**A**:
+
 - **开发模式**：直接导入源码（src/index.ts），无需构建即可开发
 - **生产模式**：使用构建产物（dist）
 - 这需要打包工具支持（如 Vite、tsup）
@@ -499,6 +518,7 @@ pnpm nx run-many --target=build --all --skip-nx-cache
 ### Q7: 是否可以只用 tsup --dts，不用 tsc？
 
 **A**: 可以，但不推荐：
+
 - ❌ 失去 composite 和 references 的好处（类型热更新）
 - ❌ 无法利用 tsc 的增量编译
 - ❌ 在复杂项目中 api-extractor 可能生成不正确的类型
@@ -554,6 +574,7 @@ apps/desktop
    - 让 TypeScript 自动管理依赖顺序
 
 4. **在 CI/CD 中先运行 typecheck**
+
    ```bash
    pnpm nx affected --target=typecheck
    pnpm nx affected --target=build
@@ -597,6 +618,7 @@ pnpm nx run-many --target=build --all
 ### 测试类型热更新
 
 1. 启动 watch 模式：
+
    ```bash
    pnpm tsc --build --watch
    ```
@@ -618,6 +640,7 @@ pnpm nx run-many --target=build --all
 **配置完成！** 🎉
 
 你现在拥有：
+
 - ✅ 所有包支持类型热更新
 - ✅ 类型检查和打包完全分离
 - ✅ 充分利用 Nx 的缓存和并行构建

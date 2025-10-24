@@ -11,12 +11,14 @@
 ### 已完成
 
 ✅ **PM 阶段基础设施**
+
 - 创建目录结构 (`docs/epics/`, `docs/stories/`, `docs/sprints/`)
 - 编写 PM 阶段总览文档 ([PM_PHASE_OVERVIEW.md](./PM_PHASE_OVERVIEW.md))
 - 定义 Story 拆解原则和 DoD 标准
 - 规划 6 个 Sprint 的整体框架
 
 ✅ **第一个 Epic 文档**
+
 - **EPIC-SETTING-001**: 用户偏好设置（完整示例）
 - 包含 9 个详细的 User Stories
 - 总计 23 SP，预估 1.5-2 周完成
@@ -28,6 +30,7 @@
 🟡 **创建剩余 9 个 P0 Epic 文档**
 
 待创建清单：
+
 1. EPIC-GOAL-002: KR 权重与进度快照 (5 stories, 预估 2 周)
 2. EPIC-GOAL-003: 专注周期聚焦模式 (4 stories, 预估 1.5 周)
 3. EPIC-GOAL-004: 目标进度自动计算 (5 stories, 预估 2 周)
@@ -46,23 +49,24 @@
 
 **EPIC-SETTING-001: 用户偏好设置** ✅
 
-| Story | 标题 | SP | 状态 |
-|-------|------|----|----|
-| 001 | Contracts & Domain | 2 | 📝 Ready for Dev |
-| 002 | Application Service | 3 | 📝 Ready for Dev |
-| 003 | Infrastructure & Repository | 2 | 📝 Ready for Dev |
-| 004 | API Endpoints | 3 | 📝 Ready for Dev |
-| 005 | Client Services | 2 | 📝 Ready for Dev |
-| 006 | UI - 外观设置 | 3 | 📝 Ready for Dev |
-| 007 | UI - 通知设置 | 3 | 📝 Ready for Dev |
-| 008 | UI - 快捷键设置 | 3 | 📝 Ready for Dev |
-| 009 | E2E Tests | 2 | 📝 Ready for Dev |
+| Story | 标题                        | SP  | 状态             |
+| ----- | --------------------------- | --- | ---------------- |
+| 001   | Contracts & Domain          | 2   | 📝 Ready for Dev |
+| 002   | Application Service         | 3   | 📝 Ready for Dev |
+| 003   | Infrastructure & Repository | 2   | 📝 Ready for Dev |
+| 004   | API Endpoints               | 3   | 📝 Ready for Dev |
+| 005   | Client Services             | 2   | 📝 Ready for Dev |
+| 006   | UI - 外观设置               | 3   | 📝 Ready for Dev |
+| 007   | UI - 通知设置               | 3   | 📝 Ready for Dev |
+| 008   | UI - 快捷键设置             | 3   | 📝 Ready for Dev |
+| 009   | E2E Tests                   | 2   | 📝 Ready for Dev |
 
 **总计**: 23 SP
 
 ### Epic 模板质量
 
 EPIC-SETTING-001 作为模板包含：
+
 - ✅ 完整的业务价值说明
 - ✅ 详细的 User Stories 拆解（9 个）
 - ✅ 每个 Story 的 Gherkin 验收标准
@@ -80,25 +84,25 @@ EPIC-SETTING-001 作为模板包含：
 
 ### 按模块分布
 
-| 模块 | Epic 数 | Stories 数 | Story Points | 预估工期 |
-|------|---------|-----------|--------------|----------|
-| **Goal** | 3 | 14 | ~42 SP | 3-4 周 |
-| **Task** | 3 | 16 | ~48 SP | 4-5 周 |
-| **Reminder** | 1 | 5 | ~15 SP | 1-2 周 |
-| **Schedule** | 1 | 6 | ~18 SP | 2-3 周 |
-| **Notification** | 1 | 5 | ~15 SP | 1-2 周 |
-| **Setting** | 1 | 9 (完成) | 23 SP | 1.5-2 周 |
-| **总计** | **10** | **55** | **~161 SP** | **13-18 周** |
+| 模块             | Epic 数 | Stories 数 | Story Points | 预估工期     |
+| ---------------- | ------- | ---------- | ------------ | ------------ |
+| **Goal**         | 3       | 14         | ~42 SP       | 3-4 周       |
+| **Task**         | 3       | 16         | ~48 SP       | 4-5 周       |
+| **Reminder**     | 1       | 5          | ~15 SP       | 1-2 周       |
+| **Schedule**     | 1       | 6          | ~18 SP       | 2-3 周       |
+| **Notification** | 1       | 5          | ~15 SP       | 1-2 周       |
+| **Setting**      | 1       | 9 (完成)   | 23 SP        | 1.5-2 周     |
+| **总计**         | **10**  | **55**     | **~161 SP**  | **13-18 周** |
 
 ### 按优先级（RICE 评分）
 
-| 排名 | Epic | 模块 | RICE | 理由 |
-|------|------|------|------|------|
-| 1 | GOAL-002 | Goal | 672 | OKR 核心能力，最高价值 |
-| 2 | GOAL-004 | Goal | 480 | 自动化进度计算，高效率 |
-| 3 | GOAL-003 | Goal | 432 | 专注模式，用户体验关键 |
-| 4 | SETTING-001 | Setting | 154 | 基础设施，必须最先完成 |
-| 5-10 | 其他 | 多个 | - | 按依赖关系排序 |
+| 排名 | Epic        | 模块    | RICE | 理由                   |
+| ---- | ----------- | ------- | ---- | ---------------------- |
+| 1    | GOAL-002    | Goal    | 672  | OKR 核心能力，最高价值 |
+| 2    | GOAL-004    | Goal    | 480  | 自动化进度计算，高效率 |
+| 3    | GOAL-003    | Goal    | 432  | 专注模式，用户体验关键 |
+| 4    | SETTING-001 | Setting | 154  | 基础设施，必须最先完成 |
+| 5-10 | 其他        | 多个    | -    | 按依赖关系排序         |
 
 ---
 
@@ -109,6 +113,7 @@ EPIC-SETTING-001 作为模板包含：
 **目标**: 搭建核心架构，完成基础 CRUD
 
 **Epics**:
+
 - ✅ EPIC-SETTING-001: 用户偏好设置 (全部 9 stories)
   - Week 1: Stories 001-005 (后端 + Client)
   - Week 2: Stories 006-009 (UI + E2E)
@@ -117,6 +122,7 @@ EPIC-SETTING-001 作为模板包含：
 **团队**: 1-2 名全栈开发
 
 **交付物**:
+
 - 完整的用户偏好设置功能
 - Contracts 框架建立
 - 第一个完整的 DDD 实现示例
@@ -128,6 +134,7 @@ EPIC-SETTING-001 作为模板包含：
 **目标**: 完成 Goal 模块最高价值功能
 
 **Epics** (待创建):
+
 - EPIC-GOAL-002: KR 权重与进度快照 (5 stories, ~15 SP)
 - EPIC-GOAL-003: 专注周期聚焦模式 (4 stories, ~12 SP)
 
@@ -135,6 +142,7 @@ EPIC-SETTING-001 作为模板包含：
 **依赖**: Sprint 1 的 Contracts 框架
 
 **交付物**:
+
 - KR 权重管理与进度快照
 - 专注模式 UI 与后端
 - Goal 模块核心能力完成 60%
@@ -146,6 +154,7 @@ EPIC-SETTING-001 作为模板包含：
 **目标**: 完成 Goal 模块，启动 Task 管理
 
 **Epics** (待创建):
+
 - EPIC-GOAL-004: 目标进度自动计算 (5 stories, ~15 SP)
 - EPIC-TASK-002: 任务优先级矩阵 (3-4 stories, ~12 SP)
 
@@ -153,6 +162,7 @@ EPIC-SETTING-001 作为模板包含：
 **依赖**: Sprint 2 的 Goal 基础
 
 **交付物**:
+
 - Goal 模块 100% 完成
 - Task 优先级矩阵（部分）
 
@@ -163,6 +173,7 @@ EPIC-SETTING-001 作为模板包含：
 **目标**: 完成 Task 模块核心能力
 
 **Epics** (待创建):
+
 - EPIC-TASK-002: 任务优先级矩阵（剩余）
 - EPIC-TASK-006: 任务依赖关系 (5 stories, ~15 SP)
 - EPIC-TASK-001: 任务依赖图（部分，3-4 stories）
@@ -170,6 +181,7 @@ EPIC-SETTING-001 作为模板包含：
 **Story Points**: 25-30 SP
 
 **交付物**:
+
 - 任务优先级完整实现
 - 任务依赖关系管理
 - 任务依赖图（部分可视化）
@@ -181,12 +193,14 @@ EPIC-SETTING-001 作为模板包含：
 **目标**: 完成 Task 可视化，启动 Schedule 模块
 
 **Epics** (待创建):
+
 - EPIC-TASK-001: 任务依赖图（剩余，~18 SP）
 - EPIC-SCHEDULE-001: 日程冲突检测（部分，~10 SP）
 
 **Story Points**: 28 SP
 
 **交付物**:
+
 - 完整的任务依赖图可视化
 - 日程冲突检测（后端 + 部分 UI）
 
@@ -197,6 +211,7 @@ EPIC-SETTING-001 作为模板包含：
 **目标**: 完成所有 P0 功能，MVP 上线
 
 **Epics** (待创建):
+
 - EPIC-SCHEDULE-001: 日程冲突检测（剩余）
 - EPIC-REMINDER-001: 智能提醒频率 (5 stories, ~15 SP)
 - EPIC-NOTIFICATION-001: 多渠道通知聚合 (5 stories, ~15 SP)
@@ -204,6 +219,7 @@ EPIC-SETTING-001 作为模板包含：
 **Story Points**: 35-40 SP
 
 **交付物**:
+
 - 日程管理完整功能
 - 智能提醒系统
 - 多渠道通知聚合
@@ -243,12 +259,12 @@ EPIC-SETTING-001 作为模板包含：
 
 ### PM 阶段质量指标
 
-| 指标 | 目标 | 当前 | 状态 |
-|------|------|------|------|
-| Epic 文档完成率 | 100% | 10% (1/10) | 🟡 进行中 |
-| Story 拆解完成率 | 100% | 10% (9/55) | 🟡 进行中 |
-| 验收标准完整性 | 100% | 100% (已完成的) | ✅ 达标 |
-| Sprint 规划完成 | 6 个 | 1 个详细 | 🟡 进行中 |
+| 指标             | 目标 | 当前            | 状态      |
+| ---------------- | ---- | --------------- | --------- |
+| Epic 文档完成率  | 100% | 10% (1/10)      | 🟡 进行中 |
+| Story 拆解完成率 | 100% | 10% (9/55)      | 🟡 进行中 |
+| 验收标准完整性   | 100% | 100% (已完成的) | ✅ 达标   |
+| Sprint 规划完成  | 6 个 | 1 个详细        | 🟡 进行中 |
 
 ### 工作量统计
 
@@ -269,11 +285,13 @@ EPIC-SETTING-001 作为模板包含：
 ### 做得好的地方
 
 ✅ **Epic 模板设计**
+
 - EPIC-SETTING-001 作为标准模板，结构清晰
 - Gherkin 验收标准详细，便于 QA 测试
 - 按 DDD 层次拆分 Stories，符合架构约束
 
 ✅ **Story Points 估算**
+
 - 使用标准化的 SP 定义（1/2/3/5/8）
 - 包含工时预估，便于团队规划
 - 考虑了技术复杂度和依赖关系
@@ -281,11 +299,13 @@ EPIC-SETTING-001 作为模板包含：
 ### 需要改进的地方
 
 🟡 **Epic 创建效率**
+
 - 第一个 Epic 耗时较长（2 小时）
 - 需要优化模板，提升后续创建速度
 - 考虑使用工具辅助生成
 
 🟡 **跨模块依赖分析**
+
 - 需要更清晰的依赖关系图
 - 部分依赖可能在 Story 细化时才发现
 - 需要与 Architect 更早对齐
@@ -294,12 +314,12 @@ EPIC-SETTING-001 作为模板包含：
 
 ## 📝 风险与缓解
 
-| 风险 | 影响 | 概率 | 缓解策略 |
-|------|------|------|---------|
-| Epic 创建时间超预期 | 中 | 中 | 使用 EPIC-001 作为模板，加速后续创建 |
-| Story Points 估算不准 | 高 | 中 | Sprint 1 实际数据校准估算 |
-| 技术依赖发现延迟 | 中 | 低 | 与 Architect 提前 Review 所有 Epic |
-| 团队资源不足 | 高 | 低 | 优先完成 P0 功能，P1 功能延后 |
+| 风险                  | 影响 | 概率 | 缓解策略                             |
+| --------------------- | ---- | ---- | ------------------------------------ |
+| Epic 创建时间超预期   | 中   | 中   | 使用 EPIC-001 作为模板，加速后续创建 |
+| Story Points 估算不准 | 高   | 中   | Sprint 1 实际数据校准估算            |
+| 技术依赖发现延迟      | 中   | 低   | 与 Architect 提前 Review 所有 Epic   |
+| 团队资源不足          | 高   | 低   | 优先完成 P0 功能，P1 功能延后        |
 
 ---
 
@@ -312,5 +332,5 @@ EPIC-SETTING-001 作为模板包含：
 
 ---
 
-*报告生成于: 2025-10-21*  
-*下次更新: 完成 3 个 Goal Epic 后*
+_报告生成于: 2025-10-21_  
+_下次更新: 完成 3 个 Goal Epic 后_

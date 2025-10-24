@@ -4,7 +4,7 @@
  */
 
 import { beforeEach, afterEach, vi } from 'vitest';
-import { mockPrismaClient, resetMockData } from './mocks/prismaMock.js';
+import { mockPrismaClient, resetMockData } from './mocks/prismaMock';
 
 // Mock Prisma config module
 vi.mock('../config/prisma.js', () => ({

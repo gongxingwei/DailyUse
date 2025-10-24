@@ -3,9 +3,10 @@
 **Epic**: TECH-004 (Technical Debt & Quality)  
 **Story Points**: 1.5 SP  
 **Priority**: P2  
-**Status**: Approved  
+**Status**: In Progress  
 **Created**: 2024-10-24  
 **Approved**: 2024-10-24  
+**Started**: 2024-10-24  
 **Sprint**: Sprint 4
 
 ---
@@ -21,18 +22,22 @@
 ## ✅ Acceptance Criteria
 
 ### AC-1: Code Duplication Eliminated
+
 **Given** duplicate code exists in the codebase  
 **When** reviewing code for duplication  
 **Then**
+
 - Duplicate utility functions should be extracted to shared packages
 - Duplicate business logic should be centralized
 - Code duplication percentage should be < 3%
 - DRY (Don't Repeat Yourself) principle should be followed
 
 ### AC-2: Type Safety Improved
+
 **Given** TypeScript is used throughout the project  
 **When** checking type coverage  
 **Then**
+
 - No `any` types should exist in business logic (exceptions allowed for third-party libs)
 - All function parameters should have explicit types
 - All return types should be explicitly defined
@@ -40,9 +45,11 @@
 - No `@ts-ignore` comments without justification
 
 ### AC-3: Code Documentation Added
+
 **Given** complex functions and modules exist  
 **When** reviewing code documentation  
 **Then**
+
 - All public functions should have JSDoc comments
 - All modules should have README.md files
 - Complex algorithms should have inline comments explaining logic
@@ -50,9 +57,11 @@
 - Architecture decisions should be documented in ADRs
 
 ### AC-4: Dependency Management Improved
+
 **Given** project dependencies exist  
 **When** reviewing dependency health  
 **Then**
+
 - No critical security vulnerabilities should exist
 - Outdated dependencies should be updated (within major version)
 - Unused dependencies should be removed
@@ -60,9 +69,11 @@
 - `pnpm audit` should report 0 high/critical issues
 
 ### AC-5: Code Style Consistency Enforced
+
 **Given** multiple developers work on the codebase  
 **When** checking code style  
 **Then**
+
 - ESLint should pass with 0 errors
 - Prettier should format all code consistently
 - No console.log statements in production code (use logger)
@@ -125,7 +136,7 @@
        * @returns Created goal object
        * @throws {ValidationError} If data is invalid
        */
-      export async function createGoal(data: CreateGoalDto, accountUuid: string): Promise<Goal>
+      export async function createGoal(data: CreateGoalDto, accountUuid: string): Promise<Goal>;
       ```
   - [ ] Create module README files
     - [ ] `packages/domain-server/README.md`
@@ -178,7 +189,7 @@
     - [ ] Enable stricter rules:
       ```json
       {
-        "no-console": "error",  // Use logger instead
+        "no-console": "error", // Use logger instead
         "no-debugger": "error",
         "@typescript-eslint/explicit-function-return-type": "warn"
       }
@@ -197,18 +208,21 @@
     - [ ] Configure:
       ```json
       {
-        "import/order": ["error", {
-          "groups": [
-            "builtin",   // Node.js built-ins
-            "external",  // npm packages
-            "internal",  // @/* imports
-            "parent",    // ../
-            "sibling",   // ./
-            "index"      // ./index
-          ],
-          "newlines-between": "always",
-          "alphabetize": { "order": "asc" }
-        }]
+        "import/order": [
+          "error",
+          {
+            "groups": [
+              "builtin", // Node.js built-ins
+              "external", // npm packages
+              "internal", // @/* imports
+              "parent", // ../
+              "sibling", // ./
+              "index" // ./index
+            ],
+            "newlines-between": "always",
+            "alphabetize": { "order": "asc" }
+          }
+        ]
       }
       ```
   - [ ] Enforce file naming conventions
@@ -249,6 +263,7 @@
 ## 👨‍💻 Dev Notes
 
 ### Previous Story Insights
+
 - STORY-029: E2E tests revealed some code duplication in test setup
 - STORY-022-027: Task dependency system has complex logic that needs documentation
 - General: Rapid feature development has accumulated some technical debt
@@ -256,11 +271,13 @@
 ### Technical Context
 
 #### 🏗️ Codebase Structure
+
 [Source: Project structure + Clean Architecture]
 
 **Project Type**: Nx monorepo with multiple apps and packages
 
 **Key Directories**:
+
 ```
 apps/
   api/          - Express backend (needs most refactoring)
@@ -275,6 +292,7 @@ packages/
 ```
 
 **Current Quality Issues** (Common in rapid development):
+
 - Utility functions duplicated across apps
 - Some `any` types in complex domain logic
 - Sparse documentation for business rules
@@ -284,6 +302,7 @@ packages/
 #### 📦 File Locations for New Code
 
 **Extracted Utilities**:
+
 ```
 packages/utils/src/
 ├── string-utils.ts      (new)
@@ -294,6 +313,7 @@ packages/utils/src/
 ```
 
 **Documentation**:
+
 ```
 docs/architecture/adr/
 ├── ADR-001-clean-architecture.md  (new)
@@ -304,6 +324,7 @@ packages/*/README.md  (new - one per package)
 ```
 
 **Configuration**:
+
 ```
 .husky/
 └── pre-commit           (new)
@@ -312,9 +333,11 @@ lint-staged.config.js    (new)
 ```
 
 #### 🔧 Code Duplication Tools
+
 [Source: Industry standard tools]
 
 **jscpd** (Copy/Paste Detector):
+
 ```bash
 # Install
 npx jscpd --version
@@ -327,16 +350,12 @@ npx jscpd --format html --output ./reports/duplication
 ```
 
 **Configuration** (`.jscpd.json`):
+
 ```json
 {
   "threshold": 3,
   "reporters": ["html", "console"],
-  "ignore": [
-    "**/node_modules/**",
-    "**/dist/**",
-    "**/*.spec.ts",
-    "**/*.test.ts"
-  ],
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/*.spec.ts", "**/*.test.ts"],
   "format": ["typescript", "javascript"],
   "minLines": 10,
   "minTokens": 50
@@ -344,9 +363,11 @@ npx jscpd --format html --output ./reports/duplication
 ```
 
 #### 🎯 Type Coverage Tool
+
 [Source: type-coverage npm package]
 
 **Installation & Usage**:
+
 ```bash
 pnpm add -D type-coverage
 
@@ -361,16 +382,18 @@ apps/api/src/modules/goals/services/GoalService.ts:45:12: error Parameter 'data'
 **Target**: > 95% type coverage
 
 #### 📝 JSDoc Standards
+
 [Source: TypeScript + JSDoc best practices]
 
 **Template**:
-```typescript
+
+````typescript
 /**
  * Brief description of what the function does
- * 
+ *
  * More detailed explanation if needed.
  * Can span multiple lines.
- * 
+ *
  * @param paramName - Description of parameter
  * @param options - Optional parameter description
  * @param options.field1 - Nested option
@@ -383,22 +406,25 @@ apps/api/src/modules/goals/services/GoalService.ts:45:12: error Parameter 'data'
  */
 export async function myFunction(
   paramName: string,
-  options?: { field1?: boolean }
+  options?: { field1?: boolean },
 ): Promise<Result> {
   // Implementation
 }
-```
+````
 
 **Priority Targets**:
+
 - All exported functions in `packages/domain-server/src/`
 - All exported functions in `packages/domain-client/src/`
 - All API controllers and services
 - All complex business logic
 
 #### 🔒 Dependency Audit Process
+
 [Source: npm/pnpm security best practices]
 
 **Audit Commands**:
+
 ```bash
 # Check for vulnerabilities
 pnpm audit
@@ -420,11 +446,13 @@ pnpm update package-name --latest
 ```
 
 **Update Strategy**:
+
 1. **Patch updates** (1.2.3 → 1.2.4): Apply immediately
 2. **Minor updates** (1.2.3 → 1.3.0): Test thoroughly
 3. **Major updates** (1.2.3 → 2.0.0): Review breaking changes, update carefully
 
 **Priority Order**:
+
 1. Critical security vulnerabilities
 2. High security vulnerabilities
 3. Outdated build tools (Nx, Vite, TypeScript)
@@ -432,9 +460,11 @@ pnpm update package-name --latest
 5. Outdated libraries
 
 #### 🎨 ESLint Configuration Enhancement
+
 [Source: Project eslint.config.ts]
 
 **Recommended Rules to Add**:
+
 ```typescript
 // eslint.config.ts
 export default [
@@ -444,41 +474,42 @@ export default [
       'no-console': 'error',
       'no-debugger': 'error',
       'no-alert': 'error',
-      
+
       // TypeScript
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_' 
-      }],
-      
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+        },
+      ],
+
       // Import Order
-      'import/order': ['error', {
-        'groups': [
-          'builtin',
-          'external',
-          'internal',
-          'parent',
-          'sibling',
-          'index'
-        ],
-        'newlines-between': 'always',
-        'alphabetize': { 'order': 'asc' }
-      }],
-      
+      'import/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+          alphabetize: { order: 'asc' },
+        },
+      ],
+
       // Code Style
       'max-len': ['warn', { code: 100, ignoreComments: true }],
-      'complexity': ['warn', 10],
+      complexity: ['warn', 10],
       'max-depth': ['warn', 3],
-    }
-  }
+    },
+  },
 ];
 ```
 
 #### 🪝 Git Hooks with Husky
+
 [Source: Husky + lint-staged best practices]
 
 **Setup Process**:
+
 ```bash
 # Install
 pnpm add -D husky lint-staged
@@ -496,80 +527,91 @@ chmod +x .husky/pre-commit
 ```
 
 **lint-staged Configuration** (`package.json`):
+
 ```json
 {
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
+    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yml,yaml}": ["prettier --write"]
   }
 }
 ```
 
 #### 📚 Architecture Decision Records (ADR)
+
 [Source: ADR best practices]
 
 **Template** (`docs/architecture/adr/ADR-XXX-title.md`):
+
 ```markdown
 # ADR-XXX: Title
 
 **Date**: 2024-10-24  
 **Status**: Accepted  
-**Deciders**: Team  
+**Deciders**: Team
 
 ## Context
+
 What is the issue we're seeing that motivates this decision?
 
 ## Decision
+
 What is the change we're making?
 
 ## Consequences
+
 What becomes easier or harder because of this change?
 
 ### Positive
+
 - Benefit 1
 - Benefit 2
 
 ### Negative
+
 - Trade-off 1
 - Trade-off 2
 
 ## Alternatives Considered
+
 - Option A: Why not chosen
 - Option B: Why not chosen
 ```
 
 **Required ADRs for this story**:
+
 1. **ADR-001**: Clean Architecture Pattern
 2. **ADR-002**: Nx Monorepo Structure
 3. **ADR-003**: Task Dependency Graph Implementation
 
 #### 🧪 Testing Strategy
+
 [Source: Project testing patterns]
 
 **Quality Enforcement Tests**:
+
 - Type coverage check in CI
 - Duplication threshold check in CI
 - Dependency audit in CI
 - ESLint in CI (already exists)
 
 **Refactoring Tests**:
+
 - Run all existing tests after each refactoring
 - Verify no functionality broken
 - Add tests for newly extracted utilities
 
 #### ⚠️ Technical Constraints
+
 - Refactoring must not break existing functionality
 - Must maintain backward compatibility for shared packages
 - Type improvements should not require extensive rewrites
 - Documentation should be concise yet comprehensive
 
 #### 🎯 Success Metrics
+
 **Quantitative**:
+
 - Code duplication: < 3%
 - Type coverage: > 95%
 - ESLint errors: 0
@@ -577,12 +619,14 @@ What becomes easier or harder because of this change?
 - JSDoc coverage: > 80% of public functions
 
 **Qualitative**:
+
 - Easier onboarding for new developers
 - Faster code reviews (clearer code)
 - Fewer bugs from type errors
 - Better IDE autocomplete experience
 
 #### 📚 Implementation Order Priority
+
 1. **Code Style** (Task 5) - Quick wins, foundation for other tasks
 2. **Type Safety** (Task 2) - Prevent future issues
 3. **Duplication** (Task 1) - Requires refactoring knowledge
@@ -595,14 +639,17 @@ What becomes easier or harder because of this change?
 ## 📊 Testing
 
 ### Unit Tests
+
 - ✅ Extracted utility functions have tests
 - ✅ All refactored code maintains existing test coverage
 
 ### Integration Tests
+
 - ✅ Verify no functionality broken after refactoring
 - ✅ All existing E2E tests still pass
 
 ### Quality Gates
+
 - ✅ Type coverage > 95%
 - ✅ Code duplication < 3%
 - ✅ ESLint passes with 0 errors
@@ -612,29 +659,34 @@ What becomes easier or harder because of this change?
 
 ## 🔄 Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2024-10-24 | 1.0 | Initial story creation | Bob (Scrum Master) |
+| Date       | Version | Description            | Author             |
+| ---------- | ------- | ---------------------- | ------------------ |
+| 2024-10-24 | 1.0     | Initial story creation | Bob (Scrum Master) |
 
 ---
 
 ## 👨‍💻 Dev Agent Record
 
 ### Agent Model Used
+
 _To be filled by Dev Agent_
 
 ### Debug Log References
+
 _To be filled by Dev Agent_
 
 ### Completion Notes List
+
 _To be filled by Dev Agent_
 
 ### File List
+
 _To be filled by Dev Agent_
 
 ---
 
 ## 🧪 QA Results
+
 _To be filled by QA Agent_
 
 ---

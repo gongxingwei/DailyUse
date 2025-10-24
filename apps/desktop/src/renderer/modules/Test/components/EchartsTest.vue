@@ -4,8 +4,14 @@
     <div class="header">
       <span>选择要展示的目标</span>
       <div>
-        <v-select v-model="selectedGoalUuid" :items="items" item-title="name" item-value="uuid" label="Select Goal"
-          outlined></v-select>
+        <v-select
+          v-model="selectedGoalUuid"
+          :items="items"
+          item-title="name"
+          item-value="uuid"
+          label="Select Goal"
+          outlined
+        ></v-select>
       </div>
     </div>
     <main>
@@ -16,7 +22,7 @@
           <v-chart class="chart" :option="progressOption" autoresize />
         </div>
       </section>
-      <section> 
+      <section>
         <h2>关键结果进度</h2>
         <h5>当前目标: {{ selectedGoal?.name }}</h5>
         <div>
@@ -30,36 +36,28 @@
           <v-chart class="chart" :option="periodBarOption" autoresize />
         </div>
       </section>
-      
     </main>
   </div>
-
 </template>
 
 <script lang="ts" setup>
-import { use } from 'echarts/core'
-import { BarChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent
-} from 'echarts/components'
-import { CanvasRenderer } from 'echarts/renderers'
-import type { ComposeOption } from 'echarts/core'
-import type { BarSeriesOption } from 'echarts/charts'
+import { use } from 'echarts/core';
+import { BarChart } from 'echarts/charts';
+import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import type { ComposeOption } from 'echarts/core';
+import type { BarSeriesOption } from 'echarts/charts';
 import type {
   TitleComponentOption,
   TooltipComponentOption,
-  GridComponentOption
-} from 'echarts/components'
+  GridComponentOption,
+} from 'echarts/components';
 import VChart, { THEME_KEY } from 'vue-echarts';
-use([TitleComponent, TooltipComponent, GridComponent, BarChart, CanvasRenderer])
+use([TitleComponent, TooltipComponent, GridComponent, BarChart, CanvasRenderer]);
 provide(THEME_KEY, 'light');
 type EChartsOption = ComposeOption<
-  | TitleComponentOption
-  | TooltipComponentOption
-  | GridComponentOption
-  | BarSeriesOption>
+  TitleComponentOption | TooltipComponentOption | GridComponentOption | BarSeriesOption
+>;
 
 import { ref, provide, computed } from 'vue';
 
@@ -70,10 +68,12 @@ const goalStore = useGoalStore();
 const goals = computed(() => goalStore.getAllGoals);
 
 const selectedGoalUuid = ref<string | null>(null);
-const selectedGoal = computed(() => selectedGoalUuid.value ? goalStore.getGoalByUuid(selectedGoalUuid.value) : null);
+const selectedGoal = computed(() =>
+  selectedGoalUuid.value ? goalStore.getGoalByUuid(selectedGoalUuid.value) : null,
+);
 
 const items = computed(() => {
-  return goals.value.map(goal => ({
+  return goals.value.map((goal) => ({
     uuid: goal.uuid,
     name: goal.name,
   }));
@@ -83,10 +83,10 @@ type TimePeriod = '早晨' | '下午' | '晚上' | '凌晨';
 const timePeriods: TimePeriod[] = ['早晨', '下午', '晚上', '凌晨'];
 function classifyGoalRecordsByPeriod(records: GoalRecord[]): Record<TimePeriod, number> {
   const stat: Record<TimePeriod, number> = {
-    '早晨': 0,
-    '下午': 0,
-    '晚上': 0,
-    '凌晨': 0,
+    早晨: 0,
+    下午: 0,
+    晚上: 0,
+    凌晨: 0,
   };
   for (const rec of records) {
     const date = new Date(rec.lifecycle.createdAt);
@@ -131,7 +131,7 @@ const periodBarOption = computed<EChartsOption>(() => {
       {
         name: '完成数',
         type: 'bar',
-        data: timePeriods.map(period => stat[period]),
+        data: timePeriods.map((period) => stat[period]),
         itemStyle: {
           color: '#5470C6',
         },
@@ -140,9 +140,8 @@ const periodBarOption = computed<EChartsOption>(() => {
   };
 });
 
-
-const danger_threshold = 20;   // 可自定义
-const warning_threshold = 10;  // 可自定义
+const danger_threshold = 20; // 可自定义
+const warning_threshold = 10; // 可自定义
 const danger_color = '#ff4d4f';
 const warning_color = '#faad14';
 const safe_color = '#52c41a';
@@ -165,33 +164,34 @@ const progressOption = computed(() => {
       max: 100,
       splitLine: { show: false },
       axisLabel: { formatter: '{value}%' },
-      axisLine: { show: false }
+      axisLine: { show: false },
     },
     yAxis: {
       type: 'category',
       data: ['目标完成进度', '时间进度'],
-      axisTick: { show: false }
+      axisTick: { show: false },
     },
-    series: [{
-      type: 'bar',
-      data: [progress, timeProgress],
-      label: {
-        show: true,
-        position: 'right',
-        formatter: '{c}%'
+    series: [
+      {
+        type: 'bar',
+        data: [progress, timeProgress],
+        label: {
+          show: true,
+          position: 'right',
+          formatter: '{c}%',
+        },
+        itemStyle: {
+          color: bgColor,
+          borderRadius: 8,
+        },
+        barWidth: 30,
       },
-      itemStyle: {
-        color: bgColor,
-        borderRadius: 8
-      },
-      barWidth: 30
-    }]
-  }
+    ],
+  };
 });
 
-
-const krNames = computed(() => selectedGoal.value?.keyResults.map(kr => kr.name) ?? []);
-const krProgress = computed(() => selectedGoal.value?.keyResults.map(kr => kr.progress) ?? []);
+const krNames = computed(() => selectedGoal.value?.keyResults.map((kr) => kr.name) ?? []);
+const krProgress = computed(() => selectedGoal.value?.keyResults.map((kr) => kr.progress) ?? []);
 
 const krBarOption = computed(() => ({
   title: { text: '关键结果进度', left: 'center' },
@@ -199,29 +199,30 @@ const krBarOption = computed(() => ({
   xAxis: {
     max: 100,
     splitLine: { show: false },
-    axisLabel: { formatter: '{value}%' }
+    axisLabel: { formatter: '{value}%' },
   },
   yAxis: {
     type: 'category',
     data: krNames.value,
-    axisTick: { show: false }
+    axisTick: { show: false },
   },
-  series: [{
-    type: 'bar',
-    data: krProgress.value,
-    label: {
-      show: true,
-      position: 'right',
-      formatter: '{c}%'
+  series: [
+    {
+      type: 'bar',
+      data: krProgress.value,
+      label: {
+        show: true,
+        position: 'right',
+        formatter: '{c}%',
+      },
+      itemStyle: {
+        color: '#1890ff',
+        borderRadius: 8,
+      },
+      barWidth: 30,
     },
-    itemStyle: {
-      color: '#1890ff',
-      borderRadius: 8
-    },
-    barWidth: 30
-  }]
+  ],
 }));
-
 </script>
 
 <style scoped>

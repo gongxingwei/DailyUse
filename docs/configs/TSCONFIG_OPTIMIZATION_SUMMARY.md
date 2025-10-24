@@ -35,41 +35,44 @@ tsconfig.base.json          # 基础配置（所有项目继承）
 ### 1. **tsconfig.base.json** - 基础配置重构
 
 #### 改进前问题：
+
 - ❌ `moduleResolution: "Bundler"` 对 Node.js 项目不友好
 - ❌ `noEmit: true` 导致库无法生成声明文件
 - ❌ 缺少关键的严格检查选项
 - ❌ paths 配置不完整
 
 #### 改进后：
+
 ```jsonc
 {
   "compilerOptions": {
     // ✅ 使用 Node 解析，兼容性最好
     "moduleResolution": "Node",
-    
+
     // ✅ 完整的严格类型检查
     "strict": true,
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    
+
     // ✅ 性能优化
     "skipLibCheck": true,
     "incremental": true,
-    
+
     // ✅ 完整的路径别名（支持子路径）
     "paths": {
       "@dailyuse/contracts": ["packages/contracts/src/index.ts"],
       "@dailyuse/contracts/*": ["packages/contracts/src/*"],
       // ... 所有包
-    }
-  }
+    },
+  },
 }
 ```
 
 ### 2. **apps/api** - Node.js 服务配置
 
 #### 关键配置：
+
 ```jsonc
 {
   "compilerOptions": {
@@ -77,28 +80,29 @@ tsconfig.base.json          # 基础配置（所有项目继承）
     "moduleResolution": "Node",
     "lib": ["ES2020"],
     "types": ["node"],
-    
+
     // 项目引用
     "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    
+
     // 输出配置
     "outDir": "./dist",
     "rootDir": "./src",
-    "noEmit": false
+    "noEmit": false,
   },
   "references": [
     { "path": "../../packages/contracts" },
-    
+
     { "path": "../../packages/domain-server" },
-    { "path": "../../packages/utils" }
-  ]
+    { "path": "../../packages/utils" },
+  ],
 }
 ```
 
 #### 改进点：
+
 - ✅ 添加 `declarationMap` 和 `sourceMap` 用于调试
 - ✅ 明确 `noEmit: false` 生成构建产物
 - ✅ 完整的 references 配置支持增量编译
@@ -107,28 +111,30 @@ tsconfig.base.json          # 基础配置（所有项目继承）
 ### 3. **apps/web & apps/desktop** - Vite 项目配置
 
 #### 关键配置：
+
 ```jsonc
 {
   "compilerOptions": {
     // Vite bundler 解析
     "moduleResolution": "Bundler",
-    
+
     // 浏览器环境
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
-    
+
     // Vue 支持（desktop）
     "jsx": "preserve",
-    
+
     // 项目引用
     "composite": true,
     "declaration": true,
-    "sourceMap": true
-  }
+    "sourceMap": true,
+  },
 }
 ```
 
 #### 改进点：
+
 - ✅ `moduleResolution: "Bundler"` 适配 Vite
 - ✅ 添加 DOM 类型库
 - ✅ desktop 支持 Electron + Vue 混合环境
@@ -137,6 +143,7 @@ tsconfig.base.json          # 基础配置（所有项目继承）
 ### 4. **packages/** - 库配置标准化
 
 #### 统一配置模式：
+
 ```jsonc
 {
   "extends": "../../tsconfig.base.json",
@@ -145,112 +152,126 @@ tsconfig.base.json          # 基础配置（所有项目继承）
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": false,
-    
+
     // 项目引用必需配置
     "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    
+
     // 环境特定配置
-    "lib": ["ES2020"],         // 或 ["ES2020", "DOM"]
-    "types": ["node"],          // 或 ["vite/client"]
-    
+    "lib": ["ES2020"], // 或 ["ES2020", "DOM"]
+    "types": ["node"], // 或 ["vite/client"]
+
     // 本地路径
     "paths": {
       "@/*": ["./src/*"],
-      "@dailyuse/依赖包": ["../依赖包/src/index.ts"]
-    }
+      "@dailyuse/依赖包": ["../依赖包/src/index.ts"],
+    },
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "references": [
-    { "path": "../依赖包" }
-  ]
+  "references": [{ "path": "../依赖包" }],
 }
 ```
 
 #### 各包特点：
 
 **contracts** - 纯类型定义
+
 - 无依赖，作为基础包
 - 生成 .js 和 .d.ts
 
 **domain-core** - 核心领域逻辑
+
 - 依赖: contracts, utils
 - 通用环境（不依赖 DOM/Node）
 
 **domain-client** - 客户端领域逻辑
+
 - 依赖: contracts, domain-core, utils
 - 浏览器环境 (`lib: ["ES2020", "DOM"]`)
 - 包含 vitest 类型
 
 **domain-server** - 服务端领域逻辑
+
 - 依赖: contracts, domain-core, utils
 - Node.js 环境 (`types: ["node"]`)
 - 包含 vitest 类型
 
 **ui** - Vue 组件库
+
 - 依赖: utils
 - 浏览器环境 + Vue (`jsx: "preserve"`)
 
 **utils** - 工具库
+
 - 无依赖
 - 通用环境 + Node 类型
 
 **assets** - 静态资源
+
 - 无依赖
 - Vite 客户端类型 (`moduleResolution: "Bundler"`)
 
 ### 5. **新增文件**
 
 #### `packages/contracts/tsconfig.json` ✅
+
 之前缺失，现在已补充完整配置。
 
 ### 6. **tsconfig.json** - 根项目配置
 
 #### 改进：
+
 ```jsonc
 {
   "compilerOptions": {
-    "noEmit": true,      // 根项目不生成输出
-    "composite": false   // 根项目不是 composite
+    "noEmit": true, // 根项目不生成输出
+    "composite": false, // 根项目不是 composite
   },
   "references": [
     { "path": "./apps/api" },
     { "path": "./apps/web" },
     { "path": "./apps/desktop" },
-    { "path": "./packages/contracts" },    // ✅ 已启用
+    { "path": "./packages/contracts" }, // ✅ 已启用
     { "path": "./packages/domain-core" },
     { "path": "./packages/domain-client" },
     { "path": "./packages/domain-server" },
     { "path": "./packages/ui" },
-    { "path": "./packages/utils" },         // ✅ 已启用
-    { "path": "./packages/assets" }         // ✅ 已启用
-  ]
+    { "path": "./packages/utils" }, // ✅ 已启用
+    { "path": "./packages/assets" }, // ✅ 已启用
+  ],
 }
 ```
 
 ## 📊 性能提升
 
 ### 增量编译
+
 所有库启用 `composite: true` 和 `incremental: true`：
+
 - ⚡ 第一次构建后，后续构建速度提升 50-70%
 - 📦 生成 `.tsbuildinfo` 文件缓存类型信息
 
 ### Source Maps
+
 所有库启用 `sourceMap: true` 和 `declarationMap: true`：
+
 - 🐛 调试时可以跳转到源码
 - 📍 IDE 可以正确定位类型定义
 
 ### 跳过库检查
+
 基础配置启用 `skipLibCheck: true`：
+
 - ⚡ 跳过 node_modules 类型检查，提升 30-40% 编译速度
 - ✅ 只检查项目自身代码
 
 ## 🎯 路径别名规范
 
 ### 全局别名（所有项目可用）
+
 ```typescript
 // 导入包（推荐）
 import { ... } from '@dailyuse/contracts';
@@ -263,6 +284,7 @@ import { ... } from '@dailyuse/utils/logger';
 ```
 
 ### 本地别名（项目内使用）
+
 ```typescript
 // apps/api
 import { ... } from '@/modules/notification';
@@ -332,6 +354,7 @@ packages/ui
 ## 🚀 使用建议
 
 ### 开发模式
+
 ```bash
 # 运行单个项目（自动增量编译依赖）
 pnpm nx serve api
@@ -343,6 +366,7 @@ pnpm nx watch api
 ```
 
 ### 构建模式
+
 ```bash
 # 构建所有项目
 pnpm nx run-many --target=build --all
@@ -356,6 +380,7 @@ pnpm nx affected --target=build
 ```
 
 ### 类型检查
+
 ```bash
 # 全局类型检查
 tsc --build
@@ -390,17 +415,20 @@ tsc --build packages/domain-core
 ## 🎉 优化效果
 
 ### 编译速度
+
 - 首次构建: 无明显变化
 - 增量构建: **提升 50-70%** ⚡
 - 类型检查: **提升 30-40%** ⚡
 
 ### 开发体验
+
 - ✅ 路径导入智能提示完整
 - ✅ 跨包跳转定义正常工作
 - ✅ 源码调试无缝支持
 - ✅ 类型错误实时反馈
 
 ### 项目健康度
+
 - ✅ 所有配置规范统一
 - ✅ 依赖关系清晰明确
 - ✅ 构建产物可追溯

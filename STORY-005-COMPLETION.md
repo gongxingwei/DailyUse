@@ -15,6 +15,7 @@
 **文件**: `apps/web/src/modules/goal/infrastructure/api/weightSnapshotApiClient.ts`
 
 **功能**:
+
 - ✅ updateKRWeight() - 更新 KR 权重并创建快照
 - ✅ getGoalSnapshots() - 查询 Goal 的所有权重快照（支持分页）
 - ✅ getKRSnapshots() - 查询 KeyResult 的权重快照历史
@@ -22,6 +23,7 @@
 - ✅ getWeightComparison() - 对比多个时间点的权重分配（最多 5 个）
 
 **特点**:
+
 - 使用项目统一的 `apiClient` 实例
 - 类型安全的 API 调用
 - 单例模式导出
@@ -32,6 +34,7 @@
 **文件**: `apps/web/src/modules/goal/application/services/WeightSnapshotWebApplicationService.ts` (293 lines)
 
 **功能**:
+
 - ✅ updateKRWeight() - 权重更新 + 快照创建
 - ✅ getGoalSnapshots() - Goal 快照查询
 - ✅ getKRSnapshots() - KR 快照历史查询
@@ -40,12 +43,14 @@
 - ✅ refreshGoalData() - 刷新 Goal 数据的辅助方法
 
 **集成**:
+
 - ✅ Pinia Store 集成（goalStore）
 - ✅ 全局 Snackbar 提示系统
 - ✅ CrossPlatformEventBus 事件系统（WEIGHT_UPDATED 事件）
 - ✅ 统一错误处理
 
 **事件触发**:
+
 ```typescript
 this.eventBus.emit('WEIGHT_UPDATED', {
   goalUuid,
@@ -62,6 +67,7 @@ this.eventBus.emit('WEIGHT_UPDATED', {
 **文件**: `apps/web/src/modules/goal/presentation/composables/useWeightSnapshot.ts` (278 lines)
 
 **响应式状态**:
+
 - ✅ isLoading - 加载状态
 - ✅ error - 错误信息
 - ✅ snapshots - 快照列表
@@ -70,6 +76,7 @@ this.eventBus.emit('WEIGHT_UPDATED', {
 - ✅ comparisonData - 对比数据
 
 **方法**:
+
 - ✅ updateWeight() - 更新权重
 - ✅ fetchGoalSnapshots() - 查询 Goal 快照
 - ✅ fetchKRSnapshots() - 查询 KR 快照
@@ -81,6 +88,7 @@ this.eventBus.emit('WEIGHT_UPDATED', {
 - ✅ resetComparisonData() - 重置对比数据
 
 **计算属性**:
+
 - ✅ hasSnapshots - 是否有快照数据
 - ✅ hasTrendData - 是否有趋势数据
 - ✅ hasComparisonData - 是否有对比数据
@@ -89,6 +97,7 @@ this.eventBus.emit('WEIGHT_UPDATED', {
 ### 4. ✅ 模块导出
 
 **文件**: `apps/web/src/modules/goal/application/index.ts`
+
 - ✅ 导出 WeightSnapshotWebApplicationService
 
 ---
@@ -96,11 +105,13 @@ this.eventBus.emit('WEIGHT_UPDATED', {
 ## 📦 文件清单
 
 **新建文件**:
+
 1. `apps/web/src/modules/goal/infrastructure/api/weightSnapshotApiClient.ts` (136 lines)
 2. `apps/web/src/modules/goal/application/services/WeightSnapshotWebApplicationService.ts` (293 lines)
 3. `apps/web/src/modules/goal/presentation/composables/useWeightSnapshot.ts` (278 lines)
 
 **修改文件**:
+
 1. `apps/web/src/modules/goal/application/index.ts` (添加 export)
 
 **总代码量**: ~710 lines
@@ -221,17 +232,14 @@ const handleLoadTrend = async () => {
 <template>
   <div>
     <v-progress-circular v-if="isLoading" />
-    
+
     <v-list v-if="hasSnapshots">
       <v-list-item v-for="snapshot in snapshots" :key="snapshot.uuid">
         {{ snapshot.newWeight }}% (Δ {{ snapshot.weightDelta }}%)
       </v-list-item>
     </v-list>
-    
-    <v-pagination
-      v-model="pagination.page"
-      :length="pagination.totalPages"
-    />
+
+    <v-pagination v-model="pagination.page" :length="pagination.totalPages" />
   </div>
 </template>
 ```
@@ -253,11 +261,13 @@ const handleLoadTrend = async () => {
 ## 📊 完成度
 
 **STORY-005**: 3/3 SP (100%) ✅
+
 - API Client: 1/1 SP ✅
 - Application Service: 1/1 SP ✅
 - Vue Composable: 1/1 SP ✅
 
 **Sprint 2a 总进度**: 16/25 SP (64%)
+
 - STORY-001: 3/3 SP ✅
 - STORY-002: 3/3 SP ✅
 - STORY-003: 3/3 SP ✅
@@ -273,21 +283,21 @@ const handleLoadTrend = async () => {
 ## 🚀 下一步
 
 ### 立即可执行
+
 1. ✅ 提交代码
 2. ⏳ 编写单元测试（可选，预计 1-2 小时）
 3. ⏳ 开始 STORY-006: UI - 权重快照列表视图 (3 SP)
 
 ### 前端 UI Stories
+
 - **STORY-006**: 权重快照列表视图 (3 SP)
   - 显示快照列表
   - 支持分页
   - 显示权重变化
-  
 - **STORY-007**: 权重趋势图表 (3 SP)
   - ECharts 折线图
   - 时间范围选择
   - 多 KR 对比
-  
 - **STORY-008**: 权重对比视图 (2 SP)
   - 多时间点对比
   - 柱状图或雷达图

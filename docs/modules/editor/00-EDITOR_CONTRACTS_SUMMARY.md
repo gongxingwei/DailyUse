@@ -194,15 +194,15 @@
 
 ## 📊 文件统计
 
-| 类型 | 文件数量 | 总大小（约） |
-|-----|---------|------------|
-| 枚举 | 1 | 2KB |
-| 值对象 | 6 (5+1导出) | 11KB |
-| 聚合根 | 5 (4+1导出) | 12KB |
-| 实体 | 13 (12+1导出) | 28KB |
-| API DTO | 1 | 7KB |
-| 统一导出 | 1 | 0.5KB |
-| **总计** | **27** | **60.5KB** |
+| 类型     | 文件数量      | 总大小（约） |
+| -------- | ------------- | ------------ |
+| 枚举     | 1             | 2KB          |
+| 值对象   | 6 (5+1导出)   | 11KB         |
+| 聚合根   | 5 (4+1导出)   | 12KB         |
+| 实体     | 13 (12+1导出) | 28KB         |
+| API DTO  | 1             | 7KB          |
+| 统一导出 | 1             | 0.5KB        |
+| **总计** | **27**        | **60.5KB**   |
 
 ## 🏗️ 架构规范
 
@@ -245,15 +245,18 @@ contracts/src/modules/editor/
 ### 2. 命名规范
 
 #### DTO 命名
+
 - **Server DTO**: `XxxServerDTO`
 - **Client DTO**: `XxxClientDTO`
 - **Persistence DTO**: `XxxPersistenceDTO` (snake_case 字段)
 
 #### 接口命名
+
 - **Server 接口**: `IXxxServer` → `export type XxxServer = IXxxServer`
 - **Client 接口**: `IXxxClient` → `export type XxxClient = IXxxClient`
 
 #### 领域事件命名
+
 - **事件接口**: `XxxCreatedEvent`, `XxxUpdatedEvent`, `XxxDeletedEvent` 等
 - **事件联合类型**: `XxxDomainEvent = Event1 | Event2 | ...`
 
@@ -263,9 +266,9 @@ contracts/src/modules/editor/
 
 ```typescript
 export interface XxxServerDTO {
-  createdAt: number;      // ✅ epoch ms
-  updatedAt: number;      // ✅ epoch ms
-  lastAccessedAt?: number | null;  // ✅ epoch ms
+  createdAt: number; // ✅ epoch ms
+  updatedAt: number; // ✅ epoch ms
+  lastAccessedAt?: number | null; // ✅ epoch ms
 }
 ```
 
@@ -331,6 +334,7 @@ export interface XxxServerDTO {
 4. **特殊操作 Request/Response**: 根据具体业务命名
 
 **注意事项：**
+
 - Request 不包含 `uuid`, `createdAt`, `updatedAt`（由服务端生成）
 - Response 通常包含完整或简化的 DTO
 - List Response 必须包含 `total` 字段
@@ -340,11 +344,13 @@ export interface XxxServerDTO {
 ### 1. Server/Client 分离
 
 **原因：**
+
 - Server 接口包含完整的业务逻辑和 Persistence DTO
 - Client 接口简化，只包含 UI 相关的辅助方法
 - 避免客户端依赖服务端特定的实现细节
 
 **示例：**
+
 ```typescript
 // Server 包含 Persistence DTO
 export interface XxxServer {
@@ -365,16 +371,16 @@ export interface XxxClient {
 ```typescript
 export interface DocumentServerDTO {
   uuid: string;
-  workspaceUuid: string;  // ✅ 聚合根外键
+  workspaceUuid: string; // ✅ 聚合根外键
   accountUuid: string;
   // ...
 }
 
 export interface EditorTabServerDTO {
   uuid: string;
-  groupUuid: string;      // 所属分组
-  sessionUuid: string;    // 所属会话
-  workspaceUuid: string;  // ✅ 聚合根外键
+  groupUuid: string; // 所属分组
+  sessionUuid: string; // 所属会话
+  workspaceUuid: string; // ✅ 聚合根外键
   accountUuid: string;
   // ...
 }
@@ -386,12 +392,13 @@ export interface EditorTabServerDTO {
 
 ```typescript
 export interface XxxServerDTO {
-  description?: string | null;  // ✅ 正确
-  lastAccessedAt?: number | null;  // ✅ 正确
+  description?: string | null; // ✅ 正确
+  lastAccessedAt?: number | null; // ✅ 正确
 }
 ```
 
 **原因：**
+
 - `null` 可以显式序列化到 JSON
 - `undefined` 在 JSON 序列化时会丢失
 - 数据库中 `NULL` 对应 TypeScript 的 `null`
@@ -405,9 +412,9 @@ export interface XxxClientDTO {
   // 基础字段
   createdAt: number;
   updatedAt: number;
-  
+
   // UI 格式化字段
-  formattedCreatedAt: string;  // "2024-06-28 10:30:00"
+  formattedCreatedAt: string; // "2024-06-28 10:30:00"
   formattedUpdatedAt: string;
 }
 ```
@@ -418,10 +425,10 @@ export interface XxxClientDTO {
 
 ```typescript
 export interface XxxCreatedEvent {
-  readonly eventType: 'XxxCreated';  // 事件类型标识
-  readonly occurredAt: number;       // 发生时间（epoch ms）
-  readonly aggregateId: string;      // 聚合根 ID
-  readonly xxx: XxxServerDTO;        // 完整的领域对象
+  readonly eventType: 'XxxCreated'; // 事件类型标识
+  readonly occurredAt: number; // 发生时间（epoch ms）
+  readonly aggregateId: string; // 聚合根 ID
+  readonly xxx: XxxServerDTO; // 完整的领域对象
 }
 ```
 

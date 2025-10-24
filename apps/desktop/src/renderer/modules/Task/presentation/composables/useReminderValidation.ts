@@ -31,12 +31,14 @@ export function useReminderValidation() {
   /**
    * 单个提醒项的快速验证
    */
-  const validateSingleAlert = (alert: TaskTemplate['reminderConfig']['alerts'][number]): boolean => {
+  const validateSingleAlert = (
+    alert: TaskTemplate['reminderConfig']['alerts'][number],
+  ): boolean => {
     if (!alert.type) {
       errors.value.push('提醒类型不能为空');
       return false;
     }
-      
+
     if (!alert.timing || !alert.timing.type) {
       errors.value.push('提醒时机类型不能为空');
       return false;
@@ -47,12 +49,12 @@ export function useReminderValidation() {
         errors.value.push('相对提醒时间必须大于0分钟');
         return false;
       }
-      
+
       // UI层面的用户体验警告
       if (alert.timing.minutesBefore > 1440) {
         warnings.value.push('提前时间超过24小时可能影响提醒效果');
       }
-      
+
       if (alert.timing.minutesBefore < 5) {
         warnings.value.push('提前时间过短，可能无法及时准备');
       }
@@ -79,8 +81,8 @@ export function useReminderValidation() {
    */
   const checkTimeConflicts = (alerts: TaskTemplate['reminderConfig']['alerts']): boolean => {
     const relativeTimes = alerts
-      .filter(alert => alert.timing.type === 'relative' && alert.timing.minutesBefore)
-      .map(alert => alert.timing.minutesBefore!)
+      .filter((alert) => alert.timing.type === 'relative' && alert.timing.minutesBefore)
+      .map((alert) => alert.timing.minutesBefore!)
       .sort((a, b) => a - b);
 
     // 检查是否有重复的相对时间
@@ -103,11 +105,11 @@ export function useReminderValidation() {
     warnings,
     isValid,
     hasWarnings,
-    
+
     // 方法 - 仅UI验证相关
     validateReminders,
     validateSingleAlert,
     resetValidation,
-    checkTimeConflicts
+    checkTimeConflicts,
   };
 }

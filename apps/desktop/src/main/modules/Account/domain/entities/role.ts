@@ -29,7 +29,7 @@ export class Role {
   }) {
     this._uuid = params.uuid;
     this._name = params.name;
-    this._description = params.description ?? "";
+    this._description = params.description ?? '';
     this._permissions = new Set(params.permissions ?? []);
   }
 
@@ -88,9 +88,9 @@ export class Role {
    */
   static forCreate(): Role {
     return new Role({
-      uuid: "",
-      name: "",
-      description: "",
+      uuid: '',
+      name: '',
+      description: '',
       permissions: [],
     });
   }
@@ -101,11 +101,7 @@ export class Role {
   static isRole(obj: any): obj is Role {
     return (
       obj instanceof Role ||
-      (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "name" in obj &&
-        "permissions" in obj)
+      (obj && typeof obj === 'object' && 'uuid' in obj && 'name' in obj && 'permissions' in obj)
     );
   }
 

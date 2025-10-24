@@ -9,11 +9,11 @@ import {
   Notification,
   NotificationTemplate,
   NotificationPreference,
-  
+
   // 实体
   NotificationChannel,
   NotificationHistory,
-  
+
   // 值对象
   NotificationAction,
   NotificationMetadata,
@@ -23,12 +23,12 @@ import {
   ChannelError,
   ChannelResponse,
   NotificationTemplateConfig,
-  
+
   // 仓储接口
   INotificationRepository,
   INotificationTemplateRepository,
   INotificationPreferenceRepository,
-  
+
   // 领域服务
   NotificationDomainService,
   NotificationTemplateDomainService,
@@ -122,15 +122,11 @@ await preferenceService.enableDoNotDisturb(
 );
 
 // 更新分类偏好
-await preferenceService.updateCategoryPreference(
-  'user-123',
-  NotificationCategory.TASK,
-  {
-    enabled: true,
-    channels: { inApp: true, email: false, push: true, sms: false },
-    importance: ImportanceLevel.High,
-  },
-);
+await preferenceService.updateCategoryPreference('user-123', NotificationCategory.TASK, {
+  enabled: true,
+  channels: { inApp: true, email: false, push: true, sms: false },
+  importance: ImportanceLevel.High,
+});
 ```
 
 ### 4. 查询和管理通知
@@ -173,11 +169,11 @@ const notification = await notificationService.getNotification(uuid, {
 const channels = notification.getAllChannels();
 for (const channel of channels) {
   console.log(channel.channelType, channel.status);
-  
+
   if (channel.isFailed()) {
     const error = channel.error;
     console.error(`Failed: ${error?.message}`);
-    
+
     // 重试
     if (channel.canRetry()) {
       channel.retry();
@@ -215,10 +211,7 @@ const notification = await notificationService.createAndSendNotification({
 });
 
 // 用户点击操作
-await notificationService.executeNotificationAction(
-  notification.uuid,
-  'accept',
-);
+await notificationService.executeNotificationAction(notification.uuid, 'accept');
 ```
 
 ### 7. 维护任务
@@ -242,7 +235,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
 
   async save(notification: Notification): Promise<void> {
     const dto = notification.toPersistenceDTO();
-    
+
     await this.prisma.notification.upsert({
       where: { uuid: dto.uuid },
       create: dto,
@@ -392,9 +385,7 @@ model NotificationPreference {
 
 @Controller('notifications')
 export class NotificationController {
-  constructor(
-    private notificationService: NotificationDomainService,
-  ) {}
+  constructor(private notificationService: NotificationDomainService) {}
 
   @Get()
   async getNotifications(
@@ -442,10 +433,7 @@ export class NotificationController {
   }
 
   @Post(':uuid/actions/:actionId')
-  async executeAction(
-    @Param('uuid') uuid: string,
-    @Param('actionId') actionId: string,
-  ) {
+  async executeAction(@Param('uuid') uuid: string, @Param('actionId') actionId: string) {
     await this.notificationService.executeNotificationAction(uuid, actionId);
     return { success: true };
   }
@@ -462,7 +450,7 @@ export class NotificationSSEController {
   @Sse()
   stream(@Req() req): Observable<MessageEvent> {
     const accountUuid = req.user.uuid;
-    
+
     return new Observable((observer) => {
       // 监听新通知事件
       eventBus.on(`notification.created.${accountUuid}`, (notification) => {

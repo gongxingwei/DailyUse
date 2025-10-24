@@ -11,10 +11,12 @@
 Account 模块是基础设施模块，管理用户账户和偏好设置。
 
 ### 主要聚合根
+
 1. **Account** - 用户账户（核心）
 2. **AccountPreferences** - 账户偏好设置
 
 ### 主要实体
+
 1. **AccountProfile** - 账户资料（可作为值对象）
 2. **AccountQuota** - 账户配额（可作为值对象）
 
@@ -24,16 +26,16 @@ Account 模块是基础设施模块，管理用户账户和偏好设置。
 
 ```typescript
 // Server DTO
-AccountServerDTO
-AccountPreferencesServerDTO
+AccountServerDTO;
+AccountPreferencesServerDTO;
 
 // Client DTO（注意 Client 后缀）
-AccountClientDTO
-AccountPreferencesClientDTO
+AccountClientDTO;
+AccountPreferencesClientDTO;
 
 // Persistence DTO
-AccountPersistenceDTO
-AccountPreferencesPersistenceDTO
+AccountPersistenceDTO;
+AccountPreferencesPersistenceDTO;
 ```
 
 ---
@@ -50,7 +52,7 @@ AccountPreferencesPersistenceDTO
 export enum AccountStatus {
   Active = 'active',
   Suspended = 'suspended',
-  Deleted = 'deleted',  // 逻辑删除
+  Deleted = 'deleted', // 逻辑删除
 }
 ```
 
@@ -65,15 +67,15 @@ export class Account extends AggregateRoot {
   public suspend(reason: string): void;
   public softDelete(): void;
   public restore(): void;
-  
+
   // 偏好设置
   public updatePreferences(preferences: AccountPreferences): void;
-  
+
   // 资料管理
   public updateProfile(profile: AccountProfile): void;
   public updateEmail(email: string): void;
   public updateDisplayName(displayName: string): void;
-  
+
   // 配额管理
   public checkQuota(resource: string): boolean;
   public updateQuota(quota: AccountQuota): void;
@@ -90,12 +92,12 @@ export interface IAccountRepository {
   findByUuid(uuid: string): Promise<Account | null>;
   findByEmail(email: string): Promise<Account | null>;
   findAll(includeDeleted?: boolean): Promise<Account[]>;
-  
+
   // 逻辑删除
   softDelete(uuid: string): Promise<void>;
   restore(uuid: string): Promise<void>;
   hardDelete(uuid: string): Promise<void>;
-  
+
   // 查询
   findByStatus(status: AccountStatus): Promise<Account[]>;
 }

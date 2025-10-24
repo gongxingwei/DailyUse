@@ -1,15 +1,25 @@
 <template>
   <div class="editor-header">
     <div class="editor-tabs">
-      <div v-for="tab in props.tabs" :key="tab.uuid" :class="{ 'active': tab.uuid === props.activeTabId }"
-        @click="handleTabClick(tab.uuid)" class="tab">
+      <div
+        v-for="tab in props.tabs"
+        :key="tab.uuid"
+        :class="{ active: tab.uuid === props.activeTabId }"
+        @click="handleTabClick(tab.uuid)"
+        class="tab"
+      >
         <span class="tab-title">{{ tab.title }}</span>
         <button class="function-icon" @click.stop="handleTabClose(tab.uuid)">×</button>
       </div>
     </div>
     <div class="editor-actions function-group">
-      <button v-for="icon in editorFunctionIconStore.editorFunctionIcons" :key="icon.uuid" class="function-icon"
-        :title="icon.title" @click="icon.action">
+      <button
+        v-for="icon in editorFunctionIconStore.editorFunctionIcons"
+        :key="icon.uuid"
+        class="function-icon"
+        :title="icon.title"
+        @click="icon.action"
+      >
         <v-icon>{{ icon.icon }}</v-icon>
       </button>
       <Menu :items="editorFunctionIconStore.moreFunctions" placement="bottom-end">
@@ -24,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch } from 'vue';
 import { useEditorLayoutStore } from '../stores/editorLayoutStore';
 import { useEditorFunctionIconStore } from '../stores/editorFunctionIconStore';
 import Menu from '@renderer/shared/components/Menu.vue';
@@ -33,25 +43,28 @@ import type { EditorTab } from '../stores/editorGroupStore';
 const props = defineProps<{
   tabs: EditorTab[];
   activeTabId: string | null;
-}>()
+}>();
 
-const emit = defineEmits(['close-tab', 'select-tab'])
+const emit = defineEmits(['close-tab', 'select-tab']);
 
-const editorLayoutStore = useEditorLayoutStore()
-const editorFunctionIconStore = useEditorFunctionIconStore()
+const editorLayoutStore = useEditorLayoutStore();
+const editorFunctionIconStore = useEditorFunctionIconStore();
 
 const handleTabClick = (tabId: string) => {
-  emit('select-tab', tabId)
-}
+  emit('select-tab', tabId);
+};
 
 const handleTabClose = (tabId: string) => {
-  emit('close-tab', tabId)
-}
+  emit('close-tab', tabId);
+};
 
-watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
-  document.documentElement.style.setProperty('--editor-tab-width', `${newWidth}px`)
-}, { immediate: true })
-
+watch(
+  () => editorLayoutStore.editorTabWidth,
+  (newWidth) => {
+    document.documentElement.style.setProperty('--editor-tab-width', `${newWidth}px`);
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -75,7 +88,6 @@ watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
   .button {
     width: 20px;
   }
-
 }
 
 .tab {

@@ -52,9 +52,7 @@
                 <div class="d-flex justify-center">
                   <ProfileAvatar size="64" />
                 </div>
-                <p class="text-center mt-4 text-body-2">
-                  点击头像查看用户信息弹窗
-                </p>
+                <p class="text-center mt-4 text-body-2">点击头像查看用户信息弹窗</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -70,9 +68,7 @@
                 <v-btn color="primary" variant="outlined" @click="$router.push('/tasks')" block>
                   进入任务管理
                 </v-btn>
-                <p class="text-center mt-4 text-body-2">
-                  包含任务模板和任务实例管理
-                </p>
+                <p class="text-center mt-4 text-body-2">包含任务模板和任务实例管理</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -88,9 +84,7 @@
                 <v-btn color="primary" variant="outlined" @click="$router.push('/editor')" block>
                   打开编辑器
                 </v-btn>
-                <p class="text-center mt-4 text-body-2">
-                  Markdown编辑器，支持预览
-                </p>
+                <p class="text-center mt-4 text-body-2">Markdown编辑器，支持预览</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -106,9 +100,7 @@
                 <v-btn color="primary" variant="outlined" @click="$router.push('/settings')" block>
                   进入设置
                 </v-btn>
-                <p class="text-center mt-4 text-body-2">
-                  应用设置，包含主题、编辑器配置等
-                </p>
+                <p class="text-center mt-4 text-body-2">应用设置，包含主题、编辑器配置等</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -121,12 +113,15 @@
                 仓储管理组件
               </v-card-title>
               <v-card-text>
-                <v-btn color="primary" variant="outlined" @click="$router.push('/repositories')" block>
+                <v-btn
+                  color="primary"
+                  variant="outlined"
+                  @click="$router.push('/repositories')"
+                  block
+                >
                   进入仓储管理
                 </v-btn>
-                <p class="text-center mt-4 text-body-2">
-                  Git仓储管理界面
-                </p>
+                <p class="text-center mt-4 text-body-2">Git仓储管理界面</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -142,9 +137,7 @@
                 <v-btn color="primary" variant="outlined" @click="$router.push('/goals')" block>
                   进入目标管理
                 </v-btn>
-                <p class="text-center mt-4 text-body-2">
-                  目标和关键结果管理
-                </p>
+                <p class="text-center mt-4 text-body-2">目标和关键结果管理</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -160,9 +153,7 @@
                 <v-btn color="primary" variant="outlined" @click="$router.push('/reminders')" block>
                   进入提醒管理
                 </v-btn>
-                <p class="text-center mt-4 text-body-2">
-                  提醒模板和实例管理
-                </p>
+                <p class="text-center mt-4 text-body-2">提醒模板和实例管理</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -178,9 +169,7 @@
                 <v-btn color="primary" variant="outlined" @click="$router.push('/schedules')" block>
                   进入调度管理
                 </v-btn>
-                <p class="text-center mt-4 text-body-2">
-                  任务调度和队列管理
-                </p>
+                <p class="text-center mt-4 text-body-2">任务调度和队列管理</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -203,15 +192,11 @@
                   <v-btn @click="showSuccess('成功通知')" color="success" size="small">
                     成功
                   </v-btn>
-                  <v-btn @click="showError('错误通知')" color="error" size="small">
-                    错误
-                  </v-btn>
+                  <v-btn @click="showError('错误通知')" color="error" size="small"> 错误 </v-btn>
                   <v-btn @click="showWarning('警告通知')" color="warning" size="small">
                     警告
                   </v-btn>
-                  <v-btn @click="showInfo('信息通知')" color="info" size="small">
-                    信息
-                  </v-btn>
+                  <v-btn @click="showInfo('信息通知')" color="info" size="small"> 信息 </v-btn>
                 </v-btn-group>
               </v-card-text>
             </v-card>
@@ -224,8 +209,13 @@
                 主题切换测试
               </v-card-title>
               <v-card-text>
-                <v-btn-toggle v-model="selectedTheme" @update:model-value="switchTheme" variant="outlined" divided
-                  mandatory>
+                <v-btn-toggle
+                  v-model="selectedTheme"
+                  @update:model-value="switchTheme"
+                  variant="outlined"
+                  divided
+                  mandatory
+                >
                   <v-btn value="light" size="small">
                     <v-icon>mdi-weather-sunny</v-icon>
                   </v-btn>
@@ -292,12 +282,24 @@
               </v-card-title>
               <v-card-text>
                 <div class="mb-3">
-                  <v-btn @click="createScheduleJob" color="primary" variant="outlined" size="small" class="mr-2">
+                  <v-btn
+                    @click="createScheduleJob"
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                    class="mr-2"
+                  >
                     <v-icon start>mdi-plus</v-icon>
                     创建调度任务
                   </v-btn>
-                  <v-btn @click="getScheduleJobs" color="info" variant="outlined" size="small" class="mr-2"
-                    :loading="scheduleLoading">
+                  <v-btn
+                    @click="getScheduleJobs"
+                    color="info"
+                    variant="outlined"
+                    size="small"
+                    class="mr-2"
+                    :loading="scheduleLoading"
+                  >
                     <v-icon start>mdi-refresh</v-icon>
                     刷新任务列表
                   </v-btn>
@@ -312,8 +314,10 @@
                         </v-icon>
                       </template>
                       <v-list-item-title>{{ job.name }}</v-list-item-title>
-                      <v-list-item-subtitle>{{ job.cronExpression }} - {{ formatScheduleStatus(job.status)
-                        }}</v-list-item-subtitle>
+                      <v-list-item-subtitle
+                        >{{ job.cronExpression }} -
+                        {{ formatScheduleStatus(job.status) }}</v-list-item-subtitle
+                      >
                       <template v-slot:append>
                         <v-btn @click="toggleJob(job)" icon size="x-small" variant="text">
                           <v-icon>{{ job.status === 'ACTIVE' ? 'mdi-pause' : 'mdi-play' }}</v-icon>
@@ -322,9 +326,7 @@
                     </v-list-item>
                   </v-list>
                 </div>
-                <div v-else class="text-center text-medium-emphasis">
-                  暂无调度任务
-                </div>
+                <div v-else class="text-center text-medium-emphasis">暂无调度任务</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -399,13 +401,26 @@
                   </div>
                 </div>
 
-                <v-btn @click="requestNotificationPermission" :loading="permissionLoading" color="primary"
-                  variant="outlined" size="small" class="mb-2" block>
+                <v-btn
+                  @click="requestNotificationPermission"
+                  :loading="permissionLoading"
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  class="mb-2"
+                  block
+                >
                   <v-icon start>mdi-key</v-icon>
                   请求通知权限
                 </v-btn>
 
-                <v-btn @click="testNotificationSupport" color="info" variant="outlined" size="small" block>
+                <v-btn
+                  @click="testNotificationSupport"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  block
+                >
                   <v-icon start>mdi-help-circle</v-icon>
                   检测浏览器支持
                 </v-btn>
@@ -422,25 +437,51 @@
               </v-card-title>
               <v-card-text>
                 <div class="mb-3">
-                  <v-btn @click="showTestNotification(NotificationType.INFO)" color="info" variant="outlined"
-                    size="small" class="mr-2 mb-2">
+                  <v-btn
+                    @click="showTestNotification(NotificationType.INFO)"
+                    color="info"
+                    variant="outlined"
+                    size="small"
+                    class="mr-2 mb-2"
+                  >
                     信息通知
                   </v-btn>
-                  <v-btn @click="showTestNotification(NotificationType.SUCCESS)" color="success" variant="outlined"
-                    size="small" class="mr-2 mb-2">
+                  <v-btn
+                    @click="showTestNotification(NotificationType.SUCCESS)"
+                    color="success"
+                    variant="outlined"
+                    size="small"
+                    class="mr-2 mb-2"
+                  >
                     成功通知
                   </v-btn>
-                  <v-btn @click="showTestNotification(NotificationType.WARNING)" color="warning" variant="outlined"
-                    size="small" class="mr-2 mb-2">
+                  <v-btn
+                    @click="showTestNotification(NotificationType.WARNING)"
+                    color="warning"
+                    variant="outlined"
+                    size="small"
+                    class="mr-2 mb-2"
+                  >
                     警告通知
                   </v-btn>
-                  <v-btn @click="showTestNotification(NotificationType.ERROR)" color="error" variant="outlined"
-                    size="small" class="mb-2">
+                  <v-btn
+                    @click="showTestNotification(NotificationType.ERROR)"
+                    color="error"
+                    variant="outlined"
+                    size="small"
+                    class="mb-2"
+                  >
                     错误通知
                   </v-btn>
                 </div>
 
-                <v-btn @click="showCustomNotification" color="primary" variant="flat" size="small" block>
+                <v-btn
+                  @click="showCustomNotification"
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  block
+                >
                   <v-icon start>mdi-bell-ring</v-icon>
                   自定义通知
                 </v-btn>
@@ -459,8 +500,15 @@
                 <div class="mb-3">
                   <div class="d-flex align-items-center mb-3">
                     <span class="text-body-2 mr-2">音量:</span>
-                    <v-slider v-model="globalVolume" :min="0" :max="1" :step="0.1" @update:model-value="updateVolume"
-                      thumb-label class="flex-grow-1"></v-slider>
+                    <v-slider
+                      v-model="globalVolume"
+                      :min="0"
+                      :max="1"
+                      :step="0.1"
+                      @update:model-value="updateVolume"
+                      thumb-label
+                      class="flex-grow-1"
+                    ></v-slider>
                   </div>
 
                   <div class="d-flex flex-wrap gap-2 mb-3">
@@ -478,8 +526,12 @@
                     </v-btn>
                   </div>
 
-                  <v-switch v-model="soundEnabled" @update:model-value="toggleSound" label="启用声音"
-                    color="primary"></v-switch>
+                  <v-switch
+                    v-model="soundEnabled"
+                    @update:model-value="toggleSound"
+                    label="启用声音"
+                    color="primary"
+                  ></v-switch>
                 </div>
               </v-card-text>
             </v-card>
@@ -494,24 +546,47 @@
               </v-card-title>
               <v-card-text>
                 <div class="mb-3">
-                  <v-btn @click="simulateTaskReminder" color="primary" variant="outlined" size="small"
-                    class="mr-2 mb-2">
+                  <v-btn
+                    @click="simulateTaskReminder"
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                    class="mr-2 mb-2"
+                  >
                     <v-icon start>mdi-format-list-checks</v-icon>
                     任务提醒
                   </v-btn>
-                  <v-btn @click="simulateGoalReminder" color="info" variant="outlined" size="small" class="mb-2">
+                  <v-btn
+                    @click="simulateGoalReminder"
+                    color="info"
+                    variant="outlined"
+                    size="small"
+                    class="mb-2"
+                  >
                     <v-icon start>mdi-target</v-icon>
                     目标提醒
                   </v-btn>
                 </div>
 
-                <v-btn @click="simulateCustomReminder" color="success" variant="outlined" size="small" class="mr-2 mb-2"
-                  block>
+                <v-btn
+                  @click="simulateCustomReminder"
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                  class="mr-2 mb-2"
+                  block
+                >
                   <v-icon start>mdi-bell-outline</v-icon>
                   自定义提醒
                 </v-btn>
 
-                <v-btn @click="dismissAllNotifications" color="error" variant="outlined" size="small" block>
+                <v-btn
+                  @click="dismissAllNotifications"
+                  color="error"
+                  variant="outlined"
+                  size="small"
+                  block
+                >
                   <v-icon start>mdi-close-circle</v-icon>
                   关闭所有通知
                 </v-btn>
@@ -528,21 +603,44 @@
               </v-card-title>
               <v-card-text>
                 <div class="mb-3">
-                  <v-switch v-model="desktopEnabled" @update:model-value="updateDesktopEnabled" label="桌面通知"
-                    color="primary" class="mb-2"></v-switch>
+                  <v-switch
+                    v-model="desktopEnabled"
+                    @update:model-value="updateDesktopEnabled"
+                    label="桌面通知"
+                    color="primary"
+                    class="mb-2"
+                  ></v-switch>
 
-                  <v-switch v-model="doNotDisturbMode" @update:model-value="updateDoNotDisturb" label="勿扰模式"
-                    color="warning" class="mb-2"></v-switch>
+                  <v-switch
+                    v-model="doNotDisturbMode"
+                    @update:model-value="updateDoNotDisturb"
+                    label="勿扰模式"
+                    color="warning"
+                    class="mb-2"
+                  ></v-switch>
 
                   <div class="d-flex align-items-center mb-3">
                     <span class="text-body-2 mr-2">自动关闭时间:</span>
-                    <v-select v-model="autoCloseTime" @update:model-value="updateAutoCloseTime"
-                      :items="autoCloseOptions" item-title="label" item-value="value" density="compact"
-                      variant="outlined" class="flex-grow-1"></v-select>
+                    <v-select
+                      v-model="autoCloseTime"
+                      @update:model-value="updateAutoCloseTime"
+                      :items="autoCloseOptions"
+                      item-title="label"
+                      item-value="value"
+                      density="compact"
+                      variant="outlined"
+                      class="flex-grow-1"
+                    ></v-select>
                   </div>
                 </div>
 
-                <v-btn @click="resetNotificationConfig" color="warning" variant="outlined" size="small" block>
+                <v-btn
+                  @click="resetNotificationConfig"
+                  color="warning"
+                  variant="outlined"
+                  size="small"
+                  block
+                >
                   <v-icon start>mdi-restore</v-icon>
                   重置配置
                 </v-btn>
@@ -573,13 +671,25 @@
                   </div>
                 </div>
 
-                <v-btn @click="refreshNotificationStats" color="info" variant="outlined" size="small" class="mb-2"
-                  block>
+                <v-btn
+                  @click="refreshNotificationStats"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  class="mb-2"
+                  block
+                >
                   <v-icon start>mdi-refresh</v-icon>
                   刷新统计
                 </v-btn>
 
-                <v-btn @click="clearNotificationHistory" color="error" variant="outlined" size="small" block>
+                <v-btn
+                  @click="clearNotificationHistory"
+                  color="error"
+                  variant="outlined"
+                  size="small"
+                  block
+                >
                   <v-icon start>mdi-delete</v-icon>
                   清空历史
                 </v-btn>
@@ -603,19 +713,31 @@
                       <strong>基础功能:</strong>
                     </div>
                     <div class="d-flex align-center mb-1">
-                      <v-icon :color="browserSupport.desktopSupport ? 'success' : 'error'" size="16" class="mr-2">
+                      <v-icon
+                        :color="browserSupport.desktopSupport ? 'success' : 'error'"
+                        size="16"
+                        class="mr-2"
+                      >
                         {{ browserSupport.desktopSupport ? 'mdi-check' : 'mdi-close' }}
                       </v-icon>
                       <span>桌面通知</span>
                     </div>
                     <div class="d-flex align-center mb-1">
-                      <v-icon :color="browserSupport.audioSupport ? 'success' : 'error'" size="16" class="mr-2">
+                      <v-icon
+                        :color="browserSupport.audioSupport ? 'success' : 'error'"
+                        size="16"
+                        class="mr-2"
+                      >
                         {{ browserSupport.audioSupport ? 'mdi-check' : 'mdi-close' }}
                       </v-icon>
                       <span>音频播放</span>
                     </div>
                     <div class="d-flex align-center mb-1">
-                      <v-icon :color="browserSupport.configPersistence ? 'success' : 'error'" size="16" class="mr-2">
+                      <v-icon
+                        :color="browserSupport.configPersistence ? 'success' : 'error'"
+                        size="16"
+                        class="mr-2"
+                      >
                         {{ browserSupport.configPersistence ? 'mdi-check' : 'mdi-close' }}
                       </v-icon>
                       <span>配置持久化</span>
@@ -626,10 +748,16 @@
                       <strong>权限状态:</strong>
                     </div>
                     <div class="d-flex align-center mb-1">
-                      <v-icon :color="browserSupport.permissionGranted ? 'success' : 'warning'" size="16" class="mr-2">
+                      <v-icon
+                        :color="browserSupport.permissionGranted ? 'success' : 'warning'"
+                        size="16"
+                        class="mr-2"
+                      >
                         {{ browserSupport.permissionGranted ? 'mdi-check' : 'mdi-alert' }}
                       </v-icon>
-                      <span>通知权限{{ browserSupport.permissionGranted ? '已授权' : '未授权' }}</span>
+                      <span
+                        >通知权限{{ browserSupport.permissionGranted ? '已授权' : '未授权' }}</span
+                      >
                     </div>
                   </v-col>
                 </v-row>
@@ -651,10 +779,24 @@
                 基础弹窗
               </v-card-title>
               <v-card-text>
-                <v-btn @click="showBasicDialog" color="primary" variant="outlined" size="small" class="mb-2" block>
+                <v-btn
+                  @click="showBasicDialog"
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  class="mb-2"
+                  block
+                >
                   基础对话框
                 </v-btn>
-                <v-btn @click="showConfirmDialog" color="warning" variant="outlined" size="small" class="mb-2" block>
+                <v-btn
+                  @click="showConfirmDialog"
+                  color="warning"
+                  variant="outlined"
+                  size="small"
+                  class="mb-2"
+                  block
+                >
                   确认对话框
                 </v-btn>
                 <v-btn @click="showFormDialog" color="info" variant="outlined" size="small" block>
@@ -671,10 +813,24 @@
                 提示和浮层
               </v-card-title>
               <v-card-text>
-                <v-btn @click="showBottomSheet" color="primary" variant="outlined" size="small" class="mb-2" block>
+                <v-btn
+                  @click="showBottomSheet"
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  class="mb-2"
+                  block
+                >
                   底部抽屉
                 </v-btn>
-                <v-btn @click="showOverlay" color="info" variant="outlined" size="small" class="mb-2" block>
+                <v-btn
+                  @click="showOverlay"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  class="mb-2"
+                  block
+                >
                   覆盖层
                 </v-btn>
                 <v-tooltip text="这是一个工具提示">
@@ -697,7 +853,14 @@
               <v-card-text>
                 <v-menu>
                   <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" color="primary" variant="outlined" size="small" class="mb-2" block>
+                    <v-btn
+                      v-bind="props"
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                      class="mb-2"
+                      block
+                    >
                       下拉菜单
                     </v-btn>
                   </template>
@@ -708,11 +871,24 @@
                   </v-list>
                 </v-menu>
 
-                <v-btn @click="showDatePicker" color="info" variant="outlined" size="small" class="mb-2" block>
+                <v-btn
+                  @click="showDatePicker"
+                  color="info"
+                  variant="outlined"
+                  size="small"
+                  class="mb-2"
+                  block
+                >
                   日期选择器
                 </v-btn>
 
-                <v-btn @click="showColorPicker" color="success" variant="outlined" size="small" block>
+                <v-btn
+                  @click="showColorPicker"
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                  block
+                >
                   颜色选择器
                 </v-btn>
               </v-card-text>
@@ -733,21 +909,26 @@
                 基础连接测试
               </v-card-title>
               <v-card-text>
-                <v-btn @click="handleTest" :loading="loading" :disabled="loading" color="primary" variant="outlined">
+                <v-btn
+                  @click="handleTest"
+                  :loading="loading"
+                  :disabled="loading"
+                  color="primary"
+                  variant="outlined"
+                >
                   {{ loading ? '测试中...' : '测试连接' }}
                 </v-btn>
 
                 <div v-if="result" class="mt-4">
-                  <v-alert :type="result.success ? 'success' : 'error'" :title="result.success ? '连接成功' : '连接失败'"
-                    :text="result.message">
-                    <div v-if="result.success">
-                      <strong>响应时间:</strong> {{ elapsed }} ms
-                    </div>
+                  <v-alert
+                    :type="result.success ? 'success' : 'error'"
+                    :title="result.success ? '连接成功' : '连接失败'"
+                    :text="result.message"
+                  >
+                    <div v-if="result.success"><strong>响应时间:</strong> {{ elapsed }} ms</div>
                     <div v-else>
                       <strong>错误详情:</strong> {{ result.message }}
-                      <div v-if="timeout">
-                        <strong>超时:</strong> 请求超时（超过5秒）
-                      </div>
+                      <div v-if="timeout"><strong>超时:</strong> 请求超时（超过5秒）</div>
                     </div>
                   </v-alert>
                 </div>
@@ -763,19 +944,32 @@
               </v-card-title>
               <v-card-text>
                 <div class="mb-3">
-                  <v-btn @click="testReminderAPI" :loading="reminderApiLoading" color="info" variant="outlined"
-                    size="small" class="mr-2">
+                  <v-btn
+                    @click="testReminderAPI"
+                    :loading="reminderApiLoading"
+                    color="info"
+                    variant="outlined"
+                    size="small"
+                    class="mr-2"
+                  >
                     测试提醒 API
                   </v-btn>
-                  <v-btn @click="testScheduleAPI" :loading="scheduleApiLoading" color="success" variant="outlined"
-                    size="small">
+                  <v-btn
+                    @click="testScheduleAPI"
+                    :loading="scheduleApiLoading"
+                    color="success"
+                    variant="outlined"
+                    size="small"
+                  >
                     测试调度 API
                   </v-btn>
                 </div>
 
                 <div v-if="apiTestResult" class="mt-3">
                   <v-alert :type="apiTestResult.success ? 'success' : 'error'" density="compact">
-                    <div><strong>{{ apiTestResult.title }}</strong></div>
+                    <div>
+                      <strong>{{ apiTestResult.title }}</strong>
+                    </div>
                     <div class="text-body-2 mt-1">{{ apiTestResult.message }}</div>
                     <div v-if="apiTestResult.data" class="text-caption mt-2">
                       数据: {{ JSON.stringify(apiTestResult.data).substring(0, 100) }}...
@@ -856,9 +1050,7 @@
     <v-dialog v-model="basicDialog" max-width="400">
       <v-card>
         <v-card-title>基础对话框</v-card-title>
-        <v-card-text>
-          这是一个基础的对话框示例，用于显示信息或简单的交互。
-        </v-card-text>
+        <v-card-text> 这是一个基础的对话框示例，用于显示信息或简单的交互。 </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn @click="basicDialog = false">关闭</v-btn>
@@ -870,9 +1062,7 @@
     <v-dialog v-model="confirmDialog" max-width="400">
       <v-card>
         <v-card-title>确认操作</v-card-title>
-        <v-card-text>
-          您确定要执行此操作吗？此操作无法撤销。
-        </v-card-text>
+        <v-card-text> 您确定要执行此操作吗？此操作无法撤销。 </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn @click="confirmDialog = false">取消</v-btn>
@@ -887,8 +1077,18 @@
         <v-card-title>表单对话框</v-card-title>
         <v-card-text>
           <v-form>
-            <v-text-field v-model="formData.name" label="名称" variant="outlined" class="mb-3"></v-text-field>
-            <v-textarea v-model="formData.description" label="描述" variant="outlined" rows="3"></v-textarea>
+            <v-text-field
+              v-model="formData.name"
+              label="名称"
+              variant="outlined"
+              class="mb-3"
+            ></v-text-field>
+            <v-textarea
+              v-model="formData.description"
+              label="描述"
+              variant="outlined"
+              rows="3"
+            ></v-textarea>
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -932,7 +1132,12 @@
     <v-overlay v-model="overlay" class="align-center justify-center">
       <v-card class="pa-6" max-width="300">
         <div class="text-center">
-          <v-progress-circular indeterminate size="64" color="primary" class="mb-4"></v-progress-circular>
+          <v-progress-circular
+            indeterminate
+            size="64"
+            color="primary"
+            class="mb-4"
+          ></v-progress-circular>
           <div class="text-h6 mb-2">处理中...</div>
           <div class="text-body-2 mb-4">请稍等片刻</div>
           <v-btn @click="overlay = false" color="primary" variant="outlined">取消</v-btn>
@@ -945,7 +1150,10 @@
       <v-card>
         <v-card-title>选择日期</v-card-title>
         <v-card-text>
-          <v-date-picker v-model="selectedDate" @update:model-value="handleDateSelect"></v-date-picker>
+          <v-date-picker
+            v-model="selectedDate"
+            @update:model-value="handleDateSelect"
+          ></v-date-picker>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -955,7 +1163,10 @@
       <v-card>
         <v-card-title>选择颜色</v-card-title>
         <v-card-text>
-          <v-color-picker v-model="selectedColor" @update:model-value="handleColorSelect"></v-color-picker>
+          <v-color-picker
+            v-model="selectedColor"
+            @update:model-value="handleColorSelect"
+          ></v-color-picker>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -965,12 +1176,15 @@
     </v-dialog>
 
     <!-- Snackbar -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right">
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+      location="top right"
+    >
       {{ snackbar.message }}
       <template #actions>
-        <v-btn color="white" variant="text" @click="closeSnackbar">
-          关闭
-        </v-btn>
+        <v-btn color="white" variant="text" @click="closeSnackbar"> 关闭 </v-btn>
       </template>
     </v-snackbar>
   </v-container>
@@ -997,7 +1211,7 @@ import {
   NotificationMethod,
   SoundType,
   type NotificationConfig,
-  type NotificationServiceConfig
+  type NotificationServiceConfig,
 } from '@/modules/notification';
 
 const { snackbar, closeSnackbar, showSuccess, showError, showWarning, showInfo } = useSnackbar();
@@ -1061,7 +1275,7 @@ const autoCloseOptions = [
   { label: '10秒', value: 10000 },
   { label: '15秒', value: 15000 },
   { label: '30秒', value: 30000 },
-  { label: '永不关闭', value: 0 }
+  { label: '永不关闭', value: 0 },
 ];
 
 // 弹窗相关状态
@@ -1076,7 +1290,7 @@ const colorPickerDialog = ref(false);
 // 表单数据
 const formData = ref({
   name: '',
-  description: ''
+  description: '',
 });
 
 // 选择器数据
@@ -1112,36 +1326,36 @@ async function handleTest() {
       setTimeout(() => {
         timeout.value = true;
         reject(new Error('请求超时'));
-      }, TIMEOUT_MS)
+      }, TIMEOUT_MS),
     );
 
     console.log('开始测试连接...');
 
     // 模拟API调用
     const testConnection = new Promise<string>((resolve) => {
-      setTimeout(() => {
-        resolve('API连接正常');
-      }, Math.random() * 2000 + 500); // 随机延迟500-2500ms
+      setTimeout(
+        () => {
+          resolve('API连接正常');
+        },
+        Math.random() * 2000 + 500,
+      ); // 随机延迟500-2500ms
     });
 
-    const response = await Promise.race([
-      testConnection,
-      timeoutPromise
-    ]);
+    const response = await Promise.race([testConnection, timeoutPromise]);
 
     console.log('连接测试响应:', response);
 
     elapsed.value = Math.round(performance.now() - start);
     result.value = {
       success: !!response,
-      message: response || '连接成功'
+      message: response || '连接成功',
     };
   } catch (err: any) {
     console.error('连接测试错误:', err);
     elapsed.value = Math.round(performance.now() - start);
     result.value = {
       success: false,
-      message: err.message || '未知错误'
+      message: err.message || '未知错误',
     };
   } finally {
     loading.value = false;
@@ -1185,7 +1399,7 @@ const createScheduleJob = async () => {
       cronExpression: '0 */2 * * *',
       payload: { description: '这是一个测试任务' },
       priority: 'MEDIUM',
-      status: 'ACTIVE'
+      status: 'ACTIVE',
     };
 
     const task = await scheduleApiClient.createScheduleTask(request);
@@ -1249,7 +1463,8 @@ const toggleJob = async (job: ScheduleTaskApi) => {
       await getScheduleJobs();
     }
 
-    const statusCode = (updatedTask?.status ?? (isActive ? 'PAUSED' : 'ACTIVE')) as ScheduleTaskApi['status'];
+    const statusCode = (updatedTask?.status ??
+      (isActive ? 'PAUSED' : 'ACTIVE')) as ScheduleTaskApi['status'];
     showInfo(`任务 ${job.name} 状态已更新为 ${formatScheduleStatus(statusCode)}`);
 
     await getScheduleStats();
@@ -1266,14 +1481,16 @@ const clearAllJobs = async () => {
   }
 
   try {
-    const jobIds = scheduleJobs.value.map(job => job.id);
+    const jobIds = scheduleJobs.value.map((job) => job.id);
     const result = await scheduleApiClient.batchOperateScheduleTasks(jobIds, 'delete');
 
     await getScheduleJobs(); // 刷新任务列表
     await getScheduleStats(); // 刷新统计信息
 
     if (result.failed.length > 0) {
-      showWarning(`成功删除 ${result.success.length} 个任务，有 ${result.failed.length} 个任务删除失败`);
+      showWarning(
+        `成功删除 ${result.success.length} 个任务，有 ${result.failed.length} 个任务删除失败`,
+      );
     } else {
       showSuccess(`已清空 ${result.success.length} 个调度任务`);
     }
@@ -1355,22 +1572,22 @@ const testReminderAPI = async () => {
 
   try {
     // 模拟调用提醒 API
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // 模拟成功响应
     const mockData = {
       templates: [
         { id: '1', name: '提醒模板1', enabled: true },
-        { id: '2', name: '提醒模板2', enabled: false }
+        { id: '2', name: '提醒模板2', enabled: false },
       ],
-      total: 2
+      total: 2,
     };
 
     apiTestResult.value = {
       success: true,
       title: 'Reminder API 测试成功',
       message: '获取提醒模板列表成功',
-      data: mockData
+      data: mockData,
     };
 
     showSuccess('Reminder API 测试通过');
@@ -1378,7 +1595,7 @@ const testReminderAPI = async () => {
     apiTestResult.value = {
       success: false,
       title: 'Reminder API 测试失败',
-      message: error instanceof Error ? error.message : 'API 调用失败'
+      message: error instanceof Error ? error.message : 'API 调用失败',
     };
 
     showError('Reminder API 测试失败');
@@ -1399,7 +1616,7 @@ const testScheduleAPI = async () => {
       success: true,
       title: 'Schedule API 测试成功',
       message: '获取调度统计信息成功',
-      data: stats
+      data: stats,
     };
 
     showSuccess('Schedule API 测试通过');
@@ -1407,7 +1624,7 @@ const testScheduleAPI = async () => {
     apiTestResult.value = {
       success: false,
       title: 'Schedule API 测试失败',
-      message: error instanceof Error ? error.message : 'API 调用失败'
+      message: error instanceof Error ? error.message : 'API 调用失败',
     };
 
     showError('Schedule API 测试失败');
@@ -1465,14 +1682,23 @@ const showTestNotification = async (type: string) => {
     }
 
     const messages: Record<NotificationType, { title: string; body: string }> = {
-      [NotificationType.INFO]: { title: '信息通知测试', body: '这是一条信息通知，用于测试桌面通知功能' },
-      [NotificationType.SUCCESS]: { title: '成功通知测试', body: '这是一条成功通知，表示操作已完成' },
-      [NotificationType.WARNING]: { title: '警告通知测试', body: '这是一条警告通知，请注意相关事项' },
+      [NotificationType.INFO]: {
+        title: '信息通知测试',
+        body: '这是一条信息通知，用于测试桌面通知功能',
+      },
+      [NotificationType.SUCCESS]: {
+        title: '成功通知测试',
+        body: '这是一条成功通知，表示操作已完成',
+      },
+      [NotificationType.WARNING]: {
+        title: '警告通知测试',
+        body: '这是一条警告通知，请注意相关事项',
+      },
       [NotificationType.ERROR]: { title: '错误通知测试', body: '这是一条错误通知，需要您的关注' },
       [NotificationType.REMINDER]: { title: '提醒通知测试', body: '这是一条提醒通知' },
       [NotificationType.TASK]: { title: '任务通知测试', body: '这是一条任务通知' },
       [NotificationType.GOAL]: { title: '目标通知测试', body: '这是一条目标通知' },
-      [NotificationType.SYSTEM]: { title: '系统通知测试', body: '这是一条系统通知' }
+      [NotificationType.SYSTEM]: { title: '系统通知测试', body: '这是一条系统通知' },
     };
 
     const notificationType = type as NotificationType;
@@ -1490,12 +1716,14 @@ const showTestNotification = async (type: string) => {
       type: notificationType,
       priority: NotificationPriority.NORMAL,
       methods: desktopEnabled.value ? [NotificationMethod.DESKTOP] : [],
-      sound: soundEnabled.value ? {
-        enabled: true,
-        type: SoundType.DEFAULT,
-        volume: globalVolume.value
-      } : undefined,
-      autoClose: autoCloseTime.value || undefined
+      sound: soundEnabled.value
+        ? {
+            enabled: true,
+            type: SoundType.DEFAULT,
+            volume: globalVolume.value,
+          }
+        : undefined,
+      autoClose: autoCloseTime.value || undefined,
     };
 
     // 添加声音方式到methods
@@ -1525,24 +1753,26 @@ const showCustomNotification = async () => {
       type: NotificationType.INFO,
       priority: NotificationPriority.HIGH,
       methods: [],
-      sound: soundEnabled.value ? {
-        enabled: true,
-        type: SoundType.REMINDER,
-        volume: globalVolume.value
-      } : undefined,
+      sound: soundEnabled.value
+        ? {
+            enabled: true,
+            type: SoundType.REMINDER,
+            volume: globalVolume.value,
+          }
+        : undefined,
       autoClose: autoCloseTime.value || undefined,
       actions: [
         {
           id: 'confirm',
           action: 'confirm',
-          label: '确认'
+          label: '确认',
         },
         {
           id: 'cancel',
           action: 'cancel',
-          label: '取消'
-        }
-      ]
+          label: '取消',
+        },
+      ],
     };
 
     // 添加通知方式
@@ -1574,9 +1804,9 @@ const testSound = async (soundType: string) => {
       sound: {
         enabled: true,
         type: soundType as SoundType,
-        volume: globalVolume.value
+        volume: globalVolume.value,
       },
-      autoClose: 1 // 1毫秒后自动关闭
+      autoClose: 1, // 1毫秒后自动关闭
     };
 
     if (notificationService) {
@@ -1645,13 +1875,15 @@ const simulateTaskReminder = async () => {
       type: NotificationType.WARNING,
       priority: NotificationPriority.HIGH,
       methods: [],
-      sound: soundEnabled.value ? {
-        enabled: true,
-        type: SoundType.REMINDER,
-        volume: globalVolume.value
-      } : undefined,
+      sound: soundEnabled.value
+        ? {
+            enabled: true,
+            type: SoundType.REMINDER,
+            volume: globalVolume.value,
+          }
+        : undefined,
       autoClose: autoCloseTime.value || undefined,
-      sourceModule: 'schedule'
+      sourceModule: 'schedule',
     };
 
     // 添加通知方式
@@ -1684,13 +1916,15 @@ const simulateGoalReminder = async () => {
       type: NotificationType.INFO,
       priority: NotificationPriority.NORMAL,
       methods: [],
-      sound: soundEnabled.value ? {
-        enabled: true,
-        type: SoundType.DEFAULT,
-        volume: globalVolume.value
-      } : undefined,
+      sound: soundEnabled.value
+        ? {
+            enabled: true,
+            type: SoundType.DEFAULT,
+            volume: globalVolume.value,
+          }
+        : undefined,
       autoClose: autoCloseTime.value || undefined,
-      sourceModule: 'schedule'
+      sourceModule: 'schedule',
     };
 
     // 添加通知方式
@@ -1723,13 +1957,15 @@ const simulateCustomReminder = async () => {
       type: NotificationType.SUCCESS,
       priority: NotificationPriority.NORMAL,
       methods: [],
-      sound: soundEnabled.value ? {
-        enabled: true,
-        type: SoundType.SUCCESS,
-        volume: globalVolume.value
-      } : undefined,
+      sound: soundEnabled.value
+        ? {
+            enabled: true,
+            type: SoundType.SUCCESS,
+            volume: globalVolume.value,
+          }
+        : undefined,
       autoClose: autoCloseTime.value || undefined,
-      sourceModule: 'schedule'
+      sourceModule: 'schedule',
     };
 
     // 添加通知方式
@@ -1779,7 +2015,7 @@ const resetNotificationConfig = async () => {
       vibrationEnabled: false,
       desktopEnabled: true,
       globalVolume: 0.7,
-      doNotDisturbEnabled: false
+      doNotDisturbEnabled: false,
     };
 
     await notificationService.updateConfig(defaultConfig);
@@ -1835,7 +2071,7 @@ const refreshBrowserSupport = async () => {
       desktopSupport: 'Notification' in window,
       audioSupport: 'Audio' in window,
       configPersistence: 'localStorage' in window,
-      permissionGranted: Notification.permission === 'granted'
+      permissionGranted: Notification.permission === 'granted',
     };
   } catch (error) {
     console.error('检测浏览器支持失败:', error);
@@ -1845,27 +2081,30 @@ const refreshBrowserSupport = async () => {
 // 权限状态相关的计算属性和方法
 const getPermissionColor = (permission: NotificationPermission) => {
   switch (permission) {
-    case 'granted': return 'success';
-    case 'denied': return 'error';
-    default: return 'warning';
+    case 'granted':
+      return 'success';
+    case 'denied':
+      return 'error';
+    default:
+      return 'warning';
   }
 };
 
 const getPermissionText = (permission: NotificationPermission) => {
   switch (permission) {
-    case 'granted': return '已授权';
-    case 'denied': return '已拒绝';
-    default: return '未授权';
+    case 'granted':
+      return '已授权';
+    case 'denied':
+      return '已拒绝';
+    default:
+      return '未授权';
   }
 };
 
 onMounted(async () => {
   // 当切换到 Schedule 标签页时加载数据
   if (activeTab.value === 'schedule') {
-    await Promise.all([
-      getScheduleJobs(),
-      getScheduleStats()
-    ]);
+    await Promise.all([getScheduleJobs(), getScheduleStats()]);
   }
 
   // 初始化 Notification 模块
@@ -1886,10 +2125,7 @@ onMounted(async () => {
       autoCloseTime.value = config.defaultAutoClose;
 
       // 刷新统计和浏览器支持信息
-      await Promise.all([
-        refreshNotificationStats(),
-        refreshBrowserSupport()
-      ]);
+      await Promise.all([refreshNotificationStats(), refreshBrowserSupport()]);
     } catch (error) {
       console.error('初始化通知模块失败:', error);
       showError('初始化通知模块失败');
@@ -1900,10 +2136,7 @@ onMounted(async () => {
 // 监听标签页切换，加载对应数据
 watch(activeTab, async (newTab) => {
   if (newTab === 'schedule' && scheduleJobs.value.length === 0) {
-    await Promise.all([
-      getScheduleJobs(),
-      getScheduleStats()
-    ]);
+    await Promise.all([getScheduleJobs(), getScheduleStats()]);
   } else if (newTab === 'reminder') {
     try {
       // 初始化通知模块
@@ -1926,10 +2159,7 @@ watch(activeTab, async (newTab) => {
       autoCloseTime.value = config.defaultAutoClose;
 
       // 刷新统计和浏览器支持信息
-      await Promise.all([
-        refreshNotificationStats(),
-        refreshBrowserSupport()
-      ]);
+      await Promise.all([refreshNotificationStats(), refreshBrowserSupport()]);
     } catch (error) {
       console.error('初始化通知模块失败:', error);
       showError('初始化通知模块失败');

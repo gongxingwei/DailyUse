@@ -15,6 +15,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 数据备份和恢复
 - ✅ 跨平台迁移
 - ✅ 支持多种格式（JSON/CSV/Markdown）
@@ -130,7 +131,7 @@ interface ExportService {
         // ...
       }
     };
-    
+
     switch (options.format) {
       case 'json':
         return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -147,16 +148,16 @@ interface ImportService {
   async importData(file: File): Promise<ImportResult> {
     const content = await file.text();
     const data = JSON.parse(content);
-    
+
     // 验证数据格式
     this.validateData(data);
-    
+
     // 检测冲突
     const conflicts = await this.detectConflicts(data);
-    
+
     // 导入数据
     const result = await this.importWithConflictResolution(data, conflicts);
-    
+
     return result;
   }
 }
@@ -174,4 +175,3 @@ interface ImportService {
 ---
 
 **文档状态**: ✅ Ready
-

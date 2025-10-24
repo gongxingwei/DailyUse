@@ -69,12 +69,14 @@ pnpm nx run api:prisma:generate
 ### 2. 启动服务
 
 **终端 1 - API 服务器**:
+
 ```bash
 pnpm nx serve api
 # API 运行在 http://localhost:3000
 ```
 
 **终端 2 - Web 应用**:
+
 ```bash
 pnpm nx serve web
 # Web 运行在 http://localhost:5173
@@ -83,6 +85,7 @@ pnpm nx serve web
 ### 3. 运行测试
 
 **终端 3 - E2E 测试**:
+
 ```bash
 # 运行所有测试
 pnpm nx e2e web
@@ -115,10 +118,12 @@ pnpm nx run web:e2e:ui
 E2E 测试通过 `.github/workflows/e2e-tests.yml` 在 CI 中自动运行。
 
 **触发条件**:
+
 - 推送到 `main`、`develop` 或 `feature/**` 分支
 - 创建 Pull Request 到 `main` 或 `develop`
 
 **执行流程**:
+
 1. ✅ 设置 Node.js 和 pnpm
 2. ✅ 安装依赖
 3. ✅ 启动 PostgreSQL 服务
@@ -192,11 +197,11 @@ export class TaskPage {
   taskCard(identifier: string | number): Locator {
     // 灵活的任务定位器
   }
-  
+
   async createTask(taskData: TaskData) {
     // 创建任务的完整流程
   }
-  
+
   async expectDependencyExists(source: string, target: string) {
     // 验证依赖关系
   }
@@ -267,10 +272,10 @@ test.describe('Feature Name', () => {
   test.beforeEach(async ({ page: testPage }) => {
     page = testPage;
     featurePage = new FeaturePage(page);
-    
+
     // 登录
     await login(page, TEST_USER.username, TEST_USER.password);
-    
+
     // 导航到功能页面
     await featurePage.navigate();
   });
@@ -281,11 +286,8 @@ test.describe('Feature Name', () => {
 
   test('should do something', async () => {
     // Arrange: 准备测试数据
-    
     // Act: 执行操作
-    
     // Assert: 验证结果
-    
     // Screenshot: 截图记录
   });
 });
@@ -320,15 +322,15 @@ console.log('✅ Tasks created\n');
 
 ```typescript
 // Before 截图
-await page.screenshot({ 
-  path: 'test-results/01-before-action.png', 
-  fullPage: true 
+await page.screenshot({
+  path: 'test-results/01-before-action.png',
+  fullPage: true,
 });
 
 // After 截图
-await page.screenshot({ 
-  path: 'test-results/02-after-action.png', 
-  fullPage: true 
+await page.screenshot({
+  path: 'test-results/02-after-action.png',
+  fullPage: true,
 });
 ```
 
@@ -368,6 +370,7 @@ await page.waitForTimeout(500);
 **问题**: 测试在等待元素时超时
 
 **解决方案**:
+
 ```typescript
 // 增加超时时间
 await expect(element).toBeVisible({ timeout: 10000 });
@@ -384,9 +387,10 @@ if (!exists) {
 **问题**: 无法找到元素
 
 **解决方案**:
+
 ```typescript
 // 使用多种定位策略
-const element = 
+const element =
   page.getByTestId('element-id') ||
   page.getByText('Element Text') ||
   page.locator('.element-class');
@@ -400,6 +404,7 @@ await page.waitForLoadState('networkidle');
 **问题**: 前一个测试的数据影响当前测试
 
 **解决方案**:
+
 ```typescript
 // 确保 afterEach 清理所有数据
 test.afterEach(async ({ page }) => {
@@ -414,21 +419,23 @@ const taskTitle = `E2E Test ${uniqueId}`;
 #### 4. CI 环境失败但本地通过
 
 **可能原因**:
+
 - 时间相关的测试（时区差异）
 - 资源限制（内存、CPU）
 - 并发问题
 
 **解决方案**:
+
 ```typescript
 // 使用相对时间而非绝对时间
 const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
 // 减少并行度
 // playwright.config.ts
-workers: process.env.CI ? 1 : 2
+workers: process.env.CI ? 1 : 2;
 
 // 增加重试次数
-retries: process.env.CI ? 2 : 0
+retries: process.env.CI ? 2 : 0;
 ```
 
 ### 调试技巧
@@ -458,10 +465,10 @@ pnpm nx run web:e2e:debug
 
 ```typescript
 // 失败时自动截图（已配置）
-screenshot: 'only-on-failure'
+screenshot: 'only-on-failure';
 
 // 失败时保留视频
-video: 'retain-on-failure'
+video: 'retain-on-failure';
 ```
 
 #### 4. 追踪日志
@@ -480,15 +487,15 @@ pnpm exec playwright show-trace trace.zip
 
 ### 当前覆盖率: 86%
 
-| 模块 | 覆盖率 | 场景数 |
-|------|--------|--------|
-| Reminder | 100% | 6 |
-| Goal DAG | 100% | 4 |
-| User Settings | 100% | 3 |
-| Task Dependency | 62.5% | 5 |
-| Task DAG | 60% | 5 |
-| Drag & Drop | 100% | 4 |
-| Command Palette | 75% | 6 |
+| 模块            | 覆盖率 | 场景数 |
+| --------------- | ------ | ------ |
+| Reminder        | 100%   | 6      |
+| Goal DAG        | 100%   | 4      |
+| User Settings   | 100%   | 3      |
+| Task Dependency | 62.5%  | 5      |
+| Task DAG        | 60%    | 5      |
+| Drag & Drop     | 100%   | 4      |
+| Command Palette | 75%    | 6      |
 
 ### 目标
 

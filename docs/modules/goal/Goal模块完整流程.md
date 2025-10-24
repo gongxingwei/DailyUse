@@ -8,6 +8,7 @@
 ## 📋 概述
 
 Goal 模块负责管理用户的目标（Goals）功能，包括：
+
 - 创建、查询、更新、删除目标
 - 目标状态管理（激活、暂停、完成、归档）
 - 目标目录（GoalDirectory）管理
@@ -16,12 +17,12 @@ Goal 模块负责管理用户的目标（Goals）功能，包括：
 
 ### 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| **前端** | Vue 3 + Pinia + TypeScript |
-| **后端** | Node.js + Express + Prisma |
+| 层级     | 技术                                        |
+| -------- | ------------------------------------------- |
+| **前端** | Vue 3 + Pinia + TypeScript                  |
+| **后端** | Node.js + Express + Prisma                  |
 | **架构** | DDD (Domain-Driven Design) + Contract First |
-| **通信** | RESTful API + Axios |
+| **通信** | RESTful API + Axios                         |
 
 ---
 
@@ -391,7 +392,7 @@ export const useGoalStore = defineStore('goal', {
   actions: {
     async createGoal(input: CreateGoalInput) {
       const service = getGoalWebService();
-      
+
       // 🚀 乐观更新：先添加临时目标到 UI
       const tempGoal: GoalClientDTO = {
         uuid: `temp-${Date.now()}`,
@@ -405,15 +406,15 @@ export const useGoalStore = defineStore('goal', {
       try {
         // 调用 API
         const result = await service.createGoal(input);
-        
+
         // ✅ 用服务器返回的真实数据替换临时数据
-        const index = this.goals.findIndex(g => g.uuid === tempGoal.uuid);
+        const index = this.goals.findIndex((g) => g.uuid === tempGoal.uuid);
         if (index !== -1) {
           this.goals[index] = result;
         }
       } catch (error) {
         // ❌ 失败：移除临时数据
-        const index = this.goals.findIndex(g => g.uuid === tempGoal.uuid);
+        const index = this.goals.findIndex((g) => g.uuid === tempGoal.uuid);
         if (index !== -1) {
           this.goals.splice(index, 1);
         }
@@ -436,7 +437,7 @@ export class GoalWebApplicationService {
 
   async createGoal(input: CreateGoalInput): Promise<GoalClientDTO> {
     // 可以在这里添加业务逻辑（如验证、转换）
-    
+
     // 调用 API 客户端
     return await goalApiClient.createGoal(input);
   }
@@ -508,12 +509,7 @@ export class GoalController {
       // 错误分类处理
       if (error instanceof Error) {
         if (error.message.includes('Invalid UUID')) {
-          return GoalController.sendError(
-            res,
-            ResponseCode.VALIDATION_ERROR,
-            error.message,
-            error,
-          );
+          return GoalController.sendError(res, ResponseCode.VALIDATION_ERROR, error.message, error);
         }
         if (error.message.includes('Authentication')) {
           return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
@@ -583,7 +579,7 @@ export class GoalApplicationService {
 
   constructor(
     private readonly goalRepository: IGoalRepository,
-    private readonly domainService = new GoalDomainService()
+    private readonly domainService = new GoalDomainService(),
   ) {}
 
   async createGoal(accountUuid: string, dto: CreateGoalRequest): Promise<GoalClientDTO> {
@@ -744,11 +740,13 @@ export class PrismaGoalRepository implements IGoalRepository {
 ### 1. [[日志系统]]
 
 **使用位置**:
+
 - Controller: `const logger = createLogger('GoalController')`
 - Application Service: `const logger = createLogger('GoalApplicationService')`
 - Domain Service: `const logger = createLogger('GoalDomainService')`
 
 **示例**:
+
 ```typescript
 logger.info('Creating goal', { accountUuid, goalName: request.name });
 logger.error('Failed to create goal', error, { dto });
@@ -757,9 +755,11 @@ logger.error('Failed to create goal', error, { dto });
 ### 2. [[API响应系统]]
 
 **使用位置**:
+
 - Controller 返回统一格式的响应
 
 **示例**:
+
 ```typescript
 import { ResponseCode, getHttpStatusCode } from '@dailyuse/contracts';
 
@@ -770,26 +770,27 @@ return GoalController.sendError(res, ResponseCode.VALIDATION_ERROR, error.messag
 ### 3. [[事件总线系统]]
 
 **使用位置**:
+
 - 前端监听用户登录事件，自动加载目标数据
 
 **示例**:
+
 ```typescript
 // goalEventHandlers.ts
-eventBus.on<UserLoggedInEventPayload>(
-  AUTH_EVENTS.USER_LOGGED_IN,
-  async (payload) => {
-    const goalStore = useGoalStore();
-    await goalStore.fetchGoals();
-  }
-);
+eventBus.on<UserLoggedInEventPayload>(AUTH_EVENTS.USER_LOGGED_IN, async (payload) => {
+  const goalStore = useGoalStore();
+  await goalStore.fetchGoals();
+});
 ```
 
 ### 4. [[校验系统]]
 
 **使用位置**:
+
 - 前端表单校验
 
 **示例**:
+
 ```typescript
 const validator = new FormValidator({
   fields: [
@@ -810,14 +811,14 @@ const validator = new FormValidator({
 
 ### 1. 命名规范
 
-| 类型 | 命名规则 | 示例 |
-|------|---------|------|
-| **类** | PascalCase + 后缀 | `GoalController`, `GoalApplicationService` |
-| **接口** | PascalCase + I前缀或后缀 | `IGoalRepository`, `GoalClientDTO` |
-| **方法** | camelCase + 动词 | `createGoal()`, `findById()` |
-| **变量** | camelCase | `accountUuid`, `goalName` |
-| **常量** | UPPER_SNAKE_CASE | `AUTH_EVENTS`, `GOAL_STATUS` |
-| **文件** | camelCase 或 PascalCase | `goalStore.ts`, `GoalController.ts` |
+| 类型     | 命名规则                 | 示例                                       |
+| -------- | ------------------------ | ------------------------------------------ |
+| **类**   | PascalCase + 后缀        | `GoalController`, `GoalApplicationService` |
+| **接口** | PascalCase + I前缀或后缀 | `IGoalRepository`, `GoalClientDTO`         |
+| **方法** | camelCase + 动词         | `createGoal()`, `findById()`               |
+| **变量** | camelCase                | `accountUuid`, `goalName`                  |
+| **常量** | UPPER_SNAKE_CASE         | `AUTH_EVENTS`, `GOAL_STATUS`               |
+| **文件** | camelCase 或 PascalCase  | `goalStore.ts`, `GoalController.ts`        |
 
 ### 2. 导入顺序
 
@@ -850,7 +851,7 @@ try {
       return Response.notFound(res, error.message);
     }
   }
-  
+
   return Response.error(res, 'Failed to create goal');
 }
 ```
@@ -875,6 +876,7 @@ export interface GoalClientDTO {
 ## 🔗 相关文档
 
 ### Goal 模块文档
+
 - [[GOAL_CONTROLLER_REFACTOR_COMPLETE]] - GoalController 重构完成总结
 - [[GOAL_DOMAIN_SERVICE_REFACTORING_COMPLETE]] - GoalDomainService 重构完成
 - [[DOMAIN_CLIENT_GOAL_OPTIMIZATION_COMPLETE]] - 前端 Goal 模块优化
@@ -882,6 +884,7 @@ export interface GoalClientDTO {
 - `packages/contracts/src/modules/goal/OPTIMISTIC_UPDATES_GUIDE.md` - 乐观更新指南
 
 ### 系统文档
+
 - [[日志系统]]
 - [[API响应系统]]
 - [[事件总线系统]]

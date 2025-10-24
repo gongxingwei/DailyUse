@@ -10,10 +10,12 @@
 ### ✅ 任务 1: 更新 Schedule 架构文档
 
 **问题背景：**
+
 - 原先的设计是在后端直接调用 Schedule 服务创建调度任务
 - 存在模块间紧耦合的问题
 
 **新架构（基于事件总线）：**
+
 ```
 业务模块 (Task/Goal/Reminder)
     ↓ 发布事件
@@ -25,27 +27,34 @@ Schedule 模块 (监听器)
 ```
 
 **关键实现：**
+
 1. **定义 Schedule 相关事件**
+
    ```typescript
    export class TaskScheduleRequiredEvent {
-     constructor(public readonly data: {
-       taskUuid: string;
-       scheduleType: 'template' | 'instance';
-       timeConfig: TimeConfig;
-       operation: 'create' | 'update' | 'delete';
-     }) {}
+     constructor(
+       public readonly data: {
+         taskUuid: string;
+         scheduleType: 'template' | 'instance';
+         timeConfig: TimeConfig;
+         operation: 'create' | 'update' | 'delete';
+       },
+     ) {}
    }
    ```
 
 2. **业务模块发布事件**
+
    ```typescript
    // Task 创建后
-   await this.eventBus.publish(new TaskScheduleRequiredEvent({
-     taskUuid: template.uuid,
-     scheduleType: 'template',
-     timeConfig: template.timeConfig,
-     operation: 'create',
-   }));
+   await this.eventBus.publish(
+     new TaskScheduleRequiredEvent({
+       taskUuid: template.uuid,
+       scheduleType: 'template',
+       timeConfig: template.timeConfig,
+       operation: 'create',
+     }),
+   );
    ```
 
 3. **Schedule 模块监听事件**
@@ -57,12 +66,14 @@ Schedule 模块 (监听器)
    ```
 
 **优势：**
+
 - ✅ 解耦：业务模块不需要知道 Schedule 的实现细节
 - ✅ 可扩展：新增业务模块只需发布事件
 - ✅ 可测试：事件驱动更易于单元测试
 - ✅ 可维护：职责单一，修改影响范围小
 
 **文档更新：**
+
 - 更新了 `docs/WEB_MODULE_FIX_GUIDE.md`，添加详细的事件驱动架构说明
 
 ---
@@ -70,12 +81,14 @@ Schedule 模块 (监听器)
 ### ✅ 任务 2 & 3: Theme 模块简化
 
 **清理内容：**
+
 - ❌ 删除 `apps/web/src/modules/theme/` 整个目录（用户已手动删除）
 - ❌ 删除 `apps/web/src/views/ThemeDemo.vue`
 - ❌ 从路由中删除 Theme 相关路由
 - ❌ 从 `AppInitializationManager.ts` 中删除 Theme 初始化
 
 **新实现：useTheme Composable**
+
 ```typescript
 // apps/web/src/modules/setting/presentation/composables/useTheme.ts
 
@@ -107,6 +120,7 @@ export function useTheme() {
 ```
 
 **使用方式：**
+
 ```vue
 <script setup>
 import { useTheme } from '@/modules/setting/presentation/composables/useTheme';
@@ -120,6 +134,7 @@ const { themeMode, themes, toggleTheme } = useTheme();
 ```
 
 **优势：**
+
 - ✅ 简化：从独立模块简化为单个 Composable
 - ✅ 直接：直接使用 Vuetify 和 Setting Store，没有中间层
 - ✅ 轻量：减少大量不必要的代码
@@ -130,6 +145,7 @@ const { themeMode, themes, toggleTheme } = useTheme();
 ### ✅ 任务 4: 安装 Tiptap 依赖
 
 **已安装依赖：**
+
 ```bash
 pnpm add @tiptap/vue-3 @tiptap/starter-kit @tiptap/extension-placeholder \
          @tiptap/extension-link @tiptap/extension-image marked
@@ -137,6 +153,7 @@ pnpm add -D sass-embedded
 ```
 
 **依赖说明：**
+
 - `@tiptap/vue-3@3.6.6` - Tiptap Vue 3 集成
 - `@tiptap/starter-kit@3.6.6` - 基础扩展包（标题、列表、代码等）
 - `@tiptap/extension-placeholder@3.6.6` - 占位符扩展
@@ -152,13 +169,14 @@ pnpm add -D sass-embedded
 **创建的文件：**
 
 1. **useEditor.ts** - Composable API
+
    ```typescript
    export function useEditor() {
      function setEditorInstance(instance: any) { ... }
      function openFile(file) { ... }
      function closeFile(tabUuid) { ... }
      function saveCurrentFile() { ... }
-     
+
      return {
        setEditorInstance,
        openFile,
@@ -183,6 +201,7 @@ pnpm add -D sass-embedded
    ```
 
 **组件结构：**
+
 ```
 apps/web/src/modules/editor/presentation/
 ├── components/
@@ -200,11 +219,13 @@ apps/web/src/modules/editor/presentation/
 ### ✅ 任务 6: 集成 Editor 到 Repository
 
 **修改的文件：**
+
 - `apps/web/src/modules/repository/presentation/views/RepositoryDetailView.vue`
 
 **新增功能：**
 
 1. **新增编辑器标签页**
+
    ```vue
    <v-tabs v-model="activeTab">
      <v-tab value="resources">资源列表</v-tab>
@@ -215,6 +236,7 @@ apps/web/src/modules/editor/presentation/
    ```
 
 2. **集成 EditorContainer**
+
    ```vue
    <v-window-item value="editor" class="h-100">
      <div class="editor-wrapper">
@@ -231,7 +253,7 @@ apps/web/src/modules/editor/presentation/
    ```typescript
    const openResourceInEditor = (resource: Resource) => {
      activeTab.value = 'editor';
-     
+
      setTimeout(() => {
        if (editorRef.value) {
          editorRef.value.openFile({
@@ -247,6 +269,7 @@ apps/web/src/modules/editor/presentation/
    ```
 
 **使用流程：**
+
 ```
 用户操作                Repository 页面              Editor 组件
    │                         │                          │
@@ -266,15 +289,18 @@ apps/web/src/modules/editor/presentation/
 ## 🎯 完成效果
 
 ### 1. **Schedule 架构改进**
+
 - 使用事件总线解耦业务模块和 Schedule 模块
 - 提高了系统的可维护性和可扩展性
 
 ### 2. **Theme 简化**
+
 - 从复杂的独立模块简化为 Composable
 - 直接使用 Vuetify 和 Setting Store
 - 减少了大量不必要的代码
 
 ### 3. **Editor 功能完整**
+
 - ✅ 多标签页管理
 - ✅ Markdown 编辑（基于 Tiptap）
 - ✅ 编辑/预览模式切换
@@ -283,6 +309,7 @@ apps/web/src/modules/editor/presentation/
 - ✅ 与 Repository 模块集成
 
 ### 4. **构建成功**
+
 ```bash
 ✓ built in 18.12s
 Successfully ran target vite:build for project web
@@ -293,6 +320,7 @@ Successfully ran target vite:build for project web
 ## 📝 待办事项（后续）
 
 ### Repository 编辑器改进
+
 1. [ ] 实现从后端加载文件内容
 2. [ ] 实现保存到后端的 API 调用
 3. [ ] 添加文件树导航
@@ -300,6 +328,7 @@ Successfully ran target vite:build for project web
 5. [ ] 添加键盘快捷键支持
 
 ### Editor 功能增强
+
 1. [ ] 添加更多 Markdown 扩展（表格、任务列表等）
 2. [ ] 实现拖拽上传图片
 3. [ ] 添加代码高亮
@@ -307,11 +336,13 @@ Successfully ran target vite:build for project web
 5. [ ] 添加版本历史
 
 ### Theme 功能完善
+
 1. [ ] 在 Setting 页面添加主题切换 UI
 2. [ ] 实现自定义主题颜色
 3. [ ] 添加主题预览功能
 
 ### Schedule 后端实现
+
 1. [ ] 在后端实现事件总线
 2. [ ] 实现 Schedule 事件监听器
 3. [ ] 测试事件驱动的调度功能

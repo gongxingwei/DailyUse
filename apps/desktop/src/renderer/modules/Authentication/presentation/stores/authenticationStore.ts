@@ -1,13 +1,11 @@
+import { defineStore } from 'pinia';
 
-import { defineStore } from "pinia";
-
-export const useAuthenticationStore = defineStore("authentication", {
+export const useAuthenticationStore = defineStore('authentication', {
   state: () => ({
     username: null as string | null,
     token: null as string | null,
     accountUuid: null as string | null,
     sessionUuid: null as string | null,
-
   }),
   getters: {
     isAuthenticated: (state) => !!state.token,

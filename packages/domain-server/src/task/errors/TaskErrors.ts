@@ -13,9 +13,14 @@ import { DomainError } from '@dailyuse/utils';
  */
 export class TaskTemplateNotFoundError extends DomainError {
   constructor(templateUuid: string) {
-    super('TASK_TEMPLATE_NOT_FOUND', `Task template not found: ${templateUuid}`, {
-      templateUuid,
-    }, 404);
+    super(
+      'TASK_TEMPLATE_NOT_FOUND',
+      `Task template not found: ${templateUuid}`,
+      {
+        templateUuid,
+      },
+      404,
+    );
   }
 }
 
@@ -29,7 +34,7 @@ export class InvalidTaskTemplateStateError extends DomainError {
       templateUuid: string;
       currentStatus: string;
       attemptedAction: string;
-    }
+    },
   ) {
     super('INVALID_TASK_TEMPLATE_STATE', message, context, 400);
   }
@@ -40,12 +45,7 @@ export class InvalidTaskTemplateStateError extends DomainError {
  */
 export class TaskTemplateArchivedError extends DomainError {
   constructor(templateUuid: string) {
-    super(
-      'TASK_TEMPLATE_ARCHIVED',
-      'Cannot modify archived task template',
-      { templateUuid },
-      400
-    );
+    super('TASK_TEMPLATE_ARCHIVED', 'Cannot modify archived task template', { templateUuid }, 400);
   }
 }
 
@@ -60,7 +60,7 @@ export class InvalidTagError extends DomainError {
     context: {
       tag: string;
       reason: string;
-    }
+    },
   ) {
     super('INVALID_TAG', message, context, 400);
   }
@@ -70,16 +70,12 @@ export class InvalidTagError extends DomainError {
  * 标签数量过多错误
  */
 export class TooManyTagsError extends DomainError {
-  constructor(
-    currentCount: number,
-    maxCount: number,
-    context?: Record<string, unknown>
-  ) {
+  constructor(currentCount: number, maxCount: number, context?: Record<string, unknown>) {
     super(
       'TOO_MANY_TAGS',
       `Cannot add more tags. Current: ${currentCount}, Max: ${maxCount}`,
       { currentCount, maxCount, ...context },
-      400
+      400,
     );
   }
 }
@@ -89,10 +85,15 @@ export class TooManyTagsError extends DomainError {
  */
 export class TagNotFoundError extends DomainError {
   constructor(tag: string, templateUuid: string) {
-    super('TAG_NOT_FOUND', `Tag "${tag}" not found in task template`, {
-      tag,
-      templateUuid,
-    }, 404);
+    super(
+      'TAG_NOT_FOUND',
+      `Tag "${tag}" not found in task template`,
+      {
+        tag,
+        templateUuid,
+      },
+      404,
+    );
   }
 }
 
@@ -101,10 +102,15 @@ export class TagNotFoundError extends DomainError {
  */
 export class TagAlreadyExistsError extends DomainError {
   constructor(tag: string, templateUuid: string) {
-    super('TAG_ALREADY_EXISTS', `Tag "${tag}" already exists in task template`, {
-      tag,
-      templateUuid,
-    }, 400);
+    super(
+      'TAG_ALREADY_EXISTS',
+      `Tag "${tag}" already exists in task template`,
+      {
+        tag,
+        templateUuid,
+      },
+      400,
+    );
   }
 }
 
@@ -115,9 +121,14 @@ export class TagAlreadyExistsError extends DomainError {
  */
 export class TaskInstanceNotFoundError extends DomainError {
   constructor(instanceUuid: string) {
-    super('TASK_INSTANCE_NOT_FOUND', `Task instance not found: ${instanceUuid}`, {
-      instanceUuid,
-    }, 404);
+    super(
+      'TASK_INSTANCE_NOT_FOUND',
+      `Task instance not found: ${instanceUuid}`,
+      {
+        instanceUuid,
+      },
+      404,
+    );
   }
 }
 
@@ -131,7 +142,7 @@ export class InvalidTaskInstanceStateError extends DomainError {
       instanceUuid: string;
       currentStatus: string;
       attemptedAction: string;
-    }
+    },
   ) {
     super('INVALID_TASK_INSTANCE_STATE', message, context, 400);
   }
@@ -146,7 +157,7 @@ export class TaskInstanceAlreadyCompletedError extends DomainError {
       'TASK_INSTANCE_ALREADY_COMPLETED',
       'Cannot modify completed task instance',
       { instanceUuid },
-      400
+      400,
     );
   }
 }
@@ -162,7 +173,7 @@ export class InvalidRecurrenceRuleError extends DomainError {
     context: {
       frequency?: string;
       reason: string;
-    }
+    },
   ) {
     super('INVALID_RECURRENCE_RULE', message, context, 400);
   }
@@ -177,7 +188,7 @@ export class RecurrenceRuleNotImplementedError extends DomainError {
       'RECURRENCE_RULE_NOT_IMPLEMENTED',
       `Recurrence frequency "${frequency}" is not fully implemented`,
       { frequency },
-      501
+      501,
     );
   }
 }
@@ -195,7 +206,7 @@ export class InstanceGenerationFailedError extends DomainError {
       fromDate: number;
       toDate: number;
       reason: string;
-    }
+    },
   ) {
     super('INSTANCE_GENERATION_FAILED', message, context, 500);
   }
@@ -210,7 +221,7 @@ export class InvalidDateRangeError extends DomainError {
       'INVALID_DATE_RANGE',
       `Invalid date range: fromDate (${fromDate}) must be before toDate (${toDate})`,
       { fromDate, toDate },
-      400
+      400,
     );
   }
 }
@@ -225,7 +236,7 @@ export class InvalidTimeConfigError extends DomainError {
     message: string,
     context: {
       reason: string;
-    }
+    },
   ) {
     super('INVALID_TIME_CONFIG', message, context, 400);
   }
@@ -239,7 +250,7 @@ export class TimeConflictError extends DomainError {
     message: string,
     context: {
       conflictingTasks: string[];
-    }
+    },
   ) {
     super('TIME_CONFLICT', message, context, 409);
   }
@@ -256,7 +267,7 @@ export class InvalidGoalBindingError extends DomainError {
     context: {
       goalUuid?: string;
       reason: string;
-    }
+    },
   ) {
     super('INVALID_GOAL_BINDING', message, context, 400);
   }
@@ -282,7 +293,7 @@ export class TaskTemplateAccessDeniedError extends DomainError {
       'TASK_TEMPLATE_ACCESS_DENIED',
       'You do not have permission to access this task template',
       { templateUuid, accountUuid },
-      403
+      403,
     );
   }
 }
@@ -296,7 +307,7 @@ export class TaskInstanceAccessDeniedError extends DomainError {
       'TASK_INSTANCE_ACCESS_DENIED',
       'You do not have permission to access this task instance',
       { instanceUuid, accountUuid },
-      403
+      403,
     );
   }
 }

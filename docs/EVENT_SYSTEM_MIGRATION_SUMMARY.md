@@ -41,21 +41,25 @@
 从 `@dailyuse/utils` 包导出的 `eventBus` 支持以下方法：
 
 #### 单向通信（One-way）
+
 - `send(event: string, data?: any): void` - 发送事件
 - `on(event: string, handler: Function): void` - 监听事件
 - `once(event: string, handler: Function): void` - 监听一次事件
 - `off(event: string, handler?: Function): void` - 移除监听器
 
 #### 双向通信（Two-way）
+
 - `invoke(event: string, data?: any): Promise<any>` - 调用并等待响应
 - `handle(event: string, handler: Function): void` - 处理并返回响应
 
 #### 兼容性方法
+
 - `publish(channel: string, data: any): void` - 发布到频道（同 send）
 - `subscribe(channel: string, handler: Function): void` - 订阅频道（同 on）
 - `unsubscribe(channel: string, handler?: Function): void` - 取消订阅（同 off）
 
 #### 管理方法
+
 - `getStats(): EventBusStats` - 获取统计信息
 - `destroy(): void` - 销毁事件总线
 - `removeHandler(event: string, handler?: Function): void` - 移除处理器
@@ -68,9 +72,11 @@
 ## 类型检查结果
 
 ### 迁移前
+
 - 12 个类型错误（包括缺失模块导入错误）
 
 ### 迁移后
+
 - 3 个类型错误（仅测试文件中的无关错误）
   - `tempTypes.ts` - AccountType 属性不存在
   - `test-event-driven-architecture.ts` - ACCOUNT_UUID 变量名错误（2处）
@@ -82,6 +88,7 @@
 以下模块导入已被注释，待模块实现后需要取消注释：
 
 ### unifiedEventSystem.ts
+
 ```typescript
 // import { registerAccountEventHandlers } from '../../modules/account';
 // import { initializeAuthenticationEventHandlers } from '../../modules/authentication/application/events/EventHandler';
@@ -89,6 +96,7 @@
 ```
 
 ### initializer.ts
+
 ```typescript
 // import { registerAccountInitializationTasks } from '../../modules/account';
 // import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
@@ -111,9 +119,9 @@ eventBus.on('user:created', (data) => {
 });
 
 // 发送事件
-eventBus.send('user:created', { 
-  userId: '123', 
-  name: 'John Doe' 
+eventBus.send('user:created', {
+  userId: '123',
+  name: 'John Doe',
 });
 ```
 
@@ -137,7 +145,7 @@ const stats = eventBus.getStats();
 console.log('事件总线统计:', {
   处理器数量: stats.handlersCount,
   监听器数量: stats.listenersCount,
-  待处理请求: stats.pendingRequestsCount
+  待处理请求: stats.pendingRequestsCount,
 });
 ```
 

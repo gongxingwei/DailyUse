@@ -11,6 +11,7 @@ mode: agent
 #### 迁移前准备
 
 1. **备份数据**
+
    ```bash
    # 备份数据库
    pg_dump dailyuse > dailyuse_backup.sql
@@ -20,6 +21,7 @@ mode: agent
    ```
 
 2. **分析依赖关系**
+
    ```bash
    # 分析package.json依赖
    npx depcheck
@@ -31,12 +33,14 @@ mode: agent
 #### 迁移步骤
 
 1. **初始化Nx Workspace**
+
    ```bash
    npx create-nx-workspace@latest dailyuse-monorepo --preset=empty --package-manager=pnpm
    cd dailyuse-monorepo
    ```
 
 2. **迁移应用**
+
    ```bash
    # 创建应用
    npx nx g @nx/web:app web --framework=vue --bundler=vite
@@ -50,6 +54,7 @@ mode: agent
    ```
 
 3. **迁移共享代码**
+
    ```bash
    # 创建共享库
    npx nx g @nx/js:lib shared-types --import-path=@dailyuse/shared-types
@@ -61,6 +66,7 @@ mode: agent
    ```
 
 4. **更新依赖**
+
    ```bash
    # 更新package.json
    pnpm add -D @nx/vite @nx/vue @nx/electron @nx/node
@@ -103,6 +109,7 @@ mode: agent
 #### 迁移后验证
 
 1. **构建验证**
+
    ```bash
    # 构建所有应用
    npx nx run-many --target=build
@@ -114,6 +121,7 @@ mode: agent
    ```
 
 2. **测试验证**
+
    ```bash
    # 运行所有测试
    npx nx run-many --target=test
@@ -123,6 +131,7 @@ mode: agent
    ```
 
 3. **依赖关系验证**
+
    ```bash
    # 查看项目依赖图
    npx nx graph
@@ -136,6 +145,7 @@ mode: agent
 #### 迁移前准备
 
 1. **兼容性检查**
+
    ```bash
    # 检查Vue2语法
    npx vue2-migration-helper src/
@@ -151,34 +161,36 @@ mode: agent
 #### 迁移步骤
 
 1. **更新main.ts**
+
    ```typescript
    // Vue2
-   import Vue from 'vue'
-   import App from './App.vue'
-   import router from './router'
-   import store from './store'
+   import Vue from 'vue';
+   import App from './App.vue';
+   import router from './router';
+   import store from './store';
 
    new Vue({
      router,
      store,
-     render: h => h(App)
-   }).$mount('#app')
+     render: (h) => h(App),
+   }).$mount('#app');
 
    // Vue3
-   import { createApp } from 'vue'
-   import { createRouter, createWebHistory } from 'vue-router'
-   import { createPinia } from 'pinia'
-   import App from './App.vue'
-   import router from './router'
-   import pinia from './store'
+   import { createApp } from 'vue';
+   import { createRouter, createWebHistory } from 'vue-router';
+   import { createPinia } from 'pinia';
+   import App from './App.vue';
+   import router from './router';
+   import pinia from './store';
 
-   const app = createApp(App)
-   app.use(router)
-   app.use(pinia)
-   app.mount('#app')
+   const app = createApp(App);
+   app.use(router);
+   app.use(pinia);
+   app.mount('#app');
    ```
 
 2. **组件迁移**
+
    ```vue
    <!-- Vue2 -->
    <template>
@@ -191,10 +203,10 @@ mode: agent
    export default {
      data() {
        return {
-         count: 0
-       }
-     }
-   }
+         count: 0,
+       };
+     },
+   };
    </script>
 
    <!-- Vue3 -->
@@ -205,13 +217,14 @@ mode: agent
    </template>
 
    <script setup>
-   import { ref } from 'vue'
+   import { ref } from 'vue';
 
-   const count = ref(0)
+   const count = ref(0);
    </script>
    ```
 
 3. **路由迁移**
+
    ```typescript
    // Vue2
    import VueRouter from 'vue-router'
@@ -231,31 +244,37 @@ mode: agent
    ```
 
 4. **状态管理迁移**
+
    ```typescript
    // Vuex (Vue2)
-   import Vuex from 'vuex'
+   import Vuex from 'vuex';
 
    const store = new Vuex.Store({
      state: { count: 0 },
      mutations: {
-       increment(state) { state.count++ }
-     }
-   })
+       increment(state) {
+         state.count++;
+       },
+     },
+   });
 
    // Pinia (Vue3)
-   import { defineStore } from 'pinia'
+   import { defineStore } from 'pinia';
 
    export const useCounterStore = defineStore('counter', {
      state: () => ({ count: 0 }),
      actions: {
-       increment() { this.count++ }
-     }
-   })
+       increment() {
+         this.count++;
+       },
+     },
+   });
    ```
 
 #### 迁移后验证
 
 1. **类型检查**
+
    ```bash
    npx vue-tsc --noEmit
    ```
@@ -270,6 +289,7 @@ mode: agent
 #### 迁移前准备
 
 1. **API分析**
+
    ```bash
    # 分析现有路由
    npx express-route-parser server/
@@ -284,79 +304,84 @@ mode: agent
 #### 迁移步骤
 
 1. **依赖更新**
+
    ```bash
    pnpm add fastify @fastify/cors @fastify/helmet
    pnpm remove express cors helmet
    ```
 
 2. **服务器迁移**
+
    ```typescript
    // Express
-   import express from 'express'
-   import cors from 'cors'
-   import helmet from 'helmet'
+   import express from 'express';
+   import cors from 'cors';
+   import helmet from 'helmet';
 
-   const app = express()
-   app.use(cors())
-   app.use(helmet())
-   app.use(express.json())
+   const app = express();
+   app.use(cors());
+   app.use(helmet());
+   app.use(express.json());
 
    app.get('/api/users', (req, res) => {
-     res.json({ users: [] })
-   })
+     res.json({ users: [] });
+   });
 
-   app.listen(3000)
+   app.listen(3000);
 
    // Fastify
-   import Fastify from 'fastify'
-   import cors from '@fastify/cors'
-   import helmet from '@fastify/helmet'
+   import Fastify from 'fastify';
+   import cors from '@fastify/cors';
+   import helmet from '@fastify/helmet';
 
-   const fastify = Fastify({ logger: true })
-   await fastify.register(cors)
-   await fastify.register(helmet)
+   const fastify = Fastify({ logger: true });
+   await fastify.register(cors);
+   await fastify.register(helmet);
 
    fastify.get('/api/users', async (request, reply) => {
-     return { users: [] }
-   })
+     return { users: [] };
+   });
 
-   await fastify.listen({ port: 3000 })
+   await fastify.listen({ port: 3000 });
    ```
 
 3. **路由迁移**
+
    ```typescript
    // Express路由
    app.get('/api/users/:id', (req, res) => {
-     const { id } = req.params
-     const { filter } = req.query
-     res.json({ id, filter })
-   })
+     const { id } = req.params;
+     const { filter } = req.query;
+     res.json({ id, filter });
+   });
 
    // Fastify路由
    fastify.get('/api/users/:id', async (request, reply) => {
-     const { id } = request.params
-     const { filter } = request.query
-     return { id, filter }
-   })
+     const { id } = request.params;
+     const { filter } = request.query;
+     return { id, filter };
+   });
    ```
 
 4. **中间件迁移**
+
    ```typescript
    // Express中间件
    app.use((req, res, next) => {
-     console.log(`${req.method} ${req.path}`)
-     next()
-   })
+     console.log(`${req.method} ${req.path}`);
+     next();
+   });
 
    // Fastify中间件
    fastify.addHook('preHandler', async (request, reply) => {
-     console.log(`${request.method} ${request.url}`)
-   })
+     console.log(`${request.method} ${request.url}`);
+   });
    ```
 
 #### 迁移后验证
 
 1. **性能测试**
+
    ```bash
    # 对比性能
    npx autocannon -c 100 -d 10 http://localhost:3000/api/test
@@ -373,12 +398,14 @@ mode: agent
 #### 从SQLite到PostgreSQL迁移
 
 1. **数据导出**
+
    ```bash
    # 导出SQLite数据
    sqlite3 dailyuse.db .dump > sqlite_dump.sql
    ```
 
 2. **模式迁移**
+
    ```bash
    # 生成Prisma迁移
    npx prisma migrate dev --name migrate-to-postgres
@@ -393,6 +420,7 @@ mode: agent
 #### 迁移后验证
 
 1. **数据完整性检查**
+
    ```sql
    -- 检查数据量
    SELECT 'users' as table_name, COUNT(*) as count FROM users
@@ -413,6 +441,7 @@ mode: agent
 #### 从传统部署到容器化部署
 
 1. **Dockerfile创建**
+
    ```dockerfile
    # 多阶段构建
    FROM node:18-alpine AS builder
@@ -429,13 +458,14 @@ mode: agent
    ```
 
 2. **Docker Compose配置**
+
    ```yaml
    version: '3.8'
    services:
      api:
        build: ./apps/api
        ports:
-         - "3000:3000"
+         - '3000:3000'
        environment:
          - DATABASE_URL=postgresql://user:pass@db:5432/dailyuse
        depends_on:
@@ -455,6 +485,7 @@ mode: agent
    ```
 
 3. **CI/CD配置**
+
    ```yaml
    # .github/workflows/deploy.yml
    name: Deploy
@@ -479,6 +510,7 @@ mode: agent
 #### 回滚策略
 
 1. **数据库回滚**
+
    ```bash
    # 创建恢复点
    pg_dump dailyuse > pre_migration_backup.sql
@@ -488,6 +520,7 @@ mode: agent
    ```
 
 2. **代码回滚**
+
    ```bash
    # Git回滚
    git revert HEAD~3  # 回滚最近3个提交
@@ -504,53 +537,58 @@ mode: agent
 #### 监控和告警
 
 1. **应用监控**
+
    ```typescript
    // 健康检查端点
    fastify.get('/health', async () => {
-     const dbHealth = await checkDatabaseHealth()
-     const cacheHealth = await checkCacheHealth()
+     const dbHealth = await checkDatabaseHealth();
+     const cacheHealth = await checkCacheHealth();
 
      return {
        status: dbHealth && cacheHealth ? 'healthy' : 'unhealthy',
        timestamp: new Date().toISOString(),
-       services: { database: dbHealth, cache: cacheHealth }
-     }
-   })
+       services: { database: dbHealth, cache: cacheHealth },
+     };
+   });
    ```
 
 2. **性能监控**
    ```typescript
    // 响应时间监控
    fastify.addHook('onResponse', (request, reply, done) => {
-     const responseTime = reply.getResponseTime()
+     const responseTime = reply.getResponseTime();
      if (responseTime > 1000) {
-       console.warn(`Slow response: ${request.method} ${request.url} - ${responseTime}ms`)
+       console.warn(`Slow response: ${request.method} ${request.url} - ${responseTime}ms`);
      }
-     done()
-   })
+     done();
+   });
    ```
 
 ### 迁移时间表
 
 #### Phase 1: 准备阶段 (1-2周)
+
 - [ ] 备份数据和代码
 - [ ] 分析依赖关系
 - [ ] 制定详细迁移计划
 - [ ] 搭建测试环境
 
 #### Phase 2: 核心迁移 (2-3周)
+
 - [ ] 初始化Nx Workspace
 - [ ] 迁移应用代码
 - [ ] 迁移共享库
 - [ ] 更新配置文件
 
 #### Phase 3: 测试和优化 (1-2周)
+
 - [ ] 单元测试通过
 - [ ] 集成测试通过
 - [ ] 性能测试通过
 - [ ] 端到端测试通过
 
 #### Phase 4: 部署和监控 (1周)
+
 - [ ] 生产环境部署
 - [ ] 监控告警配置
 - [ ] 回滚方案验证

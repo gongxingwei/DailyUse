@@ -1,9 +1,9 @@
-import { Database } from "better-sqlite3";
-import { getDatabase } from "../../../../shared/database/index";
-import { IAccountRepository } from "../../index";
-import { IUserRepository } from "../../index";
-import { Account } from "../../domain/aggregates/account";
-import { SqliteUserRepository } from "./sqliteUserRepository";
+import { Database } from 'better-sqlite3';
+import { getDatabase } from '../../../../shared/database/index';
+import { IAccountRepository } from '../../index';
+import { IUserRepository } from '../../index';
+import { Account } from '../../domain/aggregates/account';
+import { SqliteUserRepository } from './sqliteUserRepository';
 
 /**
  * SQLite 账号存储库实现
@@ -45,7 +45,7 @@ export class SqliteAccountRepository implements IAccountRepository {
 
       return await this.mapRowToAccount(row);
     } catch (error) {
-      console.error("查找账号失败 (ID):", error);
+      console.error('查找账号失败 (ID):', error);
       throw error;
     }
   }
@@ -68,7 +68,7 @@ export class SqliteAccountRepository implements IAccountRepository {
 
       return await this.mapRowToAccount(row);
     } catch (error) {
-      console.error("查找账号失败 (用户名):", error);
+      console.error('查找账号失败 (用户名):', error);
       throw error;
     }
   }
@@ -91,7 +91,7 @@ export class SqliteAccountRepository implements IAccountRepository {
 
       return this.mapRowToAccount(row);
     } catch (error) {
-      console.error("查找账号失败 (邮箱):", error);
+      console.error('查找账号失败 (邮箱):', error);
       throw error;
     }
   }
@@ -116,7 +116,7 @@ export class SqliteAccountRepository implements IAccountRepository {
 
       return accounts;
     } catch (error) {
-      console.error("获取所有账号失败:", error);
+      console.error('获取所有账号失败:', error);
       throw error;
     }
   }
@@ -139,7 +139,7 @@ export class SqliteAccountRepository implements IAccountRepository {
 
       return this.mapRowToAccount(row);
     } catch (error) {
-      console.error("查找账号失败 (手机号):", error);
+      console.error('查找账号失败 (手机号):', error);
       throw error;
     }
   }
@@ -150,10 +150,10 @@ export class SqliteAccountRepository implements IAccountRepository {
   async findByStatus(_status: string): Promise<Account[]> {
     try {
       // 注意：当前数据库表没有status字段，返回空数组
-      console.warn("数据库表中没有status字段，返回空数组");
+      console.warn('数据库表中没有status字段，返回空数组');
       return [];
     } catch (error) {
-      console.error("根据状态查找账号失败:", error);
+      console.error('根据状态查找账号失败:', error);
       throw error;
     }
   }
@@ -179,7 +179,7 @@ export class SqliteAccountRepository implements IAccountRepository {
 
       return accounts;
     } catch (error) {
-      console.error("根据账号类型查找账号失败:", error);
+      console.error('根据账号类型查找账号失败:', error);
       throw error;
     }
   }
@@ -194,7 +194,7 @@ export class SqliteAccountRepository implements IAccountRepository {
       const result = db.prepare(query).get(phone);
       return result !== undefined;
     } catch (error) {
-      console.error("检查手机号存在性失败:", error);
+      console.error('检查手机号存在性失败:', error);
       throw error;
     }
   }
@@ -214,10 +214,8 @@ export class SqliteAccountRepository implements IAccountRepository {
         console.log(`账号 ${account.uuid} 不存在，执行插入操作`);
         await this.insertAccount(account);
       }
-
-      
     } catch (error) {
-      console.error("保存账号失败:", error);
+      console.error('保存账号失败:', error);
       throw error;
     }
   }
@@ -237,12 +235,12 @@ export class SqliteAccountRepository implements IAccountRepository {
       const result = db.prepare(query).run(uuid);
 
       if (result.changes === 0) {
-        throw new Error("账号不存在或删除失败");
+        throw new Error('账号不存在或删除失败');
       }
 
       console.log(`账号 ${uuid} 删除成功`);
     } catch (error) {
-      console.error("删除账号失败:", error);
+      console.error('删除账号失败:', error);
       throw error;
     }
   }
@@ -257,7 +255,7 @@ export class SqliteAccountRepository implements IAccountRepository {
       const result = db.prepare(query).get(username);
       return result !== undefined;
     } catch (error) {
-      console.error("检查用户名存在性失败:", error);
+      console.error('检查用户名存在性失败:', error);
       throw error;
     }
   }
@@ -272,7 +270,7 @@ export class SqliteAccountRepository implements IAccountRepository {
       const result = db.prepare(query).get(email);
       return result !== undefined;
     } catch (error) {
-      console.error("检查邮箱存在性失败:", error);
+      console.error('检查邮箱存在性失败:', error);
       throw error;
     }
   }
@@ -338,11 +336,11 @@ export class SqliteAccountRepository implements IAccountRepository {
       account.lastLoginAt?.getTime() || null,
       null, // emailVerificationToken - 需要通过getter获取
       null, // phoneVerificationCode - 需要通过getter获取
-      account.uuid
+      account.uuid,
     );
 
     if (result.changes === 0) {
-      throw new Error("账号更新失败，未找到目标记录");
+      throw new Error('账号更新失败，未找到目标记录');
     }
 
     console.log(`账号 ${account.username} 更新成功`);
@@ -382,12 +380,12 @@ export class SqliteAccountRepository implements IAccountRepository {
       lastLoginAt: row.last_login_at ? new Date(row.last_login_at) : undefined,
       isEmailVerified: row.is_email_verified,
       isPhoneVerified: row.is_phone_verified,
-      user: userDTO
-    }
-    console.log(accountDTO)
+      user: userDTO,
+    };
+    console.log(accountDTO);
     // 创建账号聚合根
     const account = Account.fromDTO(accountDTO);
-    console.log('[sqliteAccountRepo::Account]', account)
+    console.log('[sqliteAccountRepo::Account]', account);
 
     return account;
   }

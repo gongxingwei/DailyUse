@@ -18,7 +18,7 @@ eventBus.emit('reminder-triggered', {
   methods: NotificationMethod[],
   scheduledTime: Date,
   actualTime: Date,
-  
+
   // 可选字段
   metadata?: {
     // 任意扩展数据
@@ -28,11 +28,11 @@ eventBus.emit('reminder-triggered', {
 
 ## 🔄 模块职责
 
-| 模块 | 职责 | 不负责 |
-|------|------|--------|
-| **Reminder** | 提醒模板管理 | 定时执行、通知展示 |
-| **Schedule** | 定时任务队列、触发事件 | 通知展示方式 |
-| **Notification** | 接收事件、展示通知 | 提醒规则、定时逻辑 |
+| 模块             | 职责                   | 不负责             |
+| ---------------- | ---------------------- | ------------------ |
+| **Reminder**     | 提醒模板管理           | 定时执行、通知展示 |
+| **Schedule**     | 定时任务队列、触发事件 | 通知展示方式       |
+| **Notification** | 接收事件、展示通知     | 提醒规则、定时逻辑 |
 
 ## 📨 事件流程
 
@@ -83,10 +83,10 @@ eventBus.emit('ui:show-popup-reminder', ...);
 // ✅ 正确方式
 eventBus.on('reminder-triggered', async (payload) => {
   console.log('收到提醒:', payload.sourceType);
-  
+
   // 根据类型增强配置（可选）
   const enhanced = enhanceByType(payload);
-  
+
   // 显示通知
   await notificationService.show(enhanced);
 });
@@ -130,8 +130,8 @@ function enhanceBySourceType(payload) {
   };
 
   return {
-    ...defaults[payload.sourceType] || defaults.custom,
-    ...payload,  // 允许覆盖默认值
+    ...(defaults[payload.sourceType] || defaults.custom),
+    ...payload, // 允许覆盖默认值
   };
 }
 ```
@@ -158,17 +158,23 @@ eventBus.on('reminder-triggered', (payload) => {
 ```typescript
 function validateReminderPayload(payload) {
   const required = [
-    'reminderId', 'sourceType', 'sourceId',
-    'title', 'message', 'priority', 'methods',
-    'scheduledTime', 'actualTime'
+    'reminderId',
+    'sourceType',
+    'sourceId',
+    'title',
+    'message',
+    'priority',
+    'methods',
+    'scheduledTime',
+    'actualTime',
   ];
-  
-  const missing = required.filter(key => !payload[key]);
-  
+
+  const missing = required.filter((key) => !payload[key]);
+
   if (missing.length > 0) {
     console.warn('缺少必需字段:', missing);
   }
-  
+
   return missing.length === 0;
 }
 ```
@@ -193,14 +199,14 @@ describe('提醒通知系统', () => {
 
     // 发送事件
     eventBus.emit('reminder-triggered', payload);
-    
+
     // 验证
     await waitFor(() => {
       expect(notificationService.show).toHaveBeenCalledWith(
         expect.objectContaining({
           title: '任务提醒',
           type: NotificationType.TASK,
-        })
+        }),
       );
     });
   });
@@ -217,20 +223,16 @@ describe('提醒通知系统', () => {
 function enhanceBySourceType(payload) {
   const defaults = {
     // ... 现有类型 ...
-    
+
     // 新增类型
     meeting: {
       priority: NotificationPriority.URGENT,
-      methods: [
-        NotificationMethod.DESKTOP,
-        NotificationMethod.SOUND,
-        NotificationMethod.VIBRATION,
-      ],
+      methods: [NotificationMethod.DESKTOP, NotificationMethod.SOUND, NotificationMethod.VIBRATION],
       icon: '/icons/meeting.png',
       soundType: SoundType.ALERT,
     },
   };
-  
+
   // ...
 }
 ```
@@ -239,7 +241,7 @@ function enhanceBySourceType(payload) {
 
 ```typescript
 eventBus.emit('reminder-triggered', {
-  sourceType: 'meeting',  // 新类型
+  sourceType: 'meeting', // 新类型
   // ... 其他字段 ...
 });
 ```
@@ -268,7 +270,7 @@ eventBus.emit('reminder-triggered', {
 // ✅ 正确
 eventBus.emit('reminder-triggered', {
   reminderId: '123',
-  sourceType: 'task',  // 必需
+  sourceType: 'task', // 必需
   title: '提醒',
 });
 ```

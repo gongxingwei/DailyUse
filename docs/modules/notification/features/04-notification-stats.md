@@ -15,6 +15,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 通知数量趋势分析
 - ✅ 按类型统计分布
 - ✅ 响应时间分析
@@ -107,26 +108,20 @@ interface NotificationStats {
   readonly unreadCount: number;
   readonly byType: Record<string, number>;
   readonly byPriority: Record<Priority, number>;
-  readonly avgResponseTime: number;     // 毫秒
+  readonly avgResponseTime: number; // 毫秒
   readonly trendData: TrendPoint[];
 }
 
-function generateStats(
-  userId: string,
-  period: 'week' | 'month'
-): NotificationStats {
-  const notifications = this.notificationRepository.findByPeriod(
-    userId,
-    period
-  );
-  
+function generateStats(userId: string, period: 'week' | 'month'): NotificationStats {
+  const notifications = this.notificationRepository.findByPeriod(userId, period);
+
   return {
     totalCount: notifications.length,
-    unreadCount: notifications.filter(n => !n.readAt).length,
+    unreadCount: notifications.filter((n) => !n.readAt).length,
     byType: countByType(notifications),
     byPriority: countByPriority(notifications),
     avgResponseTime: calculateAvgResponseTime(notifications),
-    trendData: generateTrendData(notifications)
+    trendData: generateTrendData(notifications),
   };
 }
 ```
@@ -144,4 +139,3 @@ function generateStats(
 ---
 
 **文档状态**: ✅ Ready
-

@@ -1,10 +1,5 @@
 <template>
-  <v-dialog 
-    v-model="isVisible" 
-    max-width="500px"
-    persistent
-    @click:outside="handleCancel"
-  >
+  <v-dialog v-model="isVisible" max-width="500px" persistent @click:outside="handleCancel">
     <v-card class="account-deactivation-dialog">
       <v-card-title class="text-h5 error--text">
         <v-icon left color="error">mdi-alert-circle-outline</v-icon>
@@ -14,11 +9,10 @@
       <v-card-text>
         <div class="mb-4">
           <p class="text-body-1 mb-2">
-            您即将注销账号 <strong>{{ username }}</strong>，此操作不可逆转。
+            您即将注销账号 <strong>{{ username }}</strong
+            >，此操作不可逆转。
           </p>
-          <p class="text-body-2 text--secondary mb-3">
-            注销后您将失去以下内容：
-          </p>
+          <p class="text-body-2 text--secondary mb-3">注销后您将失去以下内容：</p>
           <ul class="text-body-2 text--secondary mb-4">
             <li>所有账号数据和设置</li>
             <li>任务和目标记录</li>
@@ -27,13 +21,7 @@
           </ul>
         </div>
 
-        <v-alert
-          v-if="reason"
-          type="info"
-          outlined
-          dense
-          class="mb-4"
-        >
+        <v-alert v-if="reason" type="info" outlined dense class="mb-4">
           <strong>注销原因：</strong>{{ reason }}
         </v-alert>
 
@@ -50,43 +38,25 @@
             @keyup.enter="handleConfirm"
             class="mb-3"
           />
-          
-          <v-checkbox
-            v-model="confirmDeactivation"
-            :disabled="isProcessing"
-            class="mt-0"
-          >
+
+          <v-checkbox v-model="confirmDeactivation" :disabled="isProcessing" class="mt-0">
             <template #label>
-              <span class="text-body-2">
-                我确认理解注销后果并同意继续
-              </span>
+              <span class="text-body-2"> 我确认理解注销后果并同意继续 </span>
             </template>
           </v-checkbox>
         </div>
 
         <!-- 管理员操作提示 -->
-        <v-alert
-          v-else-if="requestedBy === 'admin'"
-          type="warning"
-          outlined
-          dense
-        >
+        <v-alert v-else-if="requestedBy === 'admin'" type="warning" outlined dense>
           管理员强制注销操作，无需密码验证
         </v-alert>
       </v-card-text>
 
       <v-card-actions>
         <v-spacer />
-        
-        <v-btn
-          text
-          color="grey"
-          :disabled="isProcessing"
-          @click="handleCancel"
-        >
-          取消
-        </v-btn>
-        
+
+        <v-btn text color="grey" :disabled="isProcessing" @click="handleCancel"> 取消 </v-btn>
+
         <v-btn
           color="error"
           :disabled="!canConfirm || isProcessing"
@@ -114,16 +84,19 @@ interface Props {
 
 interface Emits {
   (e: 'update:visible', value: boolean): void;
-  (e: 'confirm', data: {
-    requestId: string;
-    verificationMethod: 'password' | 'cancelled';
-    password?: string;
-    clientInfo?: {
-      ipAddress?: string;
-      userAgent?: string;
-      deviceId?: string;
-    };
-  }): void;
+  (
+    e: 'confirm',
+    data: {
+      requestId: string;
+      verificationMethod: 'password' | 'cancelled';
+      password?: string;
+      clientInfo?: {
+        ipAddress?: string;
+        userAgent?: string;
+        deviceId?: string;
+      };
+    },
+  ): void;
   (e: 'cancel', requestId: string): void;
 }
 
@@ -139,7 +112,7 @@ const isProcessing = ref(false);
 // 计算属性
 const isVisible = computed({
   get: () => props.visible,
-  set: (value) => emit('update:visible', value)
+  set: (value) => emit('update:visible', value),
 });
 
 const requiresPasswordVerification = computed(() => {
@@ -167,15 +140,18 @@ const confirmButtonText = computed(() => {
 });
 
 // 监听属性变化
-watch(() => props.visible, (newValue) => {
-  if (newValue) {
-    // 重置表单
-    password.value = '';
-    confirmDeactivation.value = false;
-    passwordError.value = '';
-    isProcessing.value = false;
-  }
-});
+watch(
+  () => props.visible,
+  (newValue) => {
+    if (newValue) {
+      // 重置表单
+      password.value = '';
+      confirmDeactivation.value = false;
+      passwordError.value = '';
+      isProcessing.value = false;
+    }
+  },
+);
 
 // 方法
 const handleConfirm = async () => {
@@ -189,7 +165,7 @@ const handleConfirm = async () => {
     const clientInfo = {
       userAgent: navigator.userAgent,
       deviceId: generateDeviceId(),
-      ipAddress: await getClientIP()
+      ipAddress: await getClientIP(),
     };
 
     // 发送确认数据
@@ -197,9 +173,8 @@ const handleConfirm = async () => {
       requestId: props.requestId,
       verificationMethod: 'password',
       password: requiresPasswordVerification.value ? password.value : undefined,
-      clientInfo
+      clientInfo,
     });
-
   } catch (error) {
     console.error('账号注销确认失败:', error);
     passwordError.value = '操作失败，请重试';
@@ -209,13 +184,13 @@ const handleConfirm = async () => {
 
 const handleCancel = () => {
   if (isProcessing.value) return;
-  
+
   emit('cancel', props.requestId);
   emit('confirm', {
     requestId: props.requestId,
-    verificationMethod: 'cancelled'
+    verificationMethod: 'cancelled',
   });
-  
+
   isVisible.value = false;
 };
 

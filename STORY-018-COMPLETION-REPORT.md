@@ -2,15 +2,15 @@
 
 ## 📋 基本信息
 
-| 项目 | 内容 |
-|------|------|
-| Story ID | STORY-018 |
-| Story 名称 | Large-Scale DAG Optimization (大规模 DAG 性能优化) |
-| Story Points | 1 SP |
-| 优先级 | P2 |
-| 状态 | ✅ **已完成** |
-| 完成日期 | 2024-10-23 |
-| Sprint | Sprint 3 |
+| 项目         | 内容                                               |
+| ------------ | -------------------------------------------------- |
+| Story ID     | STORY-018                                          |
+| Story 名称   | Large-Scale DAG Optimization (大规模 DAG 性能优化) |
+| Story Points | 1 SP                                               |
+| 优先级       | P2                                                 |
+| 状态         | ✅ **已完成**                                      |
+| 完成日期     | 2024-10-23                                         |
+| Sprint       | Sprint 3                                           |
 
 ## 🎯 Story 目标
 
@@ -30,31 +30,31 @@
 **核心组件** (300 行代码):
 
 #### 1.1 优化级别自动检测
+
 ```typescript
-export function getOptimizationLevel(nodeCount: number): 
-  'small' | 'medium' | 'large' | 'huge' {
-  
-  if (nodeCount < 20) return 'small';    // 完整功能
-  if (nodeCount < 50) return 'medium';   // 优化模式
-  if (nodeCount < 100) return 'large';   // 激进优化
-  return 'huge';                         // 极限优化
+export function getOptimizationLevel(nodeCount: number): 'small' | 'medium' | 'large' | 'huge' {
+  if (nodeCount < 20) return 'small'; // 完整功能
+  if (nodeCount < 50) return 'medium'; // 优化模式
+  if (nodeCount < 100) return 'large'; // 激进优化
+  return 'huge'; // 极限优化
 }
 ```
 
 **优化级别策略**:
 
-| 级别 | 节点数 | 动画 | 强调效果 | 渐进渲染 | 交互 |
-|------|--------|------|----------|---------|------|
-| Small | < 20 | ✅ 完整 | ✅ 邻接聚焦 | ❌ | ✅ 全部 |
-| Medium | 20-50 | ✅ 部分 | ⚠️ 简化 | ✅ | ✅ 部分 |
-| Large | 50-100 | ❌ | ❌ | ✅ | ⚠️ 基础 |
-| Huge | > 100 | ❌ | ❌ | ✅ 激进 | ❌ 禁用 |
+| 级别   | 节点数 | 动画    | 强调效果    | 渐进渲染 | 交互    |
+| ------ | ------ | ------- | ----------- | -------- | ------- |
+| Small  | < 20   | ✅ 完整 | ✅ 邻接聚焦 | ❌       | ✅ 全部 |
+| Medium | 20-50  | ✅ 部分 | ⚠️ 简化     | ✅       | ✅ 部分 |
+| Large  | 50-100 | ❌      | ❌          | ✅       | ⚠️ 基础 |
+| Huge   | > 100  | ❌      | ❌          | ✅ 激进  | ❌ 禁用 |
 
 #### 1.2 ECharts 配置优化器
+
 ```typescript
 export function getOptimizedEChartsConfig(nodeCount: number) {
   const level = getOptimizationLevel(nodeCount);
-  
+
   switch (level) {
     case 'small':
       return {
@@ -62,14 +62,14 @@ export function getOptimizedEChartsConfig(nodeCount: number) {
         animationDuration: 300,
         emphasis: { focus: 'adjacency' },
       };
-    
+
     case 'medium':
       return {
         progressive: true,
         progressiveThreshold: 25,
         emphasis: { focus: 'adjacency' },
       };
-    
+
     case 'large':
       return {
         animation: false,
@@ -77,7 +77,7 @@ export function getOptimizedEChartsConfig(nodeCount: number) {
         progressiveThreshold: 25,
         emphasis: { focus: 'none' },
       };
-    
+
     case 'huge':
       return {
         silent: true,
@@ -90,12 +90,14 @@ export function getOptimizedEChartsConfig(nodeCount: number) {
 ```
 
 **优化策略说明**:
+
 - **Small**: 完整动画 + 邻接聚焦，最佳用户体验
 - **Medium**: 渐进渲染 (25 个节点/批次)，保持邻接聚焦
 - **Large**: 禁用动画 + 渐进渲染，移除邻接聚焦
 - **Huge**: 静默模式 + 激进渐进 (50 个节点/批次)，禁用所有强调效果
 
 #### 1.3 LOD (细节层次) 渲染
+
 ```typescript
 export function getLODNodeConfig(zoom: number, nodeCount: number) {
   // 低缩放级别 (< 30%)
@@ -106,7 +108,7 @@ export function getLODNodeConfig(zoom: number, nodeCount: number) {
       opacity: 0.6,
     };
   }
-  
+
   // 中等缩放级别 (30% - 60%)
   if (zoom < DAG_PERFORMANCE_CONFIG.STRATEGIES.LOD.mediumZoom) {
     return {
@@ -115,7 +117,7 @@ export function getLODNodeConfig(zoom: number, nodeCount: number) {
       opacity: 0.8,
     };
   }
-  
+
   // 完整缩放级别 (> 60%)
   return {
     showLabel: true,
@@ -126,28 +128,31 @@ export function getLODNodeConfig(zoom: number, nodeCount: number) {
 ```
 
 **LOD 策略**:
+
 - **低缩放 (< 0.3)**: 隐藏标签，小图标，半透明
 - **中缩放 (0.3-0.6)**: 条件显示标签，中图标，部分透明
 - **高缩放 (> 0.6)**: 完整细节，大图标，不透明
 
 **性能收益**:
+
 - 低缩放时减少 70% 渲染复杂度
 - 中缩放时减少 40% 渲染复杂度
 - 平滑过渡无闪烁
 
 #### 1.4 视口裁剪优化
+
 ```typescript
 export function cullNodesOutsideViewport(
   nodes: any[],
   viewportBounds: { left: number; top: number; right: number; bottom: number },
-  padding = 100
+  padding = 100,
 ): any[] {
   const { left, top, right, bottom } = viewportBounds;
-  
-  return nodes.filter(node => {
+
+  return nodes.filter((node) => {
     const nodeX = node.x ?? 0;
     const nodeY = node.y ?? 0;
-    
+
     return (
       nodeX >= left - padding &&
       nodeX <= right + padding &&
@@ -159,52 +164,55 @@ export function cullNodesOutsideViewport(
 ```
 
 **视口裁剪策略**:
+
 - **默认边距**: 100px (可配置)
 - **防抖时间**: 100ms (避免频繁更新)
 - **性能收益**: 渲染节点数量恒定，与总节点数无关
 
 **示例场景**:
+
 - 总节点数: 200
 - 视口尺寸: 800x600
 - 可见节点: ~30-40
 - **性能提升**: 5-6x
 
 #### 1.5 性能监控系统
+
 ```typescript
 export class DAGPerformanceMonitor {
   private metrics = {
-    renderTime: [] as number[],  // 最近 100 次渲染
-    fps: [] as number[],          // 最近 60 帧
+    renderTime: [] as number[], // 最近 100 次渲染
+    fps: [] as number[], // 最近 60 帧
     nodeCount: [] as number[],
   };
-  
+
   recordRenderTime(time: number, nodeCount: number): void {
     this.metrics.renderTime.push(time);
     this.metrics.nodeCount.push(nodeCount);
-    
+
     // 保留最近 100 次记录
     if (this.metrics.renderTime.length > 100) {
       this.metrics.renderTime.shift();
       this.metrics.nodeCount.shift();
     }
   }
-  
+
   recordFrame(): number {
     const now = performance.now();
     if (this.lastFrameTime) {
       const frameDuration = now - this.lastFrameTime;
       const fps = 1000 / frameDuration;
       this.metrics.fps.push(fps);
-      
+
       if (this.metrics.fps.length > 60) {
         this.metrics.fps.shift();
       }
     }
     this.lastFrameTime = now;
-    
+
     return this.calculateFPS();
   }
-  
+
   getReport() {
     return {
       avgRenderTime: this.calculateAverage(this.metrics.renderTime).toFixed(2),
@@ -218,6 +226,7 @@ export class DAGPerformanceMonitor {
 ```
 
 **监控指标**:
+
 - **平均渲染时间**: 最近 100 次渲染的平均值
 - **平均 FPS**: 最近 60 帧的平均帧率
 - **平均节点数**: 渲染节点数的平均值
@@ -231,6 +240,7 @@ export class DAGPerformanceMonitor {
 **测试覆盖** (250 行代码, 8 大类基准测试):
 
 #### 2.1 优化级别检测基准
+
 ```typescript
 bench('Get optimization level (10 nodes)', () => {
   getOptimizationLevel(10);
@@ -241,6 +251,7 @@ bench('Get optimization level (10 nodes)', () => {
 测试场景: 10/50/100/200 个节点
 
 #### 2.2 ECharts 配置生成基准
+
 ```typescript
 bench('Generate optimized config (100 nodes)', () => {
   getOptimizedEChartsConfig(100);
@@ -251,6 +262,7 @@ bench('Generate optimized config (100 nodes)', () => {
 测试场景: 4 个优化级别配置生成
 
 #### 2.3 LOD 配置基准
+
 ```typescript
 bench('LOD config (zoom: 0.2, 100 nodes)', () => {
   getLODNodeConfig(0.2, 100);
@@ -261,6 +273,7 @@ bench('LOD config (zoom: 0.2, 100 nodes)', () => {
 测试场景: 3 个缩放级别 (0.2/0.5/1.0)
 
 #### 2.4 视口裁剪性能基准
+
 ```typescript
 bench('Viewport culling (200 nodes)', () => {
   const viewport = { left: 0, top: 0, right: 600, bottom: 400 };
@@ -272,6 +285,7 @@ bench('Viewport culling (200 nodes)', () => {
 测试场景: 50/100/200 个节点的裁剪
 
 #### 2.5 DAG 数据生成基准
+
 ```typescript
 bench('Generate DAG data (200 nodes)', () => {
   generateDAGData(200);
@@ -282,6 +296,7 @@ bench('Generate DAG data (200 nodes)', () => {
 包含节点生成 + 边生成 + 交叉连接
 
 #### 2.6 性能监控基准
+
 ```typescript
 bench('Record render time', () => {
   monitor.recordRenderTime(123.45, 100);
@@ -294,9 +309,10 @@ bench('Get performance report', () => {
 ```
 
 #### 2.7 大规模节点处理基准
+
 ```typescript
 bench('Process 200 nodes with optimizations', () => {
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     const level = getOptimizationLevel(nodes.length);
     const lodConfig = getLODNodeConfig(1.0, nodes.length);
     return { ...node, ...lodConfig, level };
@@ -306,11 +322,12 @@ bench('Process 200 nodes with optimizations', () => {
 ```
 
 #### 2.8 边计算性能基准
+
 ```typescript
 bench('Calculate edge positions (200 edges)', () => {
-  edges.forEach(edge => {
-    const source = nodes.find(n => n.id === edge.source);
-    const target = nodes.find(n => n.id === edge.target);
+  edges.forEach((edge) => {
+    const source = nodes.find((n) => n.id === edge.source);
+    const target = nodes.find((n) => n.id === edge.target);
     const dx = target.x - source.x;
     const dy = target.y - source.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -330,14 +347,14 @@ export const DAG_PERFORMANCE_CONFIG = {
     LARGE: 100,
     HUGE: 200,
   },
-  
+
   // 性能目标
   TARGETS: {
-    RENDER_TIME: 500,  // ms
+    RENDER_TIME: 500, // ms
     FPS: 60,
-    FRAME_BUDGET: 16.67,  // ms per frame (60 FPS)
+    FRAME_BUDGET: 16.67, // ms per frame (60 FPS)
   },
-  
+
   // 优化策略
   STRATEGIES: {
     LOD: {
@@ -346,19 +363,19 @@ export const DAG_PERFORMANCE_CONFIG = {
       mediumZoom: 0.6,
       fullZoom: 1.0,
     },
-    
+
     VIEWPORT_CULLING: {
       enabled: true,
       padding: 100,
       debounceTime: 100,
     },
-    
+
     RENDERING: {
       useSVG: false,
       progressive: true,
       progressiveChunkSize: 50,
     },
-    
+
     ANIMATION: {
       enabled: true,
       duration: 300,
@@ -372,30 +389,32 @@ export const DAG_PERFORMANCE_CONFIG = {
 
 ### 优化前 (Baseline)
 
-| 场景 | 节点数 | 渲染时间 | FPS | 状态 |
-|------|--------|---------|-----|------|
-| Small | 10 | 15ms | 60 | ✅ |
-| Small | 20 | 28ms | 60 | ✅ |
-| Medium | 50 | 45ms | 60 | ✅ |
-| Large | 100 | 245ms | 45-50 | ⚠️ |
-| Huge | 200 | 890ms | 30-35 | ❌ |
+| 场景   | 节点数 | 渲染时间 | FPS   | 状态 |
+| ------ | ------ | -------- | ----- | ---- |
+| Small  | 10     | 15ms     | 60    | ✅   |
+| Small  | 20     | 28ms     | 60    | ✅   |
+| Medium | 50     | 45ms     | 60    | ✅   |
+| Large  | 100    | 245ms    | 45-50 | ⚠️   |
+| Huge   | 200    | 890ms    | 30-35 | ❌   |
 
 **问题**:
+
 - 100 节点时 FPS 下降到 45-50
 - 200 节点时渲染接近 1 秒，FPS 严重下降
 - 缩放/平移操作卡顿明显
 
 ### 优化后 (Current)
 
-| 场景 | 节点数 | 渲染时间 | FPS | 优化级别 | 状态 |
-|------|--------|---------|-----|---------|------|
-| Small | 10 | 12ms | 60 | Small | ✅ |
-| Small | 20 | 25ms | 60 | Small | ✅ |
-| Medium | 50 | 38ms | 60 | Medium | ✅ |
-| Large | 100 | 120ms | 58-60 | Large | ✅ |
-| Huge | 200 | 250ms | 55-58 | Huge | ✅ |
+| 场景   | 节点数 | 渲染时间 | FPS   | 优化级别 | 状态 |
+| ------ | ------ | -------- | ----- | -------- | ---- |
+| Small  | 10     | 12ms     | 60    | Small    | ✅   |
+| Small  | 20     | 25ms     | 60    | Small    | ✅   |
+| Medium | 50     | 38ms     | 60    | Medium   | ✅   |
+| Large  | 100    | 120ms    | 58-60 | Large    | ✅   |
+| Huge   | 200    | 250ms    | 55-58 | Huge     | ✅   |
 
 **改进**:
+
 - ✅ 100 节点: 245ms → 120ms (51% 提升)
 - ✅ 200 节点: 890ms → 250ms (72% 提升)
 - ✅ FPS 提升: 100 节点从 45-50 → 58-60
@@ -403,15 +422,15 @@ export const DAG_PERFORMANCE_CONFIG = {
 
 ### 功能级性能基准
 
-| 功能 | 场景 | 时间 | 目标 | 状态 |
-|------|------|------|------|------|
-| 优化级别检测 | 任意节点数 | < 0.01ms | < 1ms | ✅ |
-| 配置生成 | 200 节点 | < 2ms | < 5ms | ✅ |
-| LOD 配置 | 任意缩放 | < 0.5ms | < 1ms | ✅ |
-| 视口裁剪 | 200 节点 | < 8ms | < 10ms | ✅ |
-| 节点处理 | 200 节点 | < 80ms | < 100ms | ✅ |
-| 边计算 | 200 边 | < 45ms | < 50ms | ✅ |
-| 性能监控 | 记录/报告 | < 0.5ms | < 1ms | ✅ |
+| 功能         | 场景       | 时间     | 目标    | 状态 |
+| ------------ | ---------- | -------- | ------- | ---- |
+| 优化级别检测 | 任意节点数 | < 0.01ms | < 1ms   | ✅   |
+| 配置生成     | 200 节点   | < 2ms    | < 5ms   | ✅   |
+| LOD 配置     | 任意缩放   | < 0.5ms  | < 1ms   | ✅   |
+| 视口裁剪     | 200 节点   | < 8ms    | < 10ms  | ✅   |
+| 节点处理     | 200 节点   | < 80ms   | < 100ms | ✅   |
+| 边计算       | 200 边     | < 45ms   | < 50ms  | ✅   |
+| 性能监控     | 记录/报告  | < 0.5ms  | < 1ms   | ✅   |
 
 **所有性能目标均已达成!** ✅
 
@@ -419,66 +438,76 @@ export const DAG_PERFORMANCE_CONFIG = {
 
 ### 新增文件
 
-| 文件路径 | 行数 | 说明 |
-|---------|------|------|
-| `apps/web/src/modules/goal/application/services/DAGPerformanceOptimization.ts` | 300 | 性能优化服务 |
-| `apps/web/src/benchmarks/dag-performance.bench.ts` | 250 | DAG 性能基准测试 |
-| `docs/guides/DAG-PERFORMANCE-OPTIMIZATION.md` | 350 | 性能优化指南 |
-| `STORY-018-COMPLETION-REPORT.md` | 450 | 本完成报告 |
+| 文件路径                                                                       | 行数 | 说明             |
+| ------------------------------------------------------------------------------ | ---- | ---------------- |
+| `apps/web/src/modules/goal/application/services/DAGPerformanceOptimization.ts` | 300  | 性能优化服务     |
+| `apps/web/src/benchmarks/dag-performance.bench.ts`                             | 250  | DAG 性能基准测试 |
+| `docs/guides/DAG-PERFORMANCE-OPTIMIZATION.md`                                  | 350  | 性能优化指南     |
+| `STORY-018-COMPLETION-REPORT.md`                                               | 450  | 本完成报告       |
 
 **总计**: ~1,350 行代码 + 文档
 
 ### 修改文件
 
-| 文件路径 | 变更说明 |
-|---------|---------|
+| 文件路径                                                                         | 变更说明              |
+| -------------------------------------------------------------------------------- | --------------------- |
 | `apps/web/src/modules/goal/presentation/components/dag/GoalDAGVisualization.vue` | 集成优化策略 (待集成) |
 
 ## 🎯 验收标准
 
-| 标准 | 要求 | 实际结果 | 状态 |
-|------|------|---------|------|
-| 渲染性能 | 100 节点 < 500ms | 120ms | ✅ |
-| 流畅度 | 缩放/平移 60 FPS | 58-60 FPS | ✅ |
-| 自动优化 | 根据节点数自动调整 | 4 级优化 | ✅ |
-| LOD 渲染 | 基于缩放级别 | 3 级细节 | ✅ |
-| 视口裁剪 | 仅渲染可见节点 | 已实现 | ✅ |
-| 性能监控 | 实时指标追踪 | 完整实现 | ✅ |
-| 文档完整 | 使用指南 + API 文档 | 350 行文档 | ✅ |
-| 测试覆盖 | 性能基准测试 | 8 类基准 | ✅ |
+| 标准     | 要求                | 实际结果   | 状态 |
+| -------- | ------------------- | ---------- | ---- |
+| 渲染性能 | 100 节点 < 500ms    | 120ms      | ✅   |
+| 流畅度   | 缩放/平移 60 FPS    | 58-60 FPS  | ✅   |
+| 自动优化 | 根据节点数自动调整  | 4 级优化   | ✅   |
+| LOD 渲染 | 基于缩放级别        | 3 级细节   | ✅   |
+| 视口裁剪 | 仅渲染可见节点      | 已实现     | ✅   |
+| 性能监控 | 实时指标追踪        | 完整实现   | ✅   |
+| 文档完整 | 使用指南 + API 文档 | 350 行文档 | ✅   |
+| 测试覆盖 | 性能基准测试        | 8 类基准   | ✅   |
 
 **验收结果**: 8/8 标准达成 ✅
 
 ## 💡 技术亮点
 
 ### 1. 自适应优化策略
+
 系统根据节点数量自动选择最佳优化级别，无需手动配置：
+
 - **Small (< 20)**: 完整功能，最佳体验
 - **Medium (20-50)**: 渐进渲染，保持流畅
 - **Large (50-100)**: 激进优化，维持性能
 - **Huge (> 100)**: 极限优化，确保可用
 
 ### 2. LOD 渲染系统
+
 基于缩放级别动态调整节点细节：
+
 - 低缩放: 隐藏标签，小图标，减少 70% 复杂度
 - 中缩放: 条件标签，中图标，减少 40% 复杂度
 - 高缩放: 完整细节，大图标，最佳可读性
 
 ### 3. 视口裁剪优化
+
 仅渲染可见区域节点：
+
 - 200 节点场景下仅渲染 30-40 个
 - 5-6 倍性能提升
 - 恒定渲染复杂度
 
 ### 4. 性能监控系统
+
 实时追踪关键指标：
+
 - 渲染时间 (最近 100 次)
 - FPS (最近 60 帧)
 - 节点数量统计
 - 自动生成性能报告
 
 ### 5. 完整基准测试
+
 8 大类基准测试覆盖所有优化策略：
+
 - 优化级别检测
 - 配置生成
 - LOD 渲染
@@ -560,29 +589,27 @@ const lodConfig = computed(() => {
 // 视口裁剪
 const visibleNodes = computed(() => {
   if (!viewportBounds.value) return dagData.value.nodes;
-  
-  return cullNodesOutsideViewport(
-    dagData.value.nodes,
-    viewportBounds.value,
-    100
-  );
+
+  return cullNodesOutsideViewport(dagData.value.nodes, viewportBounds.value, 100);
 });
 
 // 渲染 DAG
 function renderDAG() {
   const startTime = performance.now();
-  
+
   chartInstance.value?.setOption({
     ...optimizedConfig.value,
-    series: [{
-      type: 'graph',
-      data: visibleNodes.value.map(node => ({
-        ...node,
-        ...lodConfig.value,
-      })),
-    }],
+    series: [
+      {
+        type: 'graph',
+        data: visibleNodes.value.map((node) => ({
+          ...node,
+          ...lodConfig.value,
+        })),
+      },
+    ],
   });
-  
+
   const renderTime = performance.now() - startTime;
   dagPerformanceMonitor.recordRenderTime(renderTime, visibleNodes.value.length);
 }
@@ -598,33 +625,33 @@ watch(currentZoom, () => {
 
 ### Sprint 3 总览
 
-| 状态 | 数量 | Story Points | 占比 |
-|------|------|--------------|------|
-| ✅ 已完成 | 7 | 17.4 | 82.9% |
-| 🔄 进行中 | 0 | 0 | 0% |
-| ⏳ 待开始 | 3 | 3.6 | 17.1% |
-| **总计** | **10** | **21** | **100%** |
+| 状态      | 数量   | Story Points | 占比     |
+| --------- | ------ | ------------ | -------- |
+| ✅ 已完成 | 7      | 17.4         | 82.9%    |
+| 🔄 进行中 | 0      | 0            | 0%       |
+| ⏳ 待开始 | 3      | 3.6          | 17.1%    |
+| **总计**  | **10** | **21**       | **100%** |
 
 ### 已完成 Stories (17.4 SP)
 
-| Story | 名称 | SP | 完成日期 | 状态 |
-|-------|------|-----|---------|------|
-| STORY-015 | DAG Export | 2 | 2024-10-18 | ✅ |
-| STORY-020 | Template Recommendations | 2 | 2024-10-19 | ✅ |
-| STORY-019 | AI Weight Allocation | 3 | 2024-10-20 | ✅ |
-| STORY-016 | Multi-Goal Comparison | 3.5 | 2024-10-21 | ✅ |
-| STORY-021 | Auto Status Rules | 2 | 2024-10-22 | ✅ |
-| STORY-014 | Performance Benchmarks | 1 | 2024-10-22 | ✅ |
-| **STORY-018** | **DAG Optimization** | **1** | **2024-10-23** | ✅ |
-| Weight Refactor | KeyResult Weight | 2.9 | 2024-10-15 | ✅ |
+| Story           | 名称                     | SP    | 完成日期       | 状态 |
+| --------------- | ------------------------ | ----- | -------------- | ---- |
+| STORY-015       | DAG Export               | 2     | 2024-10-18     | ✅   |
+| STORY-020       | Template Recommendations | 2     | 2024-10-19     | ✅   |
+| STORY-019       | AI Weight Allocation     | 3     | 2024-10-20     | ✅   |
+| STORY-016       | Multi-Goal Comparison    | 3.5   | 2024-10-21     | ✅   |
+| STORY-021       | Auto Status Rules        | 2     | 2024-10-22     | ✅   |
+| STORY-014       | Performance Benchmarks   | 1     | 2024-10-22     | ✅   |
+| **STORY-018**   | **DAG Optimization**     | **1** | **2024-10-23** | ✅   |
+| Weight Refactor | KeyResult Weight         | 2.9   | 2024-10-15     | ✅   |
 
 ### 待开始 Stories (3.6 SP)
 
-| Story | 名称 | SP | 优先级 | 状态 |
-|-------|------|-----|--------|------|
-| STORY-012 | Test Environment | 3 | P0 | ⏳ 需要决策 |
-| STORY-013 | DTO Tests | 2 | P1 | ⏳ 依赖 STORY-012 |
-| STORY-017 | Timeline Animation | 2 | P2 | ⏳ 可开始 |
+| Story     | 名称               | SP  | 优先级 | 状态              |
+| --------- | ------------------ | --- | ------ | ----------------- |
+| STORY-012 | Test Environment   | 3   | P0     | ⏳ 需要决策       |
+| STORY-013 | DTO Tests          | 2   | P1     | ⏳ 依赖 STORY-012 |
+| STORY-017 | Timeline Animation | 2   | P2     | ⏳ 可开始         |
 
 **Sprint 3 完成度**: 82.9% (17.4/21 SP)
 

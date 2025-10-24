@@ -24,14 +24,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 interface Props {
-  visible: boolean
-  title?: string
-  width?: string | number
-  showClose?: boolean
-  closeOnClickMask?: boolean
+  visible: boolean;
+  title?: string;
+  width?: string | number;
+  showClose?: boolean;
+  closeOnClickMask?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,33 +39,33 @@ const props = withDefaults(defineProps<Props>(), {
   title: '',
   width: '50%',
   showClose: true,
-  closeOnClickMask: true
-})
+  closeOnClickMask: true,
+});
 
 const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void
-  (e: 'close'): void
-}>()
+  (e: 'update:visible', value: boolean): void;
+  (e: 'close'): void;
+}>();
 
 // 计算弹窗样式
 const dialogStyle = computed(() => {
   return {
-    width: typeof props.width === 'number' ? `${props.width}px` : props.width
-  }
-})
+    width: typeof props.width === 'number' ? `${props.width}px` : props.width,
+  };
+});
 
 // 处理遮罩层点击
 const handleMaskClick = () => {
   if (props.closeOnClickMask) {
-    handleClose()
+    handleClose();
   }
-}
+};
 
 // 处理关闭
 const handleClose = () => {
-  emit('update:visible', false)
-  emit('close')
-}
+  emit('update:visible', false);
+  emit('close');
+};
 </script>
 
 <style scoped>
@@ -113,7 +113,7 @@ const handleClose = () => {
 }
 
 .dialog-close:hover {
-  color: #409EFF;
+  color: #409eff;
 }
 
 .dialog-content {

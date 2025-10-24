@@ -6,11 +6,13 @@
 ## ✅ 已完成
 
 ### 1. Contracts 层 (100%)
+
 - ✅ 所有枚举值修复为 lowercase (e.g., `ACTIVE = 'active'`)
 - ✅ ScheduleStatisticsServerDTO/PersistenceDTO 定义对齐
 - ✅ Typecheck 通过 (0 errors)
 
 ### 2. ScheduleStatistics.ts (100%)
+
 - ✅ 修复类型导入 (`SourceModule`, `ExecutionStatus` 从 contracts 导入)
 - ✅ 修复 `toDTO()` → `toServerDTO()`，返回正确的 ServerDTO
 - ✅ 修复 `toPersistenceDTO()`，使用 snake_case 字段，JSON.stringify moduleStats
@@ -34,6 +36,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
 ```
 
 **影响**:
+
 - ScheduleTask 内部的类型与 Contracts 中的枚举不兼容
 - 导致 ScheduleStatistics 和 ScheduleDomainService 中的类型转换错误
 - 字符串字面量值不匹配：
@@ -41,6 +44,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
   - ScheduleTask: `'ACTIVE'` (uppercase)
 
 **解决方案**:
+
 1. **短期**: 在 ScheduleDomainService 中使用大写字面量 (`'ACTIVE'`, `'PAUSED'`)
 2. **长期**: 重构 ScheduleTask.ts 使用 Contracts 枚举
 
@@ -49,6 +53,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
 ### ScheduleDomainService.ts (20/31 errors fixed)
 
 **已修复**:
+
 - ✅ Import 修复: `import type { ScheduleTask }` → `import { ScheduleTask }`
 - ✅ 导入枚举: `ScheduleTaskStatus`, `ExecutionStatus`, `SourceModule`
 - ✅ 导入值对象: `ScheduleConfig`, `RetryPolicy`, `TaskMetadata`
@@ -57,6 +62,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
 - ✅ 创建任务时 DTO → 值对象转换
 
 **剩余错误 (11个)**:
+
 1. DTO 转换问题 (3个):
    - `ScheduleConfig.fromDTO()` 参数类型不匹配 (startDate: string vs number)
    - `TaskMetadata.create()` 方法不存在
@@ -76,6 +82,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
 ### ScheduleStatisticsDomainService.ts (0/13 errors fixed)
 
 **待修复**:
+
 1. 枚举比较: `'paused'` → `'PAUSED'`
 2. SourceModule 类型: 字符串字面量 → 枚举值
 3. Null 检查: `executions` 可能为 null
@@ -85,27 +92,29 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
 ### 立即任务（让 typecheck 通过）
 
 1. **ScheduleDomainService.ts**:
+
    ```typescript
    // 修复所有状态比较
    task.status === 'active'  → task.status === 'ACTIVE'
    task.status === 'paused'  → task.status === 'PAUSED'
-   
+
    // 修复方法调用
    task.complete(reason)     → task.complete()
    task.cancel(reason?)      → task.cancel(reason!)
-   
+
    // SourceModule 类型转换（临时方案）
    statistics.incrementTaskCount(task.sourceModule as any)
    ```
 
 2. **ScheduleStatisticsDomainService.ts**:
+
    ```typescript
    // 修复状态比较
    task.status === 'paused' → task.status === 'PAUSED'
-   
+
    // 添加 null 检查
    if (executions) { ... }
-   
+
    // 修复 SourceModule 字面量
    ['reminder', 'task', 'goal', 'notification'] as SourceModule[]
    ```
@@ -113,6 +122,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
 ### 长期重构（在 typecheck 通过后）
 
 **优先级 1: 统一类型系统**
+
 1. 重构 `ScheduleTask.ts`:
    - 删除本地类型定义
    - 从 Contracts 导入枚举
@@ -123,6 +133,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
    - 同样问题，也有本地类型定义
 
 **优先级 2: DTO 转换逻辑**
+
 1. 修复值对象的 `fromDTO()` 方法：
    - ScheduleConfig: 处理 startDate 类型转换 (string → number)
    - TaskMetadata: 实现 `create()` 静态工厂方法
@@ -130,6 +141,7 @@ import { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '@dailyuse/con
 2. 完善 DTO 转换测试
 
 **优先级 3: API 层和 Web 层**
+
 1. API 层 (apps/api):
    - Prisma schema 已完成
    - 实现 Repositories

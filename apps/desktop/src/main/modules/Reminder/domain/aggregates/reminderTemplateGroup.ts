@@ -1,39 +1,33 @@
-import { ReminderTemplate } from "../entities/reminderTemplate";
-import { AggregateRoot } from "@dailyuse/utils";
-import type {
-  IReminderTemplateGroup,
-  ReminderTemplateEnableMode,
-} from "@common/modules/reminder";
-export const SYSTEM_GROUP_ID = "system-root";
+import { ReminderTemplate } from '../entities/reminderTemplate';
+import { AggregateRoot } from '@dailyuse/utils';
+import type { IReminderTemplateGroup, ReminderTemplateEnableMode } from '@common/modules/reminder';
+export const SYSTEM_GROUP_ID = 'system-root';
 
 export function createSystemGroup(): ReminderTemplateGroup {
   return new ReminderTemplateGroup(
-    "系统分组",
+    '系统分组',
     true,
     [],
-    "group",
+    'group',
     SYSTEM_GROUP_ID, // 使用系统分组ID
-    undefined // 没有 parent
+    undefined, // 没有 parent
   );
 }
 
-export class ReminderTemplateGroup
-  extends AggregateRoot
-  implements IReminderTemplateGroup
-{
+export class ReminderTemplateGroup extends AggregateRoot implements IReminderTemplateGroup {
   private _name: string;
   private _enabled: boolean;
   private _templates: ReminderTemplate[] = [];
-  private _enableMode: ReminderTemplateEnableMode = "group"; // 新增属性
+  private _enableMode: ReminderTemplateEnableMode = 'group'; // 新增属性
   private _parentUuid?: string; // 父分组ID，可选
 
   constructor(
     name: string,
     enabled = true,
     templates: ReminderTemplate[] = [],
-    enableMode: ReminderTemplateEnableMode = "group",
+    enableMode: ReminderTemplateEnableMode = 'group',
     uuid?: string,
-    parentUuid?: string // 父分组ID
+    parentUuid?: string, // 父分组ID
   ) {
     super(uuid || ReminderTemplateGroup.generateUUID());
     this._name = name;
@@ -80,7 +74,7 @@ export class ReminderTemplateGroup
   }
 
   isTemplateEnabled(templateUuid: string): boolean {
-    if (this._enableMode === "group") return this._enabled;
+    if (this._enableMode === 'group') return this._enabled;
     const template = this._templates.find((t) => t.uuid === templateUuid);
     return template ? template.selfEnabled : false;
   }
@@ -145,11 +139,10 @@ export class ReminderTemplateGroup
    */
   static fromDTO(dto: any) {
     return new ReminderTemplateGroup(
-      
       dto.name,
       dto.enabled,
       (dto.templates || []).map((t: any) => ReminderTemplate.fromDTO(t)),
-      dto.enableMode || "group", // 确保enableMode有默认值
+      dto.enableMode || 'group', // 确保enableMode有默认值
       dto.uuid,
     );
   }
@@ -158,14 +151,14 @@ export class ReminderTemplateGroup
    * 从DTO对象创建ReminderTemplateGroup实例
    * @param dto DTO对象，仓储的的 templates 会直接提供已经转换好的 ReminderTemplate 实例
    * @description 用于仓储层，直接使用原始数据而不是实体方法
-   * @returns 
+   * @returns
    */
   static fromDTOForRepository(dto: any) {
     return new ReminderTemplateGroup(
       dto.name,
       dto.enabled,
       dto.templates,
-      dto.enableMode || "group", // 确保enableMode有默认值
+      dto.enableMode || 'group', // 确保enableMode有默认值
       dto.uuid,
     );
   }

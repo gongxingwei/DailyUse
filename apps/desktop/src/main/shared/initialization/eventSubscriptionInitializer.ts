@@ -1,14 +1,13 @@
-import { eventBus } from "@dailyuse/utils";
-import { AuthenticationEventHandler } from "../../modules/Authentication/application/eventHandlers/authenticationEventHandler";
-import { RepositoryFactory } from "../services/repositoryFactory";
-import { AccountRegisteredEvent } from "../../modules/Account/domain/events/accountEvents";
+import { eventBus } from '@dailyuse/utils';
+import { AuthenticationEventHandler } from '../../modules/Authentication/application/eventHandlers/authenticationEventHandler';
+import { RepositoryFactory } from '../services/repositoryFactory';
+import { AccountRegisteredEvent } from '../../modules/Account/domain/events/accountEvents';
 
 /**
  * 主进程事件订阅初始化器
  * 负责设置各模块间的事件监听关系
  */
 export class EventSubscriptionInitializer {
-  
   /**
    * 初始化所有事件订阅
    */
@@ -31,7 +30,7 @@ export class EventSubscriptionInitializer {
     try {
       // 获取 AuthCredential 仓库
       const authCredentialRepository = RepositoryFactory.getAuthCredentialRepository();
-      
+
       // 创建事件处理器
       const authEventHandler = new AuthenticationEventHandler(authCredentialRepository);
 
@@ -53,7 +52,7 @@ export class EventSubscriptionInitializer {
   //   try {
   //     // TODO: 实现 SessionLogging 模块的事件处理器
   //     // 例如：监听 AccountRegistered 事件来记录注册行为
-      
+
   //     // eventBus.subscribe('AccountRegistered', async (event) => {
   //     //   await sessionLoggingEventHandler.handleAccountRegistered(event);
   //     // });

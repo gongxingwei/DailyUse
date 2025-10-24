@@ -59,9 +59,11 @@ export class PhoneNumber {
    * 值对象相等性比较
    */
   equals(other: PhoneNumber): boolean {
-    return this._number === other._number && 
-           this._countryCode === other._countryCode &&
-           this._isVerified === other._isVerified;
+    return (
+      this._number === other._number &&
+      this._countryCode === other._countryCode &&
+      this._isVerified === other._isVerified
+    );
   }
 
   toString(): string {

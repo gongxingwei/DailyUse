@@ -17,6 +17,7 @@
 **文件路径**: `authentication/application/services/AuthenticationApplicationService.ts`
 
 **职责**:
+
 - 用户登录验证
 - 密码验证
 - 创建会话（Session）
@@ -24,6 +25,7 @@
 - 锁定/解锁凭证
 
 **核心方法**:
+
 ```typescript
 - async login(request: LoginRequest): Promise<LoginResponse>
 - async createSession(params): Promise<AuthSession>
@@ -32,6 +34,7 @@
 ```
 
 **发布事件**:
+
 - `authentication:login_success`
 - `authentication:session_created`
 - `authentication:login_failed`
@@ -45,18 +48,21 @@
 **文件路径**: `authentication/application/services/PasswordManagementApplicationService.ts`
 
 **职责**:
+
 - 修改密码
 - 重置密码
 - 验证密码强度
 - 密码历史记录
 
 **核心方法**:
+
 ```typescript
 - async changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse>
 - async resetPassword(request: ResetPasswordRequest): Promise<ChangePasswordResponse>
 ```
 
 **发布事件**:
+
 - `authentication:password_changed`
 - `authentication:password_reset`
 
@@ -69,6 +75,7 @@
 **文件路径**: `authentication/application/services/SessionManagementApplicationService.ts`
 
 **职责**:
+
 - 刷新会话
 - 验证会话
 - 终止会话（登出）
@@ -76,6 +83,7 @@
 - 查询活跃会话
 
 **核心方法**:
+
 ```typescript
 - async refreshSession(request: RefreshSessionRequest): Promise<RefreshSessionResponse>
 - async validateSession(request: ValidateSessionRequest): Promise<boolean>
@@ -85,6 +93,7 @@
 ```
 
 **发布事件**:
+
 - `authentication:session_refreshed`
 - `authentication:session_terminated`
 - `authentication:all_sessions_terminated`
@@ -98,12 +107,14 @@
 **文件路径**: `authentication/application/services/TwoFactorApplicationService.ts`
 
 **职责**:
+
 - 启用双因素认证
 - 禁用双因素认证
 - 验证双因素代码
 - 生成备用代码
 
 **核心方法**:
+
 ```typescript
 - async enableTwoFactor(request: EnableTwoFactorRequest): Promise<EnableTwoFactorResponse>
 - async disableTwoFactor(request: DisableTwoFactorRequest): Promise<void>
@@ -111,6 +122,7 @@
 ```
 
 **发布事件**:
+
 - `authentication:two_factor_enabled`
 - `authentication:two_factor_disabled`
 
@@ -123,12 +135,14 @@
 **文件路径**: `authentication/application/services/RememberMeApplicationService.ts`
 
 **职责**:
+
 - 创建记住我令牌
 - 验证记住我令牌
 - 撤销记住我令牌
 - 清理过期令牌
 
 **核心方法**:
+
 ```typescript
 - async createRememberMeToken(request: CreateRememberMeTokenRequest): Promise<CreateRememberMeTokenResponse>
 - async validateRememberMeToken(request: ValidateRememberMeTokenRequest): Promise<boolean>
@@ -137,6 +151,7 @@
 ```
 
 **发布事件**:
+
 - `authentication:remember_me_token_created`
 - `authentication:remember_me_token_revoked`
 
@@ -149,12 +164,14 @@
 **文件路径**: `authentication/application/services/ApiKeyApplicationService.ts`
 
 **职责**:
+
 - 创建 API Key
 - 验证 API Key
 - 撤销 API Key
 - 更新 API Key 权限
 
 **核心方法**:
+
 ```typescript
 - async createApiKey(request: CreateApiKeyRequest): Promise<CreateApiKeyResponse>
 - async validateApiKey(request: ValidateApiKeyRequest): Promise<boolean>
@@ -163,6 +180,7 @@
 ```
 
 **发布事件**:
+
 - `authentication:api_key_created`
 - `authentication:api_key_revoked`
 - `authentication:api_key_scopes_updated`
@@ -175,15 +193,15 @@
 
 ### 代码量统计
 
-| 服务 | 代码行数 | 核心方法数 | 事件数 |
-|------|----------|-----------|--------|
-| AuthenticationApplicationService | ~460 | 4 | 3 |
-| PasswordManagementApplicationService | ~305 | 2 | 2 |
-| SessionManagementApplicationService | ~405 | 5 | 3 |
-| TwoFactorApplicationService | ~315 | 3 | 2 |
-| RememberMeApplicationService | ~295 | 4 | 2 |
-| ApiKeyApplicationService | ~325 | 4 | 3 |
-| **总计** | **~2,105** | **22** | **15** |
+| 服务                                 | 代码行数   | 核心方法数 | 事件数 |
+| ------------------------------------ | ---------- | ---------- | ------ |
+| AuthenticationApplicationService     | ~460       | 4          | 3      |
+| PasswordManagementApplicationService | ~305       | 2          | 2      |
+| SessionManagementApplicationService  | ~405       | 5          | 3      |
+| TwoFactorApplicationService          | ~315       | 3          | 2      |
+| RememberMeApplicationService         | ~295       | 4          | 2      |
+| ApiKeyApplicationService             | ~325       | 4          | 3      |
+| **总计**                             | **~2,105** | **22**     | **15** |
 
 ### 文件结构
 
@@ -309,10 +327,7 @@ graph TD
 const service = await XxxApplicationService.getInstance();
 
 // 2. 自定义依赖（用于测试）
-const service = await XxxApplicationService.createInstance(
-  customRepository,
-  customDomainService
-);
+const service = await XxxApplicationService.createInstance(customRepository, customDomainService);
 ```
 
 ---
@@ -322,6 +337,7 @@ const service = await XxxApplicationService.createInstance(
 ### 高优先级
 
 1. **事务支持**:
+
    ```typescript
    // 当前：
    await this.repository.save(aggregate);
@@ -463,6 +479,7 @@ console.log('Backup Codes:', response.backupCodes);
 Authentication 模块的 ApplicationService 层已 **100% 完成**！
 
 **关键成果**:
+
 1. ✅ 6 个 ApplicationService 全部实现
 2. ✅ 零编译错误
 3. ✅ 完全遵循 DDD 最佳实践
@@ -471,6 +488,7 @@ Authentication 模块的 ApplicationService 层已 **100% 完成**！
 6. ✅ 约 2,100 行高质量代码
 
 **下一步**:
+
 - 实现 Repository 的事务支持
 - 更新 Controller 使用 ApplicationService
 - 编写集成测试

@@ -32,7 +32,7 @@ Scenario: 展示权重趋势折线图
   And 每个 KeyResult 一条折线
   And 不同 KR 使用不同颜色
   And 支持图例点击显示/隐藏折线
-  
+
 Scenario: 折线图交互
   When 鼠标悬停在折线上
   Then 应该显示 Tooltip
@@ -49,7 +49,7 @@ Scenario: 折线图交互
 Scenario: 快速时间范围选择
   When 用户点击"最近 7 天"
   Then 图表应该更新为最近 7 天的数据
-  
+
   Examples:
   | 快捷选项    | 时间范围        |
   | 最近 7 天   | 今天-7天        |
@@ -103,11 +103,7 @@ Scenario: 大数据量采样
         </div>
       </template>
 
-      <div
-        ref="chartRef"
-        class="chart-container"
-        style="height: 400px"
-      />
+      <div ref="chartRef" class="chart-container" style="height: 400px" />
     </el-card>
   </div>
 </template>
@@ -127,14 +123,14 @@ const timeRange = ref({ start: Date.now() - 30 * 24 * 60 * 60 * 1000, end: Date.
 const { data, isLoading } = useWeightTrend(
   props.goalUuid,
   computed(() => timeRange.value.start),
-  computed(() => timeRange.value.end)
+  computed(() => timeRange.value.end),
 );
 
 let chart: echarts.ECharts;
 
 onMounted(() => {
   chart = echarts.init(chartRef.value!);
-  
+
   const option = {
     title: { text: 'KR 权重趋势' },
     tooltip: {
@@ -144,7 +140,7 @@ onMounted(() => {
       },
     },
     legend: {
-      data: data.value?.keyResults.map(kr => kr.title) ?? [],
+      data: data.value?.keyResults.map((kr) => kr.title) ?? [],
     },
     xAxis: {
       type: 'time',
@@ -155,14 +151,15 @@ onMounted(() => {
       max: 100,
       name: '权重 (%)',
     },
-    series: data.value?.keyResults.map(kr => ({
-      name: kr.title,
-      type: 'line',
-      data: kr.data.map(d => [d.time, d.weight]),
-      smooth: true,
-    })) ?? [],
+    series:
+      data.value?.keyResults.map((kr) => ({
+        name: kr.title,
+        type: 'line',
+        data: kr.data.map((d) => [d.time, d.weight]),
+        smooth: true,
+      })) ?? [],
   };
-  
+
   chart.setOption(option);
 });
 </script>

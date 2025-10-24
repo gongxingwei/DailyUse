@@ -11,14 +11,13 @@ export class TaskEventHandlers {
     // 任务完成事件 - 内部处理
     eventBus.subscribe<TaskCompletedEvent>('TaskCompleted', async (event) => {
       console.log('Task模块处理任务完成事件:', event);
-      
+
       // 更新任务统计
       await TaskEventHandlers.updateTaskStatistics(event);
-      
+
       // 检查是否需要自动创建后续任务
       await TaskEventHandlers.checkAutoTaskCreation(event);
     });
-
   }
 
   private static async updateTaskStatistics(_event: TaskCompletedEvent): Promise<void> {

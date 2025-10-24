@@ -11,6 +11,7 @@
 成功优化了 Authentication 模块的 Controller 层，添加了输入验证、改进了错误处理，并创建了新的专门化 Controller。这是 Optimization 2 的第一阶段。
 
 **实施范围**:
+
 - ✅ AuthenticationController 优化和重构
 - ✅ 新建 PasswordManagementController
 - ✅ 添加 Zod 输入验证 schemas（8+ schemas）
@@ -21,12 +22,14 @@
 ## 🎯 Implementation Goals
 
 ### Primary Objectives (Phase 1)
+
 1. ✅ 添加输入验证（Zod schemas）
 2. ✅ 改进错误处理（细粒度状态码）
 3. ✅ 增强日志记录
 4. ✅ 创建专门化的 Controller
 
 ### Success Criteria
+
 - ✅ 所有输入通过 Zod 验证
 - ✅ 错误响应包含适当的 HTTP 状态码
 - ✅ 日志记录完整（info、error、warn）
@@ -37,12 +40,14 @@
 ## 📁 Modified/Created Files
 
 ### 1. AuthenticationController.ts (重构优化)
+
 **Location**: `apps/api/src/modules/authentication/interface/http/`  
 **Type**: 重大更新
 
 #### 添加的功能
 
 **输入验证 Schemas**:
+
 ```typescript
 - loginSchema: 验证登录请求
 - changePasswordSchema: 验证密码修改
@@ -59,8 +64,9 @@
    - 改进了错误处理（401, 423状态码）
    - 增强了日志记录
    - 返回结构化响应
-   
+
    **Before**:
+
    ```typescript
    static async createPasswordCredential(req: Request, res: Response) {
      // 没有验证
@@ -69,18 +75,19 @@
      return sendSuccess(res, credential, 'Success', 201);
    }
    ```
-   
+
    **After**:
+
    ```typescript
    static async login(req: Request, res: Response) {
      logger.info('Login request received', { username: req.body.username });
-     
+
      // 验证输入
      const validatedData = loginSchema.parse(req.body);
-     
+
      // 调用服务
      const result = await service.login(validatedData);
-     
+
      // 结构化响应
      return sendSuccess(res, {
        accessToken: result.session.accessToken,
@@ -100,12 +107,14 @@
 #### 改进点
 
 **错误处理**:
+
 - ✅ Zod 验证错误 → 400 (VALIDATION_ERROR)
 - ✅ 认证失败 → 401 (UNAUTHORIZED)
 - ✅ 账户锁定 → 423 (LOCKED)
 - ✅ 通用错误 → 500 (INTERNAL_ERROR)
 
 **日志记录**:
+
 ```typescript
 // Request
 logger.info('[AuthenticationController] Login request received', {
@@ -129,6 +138,7 @@ logger.error('[AuthenticationController] Login failed', {
 ---
 
 ### 2. PasswordManagementController.ts (新创建)
+
 **Location**: `apps/api/src/modules/authentication/interface/http/`  
 **Type**: 新文件
 
@@ -175,14 +185,16 @@ const resetPasswordSchema = z.object({
 #### 特色功能
 
 **密码强度验证**:
+
 - 最少 8 字符
 - 最多 100 字符
 - 必须包含大写字母
 - 必须包含小写字母
 - 必须包含数字
-- 必须包含特殊字符 (@$!%*?&)
+- 必须包含特殊字符 (@$!%\*?&)
 
 **细粒度错误处理**:
+
 ```typescript
 if (error.message.includes('Invalid current password')) {
   return sendError(res, { code: UNAUTHORIZED, message: '...' });
@@ -203,15 +215,15 @@ if (error.message.includes('Credential not found')) {
 
 ## 📊 Statistics
 
-| Metric | Count |
-|--------|-------|
-| **Controllers Updated** | 1 (AuthenticationController) |
-| **Controllers Created** | 1 (PasswordManagementController) |
-| **Validation Schemas** | 8+ |
-| **Methods Fully Implemented** | 3 (login, changePassword, validatePassword) |
-| **Methods with TODO** | 5 (logout, refresh, enable2FA, generateApiKey, resetPassword) |
-| **Total Lines Added/Modified** | ~540 lines |
-| **Compilation Errors** | 0 |
+| Metric                         | Count                                                         |
+| ------------------------------ | ------------------------------------------------------------- |
+| **Controllers Updated**        | 1 (AuthenticationController)                                  |
+| **Controllers Created**        | 1 (PasswordManagementController)                              |
+| **Validation Schemas**         | 8+                                                            |
+| **Methods Fully Implemented**  | 3 (login, changePassword, validatePassword)                   |
+| **Methods with TODO**          | 5 (logout, refresh, enable2FA, generateApiKey, resetPassword) |
+| **Total Lines Added/Modified** | ~540 lines                                                    |
+| **Compilation Errors**         | 0                                                             |
 
 ---
 
@@ -220,6 +232,7 @@ if (error.message.includes('Credential not found')) {
 ### Input Validation
 
 **Before**:
+
 ```typescript
 // ❌ 没有验证，直接使用 req.body
 const { username, password } = req.body;
@@ -227,6 +240,7 @@ await service.login({ username, password });
 ```
 
 **After**:
+
 ```typescript
 // ✅ Zod 验证
 const validatedData = loginSchema.parse(req.body);
@@ -237,6 +251,7 @@ await service.login(validatedData);
 ### Error Handling
 
 **Before**:
+
 ```typescript
 // ❌ 所有错误都返回 500
 catch (error) {
@@ -248,21 +263,22 @@ catch (error) {
 ```
 
 **After**:
+
 ```typescript
 // ✅ 根据错误类型返回适当状态码
 catch (error) {
   if (error instanceof z.ZodError) {
     return sendError(res, { code: VALIDATION_ERROR, ... });
   }
-  
+
   if (error.message.includes('Invalid username')) {
     return sendError(res, { code: UNAUTHORIZED, ... });
   }
-  
+
   if (error.message.includes('locked')) {
     return sendError(res, { code: FORBIDDEN, ... });
   }
-  
+
   return sendError(res, { code: INTERNAL_ERROR, ... });
 }
 ```
@@ -270,12 +286,14 @@ catch (error) {
 ### Logging
 
 **Before**:
+
 ```typescript
 // ❌ 简单的错误日志
 logger.error('Error creating credential', { error: error.message });
 ```
 
 **After**:
+
 ```typescript
 // ✅ 结构化日志，包含上下文
 logger.info('[PasswordManagementController] Change password request received', {
@@ -293,7 +311,9 @@ logger.error('[PasswordManagementController] Change password failed', {
 ## 🎓 Key Learnings
 
 ### 1. Zod for Input Validation
+
 使用 Zod 提供了：
+
 - 类型安全的验证
 - 清晰的错误消息
 - 可组合的 schemas
@@ -312,7 +332,9 @@ const data = loginSchema.parse(req.body);
 ```
 
 ### 2. Error Response Strategy
+
 统一的错误响应格式：
+
 ```typescript
 {
   success: false,
@@ -325,7 +347,9 @@ const data = loginSchema.parse(req.body);
 ```
 
 ### 3. Controller Responsibility Separation
+
 每个 Controller 应该：
+
 - ✅ 只处理一类相关的请求
 - ✅ 验证输入
 - ✅ 调用相应的 ApplicationService
@@ -349,6 +373,7 @@ const data = loginSchema.parse(req.body);
 5. **generateApiKey()** - 需要 `ApiKeyApplicationService`
 
 这些方法的实现需要：
+
 1. 导入相应的 ApplicationService
 2. 创建 service 实例
 3. 添加输入验证 schema
@@ -385,6 +410,7 @@ await passwordService.resetPassword({
 ## ✅ Validation & Testing
 
 ### Type Safety Verification
+
 ```bash
 ✅ AuthenticationController - 0 errors
 ✅ PasswordManagementController - 0 errors
@@ -393,6 +419,7 @@ await passwordService.resetPassword({
 ### Input Validation Test Cases
 
 **Login Schema**:
+
 - ✅ Valid username (3-50 chars)
 - ✅ Valid password (8-100 chars)
 - ✅ Valid device info
@@ -401,6 +428,7 @@ await passwordService.resetPassword({
 - ❌ Password too short (< 8)
 
 **Password Schema**:
+
 - ✅ Contains uppercase
 - ✅ Contains lowercase
 - ✅ Contains number
@@ -415,6 +443,7 @@ await passwordService.resetPassword({
 ## 🚀 Next Steps (Phase 2)
 
 ### Immediate Actions
+
 1. [ ] 创建 SessionManagementController
    - 实现 logout()
    - 实现 refreshSession()
@@ -438,6 +467,7 @@ await passwordService.resetPassword({
    - AccountStatusController
 
 ### Future Enhancements
+
 - [ ] 添加 rate limiting
 - [ ] 添加请求审计日志
 - [ ] 实现 API 版本控制
@@ -459,6 +489,7 @@ await passwordService.resetPassword({
 Phase 1 的 Controller 优化成功完成：
 
 **已完成**:
+
 - ✅ 输入验证框架建立（Zod）
 - ✅ 错误处理标准化
 - ✅ 日志记录增强
@@ -466,11 +497,13 @@ Phase 1 的 Controller 优化成功完成：
 - ✅ 3个方法完全实现
 
 **待完成 (Phase 2)**:
+
 - ⏳ 3个专门化 Controller 创建
 - ⏳ 5个 TODO 方法实现
 - ⏳ Account 模块 Controller 优化
 
 **Impact**:
+
 - 🎯 更好的输入验证和类型安全
 - 🎯 更细粒度的错误处理
 - 🎯 更清晰的代码结构

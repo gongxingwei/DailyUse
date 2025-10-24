@@ -4,27 +4,17 @@
       <v-card-title v-if="!compact" class="d-flex align-center">
         <v-icon class="mr-2">mdi-graph-outline</v-icon>
         目标权重分布图
-        
+
         <v-spacer />
-        
+
         <!-- 权重总和警告 -->
-        <v-chip
-          v-if="totalWeight !== 100"
-          color="error"
-          size="small"
-          class="mr-2"
-        >
+        <v-chip v-if="totalWeight !== 100" color="error" size="small" class="mr-2">
           <v-icon start>mdi-alert</v-icon>
           权重总和: {{ totalWeight }}%
         </v-chip>
-        
+
         <!-- 布局类型切换 -->
-        <v-btn-toggle
-          v-model="layoutType"
-          density="compact"
-          mandatory
-          divided
-        >
+        <v-btn-toggle v-model="layoutType" density="compact" mandatory divided>
           <v-btn value="force" size="small">
             <v-icon start>mdi-lightning-bolt</v-icon>
             力导向
@@ -34,7 +24,7 @@
             分层
           </v-btn>
         </v-btn-toggle>
-        
+
         <!-- 重置布局按钮 -->
         <v-btn
           v-if="hasCustomLayout"
@@ -45,11 +35,9 @@
           @click="resetLayout"
         >
           <v-icon>mdi-refresh</v-icon>
-          <v-tooltip activator="parent" location="bottom">
-            重置布局
-          </v-tooltip>
+          <v-tooltip activator="parent" location="bottom"> 重置布局 </v-tooltip>
         </v-btn>
-        
+
         <!-- 导出按钮 -->
         <v-btn
           icon="mdi-download"
@@ -59,39 +47,28 @@
           @click="exportDialog?.open()"
         >
           <v-icon>mdi-download</v-icon>
-          <v-tooltip activator="parent" location="bottom">
-            导出 (Ctrl+E)
-          </v-tooltip>
+          <v-tooltip activator="parent" location="bottom"> 导出 (Ctrl+E) </v-tooltip>
         </v-btn>
       </v-card-title>
 
       <v-card-text>
         <!-- 权重异常提示 -->
-        <v-alert
-          v-if="!compact && totalWeight !== 100"
-          type="warning"
-          variant="tonal"
-          class="mb-4"
-        >
+        <v-alert v-if="!compact && totalWeight !== 100" type="warning" variant="tonal" class="mb-4">
           <template #title>权重分配异常</template>
-          当前所有 KeyResult 权重总和为 {{ totalWeight }}%，应该为 100%。
-          请调整各 KeyResult 的权重值。
+          当前所有 KeyResult 权重总和为 {{ totalWeight }}%，应该为 100%。 请调整各 KeyResult
+          的权重值。
         </v-alert>
 
         <!-- 加载状态 -->
         <v-progress-linear v-if="isLoading" indeterminate color="primary" />
 
         <!-- 空状态 -->
-        <v-alert
-          v-else-if="!currentGoal || !hasKeyResults"
-          type="info"
-          variant="tonal"
-        >
+        <v-alert v-else-if="!currentGoal || !hasKeyResults" type="info" variant="tonal">
           {{ !currentGoal ? '正在加载目标数据...' : '该 Goal 暂无 KeyResult' }}
         </v-alert>
 
         <!-- DAG 图表 -->
-        <div v-else ref="containerRef" class="dag-container" :class="{ 'compact': compact }">
+        <div v-else ref="containerRef" class="dag-container" :class="{ compact: compact }">
           <v-chart
             ref="chartRef"
             class="chart"
@@ -122,14 +99,12 @@
               权重 0-30%
             </v-chip>
             <v-spacer />
-            <div class="text-caption text-grey">
-              节点大小表示权重，边宽度表示权重占比
-            </div>
+            <div class="text-caption text-grey">节点大小表示权重，边宽度表示权重占比</div>
           </div>
         </div>
       </v-card-text>
     </v-card>
-    
+
     <!-- Export Dialog -->
     <ExportDialog ref="exportDialog" @export="handleExport" />
   </div>
@@ -139,26 +114,19 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { use } from 'echarts/core';
 import { GraphChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-} from 'echarts/components';
+import { TitleComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
 import VChart from 'vue-echarts';
 import { useGoal } from '../../composables/useGoal';
 import { useResizeObserver } from '@vueuse/core';
 import ExportDialog from './ExportDialog.vue';
-import { dagExportService, type ExportOptions } from '../../../application/services/DAGExportService';
+import {
+  dagExportService,
+  type ExportOptions,
+} from '../../../application/services/DAGExportService';
 
-use([
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GraphChart,
-  CanvasRenderer,
-]);
+use([TitleComponent, TooltipComponent, LegendComponent, GraphChart, CanvasRenderer]);
 
 const props = defineProps<{
   goalUuid: string;
@@ -211,7 +179,7 @@ const calculateHierarchicalLayout = () => {
   const krs = currentGoal.value.keyResults;
 
   const nodes = [];
-  
+
   // Goal 节点居中
   nodes.push({
     id: currentGoal.value.uuid,
@@ -294,7 +262,7 @@ const dagOption = computed<EChartsOption>(() => {
 
   // 从 localStorage 加载保存的布局
   const savedLayout = loadLayout(props.goalUuid);
-  
+
   let graphData;
   if (layoutType.value === 'hierarchical') {
     graphData = calculateHierarchicalLayout();
@@ -371,10 +339,7 @@ const dagOption = computed<EChartsOption>(() => {
         layout: layoutType.value === 'force' ? 'force' : 'none',
         data: graphData.nodes,
         links: graphData.links,
-        categories: [
-          { name: 'Goal', itemStyle: { color: '#2196F3' } },
-          { name: 'KeyResult' },
-        ],
+        categories: [{ name: 'Goal', itemStyle: { color: '#2196F3' } }, { name: 'KeyResult' }],
         roam: true,
         draggable: true,
         label: {
@@ -404,10 +369,7 @@ const dagOption = computed<EChartsOption>(() => {
 // 保存布局到 localStorage
 const saveLayout = (goalUuid: string, positions: any[]) => {
   try {
-    localStorage.setItem(
-      `dag-layout-${goalUuid}`,
-      JSON.stringify(positions)
-    );
+    localStorage.setItem(`dag-layout-${goalUuid}`, JSON.stringify(positions));
     hasCustomLayout.value = true;
   } catch (error) {
     console.error('Failed to save layout:', error);
@@ -479,10 +441,10 @@ watch(chartRef, (chart) => {
           if (series) {
             const zoom = series.zoom || 1;
             const center = series.center || [0, 0];
-            
+
             currentZoom.value = zoom;
             currentCenter.value = center as [number, number];
-            
+
             emit('viewport-change', {
               zoom,
               center: center as [number, number],
@@ -507,10 +469,10 @@ watch(layoutType, (newType) => {
 useResizeObserver(containerRef, (entries) => {
   const entry = entries[0];
   const { width, height } = entry.contentRect;
-  
+
   if (width > 0 && height > 0) {
     containerSize.value = { width, height };
-    
+
     // 如果是分层布局，重新计算节点位置
     if (layoutType.value === 'hierarchical') {
       nextTick(() => {
@@ -553,13 +515,13 @@ const handleExport = async (options: ExportOptions) => {
     // 生成文件名并下载
     const filename = dagExportService.generateFilename(
       currentGoal.value?.title || 'goal',
-      options.format
+      options.format,
     );
     dagExportService.downloadBlob(blob, filename);
 
     // 关闭对话框
     exportDialog.value?.close();
-    
+
     console.log(`Successfully exported ${options.format.toUpperCase()}: ${filename}`);
   } catch (error) {
     console.error('Export failed:', error);
@@ -577,7 +539,7 @@ onMounted(() => {
   };
 
   window.addEventListener('keydown', handleKeydown);
-  
+
   return () => {
     window.removeEventListener('keydown', handleKeydown);
   };
@@ -592,15 +554,20 @@ const updateViewport = (viewport: { zoom: number; center: [number, number] }) =>
   try {
     const instance = chartRef.value.chart;
     const currentOption = instance.getOption();
-    
+
     // 更新图表配置
-    instance.setOption({
-      series: [{
-        ...currentOption.series[0],
-        zoom: viewport.zoom,
-        center: viewport.center,
-      }],
-    }, { notMerge: false, lazyUpdate: false });
+    instance.setOption(
+      {
+        series: [
+          {
+            ...currentOption.series[0],
+            zoom: viewport.zoom,
+            center: viewport.center,
+          },
+        ],
+      },
+      { notMerge: false, lazyUpdate: false },
+    );
 
     currentZoom.value = viewport.zoom;
     currentCenter.value = viewport.center;

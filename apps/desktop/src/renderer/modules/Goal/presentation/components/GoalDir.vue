@@ -10,7 +10,14 @@
       <!-- 添加按钮 -->
       <v-menu>
         <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" icon="mdi-plus" size="small" variant="text" color="primary" class="add-btn">
+          <v-btn
+            v-bind="props"
+            icon="mdi-plus"
+            size="small"
+            variant="text"
+            color="primary"
+            class="add-btn"
+          >
             <v-icon>mdi-plus</v-icon>
           </v-btn>
         </template>
@@ -31,9 +38,14 @@
     <!-- 目标节点列表 -->
     <v-card-text class="goal-dir-list pa-0 flex-grow-1 overflow-y-auto">
       <v-list class="py-0" density="compact">
-        <v-list-item v-for="item in goalDirs" :key="item.uuid"
-          :class="{ 'goal-dir-item--active': selectedGoalDir?.uuid === item.uuid }" class="goal-dir-item mx-2 my-1"
-          @click="selectDir(item)" rounded="lg">
+        <v-list-item
+          v-for="item in goalDirs"
+          :key="item.uuid"
+          :class="{ 'goal-dir-item--active': selectedGoalDir?.uuid === item.uuid }"
+          class="goal-dir-item mx-2 my-1"
+          @click="selectDir(item)"
+          rounded="lg"
+        >
           <template v-slot:prepend>
             <v-icon :color="selectedGoalDir?.uuid === item.uuid ? 'primary' : 'medium-emphasis'">
               {{ item.icon }}
@@ -45,17 +57,21 @@
           </v-list-item-title>
 
           <template v-slot:append>
-            <v-chip :color="selectedGoalDir?.uuid === item.uuid ? 'primary' : 'surface-bright'"
-              :text-color="selectedGoalDir?.uuid === item.uuid ? 'on-primary' : 'on-surface-variant'" size="small"
-              variant="flat" class="font-weight-bold">
+            <v-chip
+              :color="selectedGoalDir?.uuid === item.uuid ? 'primary' : 'surface-bright'"
+              :text-color="
+                selectedGoalDir?.uuid === item.uuid ? 'on-primary' : 'on-surface-variant'
+              "
+              size="small"
+              variant="flat"
+              class="font-weight-bold"
+            >
               {{ goalStore.getGoalsCountByDirUuid(item.uuid) }}
             </v-chip>
           </template>
         </v-list-item>
       </v-list>
     </v-card-text>
-
-
   </v-card>
 </template>
 
@@ -74,8 +90,8 @@ const props = defineProps<{
 const selectedGoalDir = ref<GoalDir | null>(null);
 
 const emit = defineEmits<{
-  (e: 'selected-goal-dir', goalDir: GoalDir): void
-  (e: 'start-create-goal-dir'): void
+  (e: 'selected-goal-dir', goalDir: GoalDir): void;
+  (e: 'start-create-goal-dir'): void;
 }>();
 
 const startCreateGoalDir = () => {
@@ -89,7 +105,7 @@ const selectDir = (goalDir: GoalDir) => {
 
 onMounted(() => {
   // 查找 uuid 为 "system_all" 的目录
-  const allDir = props.goalDirs.find(dir => dir.uuid === "system_all");
+  const allDir = props.goalDirs.find((dir) => dir.uuid === 'system_all');
   if (allDir) {
     selectedGoalDir.value = allDir;
   }
@@ -104,7 +120,11 @@ onMounted(() => {
 }
 
 .goal-dir-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-primary), 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05) 0%,
+    rgba(var(--v-theme-primary), 0.02) 100%
+  );
   border-radius: 16px 16px 0 0;
 }
 

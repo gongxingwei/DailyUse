@@ -1,13 +1,13 @@
 /**
  * TaskTemplate 聚合根单元测试
- * 
+ *
  * 测试覆盖：
  * - 工厂方法 (create, fromServerDTO, fromPersistenceDTO)
  * - 状态管理 (activate, pause, archive, softDelete, restore)
  * - 实例生成 (generateInstances, createInstance)
  * - 目标绑定 (bindToGoal, unbindFromGoal)
  * - 错误处理 (所有业务规则验证)
- * 
+ *
  * 目标覆盖率: 80%+
  */
 
@@ -29,7 +29,7 @@ type RecurrenceFrequency = TaskContracts.RecurrenceFrequency;
 
 describe('TaskTemplate Aggregate', () => {
   // ==================== 测试数据准备 ====================
-  
+
   const mockAccountUuid = '550e8400-e29b-41d4-a716-446655440000';
   const mockGoalUuid = '550e8400-e29b-41d4-a716-446655440001';
   const mockKeyResultUuid = '550e8400-e29b-41d4-a716-446655440002';
@@ -286,7 +286,9 @@ describe('TaskTemplate Aggregate', () => {
         const fromDate = Date.now();
         const toDate = fromDate + 86400000;
 
-        expect(() => template.generateInstances(fromDate, toDate)).toThrow(TaskTemplateArchivedError);
+        expect(() => template.generateInstances(fromDate, toDate)).toThrow(
+          TaskTemplateArchivedError,
+        );
       });
 
       it('should throw error when template is not active', () => {
@@ -294,9 +296,11 @@ describe('TaskTemplate Aggregate', () => {
         const fromDate = Date.now();
         const toDate = fromDate + 86400000;
 
-        expect(() => template.generateInstances(fromDate, toDate)).toThrow(InvalidTaskTemplateStateError);
         expect(() => template.generateInstances(fromDate, toDate)).toThrow(
-          'Can only generate instances for active templates'
+          InvalidTaskTemplateStateError,
+        );
+        expect(() => template.generateInstances(fromDate, toDate)).toThrow(
+          'Can only generate instances for active templates',
         );
       });
 
@@ -315,28 +319,28 @@ describe('TaskTemplate Aggregate', () => {
       it('should throw error when template is archived', () => {
         template.archive();
 
-        expect(() =>
-          template.createInstance({ instanceDate: Date.now() })
-        ).toThrow(TaskTemplateArchivedError);
+        expect(() => template.createInstance({ instanceDate: Date.now() })).toThrow(
+          TaskTemplateArchivedError,
+        );
       });
 
       it('should throw error when template is deleted', () => {
         template.softDelete();
 
-        expect(() =>
-          template.createInstance({ instanceDate: Date.now() })
-        ).toThrow(InvalidTaskTemplateStateError);
-        expect(() =>
-          template.createInstance({ instanceDate: Date.now() })
-        ).toThrow('Cannot create instance from deleted template');
+        expect(() => template.createInstance({ instanceDate: Date.now() })).toThrow(
+          InvalidTaskTemplateStateError,
+        );
+        expect(() => template.createInstance({ instanceDate: Date.now() })).toThrow(
+          'Cannot create instance from deleted template',
+        );
       });
 
       it('should throw error when instanceDate is invalid', () => {
         expect(() => template.createInstance({ instanceDate: null })).toThrow(
-          InvalidTaskTemplateStateError
+          InvalidTaskTemplateStateError,
         );
         expect(() => template.createInstance({ instanceDate: 'invalid' as any })).toThrow(
-          InvalidTaskTemplateStateError
+          InvalidTaskTemplateStateError,
         );
       });
 
@@ -371,9 +375,11 @@ describe('TaskTemplate Aggregate', () => {
       });
 
       it('should throw error when goalUuid is empty', () => {
-        expect(() => template.bindToGoal('', mockKeyResultUuid, 1)).toThrow(InvalidGoalBindingError);
         expect(() => template.bindToGoal('', mockKeyResultUuid, 1)).toThrow(
-          'Goal UUID and Key Result UUID are required'
+          InvalidGoalBindingError,
+        );
+        expect(() => template.bindToGoal('', mockKeyResultUuid, 1)).toThrow(
+          'Goal UUID and Key Result UUID are required',
         );
       });
 
@@ -385,10 +391,10 @@ describe('TaskTemplate Aggregate', () => {
         template.bindToGoal(mockGoalUuid, mockKeyResultUuid, 1);
 
         expect(() => template.bindToGoal('another-goal', 'another-kr', 1)).toThrow(
-          InvalidGoalBindingError
+          InvalidGoalBindingError,
         );
         expect(() => template.bindToGoal('another-goal', 'another-kr', 1)).toThrow(
-          'Template is already bound to a goal'
+          'Template is already bound to a goal',
         );
       });
 
@@ -396,7 +402,7 @@ describe('TaskTemplate Aggregate', () => {
         template.archive();
 
         expect(() => template.bindToGoal(mockGoalUuid, mockKeyResultUuid, 1)).toThrow(
-          TaskTemplateArchivedError
+          TaskTemplateArchivedError,
         );
       });
     });
@@ -452,7 +458,7 @@ describe('TaskTemplate Aggregate', () => {
 
       template.bindToGoal(mockGoalUuid, mockKeyResultUuid, 1);
       const lastHistory = template.history[template.history.length - 1];
-      
+
       expect(lastHistory.action).toBe('goal_bound');
       expect(lastHistory.changes).toBeDefined();
     });

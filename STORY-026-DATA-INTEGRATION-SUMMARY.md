@@ -11,27 +11,30 @@
 **文件**: `apps/web/src/shared/services/SearchDataProvider.ts`
 
 **核心特性**:
+
 - 单例模式，全局访问
 - 5 分钟缓存 TTL
 - 并行数据加载（Promise.all）
 - 错误容错（失败返回空数组）
 
 **服务集成**:
+
 ```typescript
 // Goal 模块
-goalService.getGoals({ limit: 1000 })
+goalService.getGoals({ limit: 1000 });
 // 返回: { data: GoalClientDTO[], total, page, limit, hasMore }
 
-// Task 模块  
-taskService.getTaskTemplates({ limit: 1000 })
+// Task 模块
+taskService.getTaskTemplates({ limit: 1000 });
 // 返回: { data: TaskTemplateClientDTO[], total, page, limit, hasMore }
 
 // Reminder 模块
-reminderService.getReminderTemplates({ limit: 1000, forceRefresh: true })
+reminderService.getReminderTemplates({ limit: 1000, forceRefresh: true });
 // 更新 store，通过 reminderStore.reminderTemplates 访问
 ```
 
 **缓存策略**:
+
 1. 首次加载：从所有服务获取数据
 2. 后续调用：如果在 TTL 内返回缓存
 3. 强制刷新：忽略缓存直接加载
@@ -40,6 +43,7 @@ reminderService.getReminderTemplates({ limit: 1000, forceRefresh: true })
 ### 2. App.vue 集成
 
 **修改**:
+
 ```vue
 <script setup lang="ts">
 import { computed } from 'vue';
@@ -57,15 +61,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <CommandPalette
-    :goals="goals"
-    :tasks="tasks"
-    :reminders="reminders"
-  />
+  <CommandPalette :goals="goals" :tasks="tasks" :reminders="reminders" />
 </template>
 ```
 
 **优势**:
+
 - 非阻塞应用启动
 - 自动响应（计算属性）
 - 关注点分离
@@ -74,11 +75,13 @@ onMounted(async () => {
 ### 3. 类型兼容性
 
 **挑战**: 不同的数据模型
+
 - Goal: 直接使用 `GoalClientDTO` ✅
 - Task: 使用 `TaskTemplateClientDTO`（非 TaskInstance）✅
 - Reminder: 使用 `SearchableItem` 适配器（简化自 ReminderTemplate）✅
 
 **解决方案**: SearchDataProvider 抽象复杂性
+
 ```typescript
 // Reminder 适配器
 interface SearchableItem {
@@ -104,6 +107,7 @@ reminders.map(r => ({
 **文件**: `apps/web/src/shared/services/__tests__/SearchDataProvider.integration.spec.ts`
 
 **覆盖范围**:
+
 - 单例模式验证
 - 缓存生命周期（空 → 加载 → 清除）
 - 数据访问器（getGoals, getTasks, getReminders）
@@ -113,11 +117,13 @@ reminders.map(r => ({
 ## 技术指标
 
 ### 性能
+
 - 并行加载：所有 3 个服务同时加载
 - 非阻塞：缓存未命中不抛出错误
 - 响应式：使用 Vue refs 自动更新 UI
 
 ### 代码质量
+
 - 类型安全：完整的 TypeScript 支持
 - 错误处理：失败时优雅降级
 - 文档完整：JSDoc 注释
@@ -128,6 +134,7 @@ reminders.map(r => ({
 **STORY-026 进度**: 85% → 100% ✅
 
 **可交付成果**:
+
 - ✅ 规划文档（600 行）
 - ✅ 模糊搜索引擎（400 行）
 - ✅ 全局搜索服务（450 行）
@@ -144,6 +151,7 @@ reminders.map(r => ({
 **实际时间**: ~8 小时
 
 **质量**: 生产就绪
+
 - 代码审查：就绪 ✅
 - 测试通过：100% ✅
 - 文档：完整 ✅
@@ -153,6 +161,7 @@ reminders.map(r => ({
 ## Sprint 4 进度
 
 ### 已完成 Story
+
 - ✅ STORY-022: 任务依赖数据模型（3 SP）
 - ✅ STORY-023: 任务 DAG 可视化（4 SP）
 - ✅ STORY-024: 依赖验证（3 SP）
@@ -162,6 +171,7 @@ reminders.map(r => ({
 **总计**: 15/24 SP (62.5%)
 
 ### 下一个 Story
+
 - **STORY-027**: 拖放任务管理（2 SP，P1）
 - **STORY-028**: 暗黑模式支持（2 SP，P2）
 

@@ -55,7 +55,7 @@ export class TaskTemplateController {
     if (isTaskError(error)) {
       // 映射 HTTP 状态码到 ResponseCode
       const responseCode = TaskTemplateController.mapHttpStatusToResponseCode(error.httpStatus);
-      
+
       return TaskTemplateController.responseBuilder.sendError(res, {
         code: responseCode,
         message: error.message,

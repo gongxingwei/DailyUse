@@ -18,11 +18,13 @@
 基于艾森豪威尔矩阵（重要性×紧急度），自动计算任务优先级并智能排序，帮助用户科学决策"先做什么"，提升任务执行效率。
 
 **核心问题**:
+
 - ❌ 缺少科学的优先级评估方法，凭感觉决策
 - ❌ 无法一目了然地看到哪些任务"重要且紧急"
 - ❌ 手动排序任务费时费力
 
 **解决方案**:
+
 - ✅ 重要性（1-5）× 紧急度（1-5）自动计算优先级分数（1-25）
 - ✅ 四象限矩阵视图（Q1-Q4）可视化展示
 - ✅ 一键智能排序，自动按优先级重排任务
@@ -58,9 +60,9 @@ Scenario: 定义优先级 Contracts
 ```typescript
 export interface TaskServerDTO {
   // ...existing fields...
-  readonly importance: number;        // 1-5
-  readonly urgency: number;           // 1-5
-  readonly priorityScore: number;     // importance × urgency
+  readonly importance: number; // 1-5
+  readonly urgency: number; // 1-5
+  readonly priorityScore: number; // importance × urgency
   readonly autoAdjustEnabled: boolean;
 }
 ```
@@ -72,24 +74,26 @@ export class Task extends AggregateRoot {
   private _importance: number = 3;
   private _urgency: number = 3;
   private _priorityScore: number = 9;
-  
+
   setPriority(importance: number, urgency: number): void {
     this.validatePriority(importance, urgency);
-    
+
     const oldScore = this._priorityScore;
     this._importance = importance;
     this._urgency = urgency;
     this._priorityScore = importance * urgency;
-    
+
     if (oldScore !== this._priorityScore) {
-      this.addDomainEvent(new TaskPriorityChangedEvent({
-        taskUuid: this.uuid,
-        oldScore,
-        newScore: this._priorityScore
-      }));
+      this.addDomainEvent(
+        new TaskPriorityChangedEvent({
+          taskUuid: this.uuid,
+          oldScore,
+          newScore: this._priorityScore,
+        }),
+      );
     }
   }
-  
+
   private validatePriority(importance: number, urgency: number): void {
     if (importance < 1 || importance > 5) {
       throw new InvalidPriorityError('重要性必须在 1-5 之间');
@@ -98,7 +102,7 @@ export class Task extends AggregateRoot {
       throw new InvalidPriorityError('紧急度必须在 1-5 之间');
     }
   }
-  
+
   getQuadrant(): string {
     if (this._importance >= 4 && this._urgency >= 4) return 'Q1';
     if (this._importance >= 4 && this._urgency < 4) return 'Q2';
@@ -137,7 +141,7 @@ Scenario: 智能排序任务
 export class TaskPriorityService {
   async smartSort(taskUuids: string[]): Promise<Task[]> {
     const tasks = await this.taskRepository.findByUuids(taskUuids);
-    
+
     const sorted = tasks.sort((a, b) => {
       // 1. 优先级分数
       if (a.priorityScore !== b.priorityScore) {
@@ -152,32 +156,32 @@ export class TaskPriorityService {
       // 3. 创建时间
       return a.createdAt - b.createdAt;
     });
-    
+
     // 更新 orderIndex
     sorted.forEach((task, index) => {
       task.setOrderIndex(index + 1);
     });
-    
+
     await this.taskRepository.saveAll(sorted);
-    
+
     return sorted;
   }
-  
+
   async batchSetPriority(params: {
     taskUuids: string[];
     importance?: number;
     urgency?: number;
   }): Promise<number> {
     const tasks = await this.taskRepository.findByUuids(params.taskUuids);
-    
-    tasks.forEach(task => {
+
+    tasks.forEach((task) => {
       const newImportance = params.importance ?? task.importance;
       const newUrgency = params.urgency ?? task.urgency;
       task.setPriority(newImportance, newUrgency);
     });
-    
+
     await this.taskRepository.saveAll(tasks);
-    
+
     return tasks.length;
   }
 }
@@ -198,12 +202,12 @@ export class TaskPriorityService {
 ```prisma
 model Task {
   // ...existing fields...
-  
+
   importance           Int      @default(3) @map("importance")
   urgency              Int      @default(3) @map("urgency")
   priorityScore        Int      @default(9) @map("priority_score")
   autoAdjustEnabled    Boolean  @default(true) @map("auto_adjust_enabled")
-  
+
   @@index([priorityScore(sort: Desc), dueDate(sort: Asc)])
 }
 ```
@@ -233,58 +237,44 @@ CREATE INDEX "Task_priorityScore_dueDate_idx" ON "Task"("priority_score" DESC, "
 
 ```typescript
 // 设置优先级
-router.patch('/:id/priority',
-  authenticate,
-  validateBody(SetPrioritySchema),
-  async (req, res) => {
-    const { importance, urgency } = req.body;
-    const task = await taskApplicationService.setPriority(
-      req.params.id,
-      importance,
-      urgency
-    );
-    res.json(toClientDTO(task));
-  }
-);
+router.patch('/:id/priority', authenticate, validateBody(SetPrioritySchema), async (req, res) => {
+  const { importance, urgency } = req.body;
+  const task = await taskApplicationService.setPriority(req.params.id, importance, urgency);
+  res.json(toClientDTO(task));
+});
 
 // 智能排序
-router.post('/batch/smart-sort',
-  authenticate,
-  validateBody(SmartSortSchema),
-  async (req, res) => {
-    const { taskUuids } = req.body;
-    const sorted = await taskPriorityService.smartSort(taskUuids);
-    res.json({ 
-      sortedTasks: sorted.map(toClientDTO),
-      count: sorted.length
-    });
-  }
-);
+router.post('/batch/smart-sort', authenticate, validateBody(SmartSortSchema), async (req, res) => {
+  const { taskUuids } = req.body;
+  const sorted = await taskPriorityService.smartSort(taskUuids);
+  res.json({
+    sortedTasks: sorted.map(toClientDTO),
+    count: sorted.length,
+  });
+});
 
 // 批量设置优先级
-router.post('/batch/set-priority',
+router.post(
+  '/batch/set-priority',
   authenticate,
   validateBody(BatchSetPrioritySchema),
   async (req, res) => {
     const count = await taskPriorityService.batchSetPriority(req.body);
     res.json({ updatedCount: count });
-  }
+  },
 );
 
 // 获取象限分布
-router.get('/priority-matrix',
-  authenticate,
-  async (req, res) => {
-    const tasks = await taskApplicationService.getByUser(req.user.uuid);
-    const distribution = {
-      q1: tasks.filter(t => t.getQuadrant() === 'Q1'),
-      q2: tasks.filter(t => t.getQuadrant() === 'Q2'),
-      q3: tasks.filter(t => t.getQuadrant() === 'Q3'),
-      q4: tasks.filter(t => t.getQuadrant() === 'Q4')
-    };
-    res.json(distribution);
-  }
-);
+router.get('/priority-matrix', authenticate, async (req, res) => {
+  const tasks = await taskApplicationService.getByUser(req.user.uuid);
+  const distribution = {
+    q1: tasks.filter((t) => t.getQuadrant() === 'Q1'),
+    q2: tasks.filter((t) => t.getQuadrant() === 'Q2'),
+    q3: tasks.filter((t) => t.getQuadrant() === 'Q3'),
+    q4: tasks.filter((t) => t.getQuadrant() === 'Q4'),
+  };
+  res.json(distribution);
+});
 ```
 
 ---
@@ -292,7 +282,7 @@ router.get('/priority-matrix',
 ### Story 005: Client Services
 
 **Story ID**: TASK-002-S005  
-**Story Points**: 2 SP  
+**Story Points**: 2 SP
 
 #### Technical Details
 
@@ -304,21 +294,20 @@ export function useSmartSort() {
   const service = new TaskPriorityService();
 
   return useMutation({
-    mutationFn: (taskUuids: string[]) => 
-      service.smartSort(taskUuids),
+    mutationFn: (taskUuids: string[]) => service.smartSort(taskUuids),
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
-    }
+    },
   });
 }
 
 export function usePriorityMatrix() {
   const service = new TaskPriorityService();
-  
+
   return useQuery({
     queryKey: ['task-priority-matrix'],
     queryFn: () => service.getMatrixDistribution(),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 }
 ```
@@ -362,17 +351,8 @@ Scenario: 显示四象限矩阵
           <el-badge :value="q1Tasks.length" type="danger" />
         </div>
         <div class="quadrant-label">重要且紧急</div>
-        <draggable
-          v-model="q1Tasks"
-          group="tasks"
-          @change="onTaskMoved"
-        >
-          <TaskCard
-            v-for="task in q1Tasks"
-            :key="task.uuid"
-            :task="task"
-            quadrant="Q1"
-          />
+        <draggable v-model="q1Tasks" group="tasks" @change="onTaskMoved">
+          <TaskCard v-for="task in q1Tasks" :key="task.uuid" :task="task" quadrant="Q1" />
         </draggable>
       </div>
 
@@ -432,11 +412,11 @@ function onTaskMoved(event: any, targetQuadrant: string) {
   if (event.added) {
     const task = event.added.element;
     const newPriority = getQuadrantPriority(targetQuadrant);
-    
+
     updatePriority.mutate({
       taskUuid: task.uuid,
       importance: newPriority.importance,
-      urgency: newPriority.urgency
+      urgency: newPriority.urgency,
     });
   }
 }
@@ -446,7 +426,7 @@ function getQuadrantPriority(quadrant: string) {
     Q1: { importance: 5, urgency: 5 },
     Q2: { importance: 5, urgency: 2 },
     Q3: { importance: 2, urgency: 5 },
-    Q4: { importance: 2, urgency: 2 }
+    Q4: { importance: 2, urgency: 2 },
   };
   return map[quadrant];
 }
@@ -468,10 +448,22 @@ function getQuadrantPriority(quadrant: string) {
   background: #f5f7fa;
 }
 
-.quadrant.q1 { border-color: #f56c6c; background: #fef0f0; }
-.quadrant.q2 { border-color: #e6a23c; background: #fdf6ec; }
-.quadrant.q3 { border-color: #409eff; background: #ecf5ff; }
-.quadrant.q4 { border-color: #909399; background: #f4f4f5; }
+.quadrant.q1 {
+  border-color: #f56c6c;
+  background: #fef0f0;
+}
+.quadrant.q2 {
+  border-color: #e6a23c;
+  background: #fdf6ec;
+}
+.quadrant.q3 {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+.quadrant.q4 {
+  border-color: #909399;
+  background: #f4f4f5;
+}
 
 .quadrant-header {
   display: flex;
@@ -487,28 +479,28 @@ function getQuadrantPriority(quadrant: string) {
 ### Story 007: E2E Tests
 
 **Story ID**: TASK-002-S007  
-**Story Points**: 1 SP  
+**Story Points**: 1 SP
 
 #### Technical Details
 
 ```typescript
 test('设置优先级并智能排序', async ({ page }) => {
   await page.goto('/tasks');
-  
+
   // 设置优先级
   await page.click('[data-testid="task-1"]');
   await page.click('[data-testid="set-priority"]');
   await page.fill('[data-testid="importance-input"]', '5');
   await page.fill('[data-testid="urgency-input"]', '5');
   await page.click('[data-testid="save-priority"]');
-  
+
   // 验证优先级分数
   await expect(page.locator('[data-testid="priority-score"]')).toContainText('25');
-  
+
   // 智能排序
   await page.click('[data-testid="smart-sort"]');
   await page.click('[data-testid="confirm-sort"]');
-  
+
   // 验证排序结果
   const firstTask = await page.locator('[data-testid="task-item-1"]').textContent();
   expect(firstTask).toContain('优先级: 25');
@@ -516,16 +508,13 @@ test('设置优先级并智能排序', async ({ page }) => {
 
 test('四象限矩阵视图', async ({ page }) => {
   await page.goto('/tasks/matrix');
-  
+
   // 验证象限显示
   await expect(page.locator('[data-testid="quadrant-q1"]')).toBeVisible();
-  
+
   // 拖拽任务
-  await page.dragAndDrop(
-    '[data-testid="task-1"]',
-    '[data-testid="quadrant-q1"]'
-  );
-  
+  await page.dragAndDrop('[data-testid="task-1"]', '[data-testid="quadrant-q1"]');
+
   // 验证优先级更新
   await expect(page.locator('[data-testid="task-1-importance"]')).toContainText('5');
 });
@@ -557,10 +546,12 @@ test('四象限矩阵视图', async ({ page }) => {
 **Sprint 3 (Week 5-6)** - 与 GOAL-004 并行开发
 
 **Week 1**:
+
 - Day 1-2: Story 001-003 (Contracts, Application, Infrastructure)
 - Day 3: Story 004 (API)
 
 **Week 2**:
+
 - Day 1-2: Story 005-006 (Client + UI)
 - Day 3: Story 007 (E2E Tests)
 
@@ -583,5 +574,5 @@ Feature: 任务优先级矩阵
 
 ---
 
-*文档创建: 2025-10-21*  
-*Epic Owner: PM Agent*
+_文档创建: 2025-10-21_  
+_Epic Owner: PM Agent_

@@ -24,25 +24,25 @@ interface ThemePreference {
 
 /**
  * Composable for managing application theme
- * 
+ *
  * Provides theme switching functionality with:
  * - Light/Dark/Auto modes
  * - System preference detection
  * - LocalStorage persistence
  * - Smooth transitions
- * 
+ *
  * @returns Theme management functions and state
- * 
+ *
  * @example
  * ```typescript
  * const { themeMode, isDark, setThemeMode, toggleTheme } = useTheme();
- * 
+ *
  * // Set specific mode
  * setThemeMode('dark');
- * 
+ *
  * // Toggle between light and dark
  * toggleTheme();
- * 
+ *
  * // Check current state
  * if (isDark.value) {
  *   console.log('Dark mode active');
@@ -107,10 +107,10 @@ export function useTheme() {
   const applyTheme = (themeName: ThemeName): void => {
     // Add transition class to body
     document.body.classList.add('theme-transition');
-    
+
     // Change Vuetify theme
     vuetifyTheme.global.name.value = themeName;
-    
+
     // Remove transition class after animation
     setTimeout(() => {
       document.body.classList.remove('theme-transition');
@@ -124,11 +124,11 @@ export function useTheme() {
   const setThemeMode = (mode: ThemeMode): void => {
     preference.value.mode = mode;
     savePreference(preference.value);
-    
+
     // Apply the appropriate theme
-    const themeName = isDark.value 
-      ? (preference.value.darkTheme || 'dark')
-      : (preference.value.lightTheme || 'light');
+    const themeName = isDark.value
+      ? preference.value.darkTheme || 'dark'
+      : preference.value.lightTheme || 'light';
     applyTheme(themeName);
   };
 
@@ -144,7 +144,7 @@ export function useTheme() {
       preference.value.darkTheme = themeName;
     }
     savePreference(preference.value);
-    
+
     // Apply if currently using this type
     if (isDark.value === (type === 'dark')) {
       applyTheme(themeName);
@@ -177,12 +177,12 @@ export function useTheme() {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
       systemPreference.value = e.matches ? 'dark' : 'light';
-      
+
       // Re-apply theme if in auto mode
       if (preference.value.mode === 'auto') {
         const themeName = isDark.value
-          ? (preference.value.darkTheme || 'dark')
-          : (preference.value.lightTheme || 'light');
+          ? preference.value.darkTheme || 'dark'
+          : preference.value.lightTheme || 'light';
         applyTheme(themeName);
       }
     };

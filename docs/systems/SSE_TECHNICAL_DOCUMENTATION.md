@@ -22,7 +22,7 @@
 ```typescript
 export class SSEController {
   private clients = new Map<string, SSEClient>();
-  
+
   // 建立 SSE 连接
   connect = (req: Request, res: Response): void => {
     // 设置 SSE 响应头
@@ -37,13 +37,14 @@ export class SSEController {
     // 创建客户端实例并注册事件监听器
     const client = { id: clientId, response: res, lastPing: Date.now() };
     this.clients.set(clientId, client);
-    
+
     // 发送心跳和处理连接关闭
   };
 }
 ```
 
 **关键特性：**
+
 - 自动生成客户端ID
 - 30秒心跳机制
 - 自动清理过期连接
@@ -56,18 +57,23 @@ export class SSEController {
 // apps/api/src/modules/schedule/interface/http/routes.ts
 router.get('/events', sseController.connect);
 
-// apps/api/src/app.ts 
-api.use('/schedules', (req, res, next) => {
-  // SSE 事件流端点不需要认证
-  if (req.path.startsWith('/events')) {
-    return next();
-  }
-  // 其他端点需要认证
-  return authMiddleware(req, res, next);
-}, scheduleRoutes);
+// apps/api/src/app.ts
+api.use(
+  '/schedules',
+  (req, res, next) => {
+    // SSE 事件流端点不需要认证
+    if (req.path.startsWith('/events')) {
+      return next();
+    }
+    // 其他端点需要认证
+    return authMiddleware(req, res, next);
+  },
+  scheduleRoutes,
+);
 ```
 
 **注意事项：**
+
 - SSE端点不需要JWT认证（避免token过期导致连接断开）
 - 路由必须在参数路由之前注册
 - 支持CORS预检请求
@@ -76,15 +82,15 @@ api.use('/schedules', (req, res, next) => {
 
 支持的SSE事件类型：
 
-| 事件类型 | 说明 | 数据格式 |
-|---------|------|----------|
-| `connected` | 连接建立确认 | `{clientId, timestamp}` |
-| `heartbeat` | 心跳检测 | `{timestamp}` |
-| `schedule:popup-reminder` | 弹窗提醒 | `{id, title, message, type, priority, alertMethods, ...}` |
-| `schedule:sound-reminder` | 声音提醒 | `{volume}` |
-| `schedule:system-notification` | 系统通知 | `{title, body, icon}` |
-| `schedule:reminder-triggered` | 通用提醒触发 | `{id, title, message, timestamp, ...}` |
-| `schedule:task-executed` | 任务执行完成 | `{taskId, result, timestamp}` |
+| 事件类型                       | 说明         | 数据格式                                                  |
+| ------------------------------ | ------------ | --------------------------------------------------------- |
+| `connected`                    | 连接建立确认 | `{clientId, timestamp}`                                   |
+| `heartbeat`                    | 心跳检测     | `{timestamp}`                                             |
+| `schedule:popup-reminder`      | 弹窗提醒     | `{id, title, message, type, priority, alertMethods, ...}` |
+| `schedule:sound-reminder`      | 声音提醒     | `{volume}`                                                |
+| `schedule:system-notification` | 系统通知     | `{title, body, icon}`                                     |
+| `schedule:reminder-triggered`  | 通用提醒触发 | `{id, title, message, timestamp, ...}`                    |
+| `schedule:task-executed`       | 任务执行完成 | `{taskId, result, timestamp}`                             |
 
 ### 4. 事件流格式
 
@@ -105,17 +111,17 @@ export class SSEClient {
   private eventSource: EventSource | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  
+
   async connect(): Promise<void> {
     const url = `${this.baseUrl}/api/v1/schedules/events`;
     this.eventSource = new EventSource(url);
-    
+
     // 连接成功处理
     this.eventSource.onopen = () => {
       console.log('[SSE Client] ✅ 连接成功');
       this.reconnectAttempts = 0;
     };
-    
+
     // 错误处理和重连逻辑
     this.eventSource.onerror = (error) => {
       if (this.eventSource?.readyState === EventSource.CLOSED) {
@@ -127,6 +133,7 @@ export class SSEClient {
 ```
 
 **关键特性：**
+
 - 自动重连机制（指数退避）
 - 连接状态管理
 - 事件路由到前端事件总线
@@ -137,7 +144,7 @@ export class SSEClient {
 ```typescript
 private handleScheduleEvent(eventType: string, data: string): void {
   const parsedData = JSON.parse(data);
-  
+
   switch (eventType) {
     case 'popup-reminder':
       eventBus.emit('ui:show-popup-reminder', parsedData.data);
@@ -160,7 +167,7 @@ private async initializeSSEConnection(): Promise<void> {
   try {
     await sseClient.connect();
     const status = sseClient.getStatus();
-    
+
     if (status.connected) {
       console.log('[NotificationInit] ✅ SSE 连接建立成功');
     } else {
@@ -202,12 +209,14 @@ private connectionTimeout = 5000;     // 连接超时时间
 
 ```typescript
 // app.ts
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 ```
 
 ## 故障排除
@@ -215,12 +224,15 @@ app.use(cors({
 ### 1. 常见问题
 
 #### 问题：前端显示 "SSE 连接超时"
-**原因：** 
+
+**原因：**
+
 - API服务器未启动
 - 端口冲突
 - CORS配置错误
 
 **解决方案：**
+
 ```bash
 # 检查API服务器状态
 curl -v http://localhost:3888/api/v1/schedules/events
@@ -236,12 +248,15 @@ curl -H "Origin: http://localhost:5173" \
 ```
 
 #### 问题：连接建立但无法接收事件
+
 **原因：**
+
 - 事件监听器未正确注册
 - 事件名称不匹配
 - JSON解析错误
 
 **解决方案：**
+
 ```typescript
 // 检查事件监听器
 this.eventSource.addEventListener('schedule:popup-reminder', (event) => {
@@ -250,18 +265,23 @@ this.eventSource.addEventListener('schedule:popup-reminder', (event) => {
 
 // 验证事件名称
 const expectedEvents = [
-  'connected', 'heartbeat', 
-  'schedule:popup-reminder', 'schedule:sound-reminder'
+  'connected',
+  'heartbeat',
+  'schedule:popup-reminder',
+  'schedule:sound-reminder',
 ];
 ```
 
 #### 问题：频繁重连
+
 **原因：**
+
 - 网络不稳定
 - 服务器端连接清理过于频繁
 - 客户端重连逻辑问题
 
 **解决方案：**
+
 ```typescript
 // 调整重连参数
 private maxReconnectAttempts = 10;     // 增加重连次数
@@ -271,6 +291,7 @@ private reconnectDelay = 2000;         // 增加重连延迟
 ### 2. 调试工具
 
 #### 服务器端调试
+
 ```typescript
 // 添加详细日志
 console.log(`[SSE] 客户端连接: ${clientId}, 当前连接数: ${this.clients.size}`);
@@ -280,12 +301,13 @@ console.log(`[SSE] 广播事件: ${eventType}, 数据:`, data);
 router.get('/events/status', (req, res) => {
   res.json({
     connectedClients: sseController.getStatus().connectedClients,
-    uptime: process.uptime()
+    uptime: process.uptime(),
   });
 });
 ```
 
 #### 客户端调试
+
 ```typescript
 // 连接状态检查
 setInterval(() => {
@@ -302,6 +324,7 @@ eventBus.on('sse:*', () => {
 ```
 
 #### 浏览器工具
+
 1. **Network 面板**：检查SSE连接状态和数据流
 2. **Console**：查看连接日志和错误信息
 3. **Application > EventSource**：监控事件流
@@ -309,19 +332,21 @@ eventBus.on('sse:*', () => {
 ### 3. 性能优化
 
 #### 减少重连频率
+
 ```typescript
 // 使用指数退避算法
 private attemptReconnect(): void {
   const delay = Math.min(
-    this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 
+    this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
     30000 // 最大30秒
   );
-  
+
   setTimeout(() => this.connect(), delay);
 }
 ```
 
 #### 事件过滤
+
 ```typescript
 // 只订阅必要的事件类型
 const interestedEvents = ['schedule:popup-reminder', 'schedule:sound-reminder'];
@@ -334,6 +359,7 @@ this.eventSource.addEventListener(eventType, (event) => {
 ```
 
 #### 连接池管理
+
 ```typescript
 // 限制最大连接数
 if (this.clients.size >= maxClients) {
@@ -345,21 +371,25 @@ if (this.clients.size >= maxClients) {
 ## 最佳实践
 
 ### 1. 错误处理
+
 - 使用非阻塞的连接策略
 - 实现优雅降级（SSE失败时使用轮询）
 - 记录详细的错误日志
 
 ### 2. 安全考虑
+
 - SSE端点不需要认证（避免token过期）
 - 实现连接数限制
 - 防止事件数据注入攻击
 
 ### 3. 监控和告警
+
 - 监控连接数和事件流量
 - 设置连接异常告警
 - 记录重连频率和成功率
 
 ### 4. 测试策略
+
 ```typescript
 // 单元测试示例
 describe('SSEClient', () => {

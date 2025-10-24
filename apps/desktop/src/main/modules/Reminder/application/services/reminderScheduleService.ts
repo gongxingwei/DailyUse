@@ -1,11 +1,11 @@
-import nodeSchedule from "node-schedule";
-import { notificationService } from "@electron/shared/notification";
-import { ImportanceLevel } from "@dailyuse/contracts";
-import type { RecurrenceRule as NodeScheduleRule } from "node-schedule";
+import nodeSchedule from 'node-schedule';
+import { notificationService } from '@electron/shared/notification';
+import { ImportanceLevel } from '@dailyuse/contracts';
+import type { RecurrenceRule as NodeScheduleRule } from 'node-schedule';
 import type {
   RecurrenceRule as MyRecurrenceRule,
   RecurrenceSegment,
-} from "@common/shared/types/recurrenceRule";
+} from '@common/shared/types/recurrenceRule';
 
 /**
  * ReminderPayload
@@ -55,10 +55,7 @@ export class ReminderScheduleService {
    * @example
    * await reminderScheduleService.createReminderScheduleByDate(new Date(), { uuid, title, body, importanceLevel });
    */
-  async createReminderScheduleByDate(
-    date: Date,
-    payload: ReminderPayload
-  ): Promise<void> {
+  async createReminderScheduleByDate(date: Date, payload: ReminderPayload): Promise<void> {
     try {
       // 如果已存在相同ID的任务，先删除
       if (this.scheduleJobs.has(payload.uuid)) {
@@ -74,7 +71,7 @@ export class ReminderScheduleService {
       });
       this.scheduleJobs.set(payload.uuid, job);
     } catch (error) {
-      console.error("ReminderScheduleService - createReminder Error:", error);
+      console.error('ReminderScheduleService - createReminder Error:', error);
     }
   }
 
@@ -86,10 +83,7 @@ export class ReminderScheduleService {
    * @example
    * await reminderScheduleService.createReminderScheduleByCron("0 9 * * *", { uuid, title, body, importanceLevel });
    */
-  async createReminderScheduleByCron(
-    cron: string,
-    payload: ReminderPayload
-  ): Promise<void> {
+  async createReminderScheduleByCron(cron: string, payload: ReminderPayload): Promise<void> {
     try {
       if (this.scheduleJobs.has(payload.uuid)) {
         this.cancelReminderSchedule(payload.uuid);
@@ -104,7 +98,7 @@ export class ReminderScheduleService {
       });
       this.scheduleJobs.set(payload.uuid, job);
     } catch (error) {
-      console.error("ReminderScheduleService - createReminder Error:", error);
+      console.error('ReminderScheduleService - createReminder Error:', error);
     }
   }
 
@@ -118,7 +112,7 @@ export class ReminderScheduleService {
    */
   async createReminderScheduleByRule(
     rule: MyRecurrenceRule,
-    payload: ReminderPayload
+    payload: ReminderPayload,
   ): Promise<void> {
     try {
       if (this.scheduleJobs.has(payload.uuid)) {
@@ -133,14 +127,14 @@ export class ReminderScheduleService {
           importance: payload.importanceLevel,
         });
       });
-      console.log("【ReminderScheduleService】创建定时任务:", {
+      console.log('【ReminderScheduleService】创建定时任务:', {
         uuid: payload.uuid,
         rule,
         nextInvocation: job.nextInvocation(),
       });
       this.scheduleJobs.set(payload.uuid, job);
     } catch (error) {
-      console.error("ReminderScheduleService - createReminder Error:", error);
+      console.error('ReminderScheduleService - createReminder Error:', error);
     }
   }
 
@@ -159,7 +153,7 @@ export class ReminderScheduleService {
         this.scheduleJobs.delete(uuid);
       }
     } catch (error) {
-      console.error("ReminderScheduleService - cancelReminder Error:", error);
+      console.error('ReminderScheduleService - cancelReminder Error:', error);
     }
   }
 
@@ -203,7 +197,7 @@ export class ReminderScheduleService {
    * const nodeRule = reminderScheduleService.myRecurrenceRuleToNodeScheduleRule(rule);
    */
   myRecurrenceRuleToNodeScheduleRule(rule: MyRecurrenceRule): NodeScheduleRule {
-     const nodeRule = new nodeSchedule.RecurrenceRule();
+    const nodeRule = new nodeSchedule.RecurrenceRule();
 
     /**
      * 工具函数：处理 RecurrenceSegment（支持 Range 类型）
@@ -218,10 +212,10 @@ export class ReminderScheduleService {
         return seg.map(parseSegment).flat();
       }
       if (
-        typeof seg === "object" &&
+        typeof seg === 'object' &&
         seg !== null &&
-        typeof seg.start === "number" &&
-        typeof seg.end === "number"
+        typeof seg.start === 'number' &&
+        typeof seg.end === 'number'
       ) {
         // Range 类型
         const arr: number[] = [];

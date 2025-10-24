@@ -1,4 +1,8 @@
-import { InitializationManager, InitializationPhase, InitializationTask } from '../../../shared/initialization/initializationManager';
+import {
+  InitializationManager,
+  InitializationPhase,
+  InitializationTask,
+} from '../../../shared/initialization/initializationManager';
 import { TaskIpcHandler } from '../infrastructure/ipc/taskIpcHandler';
 import { MainTaskApplicationService } from '../application/mainTaskApplicationService';
 
@@ -16,7 +20,7 @@ const taskIpcInitTask: InitializationTask = {
     const taskIpcHandler = new TaskIpcHandler();
     taskIpcHandler.register();
     console.log('✓ Task IPC handlers registered');
-  }
+  },
 };
 
 // 系统模板初始化任务（用户登录时执行）
@@ -42,7 +46,7 @@ const taskSystemTemplatesInitTask: InitializationTask = {
   cleanup: async () => {
     // 用户登出时清理
     console.log('Cleaning up task module user data...');
-  }
+  },
 };
 
 /**
@@ -50,10 +54,10 @@ const taskSystemTemplatesInitTask: InitializationTask = {
  */
 export function registerTaskInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
-  
+
   manager.registerTask(taskIpcInitTask);
   manager.registerTask(taskSystemTemplatesInitTask);
-  
+
   console.log('【主进程::Task 模块】 初始化任务已注册');
 }
 

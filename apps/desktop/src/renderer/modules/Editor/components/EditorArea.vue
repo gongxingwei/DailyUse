@@ -8,8 +8,15 @@
       </template>
       <template v-else>
         <div class="edit-area">
-          <MonacoEditor v-model:value="content" :options="editorOptions" :theme="editorTheme" language="markdown"
-            @keydown.ctrl.s.prevent="saveContent" @keydown.meta.s.prevent="saveContent" @editorDidMount="handleEditorDidMount" />
+          <MonacoEditor
+            v-model:value="content"
+            :options="editorOptions"
+            :theme="editorTheme"
+            language="markdown"
+            @keydown.ctrl.s.prevent="saveContent"
+            @keydown.meta.s.prevent="saveContent"
+            @editorDidMount="handleEditorDidMount"
+          />
         </div>
       </template>
     </div>
@@ -17,45 +24,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import MonacoEditor from 'monaco-editor-vue3'
-import MarkdownIt from 'markdown-it'
-import 'github-markdown-css'
-import { fileSystem } from '@renderer/shared/utils/fileUtils'
-import { useThemeStore } from '@renderer/modules/Theme/themeStroe'
-import { useSettingStore } from '@renderer/modules/Setting/stores/settingStore'
-import {  Range } from 'monaco-editor' 
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import MonacoEditor from 'monaco-editor-vue3';
+import MarkdownIt from 'markdown-it';
+import 'github-markdown-css';
+import { fileSystem } from '@renderer/shared/utils/fileUtils';
+import { useThemeStore } from '@renderer/modules/Theme/themeStroe';
+import { useSettingStore } from '@renderer/modules/Setting/stores/settingStore';
+import { Range } from 'monaco-editor';
 
 const props = defineProps<{
-  path: string
-  initialContent?: string
-  isPreview?: boolean
-}>()
+  path: string;
+  initialContent?: string;
+  isPreview?: boolean;
+}>();
 
 const emit = defineEmits<{
-  'contentChanged': [isDirty: boolean]
-}>()
+  contentChanged: [isDirty: boolean];
+}>();
 
-const themeStore = useThemeStore()
-const settingStore = useSettingStore()
-const editorTheme = computed(() => `vs-${themeStore.currentThemeStyle}`)
-const editor = ref<any>(null)
-let autoSaveTimer: NodeJS.Timeout | null = null
+const themeStore = useThemeStore();
+const settingStore = useSettingStore();
+const editorTheme = computed(() => `vs-${themeStore.currentThemeStyle}`);
+const editor = ref<any>(null);
+let autoSaveTimer: NodeJS.Timeout | null = null;
 
-const autoSaveDelay = ref(1000) // 1 second delay
+const autoSaveDelay = ref(1000); // 1 second delay
 // 初始化 markdown-it
 const md = new MarkdownIt({
   html: true,
   linkify: true,
-  typographer: true
-})
+  typographer: true,
+});
 
 // 状态管理
-const isPreviewMode = computed(() => props.isPreview)
-const content = ref('')
+const isPreviewMode = computed(() => props.isPreview);
+const content = ref('');
 let originalContent = '';
 
-const autoSaveEnabled = computed(() => settingStore.editor.autoSave)
+const autoSaveEnabled = computed(() => settingStore.editor.autoSave);
 
 // 编辑器配置
 const editorOptions = computed(() => ({
@@ -70,16 +77,16 @@ const editorOptions = computed(() => ({
   // 配置链接选项
   linkDetector: {
     enabled: true,
-    preferredProtocols: ['http', 'https']
+    preferredProtocols: ['http', 'https'],
   },
   // 修改链接处理器
   'editor.action.openLink': {
     enabled: true,
     callback: (url: string) => {
       window.shared.ipcRenderer.invoke('open-external-url', url);
-    }
-  }
-}))
+    },
+  },
+}));
 // const editorOptions = {
 //   minimap: { enabled: true },
 //   wordWrap: 'on',
@@ -93,47 +100,50 @@ const editorOptions = computed(() => ({
 
 // 添加编辑器实例初始化的处理函数
 const handleEditorDidMount = (instance: any) => {
-  editor.value = instance
-  const editorElement = editor.value.getDomNode()
+  editor.value = instance;
+  const editorElement = editor.value.getDomNode();
   editorElement.addEventListener('paste', async (e: ClipboardEvent) => {
-    const clipboardData = e.clipboardData
-    if (!clipboardData) return
-    console.log('Clipboard Data:', clipboardData)
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) return;
+    console.log('Clipboard Data:', clipboardData);
     for (const item of clipboardData.items) {
       if (item.type.startsWith('image/')) {
-        console.log('jiancedao')
-        e.preventDefault()
-        const imageBlob = item.getAsFile()
-        console.log('zhuanhuan')
+        console.log('jiancedao');
+        e.preventDefault();
+        const imageBlob = item.getAsFile();
+        console.log('zhuanhuan');
         if (imageBlob) {
-          const base64 = await fileToBase64(imageBlob)
-          console.log('base64')
-          insertMarkdownImage(base64)
-          console.log('insert')
-          console.log('Image Base64:', base64)
+          const base64 = await fileToBase64(imageBlob);
+          console.log('base64');
+          insertMarkdownImage(base64);
+          console.log('insert');
+          console.log('Image Base64:', base64);
         }
       }
     }
 
-    console.log('Available Types:', Array.from(clipboardData.types))
-    console.log('Items:', Array.from(clipboardData.items).map(item => ({
-      type: item.type,
-      kind: item.kind
-    })))
-    console.log('Text:', clipboardData.getData('Files'))
-    console.groupEnd()
-  })
-}
+    console.log('Available Types:', Array.from(clipboardData.types));
+    console.log(
+      'Items:',
+      Array.from(clipboardData.items).map((item) => ({
+        type: item.type,
+        kind: item.kind,
+      })),
+    );
+    console.log('Text:', clipboardData.getData('Files'));
+    console.groupEnd();
+  });
+};
 
 // 将文件转换为 base64
 const fileToBase64 = (file: File) => {
   return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 // 插入 Markdown 图片
 // const insertMarkdownImage = (base64: string) => {
@@ -171,28 +181,30 @@ const fileToBase64 = (file: File) => {
 //   }])
 // }
 const insertMarkdownImage = (base64: string) => {
-  const position = editor.value.getPosition()
-  console.log('Current position:', position)
-  console.log('Base64:', base64)
+  const position = editor.value.getPosition();
+  console.log('Current position:', position);
+  console.log('Base64:', base64);
   // 简单插入测试文本
   const insertRange = new Range(
-    position.lineNumber,    // 起始行
-    position.column,        // 起始列
-    position.lineNumber,    // 结束行
-    position.column         // 结束列
-  )
+    position.lineNumber, // 起始行
+    position.column, // 起始列
+    position.lineNumber, // 结束行
+    position.column, // 结束列
+  );
 
-  console.log('Insert Range:', insertRange)
-  console.log('Starting insert...')
+  console.log('Insert Range:', insertRange);
+  console.log('Starting insert...');
 
   // 只插入测试文本
-  editor.value.executeEdits('test-insert', [{
-    range: insertRange,
-    text: '123Test'
-  }])
+  editor.value.executeEdits('test-insert', [
+    {
+      range: insertRange,
+      text: '123Test',
+    },
+  ]);
 
-  console.log('Insert completed')
-}
+  console.log('Insert completed');
+};
 // 处理图片粘贴
 // const handleImagePaste = async (imageBlob: Blob) => {
 //   if (!props.path) return
@@ -210,7 +222,7 @@ const insertMarkdownImage = (base64: string) => {
 //     if (result) {
 //       // 获取当前光标位置
 //       const position = editor.value.getPosition()
-//       console.log(position) 
+//       console.log(position)
 //       // 在光标位置插入 Markdown 图片链接
 //       // editor.value.executeEdits('image-paste', [{
 //       //   range: new monacoEditor.Range(
@@ -228,82 +240,84 @@ const insertMarkdownImage = (base64: string) => {
 // }
 // 计算属性
 const renderedContent = computed(() => {
-  return md.render(content.value || '')
-  
-})
+  return md.render(content.value || '');
+});
 
 // 加载文件内容
 const loadFileContent = async () => {
   try {
-    const fileContent = await fileSystem.readFile(props.path)
-    content.value = fileContent
-    originalContent = fileContent
+    const fileContent = await fileSystem.readFile(props.path);
+    content.value = fileContent;
+    originalContent = fileContent;
   } catch (error) {
-    console.error('读取文件失败:', error)
-    content.value = ''
-    originalContent = ''
+    console.error('读取文件失败:', error);
+    content.value = '';
+    originalContent = '';
   }
-}
+};
 
 // 检查内容是否有更改
 const checkDirtyState = () => {
-  const isDirty = content.value !== originalContent
-  emit('contentChanged', isDirty)
-}
+  const isDirty = content.value !== originalContent;
+  emit('contentChanged', isDirty);
+};
 // 保存内容
 const saveContent = async () => {
-  if (!props.path) return
+  if (!props.path) return;
 
   try {
-    await fileSystem.writeFile(props.path, content.value)
-    originalContent = content.value
-    emit('contentChanged', false)
+    await fileSystem.writeFile(props.path, content.value);
+    originalContent = content.value;
+    emit('contentChanged', false);
   } catch (error) {
-    console.error('保存文件失败:', error)
-    alert('保存失败')
+    console.error('保存文件失败:', error);
+    alert('保存失败');
   }
-}
+};
 // 监听内容变化
 watch(content, () => {
-  checkDirtyState()
+  checkDirtyState();
 
   if (autoSaveEnabled.value) {
     if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer)
+      clearTimeout(autoSaveTimer);
     }
-    
+
     autoSaveTimer = setTimeout(async () => {
       if (content.value !== originalContent) {
-        await saveContent()
-        originalContent = content.value // Update original content after save
+        await saveContent();
+        originalContent = content.value; // Update original content after save
       }
-    }, autoSaveDelay.value)
+    }, autoSaveDelay.value);
   }
-})
-
+});
 
 // 监听路径变化重新加载内容
-watch(() => props.path, () => {
-  loadFileContent()
-}, { immediate: true })
+watch(
+  () => props.path,
+  () => {
+    loadFileContent();
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   if (props.path && !props.initialContent) {
     try {
-      const fileContent = await fileSystem.readFile(props.path)
-      content.value = fileContent
+      const fileContent = await fileSystem.readFile(props.path);
+      content.value = fileContent;
     } catch (error) {
-      console.error('读取文件失败:', error)
-      content.value = ''
+      console.error('读取文件失败:', error);
+      content.value = '';
     }
   }
-})
+});
 
 onUnmounted(() => {
   if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer)
+    clearTimeout(autoSaveTimer);
   }
-})
+});
 </script>
 
 <style scoped>
@@ -313,7 +327,6 @@ onUnmounted(() => {
   flex-direction: column;
   background-color: #3b3a8d;
   overflow: hidden; /* 添加这行 */
-
 }
 
 .toolbar {
@@ -341,7 +354,6 @@ onUnmounted(() => {
 }
 
 .preview-area {
-
   background-color: var(--vscode-editor-background);
 
   /* 添加滚动条样式 */
@@ -374,12 +386,13 @@ onUnmounted(() => {
   min-width: 200px;
   /* max-width: 980px; */
   margin: 0 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
   font-size: 16px;
   line-height: 1.5;
   /* 编辑器字体颜色 */
   color: rgb(var(--v-theme-font));
-  
 }
 
 :deep(.markdown-body h1) {

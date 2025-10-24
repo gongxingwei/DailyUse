@@ -1,11 +1,10 @@
-import type { Database } from "better-sqlite3";
-import { getDatabase } from "../../../../shared/database/index";
+import type { Database } from 'better-sqlite3';
+import { getDatabase } from '../../../../shared/database/index';
 // interfaces
-import type { ITaskTemplateRepository } from "../../domain/repositories/iTaskTemplateRepository";
-import { ITaskTemplateDTO } from "@common/modules/task/types/task";
+import type { ITaskTemplateRepository } from '../../domain/repositories/iTaskTemplateRepository';
+import { ITaskTemplateDTO } from '@common/modules/task/types/task';
 // domains
-import { TaskTemplate } from "../../domain/aggregates/taskTemplate";
-
+import { TaskTemplate } from '../../domain/aggregates/taskTemplate';
 
 /**
  * TaskTemplate 数据库仓库实现
@@ -30,7 +29,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   private mapTemplateToRow(template: TaskTemplate, accountUuid: string): any {
     try {
       const templateDTO: ITaskTemplateDTO = template.toDTO();
-      console.log("✅ [数据库仓库] template.toDTO()调用成功");
+      console.log('✅ [数据库仓库] template.toDTO()调用成功');
 
       const record = {
         uuid: templateDTO.uuid,
@@ -54,7 +53,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
       };
       return record;
     } catch (error) {
-      console.error("❌ [数据库仓库] toDbRecord过程中发生错误:", error);
+      console.error('❌ [数据库仓库] toDbRecord过程中发生错误:', error);
       throw error;
     }
   }
@@ -81,23 +80,21 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         metadata: JSON.parse(record.metadata),
         lifecycle: lifecycleDTO,
         analytics: JSON.parse(record.analytics),
-        keyResultLinks: record.key_result_links
-          ? JSON.parse(record.key_result_links)
-          : undefined,
+        keyResultLinks: record.key_result_links ? JSON.parse(record.key_result_links) : undefined,
         version: record.version,
       };
 
-      console.log("🔍 [数据库仓库] 解析后的数据:", templateData);
+      console.log('🔍 [数据库仓库] 解析后的数据:', templateData);
 
       const template = TaskTemplate.fromDTO(templateData);
-      console.log("✅ [数据库仓库] TaskTemplate.fromDTO()调用成功");
+      console.log('✅ [数据库仓库] TaskTemplate.fromDTO()调用成功');
 
       return template;
     } catch (error) {
-      console.error("❌ [数据库仓库] fromDbRecord过程中发生错误:", error);
+      console.error('❌ [数据库仓库] fromDbRecord过程中发生错误:', error);
       console.error(
-        "❌ [数据库仓库] 错误堆栈:",
-        error instanceof Error ? error.stack : "No stack trace"
+        '❌ [数据库仓库] 错误堆栈:',
+        error instanceof Error ? error.stack : 'No stack trace',
       );
       throw error;
     }
@@ -107,16 +104,13 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
    * 保存 TaskTemplate
    * 流程第4步：数据库仓库 - 将领域实体保存到数据库
    */
-  async save(
-    accountUuid: string,
-    template: TaskTemplate
-  ): Promise<TaskTemplate> {
-    console.log("🔄 [主进程-步骤4] 数据库仓库：开始保存TaskTemplate");
+  async save(accountUuid: string, template: TaskTemplate): Promise<TaskTemplate> {
+    console.log('🔄 [主进程-步骤4] 数据库仓库：开始保存TaskTemplate');
 
     try {
       const db = await this.getDB();
       const record = this.mapTemplateToRow(template, accountUuid);
-      console.log("✅ [主进程-步骤4] 实体转换为数据库记录成功");
+      console.log('✅ [主进程-步骤4] 实体转换为数据库记录成功');
 
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO task_templates (
@@ -127,7 +121,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      console.log("🔄 [主进程-步骤4] 执行数据库插入操作");
+      console.log('🔄 [主进程-步骤4] 执行数据库插入操作');
       stmt.run(
         record.uuid,
         record.account_uuid,
@@ -144,14 +138,14 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         record.paused_at,
         record.analytics,
         record.key_result_links,
-        record.version
+        record.version,
       );
 
       const savedTemplate = this.mapRowToTemplate(record);
 
       return savedTemplate;
     } catch (error) {
-      console.error("❌ [主进程-步骤4] 保存TaskTemplate过程中发生错误:", error);
+      console.error('❌ [主进程-步骤4] 保存TaskTemplate过程中发生错误:', error);
       return null as any;
     }
   }
@@ -159,10 +153,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 批量保存 TaskTemplate
    */
-  async saveAll(
-    accountUuid: string,
-    templates: TaskTemplate[]
-  ): Promise<boolean> {
+  async saveAll(accountUuid: string, templates: TaskTemplate[]): Promise<boolean> {
     try {
       const db = await this.getDB();
 
@@ -194,7 +185,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
             record.paused_at,
             record.analytics,
             record.key_result_links,
-            record.version
+            record.version,
           );
         }
       });
@@ -203,7 +194,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
 
       return true;
     } catch (error) {
-      console.error("批量保存 TaskTemplate 失败:", error);
+      console.error('批量保存 TaskTemplate 失败:', error);
       return false;
     }
   }
@@ -211,10 +202,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 根据 ID 查找 TaskTemplate
    */
-  async findById(
-    accountUuid: string,
-    uuid: string
-  ): Promise<TaskTemplate> {
+  async findById(accountUuid: string, uuid: string): Promise<TaskTemplate> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
@@ -226,13 +214,12 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
 
       if (record) {
         const template = this.mapRowToTemplate(record);
-          return template;
+        return template;
       } else {
         return null as any;
-
       }
     } catch (error) {
-      console.error("查找 TaskTemplate 失败:", error);
+      console.error('查找 TaskTemplate 失败:', error);
       return null as any;
     }
   }
@@ -254,18 +241,15 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
 
       return templates;
     } catch (error) {
-      console.error("获取所有 TaskTemplate 失败:", error);
-      return [] as any;  
+      console.error('获取所有 TaskTemplate 失败:', error);
+      return [] as any;
     }
   }
 
   /**
    * 更新 TaskTemplate
    */
-  async update(
-    accountUuid: string,
-    template: TaskTemplate
-  ): Promise<TaskTemplate> {
+  async update(accountUuid: string, template: TaskTemplate): Promise<TaskTemplate> {
     try {
       const db = await this.getDB();
       const record = this.mapTemplateToRow(template, accountUuid);
@@ -298,13 +282,13 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         record.account_uuid,
       );
       if (result.changes === 0) {
-        console.warn("没有更新任何记录，可能是因为数据没有变化");
+        console.warn('没有更新任何记录，可能是因为数据没有变化');
         return null as any;
       }
 
       return this.mapRowToTemplate(record);
     } catch (error) {
-      console.error("更新 TaskTemplate 失败:", error);
+      console.error('更新 TaskTemplate 失败:', error);
       return null as any;
     }
   }
@@ -323,9 +307,8 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
       const result = stmt.run(uuid, accountUuid);
 
       return result.changes > 0;
-           
     } catch (error) {
-      console.error("删除 TaskTemplate 失败:", error);
+      console.error('删除 TaskTemplate 失败:', error);
       return false;
     }
   }
@@ -336,7 +319,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   async findByKeyResult(
     accountUuid: string,
     goalUuid: string,
-    keyResultId: string
+    keyResultId: string,
   ): Promise<TaskTemplate[]> {
     try {
       const db = await this.getDB();
@@ -349,14 +332,14 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
       const records = stmt.all(
         accountUuid,
         `%"goalUuid":"${goalUuid}"%`,
-        `%"keyResultId":"${keyResultId}"%`
+        `%"keyResultId":"${keyResultId}"%`,
       );
 
       const templates = records.map((record) => this.mapRowToTemplate(record));
 
       return templates;
     } catch (error) {
-      console.error("根据关键结果查找 TaskTemplate 失败:", error);
+      console.error('根据关键结果查找 TaskTemplate 失败:', error);
       return [] as any;
     }
   }

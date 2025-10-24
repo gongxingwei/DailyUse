@@ -30,7 +30,7 @@ Scenario: 实现创建快照方法
   And 应该创建 KeyResultWeightSnapshot 实例
   And 应该保存快照到仓储
   And 应该返回创建的快照
-  
+
   Examples:
   | goalUuid | krUuid | oldWeight | newWeight | trigger | Result     |
   | valid-id | kr-id  | 30        | 50        | manual  | Success    |
@@ -46,7 +46,7 @@ Scenario: 校验所有 KR 权重总和 = 100%
   Then 应该计算所有 KR 的权重总和
   And 如果总和 = 100 则返回 true
   And 如果总和 ≠ 100 则返回 false
-  
+
   Examples:
   | KR1 Weight | KR2 Weight | KR3 Weight | Total | Valid |
   | 30         | 40         | 30         | 100   | true  |
@@ -66,7 +66,7 @@ Scenario: 更新 KR 权重时自动创建快照
   And 应该校验所有 KR 权重总和 = 100%
   And 如果总和 ≠ 100 则抛出 InvalidWeightSumError
   And 应该保存 Goal 聚合根
-  
+
 Scenario: 权重总和校验失败时回滚
   Given 更新 KR 权重导致总和 ≠ 100
   When 权重总和校验失败
@@ -84,13 +84,13 @@ Scenario: 查询 Goal 的所有权重快照
   Then 应该返回该 Goal 的所有快照
   And 应该按时间倒序排列（最新的在前）
   And 应该支持分页参数 (page, pageSize)
-  
+
 Scenario: 查询特定 KR 的权重快照
   Given 一个 KeyResult 有多个权重快照
   When 调用 getSnapshotsByKeyResult(krUuid) 方法
   Then 应该返回该 KR 的所有快照
   And 应该按时间倒序排列
-  
+
 Scenario: 查询特定时间范围的快照
   Given 需要查看某段时间内的权重变更
   When 调用 getSnapshotsByTimeRange(startTime, endTime) 方法
@@ -106,21 +106,21 @@ Scenario: 测试 createSnapshot 方法
   When 调用 createSnapshot() 使用有效数据
   Then 应该成功创建快照
   And Repository.save() 应该被调用一次
-  
+
 Scenario: 测试 Goal 不存在场景
   Given Goal UUID 无效
   When 调用 createSnapshot()
   Then 应该抛出 GoalNotFoundError
-  
+
 Scenario: 测试权重总和校验
   Given 一个 Goal 有 3 个 KRs: [30, 40, 30]
   When 调用 validateWeightSum()
   Then 应该返回 true
-  
+
   Given 一个 Goal 有 3 个 KRs: [30, 40, 25]
   When 调用 validateWeightSum()
   Then 应该返回 false
-  
+
 Scenario: 集成测试 - 完整权重更新流程
   Given 一个完整的 Goal 聚合根
   When 更新 KR 权重从 30 到 40
@@ -195,6 +195,7 @@ Scenario: 集成测试 - 完整权重更新流程
 ### WeightSnapshotApplicationService 代码示例
 
 **apps/api/src/application/goal/WeightSnapshotApplicationService.ts**:
+
 ```typescript
 import type { GoalRepository } from '../../domain/goal/repositories/GoalRepository';
 import type { WeightSnapshotRepository } from '../../domain/goal/repositories/WeightSnapshotRepository';
@@ -219,18 +220,18 @@ export interface SnapshotQueryOptions {
 
 /**
  * 权重快照应用服务
- * 
+ *
  * 负责权重快照的创建、查询和权重总和校验。
  */
 export class WeightSnapshotApplicationService {
   constructor(
     private readonly goalRepository: GoalRepository,
-    private readonly snapshotRepository: WeightSnapshotRepository
+    private readonly snapshotRepository: WeightSnapshotRepository,
   ) {}
 
   /**
    * 创建权重快照
-   * 
+   *
    * @param dto - 快照创建数据
    * @returns 创建的快照实例
    * @throws {GoalNotFoundError} Goal 不存在
@@ -244,7 +245,7 @@ export class WeightSnapshotApplicationService {
     }
 
     // 2. 验证 KR 存在
-    const kr = goal.keyResults.find(k => k.uuid === dto.krUuid);
+    const kr = goal.keyResults.find((k) => k.uuid === dto.krUuid);
     if (!kr) {
       throw new KeyResultNotFoundError(dto.krUuid, dto.goalUuid);
     }
@@ -259,7 +260,7 @@ export class WeightSnapshotApplicationService {
       Date.now(),
       dto.trigger,
       dto.operatorUuid,
-      dto.reason
+      dto.reason,
     );
 
     // 4. 保存快照
@@ -270,7 +271,7 @@ export class WeightSnapshotApplicationService {
 
   /**
    * 校验 Goal 中所有 KR 的权重总和是否为 100%
-   * 
+   *
    * @param goalUuid - Goal UUID
    * @returns true 如果总和 = 100, false 否则
    * @throws {GoalNotFoundError} Goal 不存在
@@ -281,47 +282,40 @@ export class WeightSnapshotApplicationService {
       throw new GoalNotFoundError(goalUuid);
     }
 
-    const totalWeight = goal.keyResults.reduce(
-      (sum, kr) => sum + kr.weight,
-      0
-    );
+    const totalWeight = goal.keyResults.reduce((sum, kr) => sum + kr.weight, 0);
 
     return Math.abs(totalWeight - 100) < 0.01; // 浮点数精度处理
   }
 
   /**
    * 查询 Goal 的所有权重快照
-   * 
+   *
    * @param goalUuid - Goal UUID
    * @param options - 查询选项 (分页)
    * @returns 快照列表 (按时间倒序)
    */
   async getSnapshotsByGoal(
     goalUuid: string,
-    options: SnapshotQueryOptions = {}
+    options: SnapshotQueryOptions = {},
   ): Promise<{ snapshots: KeyResultWeightSnapshot[]; total: number }> {
     const page = options.page ?? 1;
     const pageSize = options.pageSize ?? 20;
 
-    const { snapshots, total } = await this.snapshotRepository.findByGoal(
-      goalUuid,
-      page,
-      pageSize
-    );
+    const { snapshots, total } = await this.snapshotRepository.findByGoal(goalUuid, page, pageSize);
 
     return { snapshots, total };
   }
 
   /**
    * 查询 KeyResult 的所有权重快照
-   * 
+   *
    * @param krUuid - KeyResult UUID
    * @param options - 查询选项 (分页)
    * @returns 快照列表 (按时间倒序)
    */
   async getSnapshotsByKeyResult(
     krUuid: string,
-    options: SnapshotQueryOptions = {}
+    options: SnapshotQueryOptions = {},
   ): Promise<{ snapshots: KeyResultWeightSnapshot[]; total: number }> {
     const page = options.page ?? 1;
     const pageSize = options.pageSize ?? 20;
@@ -329,7 +323,7 @@ export class WeightSnapshotApplicationService {
     const { snapshots, total } = await this.snapshotRepository.findByKeyResult(
       krUuid,
       page,
-      pageSize
+      pageSize,
     );
 
     return { snapshots, total };
@@ -337,7 +331,7 @@ export class WeightSnapshotApplicationService {
 
   /**
    * 查询时间范围内的权重快照
-   * 
+   *
    * @param startTime - 开始时间戳
    * @param endTime - 结束时间戳
    * @param options - 查询选项 (分页)
@@ -346,7 +340,7 @@ export class WeightSnapshotApplicationService {
   async getSnapshotsByTimeRange(
     startTime: number,
     endTime: number,
-    options: SnapshotQueryOptions = {}
+    options: SnapshotQueryOptions = {},
   ): Promise<{ snapshots: KeyResultWeightSnapshot[]; total: number }> {
     const page = options.page ?? 1;
     const pageSize = options.pageSize ?? 20;
@@ -355,7 +349,7 @@ export class WeightSnapshotApplicationService {
       startTime,
       endTime,
       page,
-      pageSize
+      pageSize,
     );
 
     return { snapshots, total };
@@ -366,20 +360,17 @@ export class WeightSnapshotApplicationService {
 ### InvalidWeightSumError 实现
 
 **apps/api/src/application/goal/errors/InvalidWeightSumError.ts**:
+
 ```typescript
 import { ApplicationError } from '@dailyuse/utils';
 
 export class InvalidWeightSumError extends ApplicationError {
-  constructor(
-    goalUuid: string,
-    actualSum: number,
-    weights: Record<string, number>
-  ) {
+  constructor(goalUuid: string, actualSum: number, weights: Record<string, number>) {
     super(
       'INVALID_WEIGHT_SUM',
       `Invalid weight sum for Goal ${goalUuid}: ${actualSum} (expected 100). KR weights: ${JSON.stringify(weights)}`,
       { goalUuid, actualSum, expectedSum: 100, weights },
-      400
+      400,
     );
   }
 }
@@ -388,6 +379,7 @@ export class InvalidWeightSumError extends ApplicationError {
 ### 集成到 UpdateKeyResultService
 
 **apps/api/src/application/goal/UpdateKeyResultService.ts** (部分代码):
+
 ```typescript
 import { WeightSnapshotApplicationService } from './WeightSnapshotApplicationService';
 import { InvalidWeightSumError } from './errors/InvalidWeightSumError';
@@ -395,19 +387,19 @@ import { InvalidWeightSumError } from './errors/InvalidWeightSumError';
 export class UpdateKeyResultService {
   constructor(
     private readonly goalRepository: GoalRepository,
-    private readonly snapshotService: WeightSnapshotApplicationService
+    private readonly snapshotService: WeightSnapshotApplicationService,
   ) {}
 
   /**
    * 更新 KR 权重
-   * 
+   *
    * 自动创建权重快照并校验权重总和。
    */
   async updateWeight(
     krUuid: string,
     newWeight: number,
     operatorUuid: string,
-    reason?: string
+    reason?: string,
   ): Promise<void> {
     // 1. 查找 Goal 和 KR
     const goal = await this.goalRepository.findByKeyResultUuid(krUuid);
@@ -415,7 +407,7 @@ export class UpdateKeyResultService {
       throw new Error('Goal not found for KR');
     }
 
-    const kr = goal.keyResults.find(k => k.uuid === krUuid);
+    const kr = goal.keyResults.find((k) => k.uuid === krUuid);
     if (!kr) {
       throw new KeyResultNotFoundError(krUuid, goal.uuid);
     }
@@ -441,13 +433,11 @@ export class UpdateKeyResultService {
     if (!isValid) {
       // 回滚: 恢复旧权重
       kr.updateWeight(oldWeight);
-      
+
       // 计算实际总和用于错误信息
       const actualSum = goal.keyResults.reduce((sum, k) => sum + k.weight, 0);
-      const weights = Object.fromEntries(
-        goal.keyResults.map(k => [k.title, k.weight])
-      );
-      
+      const weights = Object.fromEntries(goal.keyResults.map((k) => [k.title, k.weight]));
+
       throw new InvalidWeightSumError(goal.uuid, actualSum, weights);
     }
 
@@ -462,6 +452,7 @@ export class UpdateKeyResultService {
 ## ✅ Definition of Done
 
 ### 功能完整性
+
 - [ ] WeightSnapshotApplicationService 实现完成
 - [ ] createSnapshot() 方法实现并测试
 - [ ] validateWeightSum() 方法实现并测试
@@ -469,22 +460,26 @@ export class UpdateKeyResultService {
 - [ ] 集成到 UpdateKeyResultService 完成
 
 ### 代码质量
+
 - [ ] TypeScript strict 模式无错误
 - [ ] ESLint 无警告
 - [ ] 所有公共方法有 JSDoc 注释
 - [ ] 单元测试覆盖率 ≥ 80%
 
 ### 测试
+
 - [ ] 所有单元测试通过
 - [ ] 集成测试通过
 - [ ] 测试覆盖权重总和校验所有场景
 - [ ] 测试覆盖事务回滚场景
 
 ### 文档
+
 - [ ] 方法签名清晰
 - [ ] JSDoc 注释完整
 
 ### Code Review
+
 - [ ] Code Review 完成
 - [ ] Code Review 反馈已解决
 
@@ -492,15 +487,15 @@ export class UpdateKeyResultService {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| WeightSnapshotApplicationService 开发 | 2 小时 |
-| UpdateKeyResultService 集成 | 1.5 小时 |
-| InvalidWeightSumError 实现 | 0.5 小时 |
-| 单元测试编写 | 2 小时 |
-| 集成测试编写 | 1.5 小时 |
-| Code Review & 修复 | 1 小时 |
-| **总计** | **8.5 小时** |
+| 任务                                  | 预估时间     |
+| ------------------------------------- | ------------ |
+| WeightSnapshotApplicationService 开发 | 2 小时       |
+| UpdateKeyResultService 集成           | 1.5 小时     |
+| InvalidWeightSumError 实现            | 0.5 小时     |
+| 单元测试编写                          | 2 小时       |
+| 集成测试编写                          | 1.5 小时     |
+| Code Review & 修复                    | 1 小时       |
+| **总计**                              | **8.5 小时** |
 
 **Story Points**: 3 SP
 
@@ -509,9 +504,11 @@ export class UpdateKeyResultService {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - STORY-GOAL-002-001 (Contracts & Domain 层) - 必须完成
 
 ### 下游依赖
+
 - STORY-GOAL-002-004 (API Endpoints) 依赖此 Story
 - STORY-GOAL-002-005 (客户端服务) 间接依赖
 
@@ -520,12 +517,14 @@ export class UpdateKeyResultService {
 ## 🚨 风险与注意事项
 
 ### 技术风险
+
 1. **事务处理**: 快照创建和权重更新需要在同一事务中
    - 缓解: 使用数据库事务或实现补偿机制
 2. **并发更新**: 多用户同时更新权重可能导致总和校验失败
    - 缓解: 使用乐观锁（版本号）
 
 ### 业务风险
+
 1. **权重总和校验时机**: 何时校验（更新前 vs 更新后）
    - 决策: 更新后校验，失败则回滚
 

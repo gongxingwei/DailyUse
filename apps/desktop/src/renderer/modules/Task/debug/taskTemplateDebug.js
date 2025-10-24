@@ -17,21 +17,21 @@ const testTaskTemplateData = {
     unit: 'minutes',
     startTime: null,
     endTime: null,
-    timeSlots: []
+    timeSlots: [],
   },
   reminderConfig: {
     enabled: true,
     advanceTime: 10,
     advanceUnit: 'minutes',
     sound: true,
-    popup: true
+    popup: true,
   },
   schedulingPolicy: {
     allowReschedule: true,
     maxDelayDays: 3,
     skipWeekends: false,
     skipHolidays: false,
-    workingHoursOnly: false
+    workingHoursOnly: false,
   },
   metadata: {
     category: '测试',
@@ -39,27 +39,27 @@ const testTaskTemplateData = {
     priority: 'medium',
     difficulty: 'easy',
     estimatedDuration: 30,
-    location: '办公室'
+    location: '办公室',
   },
   lifecycle: {
     status: 'draft',
     createdAt: {
       isoString: new Date().toISOString(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     },
     updatedAt: {
       isoString: new Date().toISOString(),
-      timestamp: Date.now()
-    }
+      timestamp: Date.now(),
+    },
   },
   analytics: {
     completionRate: 0,
     averageCompletionTime: 0,
     totalCompletions: 0,
-    lastCompletedAt: null
+    lastCompletedAt: null,
   },
   keyResultLinks: [],
-  version: 1
+  version: 1,
 };
 
 /**
@@ -67,14 +67,14 @@ const testTaskTemplateData = {
  */
 function testSerialization() {
   console.log('🧪 开始测试序列化功能');
-  
+
   try {
     const serialized = JSON.stringify(testTaskTemplateData);
     console.log('✅ 测试数据可序列化，字符串长度:', serialized.length);
-    
+
     const deserialized = JSON.parse(serialized);
     console.log('✅ 测试数据可反序列化');
-    
+
     return true;
   } catch (error) {
     console.error('❌ 序列化测试失败:', error);
@@ -87,34 +87,33 @@ function testSerialization() {
  */
 async function testTaskTemplateCreation() {
   console.log('🧪 开始测试任务模板创建流程');
-  
+
   // 首先测试序列化
   if (!testSerialization()) {
     console.error('❌ 序列化测试失败，终止测试');
     return;
   }
-  
+
   try {
     // 获取任务IPC客户端（假设已经初始化）
     if (!window.taskIpcClient) {
       console.error('❌ taskIpcClient 未初始化');
       return;
     }
-    
+
     console.log('🔄 调用任务模板创建API');
     const result = await window.taskIpcClient.createTaskTemplate(testTaskTemplateData);
-    
+
     console.log('📋 任务模板创建结果:', result);
-    
+
     if (result.success) {
       console.log('✅ 任务模板创建成功');
     } else {
       console.error('❌ 任务模板创建失败:', result.message);
     }
-    
   } catch (error) {
     console.error('❌ 任务模板创建过程中发生错误:', error);
-    
+
     // 检查是否是克隆错误
     if (error instanceof Error && error.message.includes('could not be cloned')) {
       console.error('🚨 检测到克隆错误 - 这表明存在不可序列化的对象');
@@ -131,11 +130,11 @@ async function testTaskTemplateCreation() {
  */
 async function debugStepByStep() {
   console.log('🧪 开始分步调试');
-  
+
   // 步骤1：测试序列化
   console.log('📋 步骤1：测试基础序列化');
   testSerialization();
-  
+
   // 步骤2：测试serializeForIpc函数
   console.log('📋 步骤2：测试serializeForIpc函数');
   try {
@@ -148,12 +147,12 @@ async function debugStepByStep() {
   } catch (error) {
     console.error('❌ serializeForIpc 调用失败:', error);
   }
-  
+
   // 步骤3：测试IPC客户端
   console.log('📋 步骤3：测试IPC客户端');
   if (window.taskIpcClient) {
     console.log('✅ taskIpcClient 可用');
-    
+
     // 可以在这里添加更多具体的测试
   } else {
     console.error('❌ taskIpcClient 不可用');
@@ -166,9 +165,9 @@ if (typeof window !== 'undefined') {
     testSerialization,
     testTaskTemplateCreation,
     debugStepByStep,
-    testData: testTaskTemplateData
+    testData: testTaskTemplateData,
   };
-  
+
   console.log('🧪 任务模板调试工具已加载');
   console.log('💡 使用方法：');
   console.log('  - window.debugTaskTemplate.testSerialization() - 测试序列化');

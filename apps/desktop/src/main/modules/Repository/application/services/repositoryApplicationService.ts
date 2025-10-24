@@ -1,23 +1,21 @@
-import { IRepositoryRepository } from "../../domain/repositories/iRepositoryRepository";
-import { Repository } from "../../domain/aggregates/repository";
-import { SqliteRepositoryRepository } from "../../infrastructure/repositories/sqliteRepositoryRepository";
-import { repositoryContainer } from "../../infrastructure/di/repositoryContainer";
+import { IRepositoryRepository } from '../../domain/repositories/iRepositoryRepository';
+import { Repository } from '../../domain/aggregates/repository';
+import { SqliteRepositoryRepository } from '../../infrastructure/repositories/sqliteRepositoryRepository';
+import { repositoryContainer } from '../../infrastructure/di/repositoryContainer';
 
 export class RepositoryApplicationService {
   private static _repositoryApplicationService: RepositoryApplicationService;
   private repositoryRepository: IRepositoryRepository;
 
   constructor(repositoryRepository?: IRepositoryRepository) {
-    this.repositoryRepository =
-      repositoryRepository || new SqliteRepositoryRepository();
+    this.repositoryRepository = repositoryRepository || new SqliteRepositoryRepository();
   }
 
   static createRepositoryApplicationService(
-    repositoryRepository?: IRepositoryRepository
+    repositoryRepository?: IRepositoryRepository,
   ): RepositoryApplicationService {
     const repoRepository =
-      repositoryRepository ||
-      repositoryContainer.getSqliteRepositoryRepository();
+      repositoryRepository || repositoryContainer.getSqliteRepositoryRepository();
     return new RepositoryApplicationService(repoRepository);
   }
 
@@ -41,14 +39,8 @@ export class RepositoryApplicationService {
     await this.repositoryRepository.removeRepository(accountUuid, repositoryId);
   }
 
-  async findById(
-    accountUuid: string,
-    repositoryId: string
-  ): Promise<Repository | null> {
-    return await this.repositoryRepository.getRepositoryById(
-      accountUuid,
-      repositoryId
-    );
+  async findById(accountUuid: string, repositoryId: string): Promise<Repository | null> {
+    return await this.repositoryRepository.getRepositoryById(accountUuid, repositoryId);
   }
 
   async findAll(accountUuid: string): Promise<Repository[]> {

@@ -4,6 +4,7 @@
 > SSE 连接已改为**用户级别连接**，在用户登录后才建立。每个连接使用用户的 `accountUuid` 作为客户端标识，支持针对特定用户的事件推送。
 
 ## 📚 目录
+
 1. [什么是 SSE](#什么是-sse)
 2. [SSE vs WebSocket vs 轮询](#sse-vs-websocket-vs-轮询)
 3. [DailyUse 项目中的 SSE 架构](#dailyuse-项目中的-sse-架构)
@@ -50,6 +51,7 @@ data: some text data
 ```
 
 **格式规则：**
+
 - `event:` 事件名称（可选，默认为 `message`）
 - `data:` 事件数据（必需）
 - `id:` 事件ID（可选，用于重连时续传）
@@ -62,20 +64,21 @@ data: some text data
 
 ### 对比表格
 
-| 特性 | SSE | WebSocket | 轮询 |
-|-----|-----|-----------|-----|
-| **通信方向** | 单向（服务器→客户端） | 双向 | 请求-响应 |
-| **协议** | HTTP | WebSocket (ws://) | HTTP |
-| **复杂度** | 简单 | 中等 | 简单 |
-| **浏览器支持** | 原生支持 | 原生支持 | 全部支持 |
-| **自动重连** | ✅ 浏览器原生支持 | ❌ 需要自己实现 | ❌ 需要自己实现 |
-| **实时性** | 高 | 最高 | 低 |
-| **服务器压力** | 低 | 中 | 高（频繁请求） |
-| **适用场景** | 通知、状态更新、实时数据流 | 聊天、游戏、协作编辑 | 简单的定时更新 |
+| 特性           | SSE                        | WebSocket            | 轮询            |
+| -------------- | -------------------------- | -------------------- | --------------- |
+| **通信方向**   | 单向（服务器→客户端）      | 双向                 | 请求-响应       |
+| **协议**       | HTTP                       | WebSocket (ws://)    | HTTP            |
+| **复杂度**     | 简单                       | 中等                 | 简单            |
+| **浏览器支持** | 原生支持                   | 原生支持             | 全部支持        |
+| **自动重连**   | ✅ 浏览器原生支持          | ❌ 需要自己实现      | ❌ 需要自己实现 |
+| **实时性**     | 高                         | 最高                 | 低              |
+| **服务器压力** | 低                         | 中                   | 高（频繁请求）  |
+| **适用场景**   | 通知、状态更新、实时数据流 | 聊天、游戏、协作编辑 | 简单的定时更新  |
 
 ### 何时使用 SSE
 
 ✅ **适合使用 SSE 的场景：**
+
 - 服务器向客户端推送通知
 - 实时状态更新（股票价格、任务进度）
 - 日志流式传输
@@ -83,6 +86,7 @@ data: some text data
 - **我们的场景：调度任务提醒和事件通知**
 
 ❌ **不适合使用 SSE 的场景：**
+
 - 需要客户端频繁向服务器发送数据
 - 需要双向实时通信（聊天应用）
 - 需要传输二进制数据（文件、图片）
@@ -204,7 +208,7 @@ interface SSEClient {
 export class SSEController {
   // 存储所有连接的客户端
   private clients = new Map<string, SSEClient>();
-  
+
   // 心跳间隔（30秒）
   private heartbeatInterval: NodeJS.Timeout | null = null;
 
@@ -223,11 +227,11 @@ export class SSEController {
 
     // 设置 SSE 必需的响应头
     res.writeHead(200, {
-      'Content-Type': 'text/event-stream',        // SSE MIME类型
-      'Cache-Control': 'no-cache',                // 禁止缓存
-      'Connection': 'keep-alive',                 // 保持连接
-      'Access-Control-Allow-Origin': '*',         // CORS支持
-      'X-Accel-Buffering': 'no',                  // Nginx配置：禁用缓冲
+      'Content-Type': 'text/event-stream', // SSE MIME类型
+      'Cache-Control': 'no-cache', // 禁止缓存
+      Connection: 'keep-alive', // 保持连接
+      'Access-Control-Allow-Origin': '*', // CORS支持
+      'X-Accel-Buffering': 'no', // Nginx配置：禁用缓冲
     });
 
     // 保存客户端连接
@@ -283,7 +287,7 @@ export class SSEController {
     });
 
     // 清理死连接
-    deadClients.forEach(id => this.clients.delete(id));
+    deadClients.forEach((id) => this.clients.delete(id));
   }
 
   /**
@@ -335,7 +339,7 @@ export class SSEController {
   private startHeartbeat(): void {
     this.heartbeatInterval = setInterval(() => {
       const now = new Date();
-      
+
       this.broadcast('heartbeat', {
         timestamp: now.toISOString(),
         clients: this.clients.size,
@@ -352,7 +356,7 @@ export class SSEController {
         }
       });
 
-      deadClients.forEach(id => {
+      deadClients.forEach((id) => {
         console.log(`[SSE] 清理超时客户端: ${id}`);
         this.clients.delete(id);
       });
@@ -406,23 +410,29 @@ import scheduleRoutes from './modules/schedule/interface/http/routes';
 const app = express();
 
 // CORS 配置（SSE 必需）
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
-}));
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
+  }),
+);
 
 // 挂载 Schedule 路由
 // ⚠️ SSE 端点不需要认证，避免 token 过期导致连接断开
-app.use('/api/v1/schedules', (req, res, next) => {
-  // SSE 端点跳过认证
-  if (req.path.startsWith('/events')) {
-    return next();
-  }
-  // 其他端点需要认证
-  return authMiddleware(req, res, next);
-}, scheduleRoutes);
+app.use(
+  '/api/v1/schedules',
+  (req, res, next) => {
+    // SSE 端点跳过认证
+    if (req.path.startsWith('/events')) {
+      return next();
+    }
+    // 其他端点需要认证
+    return authMiddleware(req, res, next);
+  },
+  scheduleRoutes,
+);
 
 export default app;
 ```
@@ -441,12 +451,12 @@ import { eventBus } from '@dailyuse/utils';
 export class SSEClient {
   // EventSource 对象（浏览器原生API）
   private eventSource: EventSource | null = null;
-  
+
   // 重连参数
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000; // 初始延迟 1秒
-  
+
   // 连接状态
   private isConnecting = false;
   private isDestroyed = false;
@@ -479,12 +489,12 @@ export class SSEClient {
           console.log('[SSE Client] ✅ 连接成功');
           this.reconnectAttempts = 0; // 重置重连计数
           this.isConnecting = false;
-          
+
           // 通知前端连接成功
           eventBus.emit('sse:connected', {
             timestamp: new Date().toISOString(),
           });
-          
+
           resolve();
         };
 
@@ -495,7 +505,7 @@ export class SSEClient {
         };
 
         // ========== 监听自定义事件 ==========
-        
+
         // 连接建立事件
         this.eventSource.addEventListener('connected', (event) => {
           console.log('[SSE Client] 🔗 连接建立:', event.data);
@@ -549,7 +559,6 @@ export class SSEClient {
           // 不 reject，避免阻塞应用启动
           resolve();
         };
-
       } catch (error) {
         console.error('[SSE Client] 创建连接失败:', error);
         this.isConnecting = false;
@@ -564,7 +573,7 @@ export class SSEClient {
   private handleMessage(type: string, data: string): void {
     try {
       const parsedData = JSON.parse(data);
-      
+
       // 转发到事件总线
       eventBus.emit(`sse:${type}`, parsedData);
     } catch (error) {
@@ -608,7 +617,6 @@ export class SSEClient {
 
       // 同时发送原始 SSE 事件
       eventBus.emit(`sse:schedule:${eventType}`, parsedData);
-      
     } catch (error) {
       console.error('[SSE Client] 处理调度事件失败:', error, data);
     }
@@ -626,12 +634,9 @@ export class SSEClient {
     }
 
     this.reconnectAttempts++;
-    
+
     // 指数退避：1s, 2s, 4s, 8s, 16s, ... 最大30s
-    const delay = Math.min(
-      this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
-      30000
-    );
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
 
     console.log(`[SSE Client] 第 ${this.reconnectAttempts} 次重连，延迟 ${delay}ms`);
 
@@ -769,7 +774,7 @@ onUnmounted(() => {
 <template>
   <div>
     <!-- 连接状态指示器 -->
-    <v-chip 
+    <v-chip
       :color="connectionStatus.connected ? 'success' : 'error'"
       variant="outlined"
       size="small"
@@ -781,11 +786,7 @@ onUnmounted(() => {
     </v-chip>
 
     <!-- 重连按钮 -->
-    <v-btn 
-      v-if="!connectionStatus.connected"
-      @click="reconnectSSE"
-      :loading="reconnecting"
-    >
+    <v-btn v-if="!connectionStatus.connected" @click="reconnectSSE" :loading="reconnecting">
       重新连接
     </v-btn>
   </div>
@@ -801,6 +802,7 @@ onUnmounted(() => {
 #### 第一步：后端实现
 
 1. **创建 SSE 控制器**
+
 ```bash
 # 创建文件
 apps/api/src/modules/schedule/interface/http/controllers/SSEController.ts
@@ -815,34 +817,44 @@ apps/api/src/modules/schedule/interface/http/controllers/SSEController.ts
    - [ ] 事件监听器注册
 
 3. **配置路由**
+
 ```typescript
 // routes.ts
 router.get('/events', sseController.connect);
 ```
 
 4. **配置 CORS**
+
 ```typescript
 // app.ts
-app.use(cors({
-  origin: ['http://localhost:5173'],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+  }),
+);
 ```
 
 5. **跳过认证**
+
 ```typescript
 // app.ts
-app.use('/api/v1/schedules', (req, res, next) => {
-  if (req.path.startsWith('/events')) {
-    return next(); // SSE 端点不需要认证
-  }
-  return authMiddleware(req, res, next);
-}, scheduleRoutes);
+app.use(
+  '/api/v1/schedules',
+  (req, res, next) => {
+    if (req.path.startsWith('/events')) {
+      return next(); // SSE 端点不需要认证
+    }
+    return authMiddleware(req, res, next);
+  },
+  scheduleRoutes,
+);
 ```
 
 #### 第二步：前端实现
 
 1. **创建 SSE 客户端**
+
 ```bash
 # 创建文件
 apps/web/src/modules/notification/infrastructure/sse/SSEClient.ts
@@ -858,16 +870,18 @@ apps/web/src/modules/notification/infrastructure/sse/SSEClient.ts
    - [ ] getStatus() 状态查询
 
 3. **创建全局实例**
+
 ```typescript
 export const sseClient = new SSEClient();
 ```
 
 4. **在组件中使用**
+
 ```typescript
 // Vue 组件
 onMounted(async () => {
   await sseClient.connect();
-  
+
   eventBus.on('schedule:task-executed', (data) => {
     // 处理事件
   });
@@ -877,6 +891,7 @@ onMounted(async () => {
 #### 第三步：测试
 
 1. **测试连接**
+
 ```bash
 # 启动后端
 cd apps/api
@@ -887,6 +902,7 @@ curl -N http://localhost:3888/api/v1/schedules/events
 ```
 
 2. **测试事件发送**
+
 ```typescript
 // 在后端代码中手动触发事件
 eventBusService.emit('schedule:popup-reminder', {
@@ -907,17 +923,20 @@ eventBusService.emit('schedule:popup-reminder', {
 ### 问题1：连接超时
 
 **症状：**
+
 ```
 [SSE Client] 连接超时，但继续尝试...
 ```
 
 **原因：**
+
 - 后端服务未启动
 - 端口不正确
 - CORS 配置错误
 - 防火墙阻止
 
 **解决方案：**
+
 ```bash
 # 1. 检查后端服务
 curl http://localhost:3888/api/v1/schedules/events
@@ -932,17 +951,20 @@ netstat -an | findstr 3888
 ### 问题2：连接建立但无法接收事件
 
 **症状：**
+
 ```
 [SSE Client] ✅ 连接成功
 但没有收到任何事件
 ```
 
 **原因：**
+
 - 事件名称不匹配
 - 后端未正确发送事件
 - JSON 解析错误
 
 **解决方案：**
+
 ```typescript
 // 检查事件名称是否一致
 // 后端
@@ -961,6 +983,7 @@ console.log(`[SSE] 发送事件: ${eventType}`, data);
 ### 问题3：频繁重连
 
 **症状：**
+
 ```
 [SSE Client] 第 1 次重连，延迟 1000ms
 [SSE Client] 第 2 次重连，延迟 2000ms
@@ -968,11 +991,13 @@ console.log(`[SSE] 发送事件: ${eventType}`, data);
 ```
 
 **原因：**
+
 - 网络不稳定
 - 服务器频繁重启
 - 心跳超时参数太小
 
 **解决方案：**
+
 ```typescript
 // 调整重连参数
 private maxReconnectAttempts = 10;     // 增加重连次数
@@ -989,10 +1014,12 @@ if (timeSinceLastPing > 120000) { // 改为 120 秒
 ### 问题4：浏览器显示 "net::ERR_INCOMPLETE_CHUNKED_ENCODING"
 
 **原因：**
+
 - Nginx 或代理服务器缓冲了响应
 - 响应头配置不正确
 
 **解决方案：**
+
 ```typescript
 // 1. 添加响应头
 res.writeHead(200, {
@@ -1038,7 +1065,7 @@ import zlib from 'zlib';
 
 private sendEvent(res: Response, eventType: string, data: any): void {
   const dataString = JSON.stringify(data);
-  
+
   // 如果数据大于 1KB，压缩
   if (dataString.length > 1024) {
     const compressed = zlib.gzipSync(dataString);
@@ -1057,7 +1084,7 @@ private sendEvent(res: Response, eventType: string, data: any): void {
 // SSEController.ts
 connect = (req: Request, res: Response): void => {
   const maxClients = 100;
-  
+
   if (this.clients.size >= maxClients) {
     res.status(503).json({ error: '服务器连接已满' });
     return;
@@ -1089,7 +1116,7 @@ private flushEvents(): void {
   if (this.eventQueue.length === 0) return;
 
   const events = this.eventQueue.splice(0, this.eventQueue.length);
-  
+
   this.clients.forEach((client) => {
     events.forEach(({ type, data }) => {
       this.sendEvent(client.response, type, data);
@@ -1111,6 +1138,7 @@ SSE 连接已升级为**用户级别连接**，每个连接与用户的 `account
 #### 1. 前端 SSEClient 变更
 
 **连接方法签名变更：**
+
 ```typescript
 // ❌ 旧版本 - 无参数连接
 connect(): Promise<void>
@@ -1120,6 +1148,7 @@ connect(accountUuid: string): Promise<void>
 ```
 
 **连接 URL 变更：**
+
 ```typescript
 // ❌ 旧版本
 const url = `${baseUrl}/api/v1/schedules/events`;
@@ -1129,6 +1158,7 @@ const url = `${baseUrl}/api/v1/schedules/events?accountUuid=${accountUuid}`;
 ```
 
 **使用示例：**
+
 ```typescript
 import { sseClient } from '@/modules/notification/infrastructure/sse/SSEClient';
 
@@ -1147,12 +1177,14 @@ sseClient.disconnect();
 #### 2. 初始化时机变更
 
 **旧实现（不推荐）：**
+
 ```typescript
 // 在 APP_STARTUP 阶段连接 - 此时用户还未登录
-phase: InitializationPhase.APP_STARTUP
+phase: InitializationPhase.APP_STARTUP;
 ```
 
 **新实现（推荐）：**
+
 ```typescript
 // 在 USER_LOGIN 阶段连接 - 用户登录后才建立
 const sseConnectionTask: InitializationTask = {
@@ -1174,6 +1206,7 @@ const sseConnectionTask: InitializationTask = {
 #### 3. 后端 SSEController 变更
 
 **客户端标识变更：**
+
 ```typescript
 // ❌ 旧版本 - 随机生成 ID
 const clientId = `client_${Date.now()}_${Math.random().toString(36)}`;
@@ -1188,16 +1221,18 @@ const clientId = accountUuid; // 直接使用 accountUuid
 ```
 
 **客户端数据结构：**
+
 ```typescript
 interface SSEClient {
   id: string;
-  accountUuid: string;  // 新增字段
+  accountUuid: string; // 新增字段
   response: Response;
   lastPing: number;
 }
 ```
 
 **新增功能 - 向特定用户发送事件：**
+
 ```typescript
 // 向所有客户端广播
 broadcastToAll(eventType: string, data: any): void
@@ -1209,21 +1244,25 @@ sendToUser(accountUuid: string, eventType: string, data: any): void
 ### 优势
 
 ✅ **更好的安全性**
+
 - 每个连接绑定到特定用户
 - 可以验证用户权限
 - 防止接收不属于自己的事件
 
 ✅ **支持多设备**
+
 - 同一用户可以在多个设备登录
 - 每个设备都有独立的 SSE 连接
 - 所有设备都能接收该用户的事件
 
 ✅ **精确的事件推送**
+
 - 可以针对特定用户发送事件
 - 减少不必要的广播
 - 提高系统效率
 
 ✅ **更好的生命周期管理**
+
 - 用户登录时建立连接
 - 用户登出时自动清理
 - 避免无效连接占用资源
@@ -1233,16 +1272,18 @@ sendToUser(accountUuid: string, eventType: string, data: any): void
 如果你的代码使用了旧版 SSE 实现，请按以下步骤迁移：
 
 1. **更新连接调用：**
+
    ```typescript
    // 旧代码
    await sseClient.connect();
-   
+
    // 新代码
    const accountUuid = useAuthStore().user?.uuid;
    await sseClient.connect(accountUuid);
    ```
 
 2. **移除自动连接代码：**
+
    ```typescript
    // 删除这类代码
    if (typeof window !== 'undefined') {
@@ -1269,6 +1310,7 @@ sendToUser(accountUuid: string, eventType: string, data: any): void
 ### SSE 实现的关键点
 
 ✅ **后端：**
+
 1. 正确设置响应头（Content-Type: text/event-stream）
 2. 保持连接（Connection: keep-alive）
 3. 定期发送心跳
@@ -1277,6 +1319,7 @@ sendToUser(accountUuid: string, eventType: string, data: any): void
 6. 验证 accountUuid 参数
 
 ✅ **前端：**
+
 1. 使用 EventSource API
 2. 在用户登录后建立连接（传递 accountUuid）
 3. 监听自定义事件
@@ -1286,6 +1329,7 @@ sendToUser(accountUuid: string, eventType: string, data: any): void
 7. 用户登出时断开连接
 
 ✅ **注意事项：**
+
 1. SSE 连接必须在用户登录后建立
 2. accountUuid 是必需参数
 3. 使用指数退避算法重连

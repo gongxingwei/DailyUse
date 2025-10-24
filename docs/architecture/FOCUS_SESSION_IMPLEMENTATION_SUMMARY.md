@@ -14,6 +14,7 @@ This document summarizes the implementation of the **FocusSession** feature (Pom
 ### What is FocusSession?
 
 A FocusSession is a time-boxed work period (like Pomodoro) that:
+
 - Has a planned duration (max 240 minutes / 4 hours)
 - Can be paused and resumed
 - Tracks actual work time (excluding pauses)
@@ -142,22 +143,23 @@ None currently - ready to continue with next step.
 
 ```typescript
 // Timestamps (milliseconds since epoch)
-startedAt: number | null      // When session started
-pausedAt: number | null       // Current pause start time
-resumedAt: number | null      // Last resume time
-completedAt: number | null    // When completed
-cancelledAt: number | null    // When cancelled
+startedAt: number | null; // When session started
+pausedAt: number | null; // Current pause start time
+resumedAt: number | null; // Last resume time
+completedAt: number | null; // When completed
+cancelledAt: number | null; // When cancelled
 
 // Duration tracking (minutes)
-durationMinutes: number               // Planned duration (1-240)
-actualDurationMinutes: number         // Real work time (calculated on complete)
-pausedDurationMinutes: number         // Total paused time (accumulated)
-pauseCount: number                    // Number of pause cycles
+durationMinutes: number; // Planned duration (1-240)
+actualDurationMinutes: number; // Real work time (calculated on complete)
+pausedDurationMinutes: number; // Total paused time (accumulated)
+pauseCount: number; // Number of pause cycles
 ```
 
 ### Time Calculation Examples
 
 #### 1. Simple Session (No Pauses)
+
 ```
 startedAt:  10:00:00
 completedAt: 10:25:00
@@ -168,6 +170,7 @@ Actual duration: 25 minutes ✓
 ```
 
 #### 2. Session with One Pause
+
 ```
 startedAt:  10:00:00
 pausedAt:   10:15:00  (paused for 5 minutes)
@@ -180,6 +183,7 @@ Actual duration: 25 minutes ✓
 ```
 
 #### 3. Session with Multiple Pauses
+
 ```
 startedAt:  10:00:00
 pausedAt:   10:10:00  (pause #1, 3 minutes)
@@ -198,14 +202,14 @@ pauseCount: 2
 
 ```typescript
 // On resume()
-pauseDurationMs = now - pausedAt
-pauseDurationMinutes = Math.round(pauseDurationMs / 1000 / 60)
-pausedDurationMinutes += pauseDurationMinutes  // Accumulate
+pauseDurationMs = now - pausedAt;
+pauseDurationMinutes = Math.round(pauseDurationMs / 1000 / 60);
+pausedDurationMinutes += pauseDurationMinutes; // Accumulate
 
 // On complete()
-totalDurationMs = completedAt - startedAt
-totalDurationMinutes = Math.round(totalDurationMs / 1000 / 60)
-actualDurationMinutes = totalDurationMinutes - pausedDurationMinutes
+totalDurationMs = completedAt - startedAt;
+totalDurationMinutes = Math.round(totalDurationMs / 1000 / 60);
+actualDurationMinutes = totalDurationMinutes - pausedDurationMinutes;
 ```
 
 ### Remaining Time Calculation
@@ -214,16 +218,16 @@ actualDurationMinutes = totalDurationMinutes - pausedDurationMinutes
 getRemainingMinutes(): number {
   if (status === DRAFT) return durationMinutes;
   if (status === COMPLETED || status === CANCELLED) return 0;
-  
+
   const now = Date.now();
   let elapsedMs: number;
-  
+
   if (status === IN_PROGRESS) {
     elapsedMs = now - startedAt;
   } else if (status === PAUSED) {
     elapsedMs = pausedAt - startedAt;
   }
-  
+
   const elapsedMinutes = Math.round(elapsedMs / 1000 / 60) - pausedDurationMinutes;
   return Math.max(0, durationMinutes - elapsedMinutes);
 }
@@ -241,6 +245,7 @@ getRemainingMinutes(): number {
 #### Key Methods
 
 ##### Static Factory Method
+
 ```typescript
 public static create(params: {
   accountUuid: string;
@@ -251,10 +256,12 @@ public static create(params: {
 ```
 
 **Validations**:
+
 - ✅ `durationMinutes > 0` (must be positive)
 - ✅ `durationMinutes <= 240` (max 4 hours)
 
 **Initial State**:
+
 - Status: `DRAFT`
 - All timestamps: `null`
 - Counters: `pauseCount = 0`, `pausedDurationMinutes = 0`
@@ -267,6 +274,7 @@ public static create(params: {
 // 1. Start session
 public start(): void
 ```
+
 - **Precondition**: Status must be `DRAFT`
 - **Actions**:
   - Set status to `IN_PROGRESS`
@@ -277,6 +285,7 @@ public start(): void
 // 2. Pause session
 public pause(): void
 ```
+
 - **Precondition**: Status must be `IN_PROGRESS`
 - **Actions**:
   - Set status to `PAUSED`
@@ -288,6 +297,7 @@ public pause(): void
 // 3. Resume session
 public resume(): void
 ```
+
 - **Precondition**: Status must be `PAUSED`
 - **Actions**:
   - Calculate pause duration: `now - pausedAt`
@@ -301,6 +311,7 @@ public resume(): void
 // 4. Complete session
 public complete(): void
 ```
+
 - **Preconditions**: Status must be `IN_PROGRESS` or `PAUSED`
 - **Actions**:
   - If paused, add final pause duration
@@ -314,6 +325,7 @@ public complete(): void
 // 5. Cancel session
 public cancel(): void
 ```
+
 - **Preconditions**: Status must not be `COMPLETED` or `CANCELLED`
 - **Actions**:
   - Set status to `CANCELLED`
@@ -328,12 +340,15 @@ public cancel(): void
 ```typescript
 public isActive(): boolean
 ```
+
 Returns `true` if status is `IN_PROGRESS` or `PAUSED`.
 
 ```typescript
 public getRemainingMinutes(): number
 ```
+
 Calculates remaining time based on current state:
+
 - **DRAFT**: Returns full `durationMinutes`
 - **IN_PROGRESS**: Real-time calculation (considers pauses)
 - **PAUSED**: Frozen at pause time
@@ -350,6 +365,7 @@ public toPersistenceDTO(): FocusSessionPersistenceDTO
 ```
 
 **Client DTO Enhancements**:
+
 ```typescript
 {
   ...baseFields,
@@ -381,11 +397,11 @@ public static fromPersistenceDTO(dto: FocusSessionPersistenceDTO): FocusSession
 
 ```typescript
 export enum FocusSessionStatus {
-  DRAFT = 'DRAFT',           // 草稿（未开始）
+  DRAFT = 'DRAFT', // 草稿（未开始）
   IN_PROGRESS = 'IN_PROGRESS', // 进行中
-  PAUSED = 'PAUSED',         // 已暂停
-  COMPLETED = 'COMPLETED',   // 已完成
-  CANCELLED = 'CANCELLED',   // 已取消
+  PAUSED = 'PAUSED', // 已暂停
+  COMPLETED = 'COMPLETED', // 已完成
+  CANCELLED = 'CANCELLED', // 已取消
 }
 ```
 
@@ -396,10 +412,12 @@ export enum FocusSessionStatus {
 **File**: `packages/contracts/src/modules/goal/aggregates/FocusSessionServer.ts`
 
 ##### DTOs
+
 - `FocusSessionServerDTO` - All fields with timestamps as `number`
 - `FocusSessionPersistenceDTO` - Database mapping with `Date` objects
 
 ##### Interface
+
 ```typescript
 export interface FocusSessionServer {
   // Properties (readonly)
@@ -408,7 +426,7 @@ export interface FocusSessionServer {
   readonly goalUuid: string | null;
   readonly status: FocusSessionStatus;
   // ... (all other fields)
-  
+
   // Business methods
   start(): void;
   pause(): void;
@@ -417,7 +435,7 @@ export interface FocusSessionServer {
   cancel(): void;
   isActive(): boolean;
   getRemainingMinutes(): number;
-  
+
   // DTO conversion
   toServerDTO(): FocusSessionServerDTO;
   toPersistenceDTO(): FocusSessionPersistenceDTO;
@@ -429,6 +447,7 @@ export interface FocusSessionServer {
 #### Domain Events
 
 All events follow this structure:
+
 ```typescript
 {
   type: 'focus_session.{action}',
@@ -439,6 +458,7 @@ All events follow this structure:
 ```
 
 ##### Event Types
+
 1. **FocusSessionStartedEvent**
    - Type: `'focus_session.started'`
    - Payload: `{ sessionUuid, accountUuid, goalUuid, durationMinutes, startedAt }`
@@ -466,17 +486,18 @@ All events follow this structure:
 **File**: `packages/contracts/src/modules/goal/aggregates/FocusSessionClient.ts`
 
 ##### Client DTO
+
 ```typescript
 export interface FocusSessionClientDTO {
   // All server fields
   uuid: string;
   accountUuid: string;
   // ...
-  
+
   // Computed fields (optional - for UI)
-  remainingMinutes?: number;       // Real-time remaining time
-  progressPercentage?: number;     // 0-100 progress
-  isActive?: boolean;              // IN_PROGRESS or PAUSED
+  remainingMinutes?: number; // Real-time remaining time
+  progressPercentage?: number; // 0-100 progress
+  isActive?: boolean; // IN_PROGRESS or PAUSED
 }
 ```
 
@@ -508,11 +529,8 @@ export class FocusSessionDomainService {
    * Validate single active session rule
    * Business Rule: Only one active session per account
    */
-  public validateSingleActiveSession(
-    existingSessions: FocusSession[],
-    accountUuid: string
-  ): void {
-    const activeSessions = existingSessions.filter(session => session.isActive());
+  public validateSingleActiveSession(existingSessions: FocusSession[], accountUuid: string): void {
+    const activeSessions = existingSessions.filter((session) => session.isActive());
     if (activeSessions.length > 0) {
       throw new Error('您有正在进行的专注周期，请先完成或取消');
     }
@@ -525,9 +543,7 @@ export class FocusSessionDomainService {
     if (!session.startedAt || !session.completedAt) {
       return 0;
     }
-    const totalMinutes = Math.round(
-      (session.completedAt - session.startedAt) / 1000 / 60
-    );
+    const totalMinutes = Math.round((session.completedAt - session.startedAt) / 1000 / 60);
     return Math.max(0, totalMinutes - session.pausedDurationMinutes);
   }
 
@@ -543,7 +559,7 @@ export class FocusSessionDomainService {
    */
   public validateStateTransition(
     currentStatus: FocusSessionStatus,
-    action: 'start' | 'pause' | 'resume' | 'complete' | 'cancel'
+    action: 'start' | 'pause' | 'resume' | 'complete' | 'cancel',
   ): void {
     // Validation logic based on state machine rules
     // Throw error if transition is invalid
@@ -552,6 +568,7 @@ export class FocusSessionDomainService {
 ```
 
 **Characteristics**:
+
 - ✅ No async/await (pure synchronous logic)
 - ✅ No Repository injection
 - ✅ No database access
@@ -596,7 +613,7 @@ export interface IFocusSessionRepository {
       offset?: number;
       orderBy?: 'createdAt' | 'startedAt' | 'completedAt';
       orderDirection?: 'asc' | 'desc';
-    }
+    },
   ): Promise<FocusSession[]>;
 
   /**
@@ -633,7 +650,7 @@ export class FocusSessionApplicationService {
       durationMinutes: number;
       description?: string | null;
       startImmediately?: boolean; // default: true
-    }
+    },
   ): Promise<FocusSessionClientDTO> {
     // 1. Validate associated goal (if specified)
     if (request.goalUuid) {
@@ -678,10 +695,7 @@ export class FocusSessionApplicationService {
   /**
    * Pause a running session
    */
-  async pauseSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<FocusSessionClientDTO> {
+  async pauseSession(sessionUuid: string, accountUuid: string): Promise<FocusSessionClientDTO> {
     return this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.pause();
     });
@@ -690,10 +704,7 @@ export class FocusSessionApplicationService {
   /**
    * Resume a paused session
    */
-  async resumeSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<FocusSessionClientDTO> {
+  async resumeSession(sessionUuid: string, accountUuid: string): Promise<FocusSessionClientDTO> {
     return this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.resume();
     });
@@ -702,10 +713,7 @@ export class FocusSessionApplicationService {
   /**
    * Complete a session
    */
-  async completeSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<FocusSessionClientDTO> {
+  async completeSession(sessionUuid: string, accountUuid: string): Promise<FocusSessionClientDTO> {
     return this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.complete();
     });
@@ -714,10 +722,7 @@ export class FocusSessionApplicationService {
   /**
    * Cancel a session
    */
-  async cancelSession(
-    sessionUuid: string,
-    accountUuid: string
-  ): Promise<void> {
+  async cancelSession(sessionUuid: string, accountUuid: string): Promise<void> {
     await this.executeSessionAction(sessionUuid, accountUuid, (session) => {
       session.cancel();
     });
@@ -726,9 +731,7 @@ export class FocusSessionApplicationService {
   /**
    * Get active session for an account
    */
-  async getActiveSession(
-    accountUuid: string
-  ): Promise<FocusSessionClientDTO | null> {
+  async getActiveSession(accountUuid: string): Promise<FocusSessionClientDTO | null> {
     const session = await this.sessionRepository.findActiveSession(accountUuid);
     return session ? session.toClientDTO() : null;
   }
@@ -743,17 +746,14 @@ export class FocusSessionApplicationService {
       status?: FocusSessionStatus[];
       limit?: number;
       offset?: number;
-    }
+    },
   ): Promise<FocusSessionClientDTO[]> {
-    const sessions = await this.sessionRepository.findByAccountUuid(
-      accountUuid,
-      {
-        ...filters,
-        orderBy: 'startedAt',
-        orderDirection: 'desc',
-      }
-    );
-    return sessions.map(session => session.toClientDTO());
+    const sessions = await this.sessionRepository.findByAccountUuid(accountUuid, {
+      ...filters,
+      orderBy: 'startedAt',
+      orderDirection: 'desc',
+    });
+    return sessions.map((session) => session.toClientDTO());
   }
 
   /**
@@ -762,7 +762,7 @@ export class FocusSessionApplicationService {
   private async executeSessionAction(
     sessionUuid: string,
     accountUuid: string,
-    action: (session: FocusSession) => void
+    action: (session: FocusSession) => void,
   ): Promise<FocusSessionClientDTO> {
     // 1. Load session
     const session = await this.sessionRepository.findById(sessionUuid);
@@ -794,7 +794,7 @@ export class FocusSessionApplicationService {
 
 ### Database Layer (After User Completes Migration)
 
-**Step 6: Database Migration** *(User Task)*
+**Step 6: Database Migration** _(User Task)_
 
 User needs to create Prisma schema and migration:
 
@@ -807,18 +807,18 @@ model FocusSession {
   durationMinutes         Int
   actualDurationMinutes   Int       @default(0)
   description             String?   @db.Text
-  
+
   // Timestamps
   startedAt               DateTime?
   pausedAt                DateTime?
   resumedAt               DateTime?
   completedAt             DateTime?
   cancelledAt             DateTime?
-  
+
   // Tracking
   pauseCount              Int       @default(0)
   pausedDurationMinutes   Int       @default(0)
-  
+
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -835,6 +835,7 @@ model FocusSession {
 ```
 
 **Migration command**:
+
 ```bash
 pnpm prisma migrate dev --name add_focus_sessions_table
 ```
@@ -900,7 +901,7 @@ export class PrismaFocusSessionRepository implements IFocusSessionRepository {
       offset?: number;
       orderBy?: 'createdAt' | 'startedAt' | 'completedAt';
       orderDirection?: 'asc' | 'desc';
-    }
+    },
   ): Promise<FocusSession[]> {
     const records = await this.prisma.focusSession.findMany({
       where: {
@@ -914,7 +915,7 @@ export class PrismaFocusSessionRepository implements IFocusSessionRepository {
       take: options?.limit || 50,
       skip: options?.offset || 0,
     });
-    return records.map(record => FocusSession.fromPersistenceDTO(record));
+    return records.map((record) => FocusSession.fromPersistenceDTO(record));
   }
 
   async delete(uuid: string): Promise<void> {
@@ -933,6 +934,7 @@ export class PrismaFocusSessionRepository implements IFocusSessionRepository {
 ```
 
 **Update GoalContainer**:
+
 ```typescript
 // apps/api/src/modules/goal/infrastructure/di/GoalContainer.ts
 
@@ -958,9 +960,7 @@ import { ResponseBuilder } from '@dailyuse/contracts';
 import { FocusSessionApplicationService } from '../../application/services/FocusSessionApplicationService';
 
 export class FocusSessionController {
-  constructor(
-    private readonly applicationService: FocusSessionApplicationService
-  ) {}
+  constructor(private readonly applicationService: FocusSessionApplicationService) {}
 
   /**
    * POST /api/focus-sessions
@@ -970,24 +970,15 @@ export class FocusSessionController {
     try {
       const accountUuid = req.user?.accountUuid;
       if (!accountUuid) {
-        res.status(401).json(
-          ResponseBuilder.unauthorized('未登录或会话已过期')
-        );
+        res.status(401).json(ResponseBuilder.unauthorized('未登录或会话已过期'));
         return;
       }
 
-      const session = await this.applicationService.createAndStartSession(
-        accountUuid,
-        req.body
-      );
+      const session = await this.applicationService.createAndStartSession(accountUuid, req.body);
 
-      res.status(201).json(
-        ResponseBuilder.success(session, '专注周期已创建')
-      );
+      res.status(201).json(ResponseBuilder.success(session, '专注周期已创建'));
     } catch (error: any) {
-      res.status(400).json(
-        ResponseBuilder.error(error.message || '创建失败')
-      );
+      res.status(400).json(ResponseBuilder.error(error.message || '创建失败'));
     }
   }
 
@@ -1100,17 +1091,12 @@ export class FocusSessionController {
 
       const filters = {
         goalUuid: req.query.goalUuid as string | undefined,
-        status: req.query.status
-          ? (req.query.status as string).split(',')
-          : undefined,
+        status: req.query.status ? (req.query.status as string).split(',') : undefined,
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
         offset: req.query.offset ? parseInt(req.query.offset as string) : undefined,
       };
 
-      const sessions = await this.applicationService.getSessionHistory(
-        accountUuid,
-        filters
-      );
+      const sessions = await this.applicationService.getSessionHistory(accountUuid, filters);
 
       res.json(ResponseBuilder.success(sessions));
     } catch (error: any) {
@@ -1127,9 +1113,7 @@ import { Router } from 'express';
 import { FocusSessionController } from './FocusSessionController';
 import { authenticateToken } from '../../../../middleware/auth';
 
-export function createFocusSessionRoutes(
-  controller: FocusSessionController
-): Router {
+export function createFocusSessionRoutes(controller: FocusSessionController): Router {
   const router = Router();
 
   // All routes require authentication
@@ -1247,7 +1231,7 @@ private publishDomainEvents(session: FocusSession): void {
 
 eventBus.on('focus_session.completed', async (event) => {
   const { goalUuid, actualDurationMinutes } = event.payload;
-  
+
   if (goalUuid) {
     // Update goal focus statistics
     await statisticsService.updateGoalFocusStatistics(goalUuid, {
@@ -1256,11 +1240,11 @@ eventBus.on('focus_session.completed', async (event) => {
       addFocusMinutes: actualDurationMinutes,
     });
   }
-  
+
   // Update user total statistics
   await statisticsService.incrementTotalFocusMinutes(
     event.payload.accountUuid,
-    actualDurationMinutes
+    actualDurationMinutes,
   );
 });
 ```
@@ -1275,12 +1259,12 @@ Add these fields to `GoalStatistics`:
 
 ```typescript
 interface GoalFocusStatistics {
-  totalSessions: number;          // Total focus sessions
-  completedSessions: number;      // Completed sessions
-  totalFocusMinutes: number;      // Total focused time
-  averageFocusMinutes: number;    // Average session duration
-  longestFocusMinutes: number;    // Longest single session
-  lastFocusedAt: Date | null;     // Last focus time
+  totalSessions: number; // Total focus sessions
+  completedSessions: number; // Completed sessions
+  totalFocusMinutes: number; // Total focused time
+  averageFocusMinutes: number; // Average session duration
+  longestFocusMinutes: number; // Longest single session
+  lastFocusedAt: Date | null; // Last focus time
 }
 ```
 
@@ -1333,11 +1317,11 @@ export function useFocusSession() {
   // Start countdown
   function startCountdown() {
     if (timer) clearInterval(timer);
-    
+
     timer = setInterval(() => {
       if (activeSession.value && activeSession.value.isActive) {
         remainingSeconds.value = Math.max(0, remainingSeconds.value - 1);
-        
+
         // Auto-complete when timer reaches 0
         if (remainingSeconds.value === 0) {
           completeSession();
@@ -1355,10 +1339,7 @@ export function useFocusSession() {
   });
 
   // API calls
-  async function createAndStart(params: { 
-    durationMinutes: number;
-    goalUuid?: string;
-  }) {
+  async function createAndStart(params: { durationMinutes: number; goalUuid?: string }) {
     const response = await api.post('/api/focus-sessions', params);
     activeSession.value = response.data;
     remainingSeconds.value = response.data.remainingMinutes * 60;
@@ -1367,18 +1348,14 @@ export function useFocusSession() {
 
   async function pauseSession() {
     if (!activeSession.value) return;
-    const response = await api.post(
-      `/api/focus-sessions/${activeSession.value.uuid}/pause`
-    );
+    const response = await api.post(`/api/focus-sessions/${activeSession.value.uuid}/pause`);
     activeSession.value = response.data;
     if (timer) clearInterval(timer);
   }
 
   async function resumeSession() {
     if (!activeSession.value) return;
-    const response = await api.post(
-      `/api/focus-sessions/${activeSession.value.uuid}/resume`
-    );
+    const response = await api.post(`/api/focus-sessions/${activeSession.value.uuid}/resume`);
     activeSession.value = response.data;
     remainingSeconds.value = response.data.remainingMinutes * 60;
     startCountdown();
@@ -1435,10 +1412,10 @@ export function useFocusSession() {
 ## 📚 References
 
 - **Documentation**: `docs/modules/goal/goal-flows/FOCUS_SESSION_FLOW.md`
-- **Similar Implementations**: 
+- **Similar Implementations**:
   - Goal Aggregate: `packages/domain-server/src/goal/aggregates/Goal.ts`
   - GoalFolder Aggregate: `packages/domain-server/src/goal/aggregates/GoalFolder.ts`
-- **DDD Patterns**: 
+- **DDD Patterns**:
   - Aggregate Root pattern
   - Domain Service vs Application Service separation
   - Repository pattern
@@ -1448,6 +1425,7 @@ export function useFocusSession() {
 ## ✅ Verification Checklist
 
 ### Phase 1 (Current - Complete)
+
 - [x] FocusSession aggregate root created
 - [x] Contract definitions (Server/Client DTOs)
 - [x] FocusSessionStatus enum added
@@ -1458,6 +1436,7 @@ export function useFocusSession() {
 - [x] TypeScript compilation passes
 
 ### Phase 2 (Next Steps)
+
 - [ ] FocusSessionDomainService created
 - [ ] IFocusSessionRepository interface created
 - [ ] FocusSessionApplicationService created
@@ -1465,6 +1444,7 @@ export function useFocusSession() {
 - [ ] Unit tests for domain service
 
 ### Phase 3 (After DB Migration)
+
 - [ ] Database schema created
 - [ ] Migration executed successfully
 - [ ] PrismaFocusSessionRepository implemented
@@ -1472,12 +1452,14 @@ export function useFocusSession() {
 - [ ] Repository tests pass
 
 ### Phase 4 (HTTP Layer)
+
 - [ ] FocusSessionController created
 - [ ] Routes defined with Swagger docs
 - [ ] Integration tests pass
 - [ ] Postman collection updated
 
 ### Phase 5 (Integration)
+
 - [ ] EventBus integration complete
 - [ ] Statistics listeners implemented
 - [ ] Frontend component created
@@ -1489,7 +1471,7 @@ export function useFocusSession() {
 
 | Phase                      | Description               | Lines of Code | Estimated Time    |
 | -------------------------- | ------------------------- | ------------- | ----------------- |
-| **1. Aggregate Root**      | FocusSession + Contracts  | ~700 lines    | ✅ **Complete**    |
+| **1. Aggregate Root**      | FocusSession + Contracts  | ~700 lines    | ✅ **Complete**   |
 | **2. Domain & Repository** | DomainService + Interface | ~230 lines    | 1-2 hours         |
 | **3. Application Service** | Orchestration logic       | ~350 lines    | 2-3 hours         |
 | **4. Database**            | Schema + Migration        | ~50 lines     | 30 minutes (user) |
@@ -1531,6 +1513,7 @@ export function useFocusSession() {
 **End of Document**
 
 Total Implementation Summary:
+
 - Aggregate Root: ✅ Complete (~580 lines)
 - Contracts: ✅ Complete (~200 lines)
 - Domain Service: ⏳ Next step (~200 lines)

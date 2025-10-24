@@ -1,5 +1,5 @@
-import { ISessionLoggingRepository } from "../../domain/repositories/sessionLoggingRepository";
-import { SqliteSessionLoggingRepository } from "../repositories/sqliteSessionLoggingRepository";
+import { ISessionLoggingRepository } from '../../domain/repositories/sessionLoggingRepository';
+import { SqliteSessionLoggingRepository } from '../repositories/sqliteSessionLoggingRepository';
 
 export class SessionLoggingContainer {
   private static instance: SessionLoggingContainer;
@@ -9,13 +9,12 @@ export class SessionLoggingContainer {
   private constructor() {
     this.sessionLoggingRepository = new SqliteSessionLoggingRepository();
   }
-    static getInstance(): SessionLoggingContainer {
+  static getInstance(): SessionLoggingContainer {
     if (!SessionLoggingContainer.instance) {
       SessionLoggingContainer.instance = new SessionLoggingContainer();
     }
     return SessionLoggingContainer.instance;
   }
-
 
   getSessionLoggingRepository(): ISessionLoggingRepository {
     return this.sessionLoggingRepository;

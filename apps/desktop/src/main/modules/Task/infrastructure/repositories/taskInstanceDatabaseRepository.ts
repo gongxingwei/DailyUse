@@ -1,8 +1,8 @@
-import type { Database } from "better-sqlite3";
-import { getDatabase } from "../../../../shared/database/index";
-import type { ITaskInstanceRepository } from "../../domain/repositories/iTaskInstanceRepository";
-import { TaskInstance } from "../../domain/aggregates/taskInstance";
-import { ITaskInstanceDTO } from "@common/modules/task/types/task";
+import type { Database } from 'better-sqlite3';
+import { getDatabase } from '../../../../shared/database/index';
+import type { ITaskInstanceRepository } from '../../domain/repositories/iTaskInstanceRepository';
+import { TaskInstance } from '../../domain/aggregates/taskInstance';
+import { ITaskInstanceDTO } from '@common/modules/task/types/task';
 /**
  * TaskInstance 数据库仓库实现
  * 直接使用数据库进行数据持久化
@@ -23,10 +23,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   /**
    * 将 TaskInstance 实体转换为数据库记录
    */
-  private mapTaskInstanceToRow(
-    instance: TaskInstance,
-    accountUuid: string
-  ): any {
+  private mapTaskInstanceToRow(instance: TaskInstance, accountUuid: string): any {
     const dto: ITaskInstanceDTO = instance.toDTO();
     return {
       uuid: dto.uuid,
@@ -38,9 +35,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
       reminder_status: JSON.stringify(dto.reminderStatus),
       metadata: JSON.stringify(dto.metadata),
       lifecycle: JSON.stringify(dto.lifecycle),
-      key_result_links: dto.keyResultLinks
-        ? JSON.stringify(dto.keyResultLinks)
-        : null,
+      key_result_links: dto.keyResultLinks ? JSON.stringify(dto.keyResultLinks) : null,
       version: dto.version,
       created_at: dto.lifecycle.createdAt,
       updated_at: dto.lifecycle.updatedAt,
@@ -57,9 +52,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
       title: record.title,
       description: record.description,
       timeConfig: JSON.parse(record.time_config),
-      keyResultLinks: record.key_result_links
-        ? JSON.parse(record.key_result_links)
-        : undefined,
+      keyResultLinks: record.key_result_links ? JSON.parse(record.key_result_links) : undefined,
       reminderStatus: JSON.parse(record.reminder_status),
       lifecycle: JSON.parse(record.lifecycle),
       metadata: JSON.parse(record.metadata),
@@ -71,10 +64,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   /**
    * 保存 TaskInstance
    */
-  async save(
-    accountUuid: string,
-    instance: TaskInstance
-  ): Promise<TaskInstance> {
+  async save(accountUuid: string, instance: TaskInstance): Promise<TaskInstance> {
     const db = await this.getDB();
     const record = this.mapTaskInstanceToRow(instance, accountUuid);
 
@@ -101,7 +91,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
 
       record.version,
       record.created_at,
-      record.updated_at
+      record.updated_at,
     );
 
     return instance;
@@ -110,10 +100,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   /**
    * 批量保存 TaskInstance
    */
-  async saveAll(
-    accountUuid: string,
-    instances: TaskInstance[]
-  ): Promise<TaskInstance[]> {
+  async saveAll(accountUuid: string, instances: TaskInstance[]): Promise<TaskInstance[]> {
     const db = await this.getDB();
 
     const stmt = db.prepare(`
@@ -142,7 +129,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
 
           record.version,
           record.created_at,
-          record.updated_at
+          record.updated_at,
         );
       }
     });
@@ -189,10 +176,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   /**
    * 根据模板 ID 查找 TaskInstance
    */
-  async findByTemplateId(
-    accountUuid: string,
-    templateId: string
-  ): Promise<TaskInstance[]> {
+  async findByTemplateId(accountUuid: string, templateId: string): Promise<TaskInstance[]> {
     const db = await this.getDB();
     const stmt = db.prepare(`
       SELECT * FROM task_instances 
@@ -207,10 +191,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   /**
    * 根据目标查找 TaskInstance
    */
-  async findByGoal(
-    accountUuid: string,
-    goalUuid: string
-  ): Promise<TaskInstance[]> {
+  async findByGoal(accountUuid: string, goalUuid: string): Promise<TaskInstance[]> {
     const db = await this.getDB();
     const stmt = db.prepare(`
       SELECT * FROM task_instances 
@@ -228,7 +209,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async findByDateRange(
     accountUuid: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<TaskInstance[]> {
     return this.findByTimeRange(accountUuid, startTime, endTime);
   }
@@ -239,7 +220,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async findByTimeRange(
     accountUuid: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<TaskInstance[]> {
     const db = await this.getDB();
     const start = startTime.getTime();
@@ -262,10 +243,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   /**
    * 更新 TaskInstance
    */
-  async update(
-    accountUuid: string,
-    instance: TaskInstance
-  ): Promise<TaskInstance> {
+  async update(accountUuid: string, instance: TaskInstance): Promise<TaskInstance> {
     const db = await this.getDB();
     const record = this.mapTaskInstanceToRow(instance, accountUuid);
 
@@ -293,7 +271,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
       record.updated_at,
 
       record.uuid,
-      record.account_uuid
+      record.account_uuid,
     );
 
     return instance;
@@ -317,10 +295,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   /**
    * 批量更新实例
    */
-  async updateInstances(
-    accountUuid: string,
-    instances: TaskInstance[]
-  ): Promise<TaskInstance[]> {
+  async updateInstances(accountUuid: string, instances: TaskInstance[]): Promise<TaskInstance[]> {
     const db = await this.getDB();
 
     const stmt = db.prepare(`
@@ -350,7 +325,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
           record.updated_at,
 
           record.uuid,
-          record.account_uuid
+          record.account_uuid,
         );
       }
     });

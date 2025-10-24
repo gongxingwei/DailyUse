@@ -39,6 +39,7 @@ const result = await prisma.$transaction(async (tx: any) => {
 ### 1. **Prisma Client 未正确生成**
 
 理想情况下应该使用 Prisma 的事务类型：
+
 ```typescript
 import { Prisma, PrismaClient } from '@prisma/client';
 
@@ -58,6 +59,7 @@ prisma.$transaction(async (tx: Omit<PrismaClient, '$transaction'>) => {
 ### 3. **与项目其他代码保持一致**
 
 项目中其他 Repository 实现也使用了相同的模式：
+
 ```typescript
 // PrismaTaskTemplateRepository.ts
 await this.prisma.$transaction(async (tx) => {
@@ -75,6 +77,7 @@ pnpm prisma generate
 ```
 
 然后使用正确的类型：
+
 ```typescript
 import type { PrismaClient } from '@prisma/client';
 
@@ -91,15 +94,15 @@ prisma.$transaction(async (tx: TransactionClient) => {
 ### 方案 2: 创建类型别名
 
 在 `shared/types/prisma.ts` 中定义：
+
 ```typescript
 import type { PrismaClient } from '@prisma/client';
 
-export type PrismaTransaction = Parameters<
-  Parameters<PrismaClient['$transaction']>[0]
->[0];
+export type PrismaTransaction = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
 ```
 
 然后在服务中使用：
+
 ```typescript
 import type { PrismaTransaction } from '@/shared/types/prisma';
 
@@ -135,6 +138,7 @@ prisma.$transaction(async (tx: any) => { ... })
 ```
 
 需要修复的其他文件（可选）：
+
 - `apps/api/src/modules/task/infrastructure/repositories/PrismaTaskTemplateRepository.ts`
 - `apps/api/src/modules/repository/infrastructure/repositories/PrismaRepositoryAggregateRepository.ts`
 - 等等...

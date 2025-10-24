@@ -190,6 +190,7 @@ Scenario: 取消订阅
 ### UserPreferenceClientService
 
 **packages/domain-client/src/setting/services/UserPreferenceClientService.ts**:
+
 ```typescript
 import type {
   UserPreferenceClientDTO,
@@ -207,7 +208,7 @@ export class UserPreferenceClientService {
 
   constructor(
     private readonly api: UserPreferenceAPI,
-    private readonly authService: AuthService // 获取当前用户信息
+    private readonly authService: AuthService, // 获取当前用户信息
   ) {}
 
   /**
@@ -353,6 +354,7 @@ export class UserPreferenceClientService {
 ### API Client
 
 **packages/domain-client/src/setting/api/UserPreferenceAPI.ts**:
+
 ```typescript
 import type {
   UserPreferenceClientDTO,
@@ -367,7 +369,7 @@ export class UserPreferenceAPI {
 
   async getByAccountUuid(accountUuid: string): Promise<UserPreferenceClientDTO> {
     const response = await httpClient.get<UserPreferenceClientDTO>(
-      `${this.baseURL}?accountUuid=${accountUuid}`
+      `${this.baseURL}?accountUuid=${accountUuid}`,
     );
     return response.data;
   }
@@ -380,34 +382,40 @@ export class UserPreferenceAPI {
   async updateTheme(accountUuid: string, theme: ThemeType): Promise<UserPreferenceClientDTO> {
     const response = await httpClient.patch<UserPreferenceClientDTO>(
       `${this.baseURL}/${accountUuid}/theme`,
-      { theme }
+      { theme },
     );
     return response.data;
   }
 
-  async updateLanguage(accountUuid: string, language: LanguageType): Promise<UserPreferenceClientDTO> {
+  async updateLanguage(
+    accountUuid: string,
+    language: LanguageType,
+  ): Promise<UserPreferenceClientDTO> {
     const response = await httpClient.patch<UserPreferenceClientDTO>(
       `${this.baseURL}/${accountUuid}/language`,
-      { language }
+      { language },
     );
     return response.data;
   }
 
   async updateNotifications(
     accountUuid: string,
-    notifications: NotificationSettings
+    notifications: NotificationSettings,
   ): Promise<UserPreferenceClientDTO> {
     const response = await httpClient.patch<UserPreferenceClientDTO>(
       `${this.baseURL}/${accountUuid}/notifications`,
-      notifications
+      notifications,
     );
     return response.data;
   }
 
-  async update(accountUuid: string, dto: Partial<UserPreferenceClientDTO>): Promise<UserPreferenceClientDTO> {
+  async update(
+    accountUuid: string,
+    dto: Partial<UserPreferenceClientDTO>,
+  ): Promise<UserPreferenceClientDTO> {
     const response = await httpClient.put<UserPreferenceClientDTO>(
       `${this.baseURL}/${accountUuid}`,
-      dto
+      dto,
     );
     return response.data;
   }
@@ -420,7 +428,8 @@ export class UserPreferenceAPI {
 
 ### 单元测试
 
-**services/__tests__/UserPreferenceClientService.test.ts**:
+**services/**tests**/UserPreferenceClientService.test.ts**:
+
 ```typescript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UserPreferenceClientService } from '../UserPreferenceClientService';
@@ -564,14 +573,14 @@ describe('UserPreferenceClientService', () => {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| Client Service 实现 | 2.5 小时 |
-| API Client 封装 | 1 小时 |
-| 缓存 & 乐观更新 | 1.5 小时 |
-| 事件系统 | 1 小时 |
-| 单元测试编写 | 2 小时 |
-| **总计** | **8 小时** |
+| 任务                | 预估时间   |
+| ------------------- | ---------- |
+| Client Service 实现 | 2.5 小时   |
+| API Client 封装     | 1 小时     |
+| 缓存 & 乐观更新     | 1.5 小时   |
+| 事件系统            | 1 小时     |
+| 单元测试编写        | 2 小时     |
+| **总计**            | **8 小时** |
 
 **Story Points**: 2 SP
 
@@ -580,9 +589,11 @@ describe('UserPreferenceClientService', () => {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-004 (API Endpoints)
 
 ### 下游依赖
+
 - STORY-SETTING-001-006/007/008 (UI) 依赖此 Story
 
 ---

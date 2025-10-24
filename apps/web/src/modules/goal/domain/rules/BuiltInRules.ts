@@ -181,14 +181,14 @@ export function sortRulesByPriority(rules: StatusRule[]): StatusRule[] {
  * 获取启用的规则
  */
 export function getEnabledRules(rules: StatusRule[]): StatusRule[] {
-  return rules.filter(rule => rule.enabled);
+  return rules.filter((rule) => rule.enabled);
 }
 
 /**
  * 根据 ID 查找规则
  */
 export function findRuleById(rules: StatusRule[], id: string): StatusRule | undefined {
-  return rules.find(rule => rule.id === id);
+  return rules.find((rule) => rule.id === id);
 }
 
 /**
@@ -202,7 +202,7 @@ export const RULE_TEMPLATES = {
     threshold: number,
     operator: '>=' | '<=' | '>' | '<',
     scope: 'all' | 'any',
-    targetStatus: GoalStatus
+    targetStatus: GoalStatus,
   ): Partial<StatusRule> => ({
     conditionType: scope === 'all' ? 'all' : 'any',
     conditions: [
@@ -222,10 +222,7 @@ export const RULE_TEMPLATES = {
   /**
    * 创建权重规则
    */
-  createWeightRule: (
-    total: number,
-    operator: '=' | '!=' | '>' | '<'
-  ): Partial<StatusRule> => ({
+  createWeightRule: (total: number, operator: '=' | '!=' | '>' | '<'): Partial<StatusRule> => ({
     conditionType: 'all',
     conditions: [
       {

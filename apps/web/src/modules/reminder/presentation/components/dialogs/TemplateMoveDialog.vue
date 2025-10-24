@@ -8,13 +8,19 @@
 
       <v-card-text>
         <div class="mb-3">
-          <p class="text-body-2 text-grey-700 mb-2">
-            将模板 "{{ templateName }}" 移动到：
-          </p>
+          <p class="text-body-2 text-grey-700 mb-2">将模板 "{{ templateName }}" 移动到：</p>
         </div>
 
-        <v-select v-model="selectedGroupUuid" :items="groupOptions" item-title="name" item-value="uuid" label="选择目标分组"
-          variant="outlined" :loading="loading" :disabled="loading">
+        <v-select
+          v-model="selectedGroupUuid"
+          :items="groupOptions"
+          item-title="name"
+          item-value="uuid"
+          label="选择目标分组"
+          variant="outlined"
+          :loading="loading"
+          :disabled="loading"
+        >
           <template #prepend-inner>
             <v-icon>mdi-folder</v-icon>
           </template>
@@ -25,11 +31,14 @@
 
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="handleCancel" :disabled="loading">
-          取消
-        </v-btn>
-        <v-btn color="primary" variant="flat" @click="handleConfirm" :loading="loading"
-          :disabled="!selectedGroupUuid || loading">
+        <v-btn variant="text" @click="handleCancel" :disabled="loading"> 取消 </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          @click="handleConfirm"
+          :loading="loading"
+          :disabled="!selectedGroupUuid || loading"
+        >
           移动
         </v-btn>
       </v-card-actions>
@@ -60,15 +69,15 @@ const groupOptions = computed(() => {
   const groups = reminderStore.reminderGroups;
   const options = [
     { uuid: '', name: '桌面（根分组）' }, // 空字符串表示根分组
-    ...groups.map(group => ({
+    ...groups.map((group) => ({
       uuid: group.uuid,
-      name: group.name
-    }))
+      name: group.name,
+    })),
   ];
 
   // 过滤掉当前模板所在的分组
   if (currentTemplate.value) {
-    return options.filter(option => option.uuid !== currentTemplate.value?.groupUuid);
+    return options.filter((option) => option.uuid !== currentTemplate.value?.groupUuid);
   }
 
   return options;
@@ -115,10 +124,7 @@ const handleConfirm = async () => {
   errorMessage.value = '';
 
   try {
-    await reminderService.moveTemplateToGroup(
-      currentTemplate.value.uuid,
-      selectedGroupUuid.value
-    );
+    await reminderService.moveTemplateToGroup(currentTemplate.value.uuid, selectedGroupUuid.value);
 
     emit('moved', currentTemplate.value.uuid, selectedGroupUuid.value);
     show.value = false;
@@ -132,7 +138,7 @@ const handleConfirm = async () => {
 
 // 暴露方法
 defineExpose({
-  open
+  open,
 });
 </script>
 

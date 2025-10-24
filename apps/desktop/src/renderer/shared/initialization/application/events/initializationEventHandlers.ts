@@ -1,13 +1,11 @@
-import { eventBus } from "@dailyuse/utils";
-import type {
-  UserLoggedInEvent,
-} from "@renderer/modules/Authentication/domain/events/authenticationEvents";
-import { cleanupUserSession, initializeUserSession } from "../../appInitialization";
+import { eventBus } from '@dailyuse/utils';
+import type { UserLoggedInEvent } from '@renderer/modules/Authentication/domain/events/authenticationEvents';
+import { cleanupUserSession, initializeUserSession } from '../../appInitialization';
 import {
   InitializationManager,
   InitializationPhase,
   InitializationTask,
-} from "@main/shared/initialization/initializationManager";
+} from '@main/shared/initialization/initializationManager';
 
 /**
  * 初始化 初始化事件的事件处理器
@@ -17,42 +15,32 @@ export class InitializationEventHandlers {
   static registerInitializationEventHandlers() {
     // 注册用户登录事件处理器
     eventBus.subscribe<UserLoggedInEvent>(
-      "UserLoggedIn",
-      InitializationEventHandlers.handleUserLoggedInEvent
+      'UserLoggedIn',
+      InitializationEventHandlers.handleUserLoggedInEvent,
     );
-    console.log("✅ [Initialization] 注册用户登录事件处理器");
+    console.log('✅ [Initialization] 注册用户登录事件处理器');
   }
   // 处理用户登录事件
   static async handleUserLoggedInEvent(event: UserLoggedInEvent) {
     const { accountUuid } = event.payload;
-    console.log(
-      "🟢 [Initialization] 检测到用户登录事件，开始初始化用户数据:",
-      accountUuid
-    );
+    console.log('🟢 [Initialization] 检测到用户登录事件，开始初始化用户数据:', accountUuid);
     await initializeUserSession(accountUuid);
   }
 
   static async handleUserLoggedOutEvent(event: UserLoggedInEvent) {
     const { accountUuid } = event.payload;
-    console.log(
-      "🔴 [Initialization] 检测到用户登出事件，开始清理用户数据:",
-      accountUuid
-    );
+    console.log('🔴 [Initialization] 检测到用户登出事件，开始清理用户数据:', accountUuid);
     await cleanupUserSession();
   }
-
 }
 
-
-
-
 const initializationEventHandlersTask: InitializationTask = {
-  name: "InitializationEventHandlers",
+  name: 'InitializationEventHandlers',
   phase: InitializationPhase.APP_STARTUP,
   priority: 1,
   initialize: async () => {
     InitializationEventHandlers.registerInitializationEventHandlers();
-  }
+  },
 };
 
 export const registerInitializationEventsTask = () => {

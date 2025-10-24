@@ -15,9 +15,9 @@ declare namespace NodeJS {
      * │
      * ```
      */
-    APP_ROOT: string
+    APP_ROOT: string;
     /** /dist/ or /public/ */
-    VITE_PUBLIC: string
+    VITE_PUBLIC: string;
   }
 }
 
@@ -30,7 +30,7 @@ declare namespace NodeJS {
 // }
 
 interface Window {
-  ipcRenderer: import('electron').IpcRenderer,
+  ipcRenderer: import('electron').IpcRenderer;
   env?: {
     argv?: string[];
   };
@@ -47,7 +47,7 @@ interface File {
 interface TreeNode {
   title: string;
   key: string;
-  fileType: string,
+  fileType: string;
   children?: TreeNode[];
   isLeaf?: boolean;
 }

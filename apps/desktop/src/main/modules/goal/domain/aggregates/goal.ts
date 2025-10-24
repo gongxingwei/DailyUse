@@ -1,9 +1,9 @@
-import { addDays } from "date-fns";
-import { AggregateRoot } from "@dailyuse/utils";
-import { IGoal } from "@common/modules/goal";
-import { KeyResult } from "../entities/keyResult";
-import { GoalRecord } from "../entities/record";
-import { GoalReview } from "../entities/goalReview";
+import { addDays } from 'date-fns';
+import { AggregateRoot } from '@dailyuse/utils';
+import { IGoal } from '@common/modules/goal';
+import { KeyResult } from '../entities/keyResult';
+import { GoalRecord } from '../entities/record';
+import { GoalReview } from '../entities/goalReview';
 
 export class Goal extends AggregateRoot implements IGoal {
   private _name: string;
@@ -20,7 +20,7 @@ export class Goal extends AggregateRoot implements IGoal {
   private _lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: "active" | "completed" | "paused" | "archived";
+    status: 'active' | 'completed' | 'paused' | 'archived';
   };
   private _analytics: {
     overallProgress: number;
@@ -47,9 +47,9 @@ export class Goal extends AggregateRoot implements IGoal {
     super(params.uuid || Goal.generateUUID());
     const now = new Date();
 
-    this._name = params.name || "";
+    this._name = params.name || '';
     this._description = params.description;
-    this._color = params.color || "#FF5733";
+    this._color = params.color || '#FF5733';
     this._dirUuid = params.dirUuid;
     this._startTime = params.startTime || now;
     this._endTime = params.endTime || addDays(now, 30); // 默认结束时间为开始时间后30天
@@ -59,14 +59,14 @@ export class Goal extends AggregateRoot implements IGoal {
     this._reviews = [];
 
     this._analysis = {
-      motive: params.analysis?.motive ?? "",
-      feasibility: params.analysis?.feasibility ?? "",
+      motive: params.analysis?.motive ?? '',
+      feasibility: params.analysis?.feasibility ?? '',
     };
 
     this._lifecycle = {
       createdAt: now,
       updatedAt: now,
-      status: "active",
+      status: 'active',
     };
 
     this._analytics = {
@@ -84,7 +84,7 @@ export class Goal extends AggregateRoot implements IGoal {
     return this._name;
   }
   set name(value: string) {
-    if (!value.trim()) throw new Error("目标标题不能为空");
+    if (!value.trim()) throw new Error('目标标题不能为空');
     this._name = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
@@ -122,7 +122,7 @@ export class Goal extends AggregateRoot implements IGoal {
   }
   set startTime(value: Date) {
     if (value.getTime() >= this._endTime.getTime()) {
-      throw new Error("开始时间必须早于结束时间");
+      throw new Error('开始时间必须早于结束时间');
     }
     this._startTime = value;
     this._lifecycle.updatedAt = new Date();
@@ -134,7 +134,7 @@ export class Goal extends AggregateRoot implements IGoal {
   }
   set endTime(value: Date) {
     if (value.getTime() <= this._startTime.getTime()) {
-      throw new Error("结束时间必须晚于开始时间");
+      throw new Error('结束时间必须晚于开始时间');
     }
     this._endTime = value;
     this._lifecycle.updatedAt = new Date();
@@ -165,7 +165,7 @@ export class Goal extends AggregateRoot implements IGoal {
   get lifecycle(): {
     createdAt: Date;
     updatedAt: Date;
-    status: "active" | "completed" | "paused" | "archived";
+    status: 'active' | 'completed' | 'paused' | 'archived';
   } {
     return this._lifecycle;
   }
@@ -237,7 +237,7 @@ export class Goal extends AggregateRoot implements IGoal {
     const { keyResultUuid, value } = record;
     const keyResult = this._keyResults.find((kr) => kr.uuid === keyResultUuid);
     if (!keyResult) {
-      throw new Error("关键结果不存在，无法添加记录");
+      throw new Error('关键结果不存在，无法添加记录');
     }
     this.increaseKeyResultProgressByKR(keyResult, value);
     this._records.push(record);
@@ -276,7 +276,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 归档目标
    */
   archive(): void {
-    this._lifecycle.status = "archived";
+    this._lifecycle.status = 'archived';
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
@@ -285,7 +285,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 完成目标
    */
   complete(): void {
-    this._lifecycle.status = "completed";
+    this._lifecycle.status = 'completed';
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
@@ -294,7 +294,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 暂停目标
    */
   pause(): void {
-    this._lifecycle.status = "paused";
+    this._lifecycle.status = 'paused';
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
@@ -303,7 +303,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 激活目标
    */
   activate(): void {
-    this._lifecycle.status = "active";
+    this._lifecycle.status = 'active';
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
@@ -329,9 +329,7 @@ export class Goal extends AggregateRoot implements IGoal {
       totalWeight += kr.weight;
       if (kr.isCompleted) completed++;
     });
-    this._analytics.overallProgress = Math.round(
-      totalProgress / this._keyResults.length
-    );
+    this._analytics.overallProgress = Math.round(totalProgress / this._keyResults.length);
     this._analytics.weightedProgress = Math.round(weightedProgress);
     this._analytics.completedKeyResults = completed;
     this._analytics.totalKeyResults = this._keyResults.length;
@@ -350,18 +348,14 @@ export class Goal extends AggregateRoot implements IGoal {
   getLatestReview(): GoalReview | undefined {
     if (this._reviews.length === 0) return undefined;
     return this._reviews.reduce((latest, curr) =>
-      curr.reviewDate > latest.reviewDate ? curr : latest
+      curr.reviewDate > latest.reviewDate ? curr : latest,
     );
   }
 
   static isGoal(obj: any): obj is Goal {
     return (
       obj instanceof Goal ||
-      (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "name" in obj &&
-        "dirUuid" in obj)
+      (obj && typeof obj === 'object' && 'uuid' in obj && 'name' in obj && 'dirUuid' in obj)
     );
   }
 
@@ -429,11 +423,11 @@ export class Goal extends AggregateRoot implements IGoal {
     goal._keyResults = dto.keyResults.map((kr) => KeyResult.fromDTO(kr));
     goal._records = dto.records.map((r) => GoalRecord.fromDTO(r));
     goal._reviews = dto.reviews.map((rv) => GoalReview.fromDTO(rv));
-    goal._lifecycle = { 
+    goal._lifecycle = {
       createdAt: new Date(dto.lifecycle.createdAt),
       updatedAt: new Date(dto.lifecycle.updatedAt),
       status: dto.lifecycle.status,
-     };
+    };
     goal._version = dto.version;
     return goal;
   }
@@ -451,8 +445,8 @@ export class Goal extends AggregateRoot implements IGoal {
    */
   static forCreate(): Goal {
     return new Goal({
-      name: "",
-      color: "#FF5733",
+      name: '',
+      color: '#FF5733',
       analysis: {},
     });
   }

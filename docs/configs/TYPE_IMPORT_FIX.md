@@ -13,6 +13,7 @@ import type * as EditorContracts from '@dailyuse/contracts/modules/editor';
 ```
 
 这种导入方式有以下问题：
+
 1. `@dailyuse/contracts/modules/*` 子路径导出已被移除
 2. TypeScript 编译时找不到模块
 3. 与 contracts 包的导出结构不一致
@@ -57,32 +58,32 @@ const timeType = TaskContracts.TaskTimeType.SPECIFIC_TIME;
 
 ### Editor 模块
 
-| 文件 | 修复内容 |
-|------|---------|
-| `apps/web/src/modules/editor/infrastructure/api/editorApiClient.ts` | `import type * as EditorContracts from '@dailyuse/contracts/modules/editor'` → `import type { EditorContracts } from '@dailyuse/contracts'` |
-| `apps/web/src/modules/editor/presentation/stores/editorSessionStore.ts` | 已使用正确的导入形式 ✅ |
+| 文件                                                                    | 修复内容                                                                                                                                    |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/modules/editor/infrastructure/api/editorApiClient.ts`     | `import type * as EditorContracts from '@dailyuse/contracts/modules/editor'` → `import type { EditorContracts } from '@dailyuse/contracts'` |
+| `apps/web/src/modules/editor/presentation/stores/editorSessionStore.ts` | 已使用正确的导入形式 ✅                                                                                                                     |
 
 ### Task 模块
 
-| 文件 | 修复内容 |
-|------|---------|
-| `apps/web/src/modules/task/presentation/components/dialogs/TaskTemplateDialog.vue` | 改为直接导入枚举 |
-| `apps/web/src/modules/task/presentation/composables/useTaskUtils.ts` | `@dailyuse/contracts/modules/task` → `@dailyuse/contracts` |
-| `apps/web/src/modules/task/presentation/components/TaskInstanceManagement.vue` | 使用命名空间导入 `KeyResultLink` |
-| `apps/web/src/modules/task/presentation/components/cards/TaskInSummaryCard.vue` | 使用命名空间导入 |
-| `apps/web/src/modules/task/presentation/components/cards/TaskTemplateCard.vue` | 使用命名空间导入 |
-| `apps/web/src/modules/task/presentation/components/cards/TaskInstanceCard.vue` | 使用命名空间导入 |
+| 文件                                                                               | 修复内容                                                   |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `apps/web/src/modules/task/presentation/components/dialogs/TaskTemplateDialog.vue` | 改为直接导入枚举                                           |
+| `apps/web/src/modules/task/presentation/composables/useTaskUtils.ts`               | `@dailyuse/contracts/modules/task` → `@dailyuse/contracts` |
+| `apps/web/src/modules/task/presentation/components/TaskInstanceManagement.vue`     | 使用命名空间导入 `KeyResultLink`                           |
+| `apps/web/src/modules/task/presentation/components/cards/TaskInSummaryCard.vue`    | 使用命名空间导入                                           |
+| `apps/web/src/modules/task/presentation/components/cards/TaskTemplateCard.vue`     | 使用命名空间导入                                           |
+| `apps/web/src/modules/task/presentation/components/cards/TaskInstanceCard.vue`     | 使用命名空间导入                                           |
 
 ### Repository 模块
 
-| 文件 | 修复内容 |
-|------|---------|
+| 文件                                                                        | 修复内容                                                                    |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `apps/web/src/modules/repository/presentation/composables/useRepository.ts` | `@dailyuse/contracts/modules/repository` → `@dailyuse/contracts` + 命名空间 |
 
 ### Schedule 模块
 
-| 文件 | 修复内容 |
-|------|---------|
+| 文件                                                           | 修复内容                                                                  |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `apps/web/src/modules/account/presentation/views/TestView.vue` | `@dailyuse/contracts/modules/schedule` → `@dailyuse/contracts` + 命名空间 |
 
 ## Contracts 导出结构
@@ -100,7 +101,12 @@ export * as ScheduleContracts from './modules/schedule';
 // ... 其他模块
 
 // 直接导出常用枚举（可作为值使用）
-export { TaskTimeType, TaskScheduleMode, TaskTemplateStatus, TaskInstanceStatus } from './modules/task/enums';
+export {
+  TaskTimeType,
+  TaskScheduleMode,
+  TaskTemplateStatus,
+  TaskInstanceStatus,
+} from './modules/task/enums';
 export { ImportanceLevel } from './shared/importance';
 export { UrgencyLevel } from './shared/urgency';
 // ... 其他枚举
@@ -131,11 +137,13 @@ export { UrgencyLevel } from './shared/urgency';
 ### ✅ 推荐做法
 
 1. **纯类型导入** - 使用 `import type`
+
    ```typescript
    import type { TaskContracts } from '@dailyuse/contracts';
    ```
 
 2. **枚举导入** - 直接导入已导出的枚举
+
    ```typescript
    import { TaskTimeType, ImportanceLevel } from '@dailyuse/contracts';
    ```
@@ -149,12 +157,14 @@ export { UrgencyLevel } from './shared/urgency';
 ### ❌ 避免的做法
 
 1. **子路径导入** - 已废弃
+
    ```typescript
    // ❌ 不要这样做
    import { SomeType } from '@dailyuse/contracts/modules/task';
    ```
 
 2. **通配符命名空间导入** - TypeScript 不推荐
+
    ```typescript
    // ❌ 不推荐
    import * as EditorContracts from '@dailyuse/contracts/modules/editor';

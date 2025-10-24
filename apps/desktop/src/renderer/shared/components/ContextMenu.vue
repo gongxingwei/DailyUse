@@ -4,7 +4,7 @@
     class="context-menu"
     :style="{
       left: `${adjustedPosition.x}px`,
-      top: `${adjustedPosition.y}px`
+      top: `${adjustedPosition.y}px`,
     }"
     @click.stop
     @contextmenu.stop.prevent
@@ -19,8 +19,8 @@
           v-else
           class="menu-item"
           :class="{
-            'disabled': item.disabled,
-            [item.className || '']: !!item.className
+            disabled: item.disabled,
+            [item.className || '']: !!item.className,
           }"
           @click="handleItemClick(item)"
         >
@@ -90,7 +90,7 @@ const emit = defineEmits<Emits>();
 
 const isVisible = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => emit('update:modelValue', value),
 });
 
 const menuItems = computed(() => props.items);
@@ -128,7 +128,7 @@ const adjustedPosition = computed(() => {
 
 function handleItemClick(item: MenuItem) {
   if (item.disabled) return;
-  
+
   // 调用项目自己的处理函数
   item.action?.(item);
   // 发出选择事件

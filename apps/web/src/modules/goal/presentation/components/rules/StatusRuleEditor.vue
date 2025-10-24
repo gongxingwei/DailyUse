@@ -9,28 +9,17 @@
         <v-icon icon="mdi-robot" size="24" />
         <span>自动状态规则</span>
       </div>
-      <v-chip
-        :color="config.enabled ? 'success' : 'default'"
-        variant="flat"
-        size="small"
-      >
+      <v-chip :color="config.enabled ? 'success' : 'default'" variant="flat" size="small">
         {{ config.enabled ? '已启用' : '已禁用' }}
       </v-chip>
     </v-card-title>
 
-    <v-card-subtitle>
-      根据关键结果的进度、权重和截止日期自动更新目标状态
-    </v-card-subtitle>
+    <v-card-subtitle> 根据关键结果的进度、权重和截止日期自动更新目标状态 </v-card-subtitle>
 
     <v-card-text>
       <!-- 全局配置 -->
       <div class="mb-4">
-        <v-switch
-          v-model="config.enabled"
-          color="primary"
-          label="启用自动规则"
-          hide-details
-        />
+        <v-switch v-model="config.enabled" color="primary" label="启用自动规则" hide-details />
         <v-switch
           v-model="config.allowManualOverride"
           color="primary"
@@ -82,15 +71,8 @@
 
           <v-list-item-title class="d-flex align-center ga-2">
             <span>{{ rule.name }}</span>
-            <v-chip size="x-small" variant="tonal">
-              优先级: {{ rule.priority }}
-            </v-chip>
-            <v-chip
-              v-if="rule.id.startsWith('rule-')"
-              size="x-small"
-              color="info"
-              variant="flat"
-            >
+            <v-chip size="x-small" variant="tonal"> 优先级: {{ rule.priority }} </v-chip>
+            <v-chip v-if="rule.id.startsWith('rule-')" size="x-small" color="info" variant="flat">
               内置
             </v-chip>
           </v-list-item-title>
@@ -112,12 +94,7 @@
 
           <template #append>
             <div class="d-flex ga-1">
-              <v-btn
-                icon="mdi-pencil"
-                size="small"
-                variant="text"
-                @click="openEditDialog(rule)"
-              />
+              <v-btn icon="mdi-pencil" size="small" variant="text" @click="openEditDialog(rule)" />
               <v-btn
                 v-if="!rule.id.startsWith('rule-')"
                 icon="mdi-delete"
@@ -151,7 +128,7 @@
               label="规则名称 *"
               variant="outlined"
               density="comfortable"
-              :rules="[v => !!v || '请输入规则名称']"
+              :rules="[(v) => !!v || '请输入规则名称']"
               class="mb-4"
             />
 
@@ -173,7 +150,7 @@
                   density="comfortable"
                   type="number"
                   hint="数值越大优先级越高"
-                  :rules="[v => v > 0 || '优先级必须大于 0']"
+                  :rules="[(v) => v > 0 || '优先级必须大于 0']"
                 />
               </v-col>
               <v-col cols="6">
@@ -195,28 +172,17 @@
             <div class="mb-4">
               <div class="d-flex align-center justify-space-between mb-3">
                 <h4 class="text-subtitle-2">条件设置</h4>
-                <v-btn
-                  prepend-icon="mdi-plus"
-                  variant="text"
-                  size="small"
-                  @click="addCondition"
-                >
+                <v-btn prepend-icon="mdi-plus" variant="text" size="small" @click="addCondition">
                   添加条件
                 </v-btn>
               </div>
 
               <div v-if="form.conditions.length === 0" class="text-center py-4">
                 <v-icon icon="mdi-alert-circle-outline" size="48" color="grey" />
-                <p class="text-body-2 text-grey mt-2">
-                  请至少添加一个条件
-                </p>
+                <p class="text-body-2 text-grey mt-2">请至少添加一个条件</p>
               </div>
 
-              <v-row
-                v-for="(condition, index) in form.conditions"
-                :key="index"
-                class="mb-2"
-              >
+              <v-row v-for="(condition, index) in form.conditions" :key="index" class="mb-2">
                 <v-col cols="3">
                   <v-select
                     v-model="condition.metric"
@@ -325,7 +291,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAutoStatusRules } from '../../../application/composables/useAutoStatusRules';
-import type { StatusRule, RuleCondition } from '../../../../../../../../packages/contracts/src/modules/goal/rules/StatusRule';
+import type {
+  StatusRule,
+  RuleCondition,
+} from '../../../../../../../../packages/contracts/src/modules/goal/rules/StatusRule';
 import { GoalStatus } from '../../../../../../../../packages/contracts/src/modules/goal/enums';
 import { sortRulesByPriority } from '../../../domain/rules/BuiltInRules';
 
@@ -402,10 +371,10 @@ const sortedRules = computed(() => sortRulesByPriority(rules.value));
 
 // 生成条件摘要
 const getConditionSummary = (rule: StatusRule): string => {
-  const conditionTexts = rule.conditions.map(c => {
-    const metric = metricOptions.find(m => m.value === c.metric)?.title || c.metric;
-    const operator = operatorOptions.find(o => o.value === c.operator)?.title || c.operator;
-    const scope = scopeOptions.find(s => s.value === c.scope)?.title || c.scope;
+  const conditionTexts = rule.conditions.map((c) => {
+    const metric = metricOptions.find((m) => m.value === c.metric)?.title || c.metric;
+    const operator = operatorOptions.find((o) => o.value === c.operator)?.title || c.operator;
+    const scope = scopeOptions.find((s) => s.value === c.scope)?.title || c.scope;
     return `${metric} ${operator} ${c.value} (${scope})`;
   });
 
@@ -418,7 +387,8 @@ const getActionSummary = (rule: StatusRule): string => {
   const parts: string[] = [];
 
   if (rule.action.status) {
-    const statusText = statusOptions.find(s => s.value === rule.action.status)?.title || rule.action.status;
+    const statusText =
+      statusOptions.find((s) => s.value === rule.action.status)?.title || rule.action.status;
     parts.push(`状态 → ${statusText}`);
   }
 

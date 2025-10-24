@@ -46,15 +46,12 @@
             prepend-inner-icon="mdi-magnify"
             clearable
             hide-details
-            style="max-width: 300px;"
+            style="max-width: 300px"
           />
         </div>
 
         <v-list lines="two" class="mb-4">
-          <v-list-item
-            v-for="shortcut in filteredShortcuts"
-            :key="shortcut.action"
-          >
+          <v-list-item v-for="shortcut in filteredShortcuts" :key="shortcut.action">
             <template v-slot:prepend>
               <v-avatar color="primary" variant="tonal">
                 <span>{{ shortcut.icon }}</span>
@@ -63,12 +60,7 @@
 
             <v-list-item-title>
               {{ shortcut.label }}
-              <v-chip 
-                v-if="hasConflict(shortcut.action)"
-                color="error" 
-                size="x-small" 
-                class="ml-2"
-              >
+              <v-chip v-if="hasConflict(shortcut.action)" color="error" size="x-small" class="ml-2">
                 冲突
               </v-chip>
             </v-list-item-title>
@@ -82,13 +74,15 @@
             <template v-slot:append>
               <div class="d-flex align-center ga-2">
                 <v-text-field
-                  :model-value="formatShortcutForPlatform(getShortcutValue(shortcut.action) || shortcut.default)"
+                  :model-value="
+                    formatShortcutForPlatform(getShortcutValue(shortcut.action) || shortcut.default)
+                  "
                   :placeholder="formatShortcutForPlatform(shortcut.default)"
                   density="compact"
                   variant="outlined"
                   readonly
                   :error="hasConflict(shortcut.action)"
-                  style="max-width: 180px; font-family: monospace;"
+                  style="max-width: 180px; font-family: monospace"
                   hide-details
                   @keydown.prevent="(e: any) => handleKeyDown(e, shortcut.action)"
                   @blur="() => handleShortcutBlur(shortcut.action)"
@@ -96,16 +90,14 @@
                   :disabled="loading"
                 >
                   <template v-slot:prepend-inner v-if="recordingAction === shortcut.action">
-                    <v-progress-circular
-                      indeterminate
-                      size="16"
-                      width="2"
-                      color="primary"
-                    />
+                    <v-progress-circular indeterminate size="16" width="2" color="primary" />
                   </template>
                   <template v-slot:append-inner>
                     <v-btn
-                      v-if="getShortcutValue(shortcut.action) && getShortcutValue(shortcut.action) !== shortcut.default"
+                      v-if="
+                        getShortcutValue(shortcut.action) &&
+                        getShortcutValue(shortcut.action) !== shortcut.default
+                      "
                       icon="mdi-restore"
                       size="x-small"
                       variant="text"
@@ -130,12 +122,7 @@
         </v-list>
 
         <!-- 提示信息 -->
-        <v-alert
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mb-4"
-        >
+        <v-alert type="info" variant="tonal" density="compact" class="mb-4">
           <v-alert-title class="text-body-2">💡 提示</v-alert-title>
           <ul class="text-body-2 pl-4 mb-0">
             <li>点击输入框并按下您想要的快捷键组合</li>
@@ -158,18 +145,8 @@
         >
           保存更改
         </v-btn>
-        <v-btn
-          variant="outlined"
-          @click="handleReset"
-          :disabled="loading"
-        >
-          重置
-        </v-btn>
-        <v-btn
-          variant="outlined"
-          @click="handleResetToDefaults"
-          :disabled="loading"
-        >
+        <v-btn variant="outlined" @click="handleReset" :disabled="loading"> 重置 </v-btn>
+        <v-btn variant="outlined" @click="handleResetToDefaults" :disabled="loading">
           恢复默认
         </v-btn>
       </v-col>
@@ -191,16 +168,58 @@ interface PredefinedShortcut {
 }
 
 const predefinedShortcuts: PredefinedShortcut[] = [
-  { action: 'NEW_TASK', label: '新建任务', icon: '📝', description: '快速创建新任务', default: 'Ctrl+N' },
-  { action: 'NEW_GOAL', label: '新建目标', icon: '🎯', description: '快速创建新目标', default: 'Ctrl+G' },
-  { action: 'NEW_SCHEDULE', label: '新建日程', icon: '📅', description: '快速创建新日程', default: 'Ctrl+E' },
-  { action: 'SEARCH', label: '全局搜索', icon: '🔍', description: '打开搜索面板', default: 'Ctrl+K' },
-  { action: 'COMMAND_PALETTE', label: '命令面板', icon: '⌘', description: '打开命令面板', default: 'Ctrl+P' },
-  { action: 'TOGGLE_SIDEBAR', label: '切换侧边栏', icon: '📋', description: '显示/隐藏侧边栏', default: 'Ctrl+B' },
+  {
+    action: 'NEW_TASK',
+    label: '新建任务',
+    icon: '📝',
+    description: '快速创建新任务',
+    default: 'Ctrl+N',
+  },
+  {
+    action: 'NEW_GOAL',
+    label: '新建目标',
+    icon: '🎯',
+    description: '快速创建新目标',
+    default: 'Ctrl+G',
+  },
+  {
+    action: 'NEW_SCHEDULE',
+    label: '新建日程',
+    icon: '📅',
+    description: '快速创建新日程',
+    default: 'Ctrl+E',
+  },
+  {
+    action: 'SEARCH',
+    label: '全局搜索',
+    icon: '🔍',
+    description: '打开搜索面板',
+    default: 'Ctrl+K',
+  },
+  {
+    action: 'COMMAND_PALETTE',
+    label: '命令面板',
+    icon: '⌘',
+    description: '打开命令面板',
+    default: 'Ctrl+P',
+  },
+  {
+    action: 'TOGGLE_SIDEBAR',
+    label: '切换侧边栏',
+    icon: '📋',
+    description: '显示/隐藏侧边栏',
+    default: 'Ctrl+B',
+  },
   { action: 'SAVE', label: '保存', icon: '💾', description: '保存当前更改', default: 'Ctrl+S' },
   { action: 'UNDO', label: '撤销', icon: '↩️', description: '撤销上一步操作', default: 'Ctrl+Z' },
   { action: 'REDO', label: '重做', icon: '↪️', description: '重做上一步操作', default: 'Ctrl+Y' },
-  { action: 'SETTINGS', label: '打开设置', icon: '⚙️', description: '打开设置页面', default: 'Ctrl+,' },
+  {
+    action: 'SETTINGS',
+    label: '打开设置',
+    icon: '⚙️',
+    description: '打开设置页面',
+    default: 'Ctrl+,',
+  },
 ];
 
 // ===== Props =====
@@ -234,7 +253,7 @@ const recordingAction = ref<string | null>(null);
 
 // 检测平台（Mac 或其他）
 const isMac = ref(
-  typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
+  typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform),
 );
 
 // ===== 计算属性 =====
@@ -245,32 +264,32 @@ const hasChanges = computed(() => {
 // 过滤后的快捷键列表
 const filteredShortcuts = computed(() => {
   if (!searchQuery.value) return predefinedShortcuts;
-  
+
   const query = searchQuery.value.toLowerCase();
   return predefinedShortcuts.filter(
     (s) =>
       s.label.toLowerCase().includes(query) ||
       s.description.toLowerCase().includes(query) ||
-      s.action.toLowerCase().includes(query)
+      s.action.toLowerCase().includes(query),
   );
 });
 
 // 冲突检测
 const conflicts = computed(() => {
   const conflictMap: Record<string, string[]> = {};
-  
+
   Object.entries(localShortcuts.value.custom).forEach(([action, shortcut]) => {
     if (!shortcut) return;
-    
+
     if (!conflictMap[shortcut]) {
       conflictMap[shortcut] = [];
     }
     conflictMap[shortcut].push(action);
   });
-  
+
   // 只保留有冲突的（同一个快捷键被多个动作使用）
   return Object.fromEntries(
-    Object.entries(conflictMap).filter(([, actions]) => actions.length > 1)
+    Object.entries(conflictMap).filter(([, actions]) => actions.length > 1),
   );
 });
 
@@ -289,7 +308,7 @@ watch(
       };
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 // ===== 工具方法 =====
@@ -299,26 +318,26 @@ const getShortcutValue = (action: string): string => {
 
 const formatKeyCombo = (event: KeyboardEvent): string => {
   const parts: string[] = [];
-  
+
   // 使用平台相关的修饰键名称
   if (event.ctrlKey) parts.push('Ctrl');
   if (event.altKey) parts.push('Alt');
   if (event.shiftKey) parts.push('Shift');
   if (event.metaKey) parts.push(isMac.value ? 'Cmd' : 'Meta');
-  
+
   if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
     parts.push(event.key.toUpperCase());
   }
-  
+
   return parts.join('+');
 };
 
 // 为不同平台格式化快捷键显示
 const formatShortcutForPlatform = (shortcut: string): string => {
   if (!shortcut) return '';
-  
+
   let formatted = shortcut;
-  
+
   if (isMac.value) {
     // Mac 平台使用符号
     formatted = formatted
@@ -328,7 +347,7 @@ const formatShortcutForPlatform = (shortcut: string): string => {
       .replace(/Meta/g, '⌘')
       .replace(/Cmd/g, '⌘');
   }
-  
+
   return formatted;
 };
 
@@ -336,7 +355,7 @@ const formatShortcutForPlatform = (shortcut: string): string => {
 const hasConflict = (action: string): boolean => {
   const shortcut = getShortcutValue(action);
   if (!shortcut) return false;
-  
+
   const conflictingActions = conflicts.value[shortcut];
   return conflictingActions && conflictingActions.length > 1;
 };
@@ -345,10 +364,10 @@ const hasConflict = (action: string): boolean => {
 const getConflictingShortcut = (action: string): PredefinedShortcut | undefined => {
   const shortcut = getShortcutValue(action);
   if (!shortcut) return undefined;
-  
+
   const conflictingActions = conflicts.value[shortcut];
   if (!conflictingActions || conflictingActions.length <= 1) return undefined;
-  
+
   // 返回第一个不是当前 action 的冲突项
   const conflictAction = conflictingActions.find((a) => a !== action);
   return predefinedShortcuts.find((s) => s.action === conflictAction);
@@ -363,14 +382,14 @@ const handleShortcutChange = async () => {
 
 const handleKeyDown = (event: KeyboardEvent, action: string) => {
   event.preventDefault();
-  
+
   const keyCombo = formatKeyCombo(event);
-  
+
   // 至少需要一个修饰键
   if (!event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {
     return;
   }
-  
+
   tempKeyValue.value[action] = keyCombo;
   localShortcuts.value.custom[action] = keyCombo;
   recordingAction.value = action;
@@ -378,18 +397,18 @@ const handleKeyDown = (event: KeyboardEvent, action: string) => {
 
 const handleShortcutBlur = async (action: string) => {
   const value = tempKeyValue.value[action];
-  
+
   if (value && props.autoSave) {
     await setShortcut(action, value);
   }
-  
+
   delete tempKeyValue.value[action];
   recordingAction.value = null;
 };
 
 const handleClearShortcut = async (action: string) => {
   delete localShortcuts.value.custom[action];
-  
+
   if (props.autoSave) {
     await removeShortcut(action);
   }
@@ -397,7 +416,7 @@ const handleClearShortcut = async (action: string) => {
 
 const handleRestoreDefault = async (action: string, defaultValue: string) => {
   localShortcuts.value.custom[action] = defaultValue;
-  
+
   if (props.autoSave) {
     await setShortcut(action, defaultValue);
   }
@@ -405,11 +424,11 @@ const handleRestoreDefault = async (action: string, defaultValue: string) => {
 
 const handleSaveAll = async () => {
   const promises = Object.entries(localShortcuts.value.custom).map(([action, shortcut]) =>
-    setShortcut(action, shortcut)
+    setShortcut(action, shortcut),
   );
-  
+
   await Promise.all(promises);
-  
+
   originalShortcuts.value = {
     enabled: localShortcuts.value.enabled,
     custom: { ...localShortcuts.value.custom },
@@ -425,12 +444,12 @@ const handleReset = () => {
 
 const handleResetToDefaults = async () => {
   const defaultShortcuts: Record<string, string> = {};
-  predefinedShortcuts.forEach(shortcut => {
+  predefinedShortcuts.forEach((shortcut) => {
     defaultShortcuts[shortcut.action] = shortcut.default;
   });
-  
+
   localShortcuts.value.custom = defaultShortcuts;
-  
+
   if (props.autoSave) {
     await handleSaveAll();
   }

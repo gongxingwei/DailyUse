@@ -1,6 +1,12 @@
 <template>
-  <div class="grid-template-item" :class="{ disabled: !isTemplateEnabled }" @click="handleClick"
-    @contextmenu="handleRightClick" draggable="true" @dragstart="onDragStart">
+  <div
+    class="grid-template-item"
+    :class="{ disabled: !isTemplateEnabled }"
+    @click="handleClick"
+    @contextmenu="handleRightClick"
+    draggable="true"
+    @dragstart="onDragStart"
+  >
     <div class="template-icon">
       <v-icon size="32" :color="isTemplateEnabled ? 'primary' : 'grey'">
         {{ 'mdi-bell' }}
@@ -12,7 +18,11 @@
     <div></div>
 
     <!-- 简单的上下文菜单 -->
-    <div v-if="showContextMenu" class="context-menu" :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }">
+    <div
+      v-if="showContextMenu"
+      class="context-menu"
+      :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+    >
       <div class="context-menu-item" @click="handleMoveTemplate">
         <v-icon size="small" class="mr-2">mdi-folder-move</v-icon>
         移动到分组
@@ -29,15 +39,19 @@
     </div>
 
     <!-- 全局覆盖层，用于关闭菜单 -->
-    <div v-if="showContextMenu" class="context-menu-overlay" @click="closeContextMenu"
-      @contextmenu.prevent="closeContextMenu" />
+    <div
+      v-if="showContextMenu"
+      class="context-menu-overlay"
+      @click="closeContextMenu"
+      @contextmenu.prevent="closeContextMenu"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { inject, computed, ref } from 'vue';
 import type { ReminderTemplate } from '@dailyuse/domain-client';
-import { useReminderStore } from "../../stores/reminderStore";
+import { useReminderStore } from '../../stores/reminderStore';
 
 const reminderStore = useReminderStore();
 

@@ -10,7 +10,7 @@ import { ValidationUtils } from './ValidationUtils';
 export class SchedulingPolicyValidator implements ITemplateValidator {
   validate(template: ITaskTemplate): ValidationResult {
     const policy = template.schedulingPolicy;
-    
+
     if (!policy) {
       return ValidationUtils.failure(['调度策略不能为空']);
     }
@@ -49,7 +49,7 @@ export class SchedulingPolicyValidator implements ITemplateValidator {
       min: 0,
       max: 365, // 最多延迟一年
       required: true,
-      integer: true
+      integer: true,
     });
 
     if (!numberResult.isValid) {
@@ -129,11 +129,13 @@ export class SchedulingPolicyValidator implements ITemplateValidator {
     }
 
     // 检查跳过周末与周末特定任务的冲突
-    if (template.timeConfig.recurrence.type === 'weekly' && 
-        template.timeConfig.recurrence.config?.weekdays) {
+    if (
+      template.timeConfig.recurrence.type === 'weekly' &&
+      template.timeConfig.recurrence.config?.weekdays
+    ) {
       const weekdays = template.timeConfig.recurrence.config.weekdays;
       const hasWeekendDays = weekdays.some((day: number) => day === 0 || day === 6); // 周日或周六
-      
+
       if (hasWeekendDays && policy.skipWeekends) {
         errors.push('任务设置在周末执行，但调度策略要求跳过周末');
       }
@@ -156,7 +158,7 @@ export class SchedulingPolicyValidator implements ITemplateValidator {
     const restrictionCount = [
       policy.skipWeekends,
       policy.skipHolidays,
-      policy.workingHoursOnly
+      policy.workingHoursOnly,
     ].filter(Boolean).length;
 
     if (restrictionCount >= 2) {

@@ -1,7 +1,7 @@
 /**
  * 初始化管理器
  * 统一管理应用不同阶段的初始化逻辑
- * 
+ *
  * 初始化阶段：
  * 1. APP_STARTUP - 应用启动时，在 app.whenReady() 后立即执行
  * 2. BEFORE_USER_LOGIN - 用户登录前的准备工作
@@ -11,11 +11,11 @@
  */
 
 export enum InitializationPhase {
-  APP_STARTUP = 'APP_STARTUP',           // 应用启动
+  APP_STARTUP = 'APP_STARTUP', // 应用启动
   BEFORE_USER_LOGIN = 'BEFORE_USER_LOGIN', // 登录前准备
-  USER_LOGIN = 'USER_LOGIN',             // 用户登录
-  USER_LOGOUT = 'USER_LOGOUT',           // 用户登出
-  APP_SHUTDOWN = 'APP_SHUTDOWN'          // 应用关闭
+  USER_LOGIN = 'USER_LOGIN', // 用户登录
+  USER_LOGOUT = 'USER_LOGOUT', // 用户登出
+  APP_SHUTDOWN = 'APP_SHUTDOWN', // 应用关闭
 }
 
 export interface InitializationTask {
@@ -55,9 +55,9 @@ export class InitializationManager {
    */
   async executePhase(phase: InitializationPhase, context?: any): Promise<void> {
     console.log(`Starting initialization phase: ${phase}`);
-    
+
     const phaseTasks = Array.from(this.tasks.values())
-      .filter(task => task.phase === phase)
+      .filter((task) => task.phase === phase)
       .sort((a, b) => a.priority - b.priority);
 
     for (const task of phaseTasks) {
@@ -115,9 +115,9 @@ export class InitializationManager {
    */
   async cleanupPhase(phase: InitializationPhase): Promise<void> {
     console.log(`Cleaning up phase: ${phase}`);
-    
+
     const phaseTasks = Array.from(this.tasks.values())
-      .filter(task => task.phase === phase && task.cleanup)
+      .filter((task) => task.phase === phase && task.cleanup)
       .sort((a, b) => b.priority - a.priority); // 清理时反向排序
 
     for (const task of phaseTasks) {
@@ -144,16 +144,16 @@ export class InitializationManager {
   /**
    * 获取模块状态
    */
-  getModuleStatus(): { [key: string]: { initialized: boolean, phase: string } } {
-    const status: { [key: string]: { initialized: boolean, phase: string } } = {};
-    
+  getModuleStatus(): { [key: string]: { initialized: boolean; phase: string } } {
+    const status: { [key: string]: { initialized: boolean; phase: string } } = {};
+
     for (const [name, task] of this.tasks) {
       status[name] = {
         initialized: this.completedTasks.has(name),
-        phase: task.phase
+        phase: task.phase,
       };
     }
-    
+
     return status;
   }
 

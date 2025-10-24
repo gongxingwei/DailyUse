@@ -79,7 +79,7 @@ class TemplateRecommendationService {
    */
   private calculateMatchScore(
     template: GoalTemplate,
-    filters: RecommendationFilters
+    filters: RecommendationFilters,
   ): { score: number; reasons: string[] } {
     let score = 0;
     const reasons: string[] = [];
@@ -90,7 +90,7 @@ class TemplateRecommendationService {
     // 角色匹配 (+40分)
     if (filters.role) {
       const roleMatch = template.roles.some((r) =>
-        r.toLowerCase().includes(filters.role!.toLowerCase())
+        r.toLowerCase().includes(filters.role!.toLowerCase()),
       );
       if (roleMatch) {
         score += 40;
@@ -104,7 +104,7 @@ class TemplateRecommendationService {
         (i) =>
           i.toLowerCase().includes(filters.industry!.toLowerCase()) ||
           i === '通用' ||
-          i === 'All Industries'
+          i === 'All Industries',
       );
       if (industryMatch) {
         score += 30;
@@ -128,7 +128,7 @@ class TemplateRecommendationService {
     // 标签匹配 (+10分 per tag)
     if (filters.tags && filters.tags.length > 0) {
       const matchedTags = template.tags.filter((tag) =>
-        filters.tags!.some((filterTag) => tag.toLowerCase().includes(filterTag.toLowerCase()))
+        filters.tags!.some((filterTag) => tag.toLowerCase().includes(filterTag.toLowerCase())),
       );
       if (matchedTags.length > 0) {
         score += matchedTags.length * 10;
@@ -214,7 +214,7 @@ class TemplateRecommendationService {
         template.title.toLowerCase().includes(lowerQuery) ||
         template.description.toLowerCase().includes(lowerQuery) ||
         template.tags.some((tag) => tag.toLowerCase().includes(lowerQuery)) ||
-        template.roles.some((role) => role.toLowerCase().includes(lowerQuery))
+        template.roles.some((role) => role.toLowerCase().includes(lowerQuery)),
     );
   }
 }

@@ -9,15 +9,15 @@
 
 ## 📊 总体评分
 
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| **DDD 架构合规性** | ⭐⭐⭐⭐☆ (4/5) | 聚合根设计优秀，但缺少 DomainEvent |
-| **代码组织结构** | ⭐⭐⭐⭐⭐ (5/5) | Monorepo + 分层架构清晰 |
-| **类型安全** | ⭐⭐⭐⭐⭐ (5/5) | TypeScript 使用规范 |
-| **测试覆盖率** | ⭐⭐☆☆☆ (2/5) | ⚠️ 单元测试严重不足 |
-| **代码复用** | ⭐⭐⭐⭐☆ (4/5) | 契约层设计良好 |
-| **错误处理** | ⭐⭐⭐☆☆ (3/5) | 基础错误处理存在，需要统一 |
-| **文档质量** | ⭐⭐⭐⭐⭐ (5/5) | 注释详细，架构文档完善 |
+| 维度               | 评分             | 说明                               |
+| ------------------ | ---------------- | ---------------------------------- |
+| **DDD 架构合规性** | ⭐⭐⭐⭐☆ (4/5)  | 聚合根设计优秀，但缺少 DomainEvent |
+| **代码组织结构**   | ⭐⭐⭐⭐⭐ (5/5) | Monorepo + 分层架构清晰            |
+| **类型安全**       | ⭐⭐⭐⭐⭐ (5/5) | TypeScript 使用规范                |
+| **测试覆盖率**     | ⭐⭐☆☆☆ (2/5)    | ⚠️ 单元测试严重不足                |
+| **代码复用**       | ⭐⭐⭐⭐☆ (4/5)  | 契约层设计良好                     |
+| **错误处理**       | ⭐⭐⭐☆☆ (3/5)   | 基础错误处理存在，需要统一         |
+| **文档质量**       | ⭐⭐⭐⭐⭐ (5/5) | 注释详细，架构文档完善             |
 
 **综合评分**: **3.8/5** ⭐⭐⭐⭐ (良好)
 
@@ -54,7 +54,8 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
 }
 ```
 
-**评价**: 
+**评价**:
+
 - ✅ 聚合根职责明确（事务边界、业务规则、子实体管理）
 - ✅ 封装性强，防止外部破坏不变性
 - ✅ 方法命名语义化（activate, pause, archive）
@@ -77,13 +78,14 @@ export interface TaskTemplateServerDTO {
 export interface TaskTemplateClientDTO {
   uuid: string;
   title: string;
-  displayTitle: string;       // ✅ 客户端专用计算字段
-  taskTypeText: string;        // ✅ 国际化友好
-  completionRate: number;      // ✅ UI 展示字段
+  displayTitle: string; // ✅ 客户端专用计算字段
+  taskTypeText: string; // ✅ 国际化友好
+  completionRate: number; // ✅ UI 展示字段
 }
 ```
 
 **评价**:
+
 - ✅ Server/Client DTO 分离（避免敏感数据泄露）
 - ✅ 计算字段在 Client DTO（减轻前端负担）
 - ✅ 类型安全（TypeScript 编译期检查）
@@ -107,16 +109,16 @@ export class AuthenticationApplicationService {
   async login(request: LoginRequest): Promise<LoginResponse> {
     // 步骤 1: 查询账户
     const account = await this.accountRepository.findByUsername(...);
-    
+
     // 步骤 2: 查询凭证
     const credential = await this.credentialRepository.findByAccountUuid(...);
-    
+
     // 步骤 3: 业务规则验证（委托给 DomainService）
     const isLocked = this.authenticationDomainService.isCredentialLocked(credential);
-    
+
     // 步骤 4: 持久化
     await this.sessionRepository.save(session);
-    
+
     // 步骤 5: 事件发布
     eventBus.emit('user:logged-in', ...);
   }
@@ -124,6 +126,7 @@ export class AuthenticationApplicationService {
 ```
 
 **评价**:
+
 - ✅ 职责单一（编排 + 持久化 + 事件发布）
 - ✅ 依赖接口而非实现（可测试、可替换）
 - ✅ 业务逻辑委托给 DomainService
@@ -146,6 +149,7 @@ eventBus.on('account:created', async (event) => {
 ```
 
 **评价**:
+
 - ✅ 模块间松耦合（Account 不依赖 Authentication）
 - ✅ 最终一致性（异步处理）
 - ✅ 可扩展（新模块只需监听事件）
@@ -168,6 +172,7 @@ eventBus.on('account:created', async (event) => {
 ```
 
 **评价**:
+
 - ✅ 类级别注释说明职责
 - ✅ 方法注释说明参数和返回值
 - ✅ 业务逻辑注释清晰
@@ -179,22 +184,26 @@ eventBus.on('account:created', async (event) => {
 ### 1. **⚠️ 单元测试严重不足** (Critical)
 
 **现状**:
+
 - ✅ 有集成测试（`registration.integration.test.ts`, `login.integration.test.ts`）
 - ❌ **没有 Domain 层单元测试**（TaskTemplate, TaskInstance, Goal 等聚合根）
 - ❌ **没有 Value Object 单元测试**（RecurrenceRule, TaskTimeConfig 等）
 - ❌ **没有 Application Service 单元测试**（Mock Repository）
 
 **问题影响**:
+
 - 🐛 业务规则变更容易引入 Bug
 - 🔄 重构风险高（无法快速验证）
 - ⏱️ 调试效率低（依赖集成测试，启动慢）
 
 **测试覆盖率估算**:
+
 - Domain 层: **< 5%** ❌
 - Application 层: **< 10%** ❌
 - API 层: **~30%** ⚠️
 
 **推荐目标**:
+
 - Domain 层: **≥ 80%** ✅
 - Application 层: **≥ 70%** ✅
 - API 层: **≥ 60%** ✅
@@ -204,29 +213,32 @@ eventBus.on('account:created', async (event) => {
 ### 2. **DomainEvent 机制未充分使用** (Medium)
 
 **现状**:
+
 ```typescript
 export class TaskTemplate extends AggregateRoot {
   public activate(): void {
     this._status = 'ACTIVE';
     this._updatedAt = Date.now();
-    this.addHistory('resumed');  // ✅ 记录历史
-    
+    this.addHistory('resumed'); // ✅ 记录历史
+
     // ❌ 缺少: 发布 TaskTemplateActivatedEvent
   }
 }
 ```
 
 **问题**:
+
 - ❌ 没有发布领域事件（如 `TaskTemplateActivatedEvent`, `TaskInstanceCompletedEvent`）
 - ❌ 无法实现事件溯源（Event Sourcing）
 - ❌ 其他模块无法监听领域事件
 
 **改进建议**:
+
 ```typescript
 public activate(): void {
   this._status = 'ACTIVE';
   this._updatedAt = Date.now();
-  
+
   // ✅ 发布领域事件
   this.addDomainEvent(new TaskTemplateActivatedEvent({
     aggregateId: this.uuid,
@@ -241,6 +253,7 @@ public activate(): void {
 ### 3. **错误处理不统一** (Medium)
 
 **现状**:
+
 ```typescript
 // ❌ 方式 1: 抛出字符串
 throw new Error('Invalid username or password');
@@ -253,18 +266,20 @@ throw new AccountAlreadyExistsError(username);
 ```
 
 **问题**:
+
 - ❌ 错误类型不统一（难以捕获和处理）
 - ❌ 缺少错误码（前端无法国际化）
 - ❌ 错误上下文信息不足（调试困难）
 
 **改进建议**:
+
 ```typescript
 // ✅ 统一错误基类
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
     message: string,
-    public readonly context?: Record<string, any>
+    public readonly context?: Record<string, any>,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -274,11 +289,7 @@ export class DomainError extends Error {
 // ✅ 具体错误类
 export class InvalidCredentialsError extends DomainError {
   constructor(username: string) {
-    super(
-      'AUTH_001',
-      'Invalid username or password',
-      { username }
-    );
+    super('AUTH_001', 'Invalid username or password', { username });
   }
 }
 
@@ -291,6 +302,7 @@ throw new InvalidCredentialsError(request.username);
 ### 4. **部分业务逻辑泄漏到 Controller** (Low)
 
 **现状**（`TaskTemplateController.ts`）:
+
 ```typescript
 static async getTaskTemplates(req: Request, res: Response) {
   // ❌ 问题: 查询逻辑分散在 Controller
@@ -308,10 +320,12 @@ static async getTaskTemplates(req: Request, res: Response) {
 ```
 
 **问题**:
+
 - ❌ Controller 包含业务判断逻辑
 - ❌ 参数解析逻辑应该在 Application Service
 
 **改进建议**:
+
 ```typescript
 // ✅ Application Service 统一入口
 async getTaskTemplates(
@@ -332,6 +346,7 @@ async getTaskTemplates(
 ### 5. **缺少 API 输入验证** (Medium)
 
 **现状**:
+
 ```typescript
 static async createTaskTemplate(req: Request, res: Response) {
   // ❌ 缺少: Zod 或 Joi 输入验证
@@ -343,10 +358,12 @@ static async createTaskTemplate(req: Request, res: Response) {
 ```
 
 **问题**:
+
 - ❌ 缺少输入验证（类型、格式、范围）
 - ❌ 可能导致脏数据进入数据库
 
 **改进建议**:
+
 ```typescript
 import { z } from 'zod';
 
@@ -372,6 +389,7 @@ static async createTaskTemplate(req: Request, res: Response) {
 ### 6. **RecurrenceRule 实现不完整** (Medium)
 
 **现状**（`TaskTemplate.shouldGenerateInstance`）:
+
 ```typescript
 switch (rule.frequency) {
   case 'MONTHLY':
@@ -387,10 +405,12 @@ switch (rule.frequency) {
 ```
 
 **问题**:
+
 - ❌ MONTHLY 和 YEARLY 逻辑未实现
 - ❌ 缺少复杂重复规则（如"每月最后一个周五"）
 
 **改进建议**:
+
 - ✅ 集成 `node-cron` 或 `rrule` 库（Sprint 2b 计划）
 - ✅ 实现完整的 RFC 5545 规则
 
@@ -442,6 +462,7 @@ switch (rule.frequency) {
 ### **Phase 1: Domain 层单元测试** (Week 1)
 
 #### **TaskTemplate 聚合根测试**
+
 ```typescript
 // packages/domain-server/src/task/aggregates/__tests__/TaskTemplate.spec.ts
 
@@ -454,7 +475,7 @@ describe('TaskTemplate Aggregate Root', () => {
         taskType: 'ONE_TIME',
         // ...
       });
-      
+
       expect(template.taskType).toBe('ONE_TIME');
       expect(template.title).toBe('Review PR');
     });
@@ -462,12 +483,14 @@ describe('TaskTemplate Aggregate Root', () => {
 
   describe('Instance Generation', () => {
     it('should generate one instance for one-time task', () => {
-      const template = TaskTemplate.create({ /* ... */ });
+      const template = TaskTemplate.create({
+        /* ... */
+      });
       const instances = template.generateInstances(
         Date.parse('2025-12-01'),
-        Date.parse('2025-12-31')
+        Date.parse('2025-12-31'),
       );
-      
+
       expect(instances).toHaveLength(1);
     });
 
@@ -480,22 +503,24 @@ describe('TaskTemplate Aggregate Root', () => {
         }),
         // ...
       });
-      
+
       const instances = template.generateInstances(
         Date.parse('2025-12-01'),
-        Date.parse('2025-12-07')  // 7 days
+        Date.parse('2025-12-07'), // 7 days
       );
-      
+
       expect(instances).toHaveLength(7);
     });
   });
 
   describe('Status Management', () => {
     it('should activate paused template', () => {
-      const template = TaskTemplate.create({ /* ... */ });
+      const template = TaskTemplate.create({
+        /* ... */
+      });
       template.pause();
       expect(template.status).toBe('PAUSED');
-      
+
       template.activate();
       expect(template.status).toBe('ACTIVE');
     });
@@ -505,14 +530,14 @@ describe('TaskTemplate Aggregate Root', () => {
     it('should add tag', () => {
       const template = TaskTemplate.create({ tags: [] });
       template.addTag('urgent');
-      
+
       expect(template.tags).toContain('urgent');
     });
 
     it('should not add duplicate tag', () => {
       const template = TaskTemplate.create({ tags: ['urgent'] });
       template.addTag('urgent');
-      
+
       expect(template.tags).toHaveLength(1);
     });
   });
@@ -520,6 +545,7 @@ describe('TaskTemplate Aggregate Root', () => {
 ```
 
 #### **RecurrenceRule 值对象测试**
+
 ```typescript
 // packages/domain-server/src/task/value-objects/__tests__/RecurrenceRule.spec.ts
 
@@ -530,7 +556,7 @@ describe('RecurrenceRule Value Object', () => {
         frequency: 'DAILY',
         interval: 1,
       });
-      
+
       expect(rule.frequency).toBe('DAILY');
     });
 
@@ -538,7 +564,7 @@ describe('RecurrenceRule Value Object', () => {
       expect(() => {
         RecurrenceRule.create({
           frequency: 'DAILY',
-          interval: 0,  // Invalid
+          interval: 0, // Invalid
         });
       }).toThrow();
     });
@@ -549,9 +575,9 @@ describe('RecurrenceRule Value Object', () => {
       const rule = RecurrenceRule.create({
         frequency: 'WEEKLY',
         interval: 1,
-        daysOfWeek: [1, 3, 5],  // Mon, Wed, Fri
+        daysOfWeek: [1, 3, 5], // Mon, Wed, Fri
       });
-      
+
       expect(rule.daysOfWeek).toEqual([1, 3, 5]);
     });
   });
@@ -563,6 +589,7 @@ describe('RecurrenceRule Value Object', () => {
 ### **Phase 2: Application 层单元测试** (Week 2)
 
 #### **AuthenticationApplicationService 测试**
+
 ```typescript
 // apps/api/src/modules/authentication/application/services/__tests__/AuthenticationApplicationService.spec.ts
 
@@ -588,15 +615,19 @@ describe('AuthenticationApplicationService', () => {
     service = new AuthenticationApplicationService(
       mockCredentialRepo,
       mockSessionRepo,
-      mockAccountRepo
+      mockAccountRepo,
     );
   });
 
   it('should login successfully with valid credentials', async () => {
     // Arrange
-    const mockAccount = Account.create({ /* ... */ });
-    const mockCredential = AuthCredential.create({ /* ... */ });
-    
+    const mockAccount = Account.create({
+      /* ... */
+    });
+    const mockCredential = AuthCredential.create({
+      /* ... */
+    });
+
     mockAccountRepo.findByUsername.mockResolvedValue(mockAccount);
     mockCredentialRepo.findByAccountUuid.mockResolvedValue(mockCredential);
 
@@ -623,7 +654,7 @@ describe('AuthenticationApplicationService', () => {
         username: 'john',
         password: 'wrong-password',
         // ...
-      })
+      }),
     ).rejects.toThrow('Invalid username or password');
   });
 });
@@ -635,15 +666,15 @@ describe('AuthenticationApplicationService', () => {
 
 ### **阶段 1: 重构 + 测试补充** (Week 1-2)
 
-| 任务 | 优先级 | 预估时间 | 负责人 |
-|------|--------|----------|--------|
-| 1. 创建 DomainError 基类 | P0 | 2h | Dev |
-| 2. 补充 TaskTemplate 单元测试 | P0 | 4h | Dev |
-| 3. 补充 RecurrenceRule 单元测试 | P0 | 3h | Dev |
-| 4. 补充 AuthenticationApplicationService 测试 | P0 | 4h | Dev |
-| 5. 添加 API 输入验证（Zod） | P1 | 3h | Dev |
-| 6. 重构 Controller 查询逻辑 | P1 | 2h | Dev |
-| **Total** | - | **18h** | - |
+| 任务                                          | 优先级 | 预估时间 | 负责人 |
+| --------------------------------------------- | ------ | -------- | ------ |
+| 1. 创建 DomainError 基类                      | P0     | 2h       | Dev    |
+| 2. 补充 TaskTemplate 单元测试                 | P0     | 4h       | Dev    |
+| 3. 补充 RecurrenceRule 单元测试               | P0     | 3h       | Dev    |
+| 4. 补充 AuthenticationApplicationService 测试 | P0     | 4h       | Dev    |
+| 5. 添加 API 输入验证（Zod）                   | P1     | 3h       | Dev    |
+| 6. 重构 Controller 查询逻辑                   | P1     | 2h       | Dev    |
+| **Total**                                     | -      | **18h**  | -      |
 
 ---
 
@@ -652,6 +683,7 @@ describe('AuthenticationApplicationService', () => {
 **基于现有 TaskTemplate，增量开发**：
 
 #### **1. Domain 层扩展** (2h)
+
 ```typescript
 // packages/domain-server/src/task/aggregates/TaskTemplate.ts
 
@@ -664,38 +696,42 @@ export class TaskTemplate extends AggregateRoot {
     if (!tag || tag.trim().length === 0) {
       throw new InvalidTagError('Tag cannot be empty');
     }
-    
+
     if (this._tags.includes(tag)) {
-      return;  // 幂等性
+      return; // 幂等性
     }
-    
+
     if (this._tags.length >= 10) {
       throw new TooManyTagsError('Maximum 10 tags allowed');
     }
-    
+
     this._tags.push(tag);
     this._updatedAt = Date.now();
-    
+
     // ✅ 发布领域事件
-    this.addDomainEvent(new TagAddedEvent({
-      aggregateId: this.uuid,
-      tag,
-      addedAt: Date.now()
-    }));
+    this.addDomainEvent(
+      new TagAddedEvent({
+        aggregateId: this.uuid,
+        tag,
+        addedAt: Date.now(),
+      }),
+    );
   }
 
   public removeTag(tag: string): void {
     const index = this._tags.indexOf(tag);
     if (index === -1) return;
-    
+
     this._tags.splice(index, 1);
     this._updatedAt = Date.now();
-    
-    this.addDomainEvent(new TagRemovedEvent({
-      aggregateId: this.uuid,
-      tag,
-      removedAt: Date.now()
-    }));
+
+    this.addDomainEvent(
+      new TagRemovedEvent({
+        aggregateId: this.uuid,
+        tag,
+        removedAt: Date.now(),
+      }),
+    );
   }
 
   public hasTag(tag: string): boolean {
@@ -707,7 +743,7 @@ export class TaskTemplate extends AggregateRoot {
     if (index === -1) {
       throw new TagNotFoundError(oldTag);
     }
-    
+
     this._tags[index] = newTag;
     this._updatedAt = Date.now();
   }
@@ -715,6 +751,7 @@ export class TaskTemplate extends AggregateRoot {
 ```
 
 #### **2. API 层扩展** (2h)
+
 ```typescript
 // apps/api/src/modules/task/interface/http/routes/taskTemplateRoutes.ts
 
@@ -726,20 +763,16 @@ router.get('/:id/tags', TaskTemplateController.getTags);
 ```
 
 #### **3. 前端 UI** (4h)
+
 ```vue
 <!-- apps/web/src/modules/task/presentation/components/TaskTagManager.vue -->
 
 <template>
   <div class="task-tag-manager">
-    <el-tag
-      v-for="tag in tags"
-      :key="tag"
-      closable
-      @close="handleRemoveTag(tag)"
-    >
+    <el-tag v-for="tag in tags" :key="tag" closable @close="handleRemoveTag(tag)">
       {{ tag }}
     </el-tag>
-    
+
     <el-input
       v-model="newTag"
       placeholder="添加标签"
@@ -768,7 +801,7 @@ const newTag = ref('');
 
 async function handleAddTag() {
   if (!newTag.value.trim()) return;
-  
+
   await addTag(props.taskUuid, newTag.value);
   emit('update:tags', [...props.tags, newTag.value]);
   newTag.value = '';
@@ -776,12 +809,16 @@ async function handleAddTag() {
 
 async function handleRemoveTag(tag: string) {
   await removeTag(props.taskUuid, tag);
-  emit('update:tags', props.tags.filter(t => t !== tag));
+  emit(
+    'update:tags',
+    props.tags.filter((t) => t !== tag),
+  );
 }
 </script>
 ```
 
 #### **4. 单元测试** (2h)
+
 ```typescript
 // packages/domain-server/src/task/aggregates/__tests__/TaskTemplate.tags.spec.ts
 
@@ -789,29 +826,31 @@ describe('TaskTemplate - Tag Management', () => {
   it('should add tag', () => {
     const template = TaskTemplate.create({ tags: [] });
     template.addTag('urgent');
-    
+
     expect(template.tags).toContain('urgent');
   });
 
   it('should prevent duplicate tags', () => {
     const template = TaskTemplate.create({ tags: ['urgent'] });
     template.addTag('urgent');
-    
+
     expect(template.tags).toHaveLength(1);
   });
 
   it('should throw error when exceeding max tags', () => {
     const template = TaskTemplate.create({
-      tags: Array(10).fill(0).map((_, i) => `tag${i}`)
+      tags: Array(10)
+        .fill(0)
+        .map((_, i) => `tag${i}`),
     });
-    
+
     expect(() => template.addTag('tag11')).toThrow(TooManyTagsError);
   });
 
   it('should remove tag', () => {
     const template = TaskTemplate.create({ tags: ['urgent', 'bug'] });
     template.removeTag('urgent');
-    
+
     expect(template.tags).not.toContain('urgent');
     expect(template.tags).toContain('bug');
   });
@@ -819,7 +858,7 @@ describe('TaskTemplate - Tag Management', () => {
   it('should replace tag', () => {
     const template = TaskTemplate.create({ tags: ['urgent'] });
     template.replaceTag('urgent', 'high-priority');
-    
+
     expect(template.tags).toContain('high-priority');
     expect(template.tags).not.toContain('urgent');
   });
@@ -833,12 +872,14 @@ describe('TaskTemplate - Tag Management', () => {
 **集成 node-cron，完善 RecurrenceRule**：
 
 #### **1. 安装依赖**
+
 ```bash
 pnpm add node-cron rrule
 pnpm add -D @types/node-cron
 ```
 
 #### **2. 重构 RecurrenceRule** (4h)
+
 ```typescript
 // packages/domain-server/src/task/value-objects/RecurrenceRule.ts
 
@@ -854,11 +895,11 @@ export class RecurrenceRule {
   static create(config: {
     frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
     interval?: number;
-    daysOfWeek?: number[];  // 0-6 (Sunday-Saturday)
-    dayOfMonth?: number;    // 1-31
-    monthOfYear?: number;   // 1-12
+    daysOfWeek?: number[]; // 0-6 (Sunday-Saturday)
+    dayOfMonth?: number; // 1-31
+    monthOfYear?: number; // 1-12
     endDate?: number;
-    count?: number;         // 最多生成 N 次
+    count?: number; // 最多生成 N 次
   }): RecurrenceRule {
     const rruleConfig: Partial<RRule> = {
       freq: this.mapFrequency(config.frequency),
@@ -886,10 +927,10 @@ export class RecurrenceRule {
 
   private static mapFrequency(freq: string): Frequency {
     const map = {
-      'DAILY': RRule.DAILY,
-      'WEEKLY': RRule.WEEKLY,
-      'MONTHLY': RRule.MONTHLY,
-      'YEARLY': RRule.YEARLY,
+      DAILY: RRule.DAILY,
+      WEEKLY: RRule.WEEKLY,
+      MONTHLY: RRule.MONTHLY,
+      YEARLY: RRule.YEARLY,
     };
     return map[freq];
   }
@@ -920,6 +961,7 @@ export class RecurrenceRule {
 ```
 
 #### **3. 集成 Node-Cron 调度器** (4h)
+
 ```typescript
 // apps/api/src/modules/task/infrastructure/schedulers/TaskInstanceScheduler.ts
 
@@ -939,13 +981,13 @@ export class TaskInstanceScheduler {
    */
   async start(): Promise<void> {
     const activeTemplates = await this.taskTemplateRepository.findByStatus('ACTIVE');
-    
+
     for (const template of activeTemplates) {
       if (template.taskType === 'RECURRING' && template.recurrenceRule) {
         this.scheduleTemplate(template);
       }
     }
-    
+
     logger.info(`Started ${this.jobs.size} task schedulers`);
   }
 
@@ -954,16 +996,16 @@ export class TaskInstanceScheduler {
    */
   private scheduleTemplate(template: TaskTemplate): void {
     const cronExpression = template.recurrenceRule!.toCronExpression();
-    
+
     const job = cron.schedule(cronExpression, async () => {
       logger.info(`Generating instance for template ${template.uuid}`);
-      
+
       try {
         const instance = template.generateInstances(
           Date.now(),
-          Date.now() + 86400000  // Next 24 hours
+          Date.now() + 86400000, // Next 24 hours
         )[0];
-        
+
         if (instance) {
           await this.taskInstanceRepository.save(instance);
         }
@@ -1004,13 +1046,13 @@ export class TaskInstanceScheduler {
 
 ### **重构后的代码质量**
 
-| 维度 | 重构前 | 重构后 | 提升 |
-|------|--------|--------|------|
-| **单元测试覆盖率** | < 5% | ≥ 80% | **+75%** ⬆️ |
-| **错误处理规范性** | 3/5 | 5/5 | **+40%** ⬆️ |
-| **API 输入验证** | ❌ | ✅ | **100%** ⬆️ |
-| **DomainEvent 使用** | ❌ | ✅ | **100%** ⬆️ |
-| **RecurrenceRule 完整性** | 60% | 100% | **+40%** ⬆️ |
+| 维度                      | 重构前 | 重构后 | 提升        |
+| ------------------------- | ------ | ------ | ----------- |
+| **单元测试覆盖率**        | < 5%   | ≥ 80%  | **+75%** ⬆️ |
+| **错误处理规范性**        | 3/5    | 5/5    | **+40%** ⬆️ |
+| **API 输入验证**          | ❌     | ✅     | **100%** ⬆️ |
+| **DomainEvent 使用**      | ❌     | ✅     | **100%** ⬆️ |
+| **RecurrenceRule 完整性** | 60%    | 100%   | **+40%** ⬆️ |
 
 ### **综合评分**
 

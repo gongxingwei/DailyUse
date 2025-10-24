@@ -5,18 +5,21 @@
 **目标**: 为 Goal-KeyResult 层级关系提供直观的有向无环图(DAG)可视化方案
 
 **业务场景**:
+
 - Goal 可包含多个 KeyResult
 - KeyResult 权重动态变化
 - 需展示层级关系和权重流动
 - 支持交互式探索和实时数据更新
 
 **技术约束**:
+
 - 前端: Vue 3 + TypeScript
 - UI 框架: Vuetify 3
 - 现有图表库: ECharts 5.5.1
 - 目标平台: Web + Electron Desktop
 
 **预期交付**:
+
 - 技术选型建议
 - 实现复杂度评估
 - 性能和兼容性分析
@@ -55,14 +58,14 @@ const graphOption = computed(() => ({
     {
       type: 'graph',
       layout: 'force', // 力导向布局
-      data: nodes.value.map(node => ({
+      data: nodes.value.map((node) => ({
         id: node.id,
         name: node.name,
         value: node.weight,
         symbolSize: 40 + node.weight * 20, // 根据权重调整大小
         itemStyle: { color: getNodeColor(node.type) },
       })),
-      links: edges.value.map(edge => ({
+      links: edges.value.map((edge) => ({
         source: edge.from,
         target: edge.to,
         lineStyle: { width: edge.weight / 10 },
@@ -96,7 +99,7 @@ const graphOption = computed(() => ({
    // 手动计算节点坐标 - Sugiyama 分层算法简化版
    const layoutNodes = (goals, krs) => {
      const nodes = [];
-     
+
      // Layer 1: Goals (顶层)
      goals.forEach((goal, i) => {
        nodes.push({
@@ -106,23 +109,24 @@ const graphOption = computed(() => ({
          fixed: true,
        });
      });
-     
+
      // Layer 2: KeyResults (底层)
      krs.forEach((kr, i) => {
-       const parentGoal = goals.find(g => g.id === kr.goalId);
+       const parentGoal = goals.find((g) => g.id === kr.goalId);
        nodes.push({
          ...kr,
-         x: parentGoal.x + (i % 3 - 1) * 80,
+         x: parentGoal.x + ((i % 3) - 1) * 80,
          y: 300,
          fixed: true,
        });
      });
-     
+
      return nodes;
    };
    ```
 
 **性能评估**:
+
 - 节点数 < 100: 流畅 (60fps)
 - 节点数 100-500: 可用 (30-60fps，需优化)
 - 节点数 > 500: 卡顿 (需虚拟化或分页)
@@ -157,54 +161,54 @@ import * as d3 from 'd3';
 import { onMounted, watch } from 'vue';
 
 onMounted(() => {
-  const svg = d3.select(svgRef.value)
-    .attr('width', 800)
-    .attr('height', 600);
+  const svg = d3.select(svgRef.value).attr('width', 800).attr('height', 600);
 
-  const simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(edges).id(d => d.id))
+  const simulation = d3
+    .forceSimulation(nodes)
+    .force(
+      'link',
+      d3.forceLink(edges).id((d) => d.id),
+    )
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(400, 300));
 
   // 渲染节点和边
-  const link = svg.selectAll('.link')
-    .data(edges)
-    .enter().append('line')
-    .attr('class', 'link');
+  const link = svg.selectAll('.link').data(edges).enter().append('line').attr('class', 'link');
 
-  const node = svg.selectAll('.node')
+  const node = svg
+    .selectAll('.node')
     .data(nodes)
-    .enter().append('circle')
+    .enter()
+    .append('circle')
     .attr('class', 'node')
     .attr('r', 10)
-    .call(d3.drag()
-      .on('start', dragstarted)
-      .on('drag', dragged)
-      .on('end', dragended));
+    .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
 
   simulation.on('tick', () => {
     link
-      .attr('x1', d => d.source.x)
-      .attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x)
-      .attr('y2', d => d.target.y);
+      .attr('x1', (d) => d.source.x)
+      .attr('y1', (d) => d.source.y)
+      .attr('x2', (d) => d.target.x)
+      .attr('y2', (d) => d.target.y);
 
-    node
-      .attr('cx', d => d.x)
-      .attr('cy', d => d.y);
+    node.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
   });
 });
 
 // 响应式数据更新处理
-watch(() => props.data, (newData) => {
-  // 需手动更新 D3 simulation
-  simulation.nodes(newData.nodes);
-  simulation.force('link').links(newData.edges);
-  simulation.alpha(1).restart();
-});
+watch(
+  () => props.data,
+  (newData) => {
+    // 需手动更新 D3 simulation
+    simulation.nodes(newData.nodes);
+    simulation.force('link').links(newData.edges);
+    simulation.alpha(1).restart();
+  },
+);
 ```
 
 **专业 DAG 布局** (使用 d3-dag 库):
+
 ```bash
 pnpm add d3-dag --filter @dailyuse/web
 ```
@@ -221,6 +225,7 @@ const { width, height } = layout(dagData);
 ```
 
 **性能评估**:
+
 - 完全可控，优化得当可支持 1000+ 节点
 - 需手写虚拟滚动和按需渲染
 
@@ -258,9 +263,7 @@ const nodes = new DataSet([
   { id: 'kr1', label: 'KR1: 完成率80%', level: 1, shape: 'ellipse' },
 ]);
 
-const edges = new DataSet([
-  { from: 'goal1', to: 'kr1', arrows: 'to', width: 2 },
-]);
+const edges = new DataSet([{ from: 'goal1', to: 'kr1', arrows: 'to', width: 2 }]);
 
 const container = document.getElementById('dag-container');
 const data = { nodes, edges };
@@ -292,6 +295,7 @@ network.on('selectNode', (params) => {
 ```
 
 **性能评估**:
+
 - 节点数 < 1000: 流畅
 - 节点数 1000-5000: 可用 (需开启聚类)
 - 节点数 > 5000: 推荐服务端聚合
@@ -344,14 +348,14 @@ const cy = cytoscape({
       selector: 'node',
       style: {
         'background-color': '#2196F3',
-        'label': 'data(label)',
-        'width': 'mapData(weight, 0, 100, 20, 60)',
+        label: 'data(label)',
+        width: 'mapData(weight, 0, 100, 20, 60)',
       },
     },
     {
       selector: 'edge',
       style: {
-        'width': 3,
+        width: 3,
         'line-color': '#ccc',
         'target-arrow-color': '#ccc',
         'target-arrow-shape': 'triangle',
@@ -362,6 +366,7 @@ const cy = cytoscape({
 ```
 
 **性能评估**:
+
 - 专为大规模图设计，1000+ 节点无压力
 - 可处理 10万+ 边的复杂网络
 
@@ -376,6 +381,7 @@ const cy = cytoscape({
 ### 🏆 首选: ECharts Graph
 
 **理由**:
+
 1. **成本最低** - 零依赖，团队已熟悉，维护成本几乎为零
 2. **技术栈统一** - 与现有 3 个 Chart 组件一致，代码风格统一
 3. **满足需求** - Goal-KR 关系简单 (2层树形结构)，不需要复杂图算法
@@ -384,21 +390,25 @@ const cy = cytoscape({
 **实现建议**:
 
 **阶段1: MVP (1-2天)**
+
 - 使用 force 布局快速实现基础 DAG
 - 节点大小映射 KeyResult 权重
 - 边宽度表示权重占比
 - 基础交互: hover tooltip、点击节点跳转详情
 
 **阶段2: 布局优化 (1天)**
+
 - 实现自定义分层布局 (固定 Goal 在顶层，KR 在底层)
 - 添加节点拖拽保存位置功能 (localStorage)
 
 **阶段3: 高级特性 (可选)**
+
 - 动态过滤: 按时间范围筛选节点
 - 权重变化动画: 边宽度/颜色随时间轴变化
 - 多目标对比: 并排显示多个 Goal 的 DAG
 
 **代码结构**:
+
 ```
 goal/presentation/components/weight-snapshot/
 ├── WeightSnapshotList.vue (已完成)
@@ -408,6 +418,7 @@ goal/presentation/components/weight-snapshot/
 ```
 
 **组件设计**:
+
 ```vue
 <template>
   <v-card>
@@ -419,14 +430,9 @@ goal/presentation/components/weight-snapshot/
         <v-btn value="hierarchical">分层</v-btn>
       </v-btn-toggle>
     </v-card-title>
-    
+
     <v-card-text>
-      <v-chart
-        :option="dagOption"
-        autoresize
-        style="height: 600px"
-        @click="handleNodeClick"
-      />
+      <v-chart :option="dagOption" autoresize style="height: 600px" @click="handleNodeClick" />
     </v-card-text>
   </v-card>
 </template>
@@ -445,7 +451,7 @@ const { currentGoal } = useGoal();
 
 const dagOption = computed(() => {
   if (!currentGoal.value) return {};
-  
+
   const nodes = [
     {
       id: currentGoal.value.uuid,
@@ -454,7 +460,7 @@ const dagOption = computed(() => {
       itemStyle: { color: '#2196F3' },
       category: 0,
     },
-    ...currentGoal.value.keyResults.map(kr => ({
+    ...currentGoal.value.keyResults.map((kr) => ({
       id: kr.uuid,
       name: kr.title,
       symbolSize: 40 + kr.weight * 0.4,
@@ -463,13 +469,13 @@ const dagOption = computed(() => {
       category: 1,
     })),
   ];
-  
-  const links = currentGoal.value.keyResults.map(kr => ({
+
+  const links = currentGoal.value.keyResults.map((kr) => ({
     source: currentGoal.value.uuid,
     target: kr.uuid,
     lineStyle: { width: kr.weight / 10 },
   }));
-  
+
   return {
     tooltip: {
       formatter: (params) => {
@@ -479,22 +485,24 @@ const dagOption = computed(() => {
         return `权重分配`;
       },
     },
-    series: [{
-      type: 'graph',
-      layout: layoutType.value,
-      data: nodes,
-      links,
-      categories: [
-        { name: 'Goal', itemStyle: { color: '#2196F3' } },
-        { name: 'KeyResult', itemStyle: { color: '#4CAF50' } },
-      ],
-      roam: true,
-      label: { show: true, position: 'right', fontSize: 12 },
-      force: {
-        repulsion: 300,
-        edgeLength: 200,
+    series: [
+      {
+        type: 'graph',
+        layout: layoutType.value,
+        data: nodes,
+        links,
+        categories: [
+          { name: 'Goal', itemStyle: { color: '#2196F3' } },
+          { name: 'KeyResult', itemStyle: { color: '#4CAF50' } },
+        ],
+        roam: true,
+        label: { show: true, position: 'right', fontSize: 12 },
+        force: {
+          repulsion: 300,
+          edgeLength: 200,
+        },
       },
-    }],
+    ],
   };
 });
 </script>
@@ -505,16 +513,16 @@ const dagOption = computed(() => {
 ## 性能优化建议
 
 ### 1. 虚拟化渲染 (节点 > 100)
+
 ```typescript
 // 只渲染视口内的节点
 const visibleNodes = computed(() => {
-  return allNodes.value.filter(node => 
-    isInViewport(node.x, node.y, viewportBounds.value)
-  );
+  return allNodes.value.filter((node) => isInViewport(node.x, node.y, viewportBounds.value));
 });
 ```
 
 ### 2. 防抖数据更新
+
 ```typescript
 import { debounce } from 'lodash-es';
 
@@ -524,24 +532,24 @@ const updateGraph = debounce(() => {
 ```
 
 ### 3. Canvas 渲染替代 SVG
+
 ```typescript
 // ECharts 默认使用 Canvas，性能已优化
 // 如使用 D3，需手动切换:
-const simulation = d3.forceSimulation()
-  .force('canvas', true); // 使用 Canvas 渲染
+const simulation = d3.forceSimulation().force('canvas', true); // 使用 Canvas 渲染
 ```
 
 ---
 
 ## 兼容性测试清单
 
-| 环境 | 版本 | ECharts | D3.js | Vis.js | Cytoscape |
-|------|------|---------|-------|--------|-----------|
-| Chrome | 90+ | ✅ | ✅ | ✅ | ✅ |
-| Edge | 90+ | ✅ | ✅ | ✅ | ✅ |
-| Firefox | 88+ | ✅ | ✅ | ✅ | ✅ |
-| Safari | 14+ | ✅ | ✅ | ⚠️ | ✅ |
-| Electron | 28+ | ✅ | ✅ | ✅ | ✅ |
+| 环境     | 版本 | ECharts | D3.js | Vis.js | Cytoscape |
+| -------- | ---- | ------- | ----- | ------ | --------- |
+| Chrome   | 90+  | ✅      | ✅    | ✅     | ✅        |
+| Edge     | 90+  | ✅      | ✅    | ✅     | ✅        |
+| Firefox  | 88+  | ✅      | ✅    | ✅     | ✅        |
+| Safari   | 14+  | ✅      | ✅    | ⚠️     | ✅        |
+| Electron | 28+  | ✅      | ✅    | ✅     | ✅        |
 
 **注**: Vis.js 在 Safari 14 早期版本有少量渲染问题，建议测试
 
@@ -552,6 +560,7 @@ const simulation = d3.forceSimulation()
 ### Sprint 2b: DAG 可视化 (预估 5 SP)
 
 **STORY-010: DAG 基础可视化** (3 SP, 2天)
+
 - 任务1: 创建 WeightDAGVisualization.vue 组件
 - 任务2: 实现 ECharts Graph force 布局
 - 任务3: 节点映射 Goal/KR 数据
@@ -564,6 +573,7 @@ const simulation = d3.forceSimulation()
   - [x] Hover 显示详细信息
 
 **STORY-011: 布局算法优化** (2 SP, 1天)
+
 - 任务1: 实现自定义分层布局
 - 任务2: 添加布局类型切换 (force / hierarchical)
 - 任务3: 节点位置持久化 (localStorage)
@@ -574,6 +584,7 @@ const simulation = d3.forceSimulation()
   - [x] 用户调整后下次打开保持布局
 
 **可选增强** (未来 Sprint):
+
 - 时间轴回放: 展示权重变化历史
 - 多目标对比: 并排展示多个 Goal DAG
 - 导出功能: PNG/SVG 导出
@@ -586,12 +597,14 @@ const simulation = d3.forceSimulation()
 **技术选型**: ECharts Graph (force 布局 + 自定义分层布局)
 
 **关键优势**:
+
 - ✅ 零学习成本
 - ✅ 零依赖成本
 - ✅ 统一技术栈
 - ✅ 快速交付 (2-3天)
 
 **风险评估**: 低
+
 - 团队已有 ECharts 经验
 - 需求明确 (2层树形结构)
 - 可逐步迭代优化
@@ -604,18 +617,22 @@ const simulation = d3.forceSimulation()
 ## 参考资源
 
 **ECharts Graph 文档**:
+
 - 官方示例: https://echarts.apache.org/examples/zh/editor.html?c=graph-force
 - Graph API: https://echarts.apache.org/zh/option.html#series-graph
 - 布局算法: https://echarts.apache.org/zh/option.html#series-graph.layout
 
 **D3.js 资源**:
+
 - d3-dag: https://github.com/erikbrinkman/d3-dag
 - Vue + D3 集成: https://www.d3-graph-gallery.com/intro_d3js.html
 
 **Vis.js 文档**:
+
 - Network 示例: https://visjs.github.io/vis-network/examples/
 
 **Cytoscape.js 文档**:
+
 - 官方文档: https://js.cytoscape.org/
 - Dagre 布局: https://github.com/cytoscape/cytoscape.js-dagre
 

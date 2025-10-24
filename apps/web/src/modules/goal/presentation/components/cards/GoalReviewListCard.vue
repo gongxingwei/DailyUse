@@ -1,7 +1,14 @@
 <template>
   <!-- 只在 goal 存在时渲染对话框，防止 props 校验警告 -->
-  <v-dialog v-if="goal" v-model="isVisible" max-width="900" max-height="90vh" persistent scrollable
-    class="goal-review-dialog">
+  <v-dialog
+    v-if="goal"
+    v-model="isVisible"
+    max-width="900"
+    max-height="90vh"
+    persistent
+    scrollable
+    class="goal-review-dialog"
+  >
     <v-card class="review-card">
       <!-- 对话框头部 -->
       <v-card-title class="review-header pa-6">
@@ -12,9 +19,7 @@
           </div>
           <v-btn icon="mdi-close" variant="text" color="medium-emphasis" @click="handleClose">
             <v-icon>mdi-close</v-icon>
-            <v-tooltip activator="parent" location="bottom">
-              关闭
-            </v-tooltip>
+            <v-tooltip activator="parent" location="bottom"> 关闭 </v-tooltip>
           </v-btn>
         </div>
       </v-card-title>
@@ -25,10 +30,20 @@
         <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-4" />
 
         <!-- 空状态 -->
-        <v-empty-state v-if="!hasReviews && !isLoading" icon="mdi-book-edit-outline" title="暂无复盘记录"
-          text="开始记录您的目标复盘，追踪成长轨迹" class="my-8">
+        <v-empty-state
+          v-if="!hasReviews && !isLoading"
+          icon="mdi-book-edit-outline"
+          title="暂无复盘记录"
+          text="开始记录您的目标复盘，追踪成长轨迹"
+          class="my-8"
+        >
           <template #actions>
-            <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="createNewReview">
+            <v-btn
+              color="primary"
+              variant="elevated"
+              prepend-icon="mdi-plus"
+              @click="createNewReview"
+            >
               创建复盘
             </v-btn>
           </template>
@@ -38,16 +53,26 @@
         <div v-else-if="hasReviews" class="review-list">
           <!-- 顶部操作栏 -->
           <div class="d-flex justify-space-between align-center mb-4">
-            <div class="text-h6 font-weight-medium">
-              复盘记录 ({{ goalReviews.length }})
-            </div>
-            <v-btn color="primary" variant="outlined" size="small" prepend-icon="mdi-plus" @click="createNewReview">
+            <div class="text-h6 font-weight-medium">复盘记录 ({{ goalReviews.length }})</div>
+            <v-btn
+              color="primary"
+              variant="outlined"
+              size="small"
+              prepend-icon="mdi-plus"
+              @click="createNewReview"
+            >
               新建复盘
             </v-btn>
           </div>
 
-          <v-card v-for="review in goalReviews" :key="review.uuid" class="review-item mb-4" variant="outlined"
-            elevation="0" :hover="true">
+          <v-card
+            v-for="review in goalReviews"
+            :key="review.uuid"
+            class="review-item mb-4"
+            variant="outlined"
+            elevation="0"
+            :hover="true"
+          >
             <v-card-text class="pa-4">
               <v-row align="center">
                 <!-- 左侧信息 -->
@@ -59,7 +84,12 @@
                         {{ getReviewTypeIcon(review.type) }}
                       </v-icon>
                       <span class="text-h6 font-weight-medium">{{ review.title }}</span>
-                      <v-chip :color="getReviewTypeColor(review.type)" size="small" variant="tonal" class="ml-2">
+                      <v-chip
+                        :color="getReviewTypeColor(review.type)"
+                        size="small"
+                        variant="tonal"
+                        class="ml-2"
+                      >
                         {{ getReviewTypeText(review.type) }}
                       </v-chip>
                     </div>
@@ -82,16 +112,25 @@
                 <!-- 右侧操作按钮 -->
                 <v-col cols="12" md="4" class="d-flex justify-end align-center">
                   <div class="action-buttons">
-                    <v-btn color="primary" variant="outlined" size="small" prepend-icon="mdi-eye" class="mr-2"
-                      @click="handleView(review.uuid)">
+                    <v-btn
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                      prepend-icon="mdi-eye"
+                      class="mr-2"
+                      @click="handleView(review.uuid)"
+                    >
                       查看
                     </v-btn>
-                    <v-btn color="error" variant="text" size="small" icon="mdi-delete"
-                      @click="handleDelete(review.uuid)">
+                    <v-btn
+                      color="error"
+                      variant="text"
+                      size="small"
+                      icon="mdi-delete"
+                      @click="handleDelete(review.uuid)"
+                    >
                       <v-icon>mdi-delete</v-icon>
-                      <v-tooltip activator="parent" location="bottom">
-                        删除记录
-                      </v-tooltip>
+                      <v-tooltip activator="parent" location="bottom"> 删除记录 </v-tooltip>
                     </v-btn>
                   </div>
                 </v-col>
@@ -105,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineExpose, watch } from 'vue'
+import { ref, computed, defineExpose, watch } from 'vue';
 import { Goal, GoalReview } from '@dailyuse/domain-client';
 import { format } from 'date-fns';
 import { useRouter } from 'vue-router';
@@ -115,8 +154,8 @@ const router = useRouter();
 const goalComposable = useGoal();
 
 const props = defineProps<{
-  goal: Goal
-}>()
+  goal: Goal;
+}>();
 
 // 内部状态控制
 const isVisible = ref(false);
@@ -151,7 +190,7 @@ const openCard = () => {
 };
 
 /**
- * 关闭卡片 - 与 GoalCard 保持一致的方法名  
+ * 关闭卡片 - 与 GoalCard 保持一致的方法名
  */
 const closeCard = () => {
   closeDialog();
@@ -167,8 +206,8 @@ const handleView = async (reviewUuid: string) => {
       name: 'goal-review-detail',
       params: {
         goalUuid: props.goal.uuid,
-        reviewUuid: reviewUuid
-      }
+        reviewUuid: reviewUuid,
+      },
     });
     closeDialog();
   } catch (error) {
@@ -190,7 +229,7 @@ const handleDelete = async (reviewId: string) => {
 };
 
 /**
- * 关闭处理 
+ * 关闭处理
  */
 const handleClose = () => {
   closeDialog();
@@ -204,7 +243,7 @@ const createNewReview = async () => {
     // 导航到创建复盘页面
     router.push({
       name: 'goal-review-create',
-      params: { goalUuid: props.goal.uuid }
+      params: { goalUuid: props.goal.uuid },
     });
     closeDialog();
   } catch (error) {
@@ -241,7 +280,7 @@ const getReviewTypeColor = (type: GoalReview['type']): string => {
     monthly: 'secondary',
     midterm: 'warning',
     final: 'success',
-    custom: 'info'
+    custom: 'info',
   };
   return colors[type] || 'primary';
 };
@@ -252,7 +291,7 @@ const getReviewTypeIcon = (type: GoalReview['type']): string => {
     monthly: 'mdi-calendar-month',
     midterm: 'mdi-calendar-check',
     final: 'mdi-trophy',
-    custom: 'mdi-calendar-star'
+    custom: 'mdi-calendar-star',
   };
   return icons[type] || 'mdi-calendar';
 };
@@ -263,7 +302,7 @@ const getReviewTypeText = (type: GoalReview['type']): string => {
     monthly: '月复盘',
     midterm: '中期复盘',
     final: '最终复盘',
-    custom: '自定义复盘'
+    custom: '自定义复盘',
   };
   return texts[type] || '复盘';
 };
@@ -289,7 +328,11 @@ watch(isVisible, (newValue) => {
 }
 
 .review-header {
-  background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(var(--v-theme-primary)) 0%,
+    rgb(var(--v-theme-secondary)) 100%
+  );
   color: white;
 }
 

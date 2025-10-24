@@ -8,8 +8,7 @@
 import { GoalContracts } from '@dailyuse/contracts';
 import { InvalidWeightError } from './KeyResultWeightSnapshotErrors';
 
-type KeyResultWeightSnapshotServerDTO =
-  GoalContracts.KeyResultWeightSnapshotServerDTO;
+type KeyResultWeightSnapshotServerDTO = GoalContracts.KeyResultWeightSnapshotServerDTO;
 type SnapshotTrigger = GoalContracts.SnapshotTrigger;
 
 export class KeyResultWeightSnapshot {
@@ -23,7 +22,7 @@ export class KeyResultWeightSnapshot {
     public readonly trigger: SnapshotTrigger,
     public readonly operatorUuid: string,
     public readonly reason?: string,
-    public readonly createdAt?: number
+    public readonly createdAt?: number,
   ) {
     this.validateWeights();
   }
@@ -71,9 +70,7 @@ export class KeyResultWeightSnapshot {
   /**
    * 从 ServerDTO 创建实例
    */
-  public static fromServerDTO(
-    dto: KeyResultWeightSnapshotServerDTO
-  ): KeyResultWeightSnapshot {
+  public static fromServerDTO(dto: KeyResultWeightSnapshotServerDTO): KeyResultWeightSnapshot {
     return new KeyResultWeightSnapshot(
       dto.uuid,
       dto.goalUuid,
@@ -84,7 +81,7 @@ export class KeyResultWeightSnapshot {
       dto.trigger,
       dto.operatorUuid,
       dto.reason ?? undefined,
-      dto.createdAt
+      dto.createdAt,
     );
   }
 }

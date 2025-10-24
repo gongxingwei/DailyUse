@@ -203,9 +203,7 @@ describe('GoalDAGVisualization', () => {
     });
 
     it('resets custom layout', async () => {
-      localStorage.setItem('dag-layout-goal-1', JSON.stringify([
-        { id: 'kr-1', x: 100, y: 200 },
-      ]));
+      localStorage.setItem('dag-layout-goal-1', JSON.stringify([{ id: 'kr-1', x: 100, y: 200 }]));
 
       wrapper = mount(GoalDAGVisualization, {
         props: { goalUuid: 'goal-1' },
@@ -230,9 +228,7 @@ describe('GoalDAGVisualization', () => {
       });
 
       expect(wrapper.emitted('node-click')).toBeTruthy();
-      expect(wrapper.emitted('node-click')![0]).toEqual([
-        { id: 'kr-1', type: 'kr' },
-      ]);
+      expect(wrapper.emitted('node-click')![0]).toEqual([{ id: 'kr-1', type: 'kr' }]);
     });
 
     it('emits node-click event for Goal node', () => {
@@ -246,9 +242,7 @@ describe('GoalDAGVisualization', () => {
       });
 
       expect(wrapper.emitted('node-click')).toBeTruthy();
-      expect(wrapper.emitted('node-click')![0]).toEqual([
-        { id: 'goal-1', type: 'goal' },
-      ]);
+      expect(wrapper.emitted('node-click')![0]).toEqual([{ id: 'goal-1', type: 'goal' }]);
     });
 
     it('does not emit for edge clicks', () => {
@@ -411,9 +405,7 @@ describe('GoalDAGVisualization', () => {
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Test Goal',
-          keyResults: [
-            { uuid: 'kr-1', title: 'KR 1', weight: 100 },
-          ],
+          keyResults: [{ uuid: 'kr-1', title: 'KR 1', weight: 100 }],
         }),
         isLoading: ref(false),
         getGoalAggregateView: jest.fn(),
@@ -459,9 +451,7 @@ describe('GoalDAGVisualization', () => {
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Test Goal',
-          keyResults: [
-            { uuid: 'kr-1', title: 'KR 1', weight: 0 },
-          ],
+          keyResults: [{ uuid: 'kr-1', title: 'KR 1', weight: 0 }],
         }),
         isLoading: ref(false),
         getGoalAggregateView: jest.fn(),

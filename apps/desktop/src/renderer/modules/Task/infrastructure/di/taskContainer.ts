@@ -2,7 +2,7 @@ import { useTaskStore } from '../../presentation/stores/taskStore';
 
 /**
  * Task 模块依赖注入容器 (渲染进程简化版)
- * 
+ *
  * 新架构设计：
  * - Application Service 直接调用 IPC，不再需要仓库抽象
  * - Store 仅做状态管理，由 Application Service 同步

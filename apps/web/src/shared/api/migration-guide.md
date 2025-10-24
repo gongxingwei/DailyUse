@@ -9,12 +9,14 @@
 ### 1. 替换导入语句
 
 #### 旧方式
+
 ```typescript
 import axios from 'axios';
 import { httpFactory } from '@/shared/http/http-factory';
 ```
 
 #### 新方式
+
 ```typescript
 import { api, AuthService, AccountService } from '@/shared/api';
 ```
@@ -24,17 +26,19 @@ import { api, AuthService, AccountService } from '@/shared/api';
 #### 基础请求
 
 **旧方式:**
+
 ```typescript
 // 需要手动配置认证头
 const response = await axios.get('/api/users', {
   headers: {
-    'Authorization': `Bearer ${token}`
-  }
+    Authorization: `Bearer ${token}`,
+  },
 });
 const data = response.data;
 ```
 
 **新方式:**
+
 ```typescript
 // 自动处理认证和响应数据提取
 const data = await api.get('/users');
@@ -43,6 +47,7 @@ const data = await api.get('/users');
 #### 错误处理
 
 **旧方式:**
+
 ```typescript
 try {
   const response = await axios.get('/api/data');
@@ -57,6 +62,7 @@ try {
 ```
 
 **新方式:**
+
 ```typescript
 try {
   const data = await api.get('/data');
@@ -65,7 +71,7 @@ try {
   // 统一错误格式，自动处理认证失败
   console.error('业务错误:', error.message);
   if (error.errors) {
-    error.errors.forEach(err => {
+    error.errors.forEach((err) => {
       console.error(`${err.field}: ${err.message}`);
     });
   }
@@ -75,6 +81,7 @@ try {
 #### 文件上传
 
 **旧方式:**
+
 ```typescript
 const formData = new FormData();
 formData.append('file', file);
@@ -86,16 +93,17 @@ const response = await axios.post('/api/upload', formData, {
   onUploadProgress: (progressEvent) => {
     const progress = (progressEvent.loaded / progressEvent.total) * 100;
     console.log(`上传进度: ${progress}%`);
-  }
+  },
 });
 ```
 
 **新方式:**
+
 ```typescript
 const result = await api.upload('/upload', file, {
   onUploadProgress: ({ progress }) => {
     console.log(`上传进度: ${progress}%`);
-  }
+  },
 });
 ```
 
@@ -104,17 +112,14 @@ const result = await api.upload('/upload', file, {
 #### 数据获取组件
 
 **旧组件:**
+
 ```vue
 <template>
   <div>
     <div v-if="loading">加载中...</div>
     <div v-else-if="error">{{ error }}</div>
     <div v-else>
-      <UserCard 
-        v-for="user in users" 
-        :key="user.id" 
-        :user="user" 
-      />
+      <UserCard v-for="user in users" :key="user.id" :user="user" />
     </div>
   </div>
 </template>
@@ -145,17 +150,14 @@ onMounted(fetchUsers);
 ```
 
 **新组件:**
+
 ```vue
 <template>
   <div>
     <div v-if="loading">加载中...</div>
     <div v-else-if="error">{{ error }}</div>
     <div v-else>
-      <UserCard 
-        v-for="user in users" 
-        :key="user.id" 
-        :user="user" 
-      />
+      <UserCard v-for="user in users" :key="user.id" :user="user" />
     </div>
   </div>
 </template>
@@ -163,12 +165,12 @@ onMounted(fetchUsers);
 <script setup lang="ts">
 import { AccountService, useRequest } from '@/shared/api';
 
-const { 
-  data: users, 
-  loading, 
-  error 
-} = useRequest(AccountService.getAccounts, { 
-  immediate: true 
+const {
+  data: users,
+  loading,
+  error,
+} = useRequest(AccountService.getAccounts, {
+  immediate: true,
 });
 </script>
 ```
@@ -176,6 +178,7 @@ const {
 #### 认证状态管理
 
 **旧方式:**
+
 ```vue
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
@@ -194,7 +197,7 @@ const login = async (credentials) => {
     token.value = response.data.token;
     user.value = response.data.user;
     localStorage.setItem('token', token.value);
-    
+
     // 设置默认请求头
     axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
   } catch (error) {
@@ -220,16 +223,12 @@ onMounted(() => {
 ```
 
 **新方式:**
+
 ```vue
 <script setup lang="ts">
 import { useAuth } from '@/shared/api';
 
-const { 
-  user, 
-  isAuthenticated, 
-  login, 
-  logout 
-} = useAuth();
+const { user, isAuthenticated, login, logout } = useAuth();
 
 // 所有认证逻辑都已封装好，无需手动管理
 </script>
@@ -238,13 +237,14 @@ const {
 #### 分页列表组件
 
 **旧组件:**
+
 ```vue
 <template>
   <div>
     <div v-if="loading">加载中...</div>
     <div v-else>
       <UserList :users="users" />
-      <Pagination 
+      <Pagination
         :current-page="currentPage"
         :total-pages="totalPages"
         @page-change="handlePageChange"
@@ -267,7 +267,7 @@ const fetchUsers = async (page = 1) => {
   try {
     loading.value = true;
     const response = await axios.get('/api/users', {
-      params: { page, size: pageSize }
+      params: { page, size: pageSize },
     });
     users.value = response.data.items;
     totalPages.value = Math.ceil(response.data.total / pageSize);
@@ -288,17 +288,14 @@ onMounted(() => fetchUsers());
 ```
 
 **新组件:**
+
 ```vue
 <template>
   <div>
     <div v-if="loading">加载中...</div>
     <div v-else>
       <UserList :users="items" />
-      <Pagination 
-        :current-page="page"
-        :total-pages="totalPages"
-        @page-change="goToPage"
-      />
+      <Pagination :current-page="page" :total-pages="totalPages" @page-change="goToPage" />
     </div>
   </div>
 </template>
@@ -306,13 +303,7 @@ onMounted(() => fetchUsers());
 <script setup lang="ts">
 import { AccountService, usePagination } from '@/shared/api';
 
-const {
-  items,
-  loading,
-  page,
-  totalPages,
-  goToPage,
-} = usePagination(AccountService.getAccounts);
+const { items, loading, page, totalPages, goToPage } = usePagination(AccountService.getAccounts);
 </script>
 ```
 
@@ -377,12 +368,14 @@ export class UserService extends AccountService {
 #### 环境变量配置
 
 **旧配置:**
+
 ```bash
 VUE_APP_API_BASE_URL=http://localhost:3000/api
 VUE_APP_TIMEOUT=10000
 ```
 
 **新配置:**
+
 ```bash
 VITE_API_BASE_URL=http://localhost:3000/api/v1
 VITE_UPLOAD_BASE_URL=http://localhost:3000/api/v1/upload
@@ -394,6 +387,7 @@ VITE_LOG_LEVEL=debug
 #### 应用初始化
 
 **旧方式:**
+
 ```typescript
 // main.ts
 import axios from 'axios';
@@ -403,7 +397,7 @@ axios.defaults.baseURL = import.meta.env.VUE_APP_API_BASE_URL;
 axios.defaults.timeout = Number(import.meta.env.VUE_APP_TIMEOUT);
 
 // 请求拦截器
-axios.interceptors.request.use(config => {
+axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -413,18 +407,19 @@ axios.interceptors.request.use(config => {
 
 // 响应拦截器
 axios.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 ```
 
 **新方式:**
+
 ```typescript
 // main.ts
 // 无需手动配置，API客户端自动初始化
@@ -470,18 +465,23 @@ app.mount('#app');
 ## 常见问题
 
 ### Q: 如何处理现有的axios拦截器？
+
 A: 新系统已内置完整的拦截器功能，包括认证、错误处理、重试等。如需自定义，可通过配置选项调整。
 
 ### Q: 如何迁移复杂的错误处理逻辑？
+
 A: 使用新系统的 `errorHandler` 和 `authFailHandler` 配置选项来自定义错误处理逻辑。
 
 ### Q: 原有的请求取消功能如何处理？
+
 A: 新系统支持AbortController，可通过 `signal` 选项传入取消信号。
 
 ### Q: 如何处理不同环境的API地址？
+
 A: 通过 `VITE_API_BASE_URL` 等环境变量配置，支持开发、测试、生产环境。
 
 ### Q: Mock数据功能如何集成？
+
 A: 通过 `VITE_ENABLE_MOCK` 环境变量控制，可与MSW等Mock库集成。
 
 ## 迁移建议
@@ -494,6 +494,7 @@ A: 通过 `VITE_ENABLE_MOCK` 环境变量控制，可与MSW等Mock库集成。
 ## 技术支持
 
 如在迁移过程中遇到问题，可参考：
+
 - [API使用指南](./README.md)
 - [测试文件](./tests.ts)
 - 项目内的示例代码

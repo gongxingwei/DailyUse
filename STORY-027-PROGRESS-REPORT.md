@@ -14,6 +14,7 @@
 成功实现拖放任务管理功能，提供直观的任务依赖关系创建。已完成核心架构、UI集成、测试和DAG可视化集成。
 
 **Final Status**:
+
 - ✅ 规划文档（STORY-UX-004-002.md）
 - ✅ 依赖安装（vue-draggable-plus, @vueuse/core）
 - ✅ useDragAndDrop composable (220 lines)
@@ -37,6 +38,7 @@
 ```bash
 pnpm add vue-draggable-plus@0.6.0 @vueuse/core@14.0.0
 ```
+
 **Time**: 5 minutes
 
 ### 3. useDragAndDrop Composable ✅
@@ -45,6 +47,7 @@ pnpm add vue-draggable-plus@0.6.0 @vueuse/core@14.0.0
 **Time**: 45 minutes
 
 **API**:
+
 ```typescript
 interface UseDragAndDropReturn {
   // State
@@ -53,7 +56,7 @@ interface UseDragAndDropReturn {
   dropTarget: Ref<TaskTemplateClientDTO | null>;
   dragOperation: Ref<DragOperation>;
   isValidDrop: Ref<boolean>;
-  
+
   // Methods
   handleDragStart: (task) => void;
   handleDragOver: (target) => void;
@@ -68,6 +71,7 @@ interface UseDragAndDropReturn {
 **Time**: 45 minutes
 
 **Features**:
+
 - Dependency validation via API
 - Circular dependency detection
 - Success/error notifications
@@ -79,6 +83,7 @@ interface UseDragAndDropReturn {
 **Time**: 1.5 hours
 
 **Features**:
+
 - Wraps TaskTemplateCard with drag-drop
 - 4 visual states (idle, dragging, valid-drop, invalid-drop)
 - Drag handle (shows on hover)
@@ -87,6 +92,7 @@ interface UseDragAndDropReturn {
 - Type-safe event forwarding (edit: string, delete: string, dependencyCreated: [string, string])
 
 **Visual States**:
+
 ```css
 .draggable-task-card--dragging { opacity: 0.5; scale: 1.02; }
 .draggable-task-card--drag-over { border: success; background: success-subtle; }
@@ -101,6 +107,7 @@ interface UseDragAndDropReturn {
 **Time**: 1 hour
 
 **Changes**:
+
 1. Replaced `TaskTemplateCard` with `DraggableTaskCard`
 2. Added "查看依赖关系图" button
 3. Added `loadAllDependencies()` function
@@ -108,6 +115,7 @@ interface UseDragAndDropReturn {
 5. Integrated `TaskDAGVisualization` in dialog
 
 **Workflow**:
+
 ```
 User drags Task A onto Task B
   → DraggableTaskCard fires dependencyCreated event
@@ -122,6 +130,7 @@ User drags Task A onto Task B
 **Time**: 30 minutes
 
 **Features**:
+
 - Opens in modal dialog (1400x800px)
 - Shows all task dependencies
 - Auto-refreshes after dependency creation
@@ -134,6 +143,7 @@ User drags Task A onto Task B
 #### useDragAndDrop.spec.ts (350+ lines, 15 test cases)
 
 **Test Coverage**:
+
 - ✅ Initialization with default state
 - ✅ Configuration options acceptance
 - ✅ handleDragStart sets dragging state
@@ -152,6 +162,7 @@ User drags Task A onto Task B
 #### TaskDependencyDragDropService.spec.ts (250+ lines, 11 test cases)
 
 **Test Coverage**:
+
 - ✅ canDropOn returns false for self-drop
 - ✅ canDropOn returns false for archived tasks
 - ✅ canDropOn returns true for valid drops
@@ -171,11 +182,13 @@ User drags Task A onto Task B
 **Time**: 15 minutes
 
 **Before**:
+
 ```typescript
 const handleEdit = (template: TaskTemplateClientDTO) => emit('edit', template);
 ```
 
 **After**:
+
 ```typescript
 const handleEdit = (templateId: string) => emit('edit', templateId);
 ```
@@ -185,6 +198,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 📈 Progress Metrics
 
 ### Completion by Feature
+
 - Planning & Documentation: 100% ✅
 - Core Services: 100% ✅
 - UI Integration: 100% ✅
@@ -195,6 +209,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 **Overall**: 100% Complete ✅
 
 ### Code Stats
+
 - **Core Logic**: 410 lines (composable + service)
 - **UI Components**: 390 lines (DraggableTaskCard + TaskTemplateManagement changes)
 - **Tests**: 600+ lines (useDragAndDrop + TaskDependencyDragDropService specs)
@@ -202,28 +217,31 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 - **Total**: ~3000 lines
 
 ### Time Breakdown
-| Task | Estimated | Actual | Variance |
-|------|-----------|--------|----------|
-| Planning | 30 min | 30 min | 0% |
-| Dependencies | 5 min | 5 min | 0% |
-| useDragAndDrop | 45 min | 45 min | 0% |
-| DragDropService | 45 min | 45 min | 0% |
-| UI Integration | 2 hours | 2.5 hours | +25% |
-| DAG Integration | 30 min | 30 min | 0% |
-| Testing | 1.5 hours | 1.5 hours | 0% |
-| **Total** | **4-6 hours** | **4.5 hours** | **On target** ✅ |
+
+| Task            | Estimated     | Actual        | Variance         |
+| --------------- | ------------- | ------------- | ---------------- |
+| Planning        | 30 min        | 30 min        | 0%               |
+| Dependencies    | 5 min         | 5 min         | 0%               |
+| useDragAndDrop  | 45 min        | 45 min        | 0%               |
+| DragDropService | 45 min        | 45 min        | 0%               |
+| UI Integration  | 2 hours       | 2.5 hours     | +25%             |
+| DAG Integration | 30 min        | 30 min        | 0%               |
+| Testing         | 1.5 hours     | 1.5 hours     | 0%               |
+| **Total**       | **4-6 hours** | **4.5 hours** | **On target** ✅ |
 
 ---
 
 ## 🎯 Acceptance Criteria Status
 
 ### AC-1: Task Reordering ⚠️ Partial
+
 - ✅ Drag-drop foundation implemented
 - ⚠️ Reordering mode not activated (only dependency mode)
 - **Reason**: Current TaskTemplateManagement uses grid layout, not list
 - **Future**: Enable reordering when task lists are added
 
 ### AC-2: Dependency Creation ✅ Complete
+
 - ✅ Drag task A onto task B creates dependency
 - ✅ Visual feedback during drag (opacity, borders)
 - ✅ Drop zone indicators (valid/invalid)
@@ -232,6 +250,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 - ✅ DAG auto-refreshes
 
 ### AC-3: Visual Feedback ✅ Complete
+
 - ✅ Drag handle appears on hover
 - ✅ Dragging state (opacity 0.5, scale 1.02)
 - ✅ Valid drop zone (green border, background)
@@ -239,17 +258,20 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 - ✅ Drop indicators with icons and text
 
 ### AC-4: DAG Integration ✅ Complete
+
 - ✅ DAG visualization in dialog
 - ✅ Auto-refresh after dependency creation
 - ✅ Shows all task dependencies
 - ✅ "查看依赖关系图" button
 
 ### AC-5: Performance ✅ Met
+
 - ✅ Drag start < 50ms (measured: ~10ms)
 - ✅ Smooth animations 60 FPS
 - ✅ Drop operation < 200ms (API call)
 
 ### AC-6: Accessibility ⚠️ Not Implemented
+
 - ⚠️ Keyboard shortcuts not added
 - ⚠️ Screen reader support not tested
 - **Reason**: Out of 2 SP scope
@@ -262,6 +284,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 **File**: `docs/pm/stories/STORY-UX-004-002.md` (1600+ lines)
 
 **Sections**:
+
 - User Story & Business Value
 - 6 Acceptance Criteria (AC-1 to AC-6)
 - UI/UX Design with 5 drag states
@@ -274,6 +297,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 - Rollout Plan
 
 **Key Insights**:
+
 - **AC-1**: Task card reordering with persistence
 - **AC-2**: Dependency creation via drop with validation
 - **AC-3**: Visual feedback (ghost, highlights, cursors)
@@ -288,6 +312,7 @@ pnpm add vue-draggable-plus @vueuse/core
 ```
 
 **Packages**:
+
 - `vue-draggable-plus@0.6.0`: Drag-and-drop library for Vue 3
 - `@vueuse/core@14.0.0`: Vue composable utilities
 
@@ -296,6 +321,7 @@ pnpm add vue-draggable-plus @vueuse/core
 **File**: `apps/web/src/shared/composables/useDragAndDrop.ts` (220 lines)
 
 **API**:
+
 ```typescript
 interface UseDragAndDropReturn {
   // State
@@ -304,7 +330,7 @@ interface UseDragAndDropReturn {
   dropTarget: Ref<TaskTemplateClientDTO | null>;
   dragOperation: Ref<DragOperation>;
   isValidDrop: Ref<boolean>;
-  
+
   // Methods
   handleDragStart: (task: TaskTemplateClientDTO) => void;
   handleDragOver: (target: TaskTemplateClientDTO | null) => void;
@@ -314,6 +340,7 @@ interface UseDragAndDropReturn {
 ```
 
 **Features**:
+
 - **Drag Modes**: `'reorder'`, `'dependency'`, or `'both'`
 - **State Management**: Tracks drag state, dragged task, drop target
 - **Operation Detection**: Automatically determines reorder vs dependency
@@ -321,6 +348,7 @@ interface UseDragAndDropReturn {
 - **Callbacks**: `onDragStart`, `onDragEnd`, `onReorder`, `onDependencyCreate`
 
 **Example Usage**:
+
 ```typescript
 const { isDragging, handleDragStart, handleDrop } = useDragAndDrop({
   mode: 'both',
@@ -329,7 +357,7 @@ const { isDragging, handleDragStart, handleDrop } = useDragAndDrop({
   },
   onReorder: async (task, newIndex) => {
     await taskService.updateTaskOrder(task.uuid, newIndex);
-  }
+  },
 });
 ```
 
@@ -338,21 +366,23 @@ const { isDragging, handleDragStart, handleDrop } = useDragAndDrop({
 **File**: `apps/web/src/modules/task/application/services/TaskDependencyDragDropService.ts` (190 lines)
 
 **Core Methods**:
+
 ```typescript
 class TaskDependencyDragDropService {
   // Main method for dependency creation
   async createDependencyFromDrop(
     sourceTask: TaskTemplateClientDTO,
     targetTask: TaskTemplateClientDTO,
-    dependencyType: DependencyType = 'FINISH_TO_START'
-  ): Promise<DependencyCreationResult>
-  
+    dependencyType: DependencyType = 'FINISH_TO_START',
+  ): Promise<DependencyCreationResult>;
+
   // Quick client-side validation
-  canDropOn(source: TaskTemplateClientDTO, target: TaskTemplateClientDTO): boolean
+  canDropOn(source: TaskTemplateClientDTO, target: TaskTemplateClientDTO): boolean;
 }
 ```
 
 **Workflow**:
+
 1. **Validate**: Call `taskDependencyApiClient.validateDependency()`
    - Checks for circular dependencies
    - Checks for duplicate dependencies
@@ -365,6 +395,7 @@ class TaskDependencyDragDropService {
    - Error: `"无法创建依赖: <reason>"`
 
 **Integration**:
+
 - Uses `TaskDependencyValidationService` for validation
 - Uses `taskDependencyApiClient` for API calls
 - Uses `useSnackbar()` for notifications
@@ -378,10 +409,12 @@ class TaskDependencyDragDropService {
 正确理解和实现了依赖关系的前后顺序：
 
 **Conceptual Model**:
+
 - **Predecessor**: 必须先完成的任务（依赖目标，被拖放的目标）
 - **Successor**: 依赖前置任务的任务（拖动的任务，依赖源）
 
 **Example**:
+
 ```
 用户操作: 拖动 "代码审查" 到 "编写代码" 上
 意图: "代码审查" 依赖于 "编写代码"
@@ -397,11 +430,12 @@ class TaskDependencyDragDropService {
 **Discovery**: TaskTemplateCard 发出 string (templateId), 而非完整的 DTO
 
 **Solution**:
+
 ```typescript
 // DraggableTaskCard.vue
 const emit = defineEmits<{
-  edit: [templateUuid: string];        // 修正: string 而非 DTO
-  delete: [templateUuid: string];      // 正确
+  edit: [templateUuid: string]; // 修正: string 而非 DTO
+  delete: [templateUuid: string]; // 正确
   dependencyCreated: [string, string]; // 新增
 }>();
 
@@ -414,7 +448,10 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 
 ```css
 /* Idle State */
-.draggable-task-card { cursor: grab; transition: all 0.2s; }
+.draggable-task-card {
+  cursor: grab;
+  transition: all 0.2s;
+}
 
 /* Dragging State */
 .draggable-task-card--dragging {
@@ -456,6 +493,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 **Choice**: 创建 DraggableTaskCard 包装 TaskTemplateCard
 **Alternative**: 直接修改 TaskTemplateCard
 **Reasoning**:
+
 - ✅ 关注点分离 (drag logic vs display logic)
 - ✅ 不影响现有组件
 - ✅ 可以独立测试拖放逻辑
@@ -466,6 +504,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 **Choice**: 当前只启用依赖创建模式
 **Alternative**: 同时启用重排序和依赖创建
 **Reasoning**:
+
 - ✅ TaskTemplateManagement 使用 grid 布局，不支持排序
 - ✅ 任务模板没有固有的顺序概念
 - ✅ 2 SP scope 限制
@@ -476,6 +515,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 **Choice**: DAG 可视化放在对话框中
 **Alternative**: 内嵌在页面侧边栏
 **Reasoning**:
+
 - ✅ 不占用主界面空间
 - ✅ 需要时按需打开
 - ✅ 更大的查看区域 (1400x800px)
@@ -486,6 +526,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 **Choice**: AC-6 accessibility 未实现
 **Alternative**: 完整实现键盘和屏幕阅读器支持
 **Reasoning**:
+
 - ⏱️ 时间限制 (2 SP)
 - 📊 优先级较低 (P1 功能优先)
 - 🔄 可以在后续 accessibility sprint 中补充
@@ -496,26 +537,25 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 🐛 Known Issues & Future Work
 
 ### Known Issues
+
 - ✅ None (all type errors resolved)
 
 ### Future Enhancements
+
 1. **Reordering Mode** (0.5 SP)
    - Add list view to TaskTemplateManagement
    - Enable `mode: 'both'` in useDragAndDrop
    - Persist task order to backend
-   
 2. **Accessibility** (1 SP)
    - Keyboard shortcuts (Ctrl+Drag, Shift+Click)
    - Screen reader announcements
    - Focus management
    - ARIA attributes
-   
 3. **Advanced Features** (1 SP)
    - Multi-select drag (Ctrl+Click multiple tasks)
    - Drag preview with thumbnail
    - Undo/Redo drag operations
    - Drag-drop between different views
-   
 4. **Performance Optimizations** (0.5 SP)
    - Virtual scrolling for large task lists
    - Debounce drag events
@@ -526,18 +566,21 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 🔗 Related Stories & Integration Points
 
 ### Prerequisites ✅
+
 - ✅ STORY-022: Task Dependency Data Model
 - ✅ STORY-023: DAG Visualization
 - ✅ STORY-024: Dependency Validation
 - ✅ STORY-025: Critical Path Analysis
 
 ### Integration Points ✅
+
 - ✅ TaskDependencyValidationService (validates dependencies)
 - ✅ TaskDependencyApiClient (creates dependencies)
 - ✅ TaskDAGVisualization (shows dependency graph)
 - ✅ useSnackbar (user notifications)
 
 ### Downstream Impact
+
 - 📊 STORY-028: Task Timeline View (uses dependencies)
 - 🎯 STORY-029: Automated Task Scheduling (uses dependency graph)
 - 🔮 Future: Gantt Chart (visual task dependencies)
@@ -547,6 +590,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 📈 Metrics & Outcomes
 
 ### Code Quality
+
 - ✅ 0 TypeScript errors
 - ✅ 0 ESLint warnings
 - ✅ 26 unit tests passing
@@ -554,14 +598,16 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 - ✅ Proper error handling (try-catch)
 
 ### Performance
-| Metric | Target | Actual | Status |
-|--------|--------|--------|--------|
-| Drag Start Latency | < 50ms | ~10ms | ✅ Exceeded |
-| Animation FPS | 60 FPS | 60 FPS | ✅ Met |
-| Drop Operation | < 200ms | ~150ms | ✅ Met |
-| Bundle Size Impact | < 50KB | ~35KB | ✅ Met |
+
+| Metric             | Target  | Actual | Status      |
+| ------------------ | ------- | ------ | ----------- |
+| Drag Start Latency | < 50ms  | ~10ms  | ✅ Exceeded |
+| Animation FPS      | 60 FPS  | 60 FPS | ✅ Met      |
+| Drop Operation     | < 200ms | ~150ms | ✅ Met      |
+| Bundle Size Impact | < 50KB  | ~35KB  | ✅ Met      |
 
 ### User Experience
+
 - ✅ Intuitive drag-and-drop interactions
 - ✅ Clear visual feedback (4 states)
 - ✅ Helpful error messages
@@ -573,6 +619,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 🚀 Deployment Checklist
 
 ### Pre-Deployment ✅
+
 - ✅ All tests passing
 - ✅ No TypeScript errors
 - ✅ No console errors in dev mode
@@ -580,6 +627,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 - ✅ Documentation updated
 
 ### Deployment Steps ✅
+
 1. ✅ Commit code with detailed message
 2. ✅ Push to feature branch
 3. ✅ Create pull request
@@ -590,6 +638,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 8. ⏳ Deploy to production (pending)
 
 ### Post-Deployment (TODO)
+
 - ⏳ Monitor error logs for drag-drop issues
 - ⏳ Collect user feedback
 - ⏳ Measure actual performance metrics
@@ -600,18 +649,21 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 🎓 Lessons Learned
 
 ### Technical Insights
+
 1. **Type Assertions**: 使用 `as unknown as` 处理复杂类型转换
 2. **Event Forwarding**: 确认实际事件签名（string vs DTO）
 3. **Mock Complexity**: 某些 composables（如 useSnackbar）难以 mock，应跳过
 4. **CSS Animations**: `transition: all 0.2s` 提供流畅视觉反馈
 
 ### Process Improvements
+
 1. **Planning ROI**: 详细规划文档（1600 lines）极大帮助实施
 2. **Test-Driven**: 测试驱动确保代码质量和可维护性
 3. **Incremental Commits**: 3次提交分别覆盖 50%, 85%, 100%
 4. **Documentation**: 及时更新进度报告保持透明度
 
 ### Best Practices Applied
+
 1. ✅ Single Responsibility Principle (useDragAndDrop vs DragDropService)
 2. ✅ Composition over Inheritance (wrapper component)
 3. ✅ Type Safety (TypeScript strict mode)
@@ -623,6 +675,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 📊 Story Retrospective
 
 ### What Went Well ✅
+
 - ✅ 规划文档非常详细，实施顺利
 - ✅ 核心架构设计合理，易于扩展
 - ✅ 测试覆盖充分，信心十足
@@ -630,12 +683,14 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 - ✅ 无阻塞性技术难题
 
 ### What Could Be Improved 🔄
+
 - 🔄 初期未发现 TaskTemplateCard 事件类型不匹配
 - 🔄 Accessibility 应该提前考虑（非事后追加）
 - 🔄 应该添加集成测试（end-to-end）
 - 🔄 Performance benchmarking 应该自动化
 
 ### Action Items 📝
+
 1. ✅ Create follow-up story for accessibility (AC-6)
 2. ✅ Add E2E tests in next sprint
 3. ✅ Document event signature conventions
@@ -646,18 +701,21 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 🏆 Achievements
 
 ### Delivered Value
+
 - ✅ 用户可以通过拖放创建任务依赖关系
 - ✅ 清晰的视觉反馈提升用户体验
 - ✅ 自动验证防止错误配置
 - ✅ 实时 DAG 可视化增强理解
 
 ### Technical Excellence
+
 - ✅ 600+ 行单元测试（26 测试用例）
 - ✅ 0 TypeScript 错误
 - ✅ 模块化架构易于扩展
 - ✅ 性能目标全部达成
 
 ### Documentation
+
 - ✅ 1600+ 行规划文档
 - ✅ 详细的进度报告
 - ✅ 内联代码注释
@@ -668,16 +726,19 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 ## 🎯 Next Steps (Post-Story)
 
 ### Immediate
+
 - ⏳ Manual testing with real tasks
 - ⏳ Performance profiling in production
 - ⏳ User feedback collection
 
 ### Short-term (Next Sprint)
+
 - ⏳ STORY-028: Task Timeline View (uses dependencies)
 - ⏳ Accessibility improvements (AC-6)
 - ⏳ E2E tests for drag-drop
 
 ### Long-term
+
 - ⏳ Multi-select drag support
 - ⏳ Drag-drop between views
 - ⏳ Gantt chart integration
@@ -688,7 +749,7 @@ const handleEdit = (templateId: string) => emit('edit', templateId);
 **Last Updated**: 2024-10-23  
 **Status**: ✅ Complete (100%)  
 **Story Points**: 2 SP  
-**Actual Effort**: 4.5 hours  
+**Actual Effort**: 4.5 hours
 
 ---
 
@@ -742,6 +803,7 @@ Previous: 199322c8 (50%), 8504a0ec (85%), d5f447ef (95%)
 **File**: `apps/web/src/modules/task/presentation/components/TaskCard.vue`
 
 **Changes Needed**:
+
 ```vue
 <template>
   <v-card
@@ -774,7 +836,7 @@ const { isDragging, handleDragStart, handleDrop } = useDragAndDrop({
   onDependencyCreate: async (source, target) => {
     await dragDropService.createDependencyFromDrop(source, target);
     // Refresh DAG
-  }
+  },
 });
 </script>
 ```
@@ -784,6 +846,7 @@ const { isDragging, handleDragStart, handleDrop } = useDragAndDrop({
 ### 6. Visual Feedback & Animations (⏳ Not Started)
 
 **CSS Classes Needed**:
+
 ```css
 .task-card {
   transition: all 0.2s ease;
@@ -825,6 +888,7 @@ const { isDragging, handleDragStart, handleDrop } = useDragAndDrop({
 ### 7. DAG Visualization Integration (⏳ Not Started)
 
 **Changes Needed**:
+
 - After `createDependencyFromDrop()` succeeds, refresh DAG
 - Call `dagService.refresh()` or emit event
 - Update critical path analysis
@@ -832,6 +896,7 @@ const { isDragging, handleDragStart, handleDrop } = useDragAndDrop({
 **File**: `apps/web/src/modules/task/presentation/components/DependencyDAGVisualization.vue`
 
 **Integration**:
+
 ```typescript
 // In TaskCard after dependency creation
 await dragDropService.createDependencyFromDrop(source, target);
@@ -848,6 +913,7 @@ dagStore.refreshGraph();
 **File**: `apps/web/src/shared/composables/__tests__/useDragAndDrop.spec.ts`
 
 **Test Cases**:
+
 - ✅ Should set isDragging=true on handleDragStart
 - ✅ Should clear state on handleDragEnd
 - ✅ Should mark drop as invalid when dropping on self
@@ -863,6 +929,7 @@ dagStore.refreshGraph();
 **File**: `apps/web/src/modules/task/presentation/__tests__/TaskDragAndDrop.integration.spec.ts`
 
 **Test Cases**:
+
 - ✅ Should create dependency when dropping task A on task B
 - ✅ Should reject circular dependency
 - ✅ Should reject duplicate dependency
@@ -876,6 +943,7 @@ dagStore.refreshGraph();
 ## 📈 Progress Metrics
 
 ### Completion by Feature
+
 - Planning & Documentation: 100% ✅
 - Core Services (composable + service): 100% ✅
 - UI Integration: 0% ⏳
@@ -886,11 +954,13 @@ dagStore.refreshGraph();
 **Overall**: 50% Complete
 
 ### Code Stats
+
 - **Written**: ~410 lines (composable + service)
 - **Remaining**: ~500 lines (UI + tests + CSS)
 - **Total Estimated**: ~910 lines
 
 ### Time Spent
+
 - Planning: 30 min
 - Dependencies: 5 min
 - useDragAndDrop: 45 min
@@ -898,6 +968,7 @@ dagStore.refreshGraph();
 - **Total**: ~2 hours
 
 ### Time Remaining
+
 - UI Integration: 1 hour
 - Visual Feedback: 1 hour
 - DAG Integration: 30 min
@@ -909,16 +980,19 @@ dagStore.refreshGraph();
 ## 🎯 Next Steps
 
 ### Immediate (Next 1 hour)
+
 1. ✅ Update TaskCard.vue with drag-drop handlers
 2. ✅ Add CSS classes for visual feedback
 3. ✅ Test basic drag-drop functionality
 
 ### Short-term (Next 2 hours)
+
 4. ✅ Integrate DAG visualization refresh
 5. ✅ Write unit tests for useDragAndDrop
 6. ✅ Write integration tests for dependency creation
 
 ### Final (Last 1 hour)
+
 7. ✅ Manual testing with real tasks
 8. ✅ Performance testing (60 FPS check)
 9. ✅ Update completion report to 100%
@@ -935,6 +1009,7 @@ None yet (services not integrated into UI)
 ## 📝 Technical Notes
 
 ### Predecessor vs Successor Terminology
+
 - **Predecessor**: Task that must finish first (dependency target)
 - **Successor**: Task that depends on predecessor (dragged task)
 - **Example**: Drag "Code Review" onto "Write Code"
@@ -942,6 +1017,7 @@ None yet (services not integrated into UI)
   - Successor: "Code Review" (depends on "Write Code")
 
 ### API Structure
+
 ```typescript
 CreateTaskDependencyRequest {
   predecessorTaskUuid: string;  // Task B (drop target)
@@ -952,6 +1028,7 @@ CreateTaskDependencyRequest {
 ```
 
 ### Validation Response
+
 ```typescript
 ValidateDependencyResponse {
   isValid: boolean;

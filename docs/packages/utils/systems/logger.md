@@ -92,7 +92,7 @@ export function initializeLogger(): void {
   // 生产环境添加文件日志
   if (isProduction) {
     const logDir = path.join(process.cwd(), 'logs');
-    
+
     transports.push(
       new FileTransport({
         filename: path.join(logDir, 'combined.log'),
@@ -216,13 +216,13 @@ ERROR (最高) → WARN → INFO → HTTP → DEBUG (最低)
 
 ### 使用场景
 
-| 级别 | 数值 | 使用场景 | 示例 |
-|------|------|---------|------|
-| `ERROR` | 0 | 错误、异常、失败 | `logger.error('Database connection failed', error)` |
-| `WARN` | 1 | 警告、非预期但可处理 | `logger.warn('Using deprecated API', { api: 'v1/users' })` |
-| `INFO` | 2 | 重要业务操作、状态变化 | `logger.info('User logged in', { userId: '123' })` |
-| `HTTP` | 3 | HTTP 请求/响应 | `logger.http('GET /api/goals', { status: 200 })` |
-| `DEBUG` | 4 | 调试信息、详细流程 | `logger.debug('Validating input', { input })` |
+| 级别    | 数值 | 使用场景               | 示例                                                       |
+| ------- | ---- | ---------------------- | ---------------------------------------------------------- |
+| `ERROR` | 0    | 错误、异常、失败       | `logger.error('Database connection failed', error)`        |
+| `WARN`  | 1    | 警告、非预期但可处理   | `logger.warn('Using deprecated API', { api: 'v1/users' })` |
+| `INFO`  | 2    | 重要业务操作、状态变化 | `logger.info('User logged in', { userId: '123' })`         |
+| `HTTP`  | 3    | HTTP 请求/响应         | `logger.http('GET /api/goals', { status: 200 })`           |
+| `DEBUG` | 4    | 调试信息、详细流程     | `logger.debug('Validating input', { input })`              |
 
 ### 级别配置
 
@@ -290,14 +290,15 @@ LoggerFactory.configure({
 
 ```typescript
 new ConsoleTransport({
-  level: LogLevel.DEBUG,        // 最低日志级别
-  colorize: true,               // 彩色输出（Node.js）
-  timestamp: true,              // 显示时间戳
-  prettyPrint: true,            // 格式化输出
-})
+  level: LogLevel.DEBUG, // 最低日志级别
+  colorize: true, // 彩色输出（Node.js）
+  timestamp: true, // 显示时间戳
+  prettyPrint: true, // 格式化输出
+});
 ```
 
 **彩色方案**:
+
 - ERROR: 红色
 - WARN: 黄色
 - INFO: 绿色
@@ -308,15 +309,16 @@ new ConsoleTransport({
 
 ```typescript
 new FileTransport({
-  filename: 'logs/app.log',     // 日志文件路径
-  level: LogLevel.INFO,         // 最低日志级别
-  json: true,                   // JSON 格式
-  maxSize: 10 * 1024 * 1024,    // 最大文件大小 (10MB)
-  maxFiles: 5,                  // 最多保留文件数
-})
+  filename: 'logs/app.log', // 日志文件路径
+  level: LogLevel.INFO, // 最低日志级别
+  json: true, // JSON 格式
+  maxSize: 10 * 1024 * 1024, // 最大文件大小 (10MB)
+  maxFiles: 5, // 最多保留文件数
+});
 ```
 
 **文件组织**:
+
 ```
 logs/
 ├── combined.log       # 所有日志（INFO 及以上）
@@ -398,7 +400,7 @@ logger.error('API request timeout', error, { url, timeout });
 // ❌ 不推荐（记录密码）
 logger.info('User login attempt', {
   username: 'john',
-  password: 'secret123',  // 敏感！
+  password: 'secret123', // 敏感！
 });
 
 // ✅ 推荐（脱敏）
@@ -441,7 +443,7 @@ export class GoalController {
 
     try {
       const goal = await goalService.createGoal(accountUuid, request);
-      
+
       logger.info('Goal created successfully', {
         goalUuid: goal.uuid,
         accountUuid,
@@ -484,7 +486,7 @@ export class GoalApplicationService {
 
     try {
       const goal = await this.goalDomainService.createGoal(dto);
-      
+
       this.logger.info('Goal created successfully', {
         goalUuid: goal.uuid,
         accountUuid,
@@ -515,7 +517,7 @@ export function useGoalActions() {
 
     try {
       const result = await goalApi.create(data);
-      
+
       logger.info('Goal created successfully', {
         goalId: result.id,
         name: result.name,
@@ -620,21 +622,21 @@ const logger = createLogger('MyService');
 
 ### Logger 方法
 
-| 方法 | 签名 | 说明 |
-|------|------|------|
-| `debug()` | `debug(message: string, metadata?: any)` | 调试日志 |
-| `info()` | `info(message: string, metadata?: any)` | 信息日志 |
-| `warn()` | `warn(message: string, metadata?: any)` | 警告日志 |
-| `error()` | `error(message: string, error?: Error, metadata?: any)` | 错误日志 |
-| `http()` | `http(message: string, metadata?: any)` | HTTP 日志 |
+| 方法      | 签名                                                    | 说明      |
+| --------- | ------------------------------------------------------- | --------- |
+| `debug()` | `debug(message: string, metadata?: any)`                | 调试日志  |
+| `info()`  | `info(message: string, metadata?: any)`                 | 信息日志  |
+| `warn()`  | `warn(message: string, metadata?: any)`                 | 警告日志  |
+| `error()` | `error(message: string, error?: Error, metadata?: any)` | 错误日志  |
+| `http()`  | `http(message: string, metadata?: any)`                 | HTTP 日志 |
 
 ### LoggerFactory 方法
 
-| 方法 | 签名 | 说明 |
-|------|------|------|
+| 方法          | 签名                              | 说明         |
+| ------------- | --------------------------------- | ------------ |
 | `configure()` | `configure(config: LoggerConfig)` | 配置日志系统 |
-| `getConfig()` | `getConfig(): LoggerConfig` | 获取当前配置 |
-| `reset()` | `reset()` | 重置配置 |
+| `getConfig()` | `getConfig(): LoggerConfig`       | 获取当前配置 |
+| `reset()`     | `reset()`                         | 重置配置     |
 
 ---
 
@@ -649,8 +651,8 @@ const logger = createLogger('MyService');
 
 ## 📝 变更历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
+| 版本  | 日期       | 变更                   |
+| ----- | ---------- | ---------------------- |
 | 1.0.0 | 2025-10-03 | 初始版本，完整日志系统 |
 | 1.1.0 | 2025-10-03 | 集成到 API 和 Web 项目 |
 

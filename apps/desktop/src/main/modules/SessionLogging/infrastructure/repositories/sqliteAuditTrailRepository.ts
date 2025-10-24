@@ -13,7 +13,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    */
   async save(sessionLogUuid: string, auditTrail: AuditTrail): Promise<void> {
     const data = auditTrail.toDTO();
-    
+
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO audit_trails (
         uuid, account_uuid, session_log_uuid, operation_type, description, risk_level,
@@ -41,7 +41,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
       data.metadata,
       data.isAlertTriggered,
       data.alertLevel,
-      data.timestamp
+      data.timestamp,
     );
   }
 
@@ -50,7 +50,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    */
   async saveWithSessionLog(auditTrail: AuditTrail, sessionLogId: string): Promise<void> {
     const data = auditTrail.toDTO();
-    
+
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO audit_trails (
         uuid, account_uuid, session_log_uuid, operation_type, description, risk_level,
@@ -78,7 +78,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
       data.metadata,
       data.isAlertTriggered,
       data.alertLevel,
-      data.timestamp
+      data.timestamp,
     );
   }
 
@@ -107,7 +107,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(accountUuid) as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -121,7 +121,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(sessionLogId) as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -135,7 +135,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(operationType) as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -149,7 +149,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(riskLevel) as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -163,7 +163,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all() as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -177,13 +177,17 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(startTime.getTime(), endTime.getTime()) as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
    * 根据账户ID和时间范围查找审计轨迹
    */
-  async findByAccountUuidAndTimeRange(accountUuid: string, startTime: Date, endTime: Date): Promise<AuditTrail[]> {
+  async findByAccountUuidAndTimeRange(
+    accountUuid: string,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<AuditTrail[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM audit_trails 
       WHERE account_uuid = ? AND timestamp BETWEEN ? AND ?
@@ -191,7 +195,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(accountUuid, startTime.getTime(), endTime.getTime()) as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -263,13 +267,13 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const result = stmt.get(startTime.getTime()) as any;
-    
+
     return {
       totalEvents: result.total_events || 0,
       criticalEvents: result.critical_events || 0,
       highRiskEvents: result.high_risk_events || 0,
       alertsTriggered: result.alerts_triggered || 0,
-      uniqueAccounts: result.unique_accounts || 0
+      uniqueAccounts: result.unique_accounts || 0,
     };
   }
 
@@ -288,7 +292,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(accountUuid, startTime.getTime()) as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -306,7 +310,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(startTime.getTime()) as any[];
-    return await Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+    return await Promise.all(rows.map((row) => this.mapRowToAuditTrail(row)));
   }
 
   private async mapRowToAuditTrail(row: any): Promise<AuditTrail> {

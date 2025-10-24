@@ -1,6 +1,9 @@
 <template>
-  <div class="grid-template-item" :class="{ disabled: !isTemplateEnabled }" @click="handleClick"
-  draggable="true"
+  <div
+    class="grid-template-item"
+    :class="{ disabled: !isTemplateEnabled }"
+    @click="handleClick"
+    draggable="true"
     @dragstart="onDragStart"
   >
     <div class="template-icon">
@@ -18,7 +21,7 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue';
 import { ReminderTemplate } from '../../../domain/entities/reminderTemplate';
-import { useReminderStore } from "../../stores/reminderStore";
+import { useReminderStore } from '../../stores/reminderStore';
 
 const reminderStore = useReminderStore();
 
@@ -26,7 +29,9 @@ const props = defineProps<{
   item: ReminderTemplate;
 }>();
 
-const isTemplateEnabled = computed(() => reminderStore.getReminderTemplateEnabledStatus(props.item?.uuid || ''));
+const isTemplateEnabled = computed(() =>
+  reminderStore.getReminderTemplateEnabledStatus(props.item?.uuid || ''),
+);
 
 const onDragStart = (event: DragEvent) => {
   // 传递 template 信息
@@ -35,12 +40,9 @@ const onDragStart = (event: DragEvent) => {
 
 const onClickTemplate = inject<(item: ReminderTemplate) => void>('onClickTemplate');
 
-
 const handleClick = () => {
   onClickTemplate?.(props.item);
 };
-
-
 </script>
 
 <style scoped>

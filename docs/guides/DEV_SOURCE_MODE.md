@@ -24,6 +24,7 @@
 ## 问题背景
 
 在 monorepo 中，默认情况下包之间通过 `node_modules` 引用，需要先构建才能看到变化。这导致：
+
 - 每次修改 contracts 都要重新构建才能在 domain-server 中看到效果
 - 开发体验不好，类型提示延迟
 
@@ -104,19 +105,20 @@ pnpm run build
 
 ```json
 {
-  "main": "dist/index.js",           // 默认入口（向后兼容）
-  "types": "dist/index.d.ts",       // 默认类型文件
+  "main": "dist/index.js", // 默认入口（向后兼容）
+  "types": "dist/index.d.ts", // 默认类型文件
   "exports": {
     ".": {
       "development": {
-        "types": "./src/index.ts",   // 开发时类型文件
-        "import": "./src/index.ts"   // 开发时 ES 模块
+        "types": "./src/index.ts", // 开发时类型文件
+        "import": "./src/index.ts" // 开发时 ES 模块
       },
-      "types": "./dist/index.d.ts",  // 生产时类型文件
-      "import": "./dist/index.js"    // 生产时 ES 模块
+      "types": "./dist/index.d.ts", // 生产时类型文件
+      "import": "./dist/index.js" // 生产时 ES 模块
     }
   },
-  "publishConfig": {                 // 发布时的配置
+  "publishConfig": {
+    // 发布时的配置
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -130,25 +132,24 @@ pnpm run build
 #### TypeScript 配置最佳实践
 
 **基础包配置**：
+
 ```json
 {
   "compilerOptions": {
-    "composite": true,              // 启用项目引用
-    "declaration": true,           // 生成 .d.ts 文件
-    "declarationMap": true,        // 生成声明映射
-    "incremental": true,           // 增量编译
+    "composite": true, // 启用项目引用
+    "declaration": true, // 生成 .d.ts 文件
+    "declarationMap": true, // 生成声明映射
+    "incremental": true, // 增量编译
     "tsBuildInfoFile": ".tsbuildinfo"
   }
 }
 ```
 
 **消费包配置**：
+
 ```json
 {
-  "references": [
-    { "path": "../contracts" },
-    { "path": "../utils" }
-  ]
+  "references": [{ "path": "../contracts" }, { "path": "../utils" }]
 }
 ```
 
@@ -157,6 +158,7 @@ pnpm run build
 #### 全局环境设置
 
 **Windows PowerShell**：
+
 ```powershell
 # 设置开发环境
 $env:NODE_ENV='development'
@@ -169,6 +171,7 @@ $env:NODE_ENV='production'
 ```
 
 **Linux/Mac**：
+
 ```bash
 # 临时设置
 export NODE_ENV=development
@@ -180,11 +183,13 @@ echo 'export NODE_ENV=development' >> ~/.bashrc
 #### 项目级环境设置
 
 创建 `.env.development`：
+
 ```env
 NODE_ENV=development
 ```
 
 创建 `.env.production`：
+
 ```env
 NODE_ENV=production
 ```
@@ -225,6 +230,7 @@ NODE_ENV=production
 ### 3. 使用方式
 
 #### 开发时
+
 ```bash
 # 方式1：全局设置环境变量（推荐）
 # Windows PowerShell
@@ -245,6 +251,7 @@ NODE_ENV=development pnpm dev
 ```
 
 #### 生产构建时
+
 ```bash
 # 不设置 NODE_ENV 或设置为 production
 pnpm run build
@@ -274,6 +281,7 @@ NODE_ENV=production pnpm run build
 ### 5. 重启 TypeScript 服务器
 
 修改配置后，需要重启 TypeScript 服务器：
+
 - 在 VS Code 中按 `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`)
 - 输入 "TypeScript: Restart TS Server"
 - 或者重新加载 VS Code 窗口
@@ -282,6 +290,7 @@ NODE_ENV=production pnpm run build
 
 1. **首次使用仍需构建一次**
    - 首次克隆项目或删除 node_modules 后，需要构建一次以安装依赖
+
    ```bash
    pnpm install
    pnpm run --filter @dailyuse/contracts build
@@ -304,11 +313,13 @@ NODE_ENV=production pnpm run build
 ### 成功案例分析
 
 #### 案例 1：大型企业级应用
+
 - **项目规模**：50+ 包，10+ 开发者
 - **痛点**：contracts 包修改后需等待 3-5 分钟构建
 - **效果**：配置源码链接后，类型变更实时生效，开发效率提升 60%
 
 #### 案例 2：微服务架构
+
 - **项目规模**：共享类型包 + 15 个微服务
 - **痛点**：API 接口变更需要逐个重新构建服务
 - **效果**：接口变更实时同步，集成测试效率显著提升
@@ -316,22 +327,26 @@ NODE_ENV=production pnpm run build
 ### 最佳实践总结
 
 #### 包设计原则
+
 1. **明确包职责**：基础包（types、utils）优先配置源码链接
 2. **避免循环依赖**：设计清晰的依赖层次
 3. **统一导出策略**：在 `src/index.ts` 中统一导出所有公开 API
 
 #### 开发工作流
+
 1. **项目初始化**：
+
    ```bash
    # 首次克隆后构建所有依赖
    pnpm install
    pnpm run build:deps
-   
+
    # 设置开发环境
    $env:NODE_ENV='development'
    ```
 
 2. **日常开发**：
+
    ```bash
    # 无需构建，直接开发
    # 修改 contracts -> 立即在 api 中看到类型变化
@@ -347,6 +362,7 @@ NODE_ENV=production pnpm run build
    ```
 
 #### 团队协作规范
+
 - **IDE 配置统一**：团队共享 `.vscode/settings.json`
 - **环境变量检查**：在 CI/CD 中验证构建文件
 - **类型检查**：定期运行全量类型检查
@@ -355,8 +371,10 @@ NODE_ENV=production pnpm run build
 ### 常见问题和解决方案
 
 #### 问题 1：TypeScript 服务器缓存问题
+
 **现象**：修改源码后类型不更新
 **解决**：
+
 ```bash
 # 重启 TypeScript 服务器
 # VS Code: Ctrl+Shift+P -> "TypeScript: Restart TS Server"
@@ -365,8 +383,10 @@ rm -rf node_modules/.cache
 ```
 
 #### 问题 2：某些工具不支持条件导出
+
 **现象**：构建工具或测试框架无法解析源码
 **解决**：
+
 ```json
 // 在工具配置中显式指定模块解析
 {
@@ -377,8 +397,10 @@ rm -rf node_modules/.cache
 ```
 
 #### 问题 3：类型导入路径错误
+
 **现象**：`Cannot find module` 错误
 **解决**：
+
 ```typescript
 // 确保正确的导出和导入
 // packages/contracts/src/index.ts
@@ -390,8 +412,10 @@ import { SomeType } from '@your-org/contracts';
 ```
 
 #### 问题 4：混合环境问题
+
 **现象**：部分包使用源码，部分使用构建文件
 **解决**：
+
 ```bash
 # 统一环境设置
 $env:NODE_ENV='development'
@@ -408,7 +432,9 @@ $env:NODE_ENV='development'
 ### 性能优化技巧
 
 #### 1. 选择性启用
+
 只为频繁修改的基础包启用源码链接：
+
 ```json
 // 高频修改包：使用源码
 "@your-org/contracts": "./packages/contracts/src",
@@ -419,20 +445,22 @@ $env:NODE_ENV='development'
 ```
 
 #### 2. TypeScript 编译优化
+
 ```json
 {
   "compilerOptions": {
     "incremental": true,
-    "skipLibCheck": true,        // 跳过第三方库检查
+    "skipLibCheck": true, // 跳过第三方库检查
     "skipDefaultLibCheck": true,
     "composite": true
   },
   "include": ["src/**/*"],
-  "exclude": ["**/*.test.ts", "**/*.spec.ts"]  // 排除测试文件
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"] // 排除测试文件
 }
 ```
 
 #### 3. 开发工具配置
+
 ```json
 // .vscode/settings.json
 {
@@ -445,12 +473,14 @@ $env:NODE_ENV='development'
 ### 监控和调试
 
 #### 1. 验证当前模式
+
 ```javascript
 // 在代码中检查当前使用的文件
 console.log('Using source mode:', __filename.includes('/src/'));
 ```
 
 #### 2. 类型检查验证
+
 ```bash
 # 验证类型正确性
 pnpm exec tsc --noEmit
@@ -460,6 +490,7 @@ pnpm exec tsc --traceResolution
 ```
 
 #### 3. 构建验证
+
 ```bash
 # 定期验证生产构建
 NODE_ENV=production pnpm run build
@@ -468,11 +499,13 @@ NODE_ENV=production pnpm run build
 ## 当前状态
 
 ✅ **已配置**：
+
 - `@dailyuse/contracts` 已配置开发环境源码导出
 - 添加了 tsconfig.json 支持 TypeScript 项目引用
 - 添加了 publishConfig 用于发布时的配置
 
 ⏳ **待做**：
+
 - 在终端设置 `NODE_ENV=development`
 - 重启 VS Code 或 TypeScript 服务器
 - 验证类型提示是否实时更新
@@ -495,18 +528,21 @@ pnpm exec nx run domain-server:typecheck
 ### 技术收益
 
 #### 开发体验提升
+
 - **即时反馈**：类型和实现变更立即生效，无需等待构建
 - **调试便利**：可以直接在源码中设置断点和调试
 - **智能提示**：IDE 能够提供更准确的代码补全和类型提示
 - **重构安全**：跨包重构时能够实时检查影响范围
 
 #### 团队协作改善
+
 - **减少冲突**：避免因构建文件导致的 Git 冲突
 - **提高效率**：团队成员无需等待他人的包构建完成
 - **降低门槛**：新人上手更容易，无需理解复杂的构建流程
 - **统一体验**：所有开发者享受一致的开发体验
 
 #### 项目维护优化
+
 - **依赖清晰**：更容易理解包之间的真实依赖关系
 - **问题定位**：错误堆栈直接指向源码位置
 - **版本管理**：减少因构建文件不一致导致的版本问题
@@ -514,11 +550,13 @@ pnpm exec nx run domain-server:typecheck
 ### 风险和限制
 
 #### 技术风险
+
 - **工具兼容性**：部分构建工具可能不支持条件导出
 - **性能影响**：大型项目中可能影响 TypeScript 编译性能
 - **版本依赖**：需要 Node.js 14+ 和较新版本的构建工具
 
 #### 管理风险
+
 - **环境一致性**：团队需要统一环境配置
 - **CI/CD 配置**：需要确保生产环境正确使用构建文件
 - **学习成本**：团队需要理解新的开发模式
@@ -526,12 +564,14 @@ pnpm exec nx run domain-server:typecheck
 ### 适用场景
 
 #### 推荐使用
+
 ✅ **大型 monorepo**：包数量多，依赖关系复杂
 ✅ **高频变更的基础包**：如 types、contracts、utils
 ✅ **TypeScript 项目**：能充分利用类型检查优势
 ✅ **团队开发**：多人协作，需要实时同步
 
 #### 谨慎使用
+
 ⚠️ **小型项目**：配置复杂度可能超过收益
 ⚠️ **稳定的基础包**：很少修改的包不需要源码链接
 ⚠️ **异构技术栈**：不同语言/框架混合的项目
@@ -540,12 +580,14 @@ pnpm exec nx run domain-server:typecheck
 ### 迁移策略
 
 #### 渐进式迁移
+
 1. **选择试点包**：从最频繁修改的 1-2 个基础包开始
 2. **验证效果**：确认配置正确且带来预期收益
 3. **逐步扩展**：根据需要扩展到更多包
 4. **团队培训**：确保所有成员掌握新的工作流程
 
 #### 回滚方案
+
 ```json
 // 临时回滚到构建文件模式
 {
@@ -561,11 +603,13 @@ pnpm exec nx run domain-server:typecheck
 ### 衡量指标
 
 #### 开发效率指标
+
 - **构建等待时间减少**：平均节省 70-80% 的等待时间
 - **错误发现速度**：类型错误实时发现，减少调试时间
 - **代码补全质量**：IDE 智能提示准确度提升
 
 #### 项目质量指标
+
 - **类型覆盖率**：跨包类型检查更加严格
 - **重构成功率**：大规模重构的成功率提升
 - **Bug 减少**：编译时发现更多潜在问题
@@ -577,6 +621,7 @@ pnpm exec nx run domain-server:typecheck
 ### 官方文档
 
 #### Node.js 生态系统
+
 - **[Node.js Package Exports](https://nodejs.org/api/packages.html#exports)**  
   官方文档详细说明了 package.json 的 exports 字段用法和条件导出机制
 
@@ -584,6 +629,7 @@ pnpm exec nx run domain-server:typecheck
   NPM 官方的 package.json 字段完整说明
 
 #### TypeScript 相关
+
 - **[TypeScript Project References](https://www.typescriptlang.org/docs/handbook/project-references.html)**  
   TypeScript 官方项目引用指南，支持大型项目的模块化编译
 
@@ -594,6 +640,7 @@ pnpm exec nx run domain-server:typecheck
   复合项目配置，支持增量编译和跨项目类型检查
 
 #### 构建工具支持
+
 - **[Nx Monorepo Patterns](https://nx.dev/concepts/monorepo)**  
   Nx 官方 monorepo 最佳实践和配置模式
 
@@ -607,6 +654,7 @@ pnpm exec nx run domain-server:typecheck
   Lerna 多包管理和发布工具配置
 
 #### 打包工具
+
 - **[tsup 配置指南](https://tsup.egoist.dev/)**  
   现代 TypeScript 打包工具，支持多种输出格式
 
@@ -619,6 +667,7 @@ pnpm exec nx run domain-server:typecheck
 ### 社区资源
 
 #### 最佳实践文章
+
 - **[Modern Node.js Package Development](https://blog.isquaredsoftware.com/2023/08/esm-modernization-lessons/)**  
   现代 Node.js 包开发的经验分享
 
@@ -629,6 +678,7 @@ pnpm exec nx run domain-server:typecheck
   深入理解 exports 字段的使用场景
 
 #### 工具和库
+
 - **[taze](https://github.com/antfu/taze)**  
   依赖更新工具，支持 monorepo
 
@@ -639,6 +689,7 @@ pnpm exec nx run domain-server:typecheck
   monorepo 包管理工具
 
 #### 示例项目
+
 - **[Vue 3 源码](https://github.com/vuejs/core)**  
   Vue 3 使用了现代 monorepo 架构和条件导出
 
@@ -651,6 +702,7 @@ pnpm exec nx run domain-server:typecheck
 ### 技术博客和教程
 
 #### 深度解析
+
 - **[Understanding Package Exports](https://antfu.me/posts/publish-esm-and-cjs)**  
   Anthony Fu 关于现代包发布的深度解析
 
@@ -658,6 +710,7 @@ pnpm exec nx run domain-server:typecheck
   monorepo 架构的演进历程
 
 #### 实战教程
+
 - **[Building TypeScript Packages](https://egghead.io/courses/publish-javascript-packages-on-npm-fe05)**  
   TypeScript 包开发和发布完整教程
 
@@ -667,24 +720,27 @@ pnpm exec nx run domain-server:typecheck
 ### 工具对比和选择
 
 #### 包管理器对比
-| 特性 | npm | yarn | pnpm |
-|------|-----|------|------|
-| 工作区支持 | ✅ | ✅ | ✅ |
-| 条件导出 | ✅ | ✅ | ✅ |
-| 性能 | 中等 | 快 | 最快 |
-| 磁盘使用 | 高 | 中等 | 最低 |
+
+| 特性       | npm  | yarn | pnpm |
+| ---------- | ---- | ---- | ---- |
+| 工作区支持 | ✅   | ✅   | ✅   |
+| 条件导出   | ✅   | ✅   | ✅   |
+| 性能       | 中等 | 快   | 最快 |
+| 磁盘使用   | 高   | 中等 | 最低 |
 
 #### 构建工具对比
-| 工具 | 学习成本 | 性能 | 生态 | 推荐度 |
-|------|----------|------|------|-------|
-| Nx | 中等 | 优秀 | 丰富 | ⭐⭐⭐⭐⭐ |
-| Turborepo | 低 | 优秀 | 中等 | ⭐⭐⭐⭐ |
-| Lerna | 低 | 中等 | 成熟 | ⭐⭐⭐ |
-| Rush | 高 | 优秀 | 企业级 | ⭐⭐⭐⭐ |
+
+| 工具      | 学习成本 | 性能 | 生态   | 推荐度     |
+| --------- | -------- | ---- | ------ | ---------- |
+| Nx        | 中等     | 优秀 | 丰富   | ⭐⭐⭐⭐⭐ |
+| Turborepo | 低       | 优秀 | 中等   | ⭐⭐⭐⭐   |
+| Lerna     | 低       | 中等 | 成熟   | ⭐⭐⭐     |
+| Rush      | 高       | 优秀 | 企业级 | ⭐⭐⭐⭐   |
 
 ### 版本兼容性
 
 #### 最低版本要求
+
 - **Node.js**: 14.13.1+（支持 package exports）
 - **TypeScript**: 4.7+（完整支持 exports 字段）
 - **npm**: 7.0+（支持工作区和条件导出）
@@ -692,12 +748,13 @@ pnpm exec nx run domain-server:typecheck
 - **Nx**: 15.0+（推荐最新版本）
 
 #### 环境支持矩阵
-| 环境 | Node.js 版本 | 支持状态 |
-|------|-------------|----------|
-| 开发环境 | 16+ | ✅ 完全支持 |
-| CI/CD | 16+ | ✅ 完全支持 |
-| 生产环境 | 14+ | ✅ 支持构建文件 |
-| 边缘计算 | 14+ | ⚠️ 需要预构建 |
+
+| 环境     | Node.js 版本 | 支持状态        |
+| -------- | ------------ | --------------- |
+| 开发环境 | 16+          | ✅ 完全支持     |
+| CI/CD    | 16+          | ✅ 完全支持     |
+| 生产环境 | 14+          | ✅ 支持构建文件 |
+| 边缘计算 | 14+          | ⚠️ 需要预构建   |
 
 ### 其他包的配置
 

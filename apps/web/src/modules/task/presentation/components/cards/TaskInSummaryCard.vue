@@ -14,7 +14,12 @@
         </div>
 
         <!-- 进度指示器 -->
-        <v-progress-circular :model-value="completionPercentage" size="40" width="4" color="primary">
+        <v-progress-circular
+          :model-value="completionPercentage"
+          size="40"
+          width="4"
+          color="primary"
+        >
           <span class="text-caption font-weight-bold">{{ completionPercentage }}%</span>
         </v-progress-circular>
       </div>
@@ -26,34 +31,51 @@
     <v-card-text class="task-content pa-0">
       <!-- 有任务时显示 -->
       <v-list v-if="todayTasks.length > 0" class="py-0">
-        <v-list-item v-for="(task, index) in todayTasks" :key="task.uuid"
-          :class="{ 'task-completed': task.execution.status === 'completed' }" class="task-item pa-4"
-          :style="{ '--task-index': index }">
+        <v-list-item
+          v-for="(task, index) in todayTasks"
+          :key="task.uuid"
+          :class="{ 'task-completed': task.execution.status === 'completed' }"
+          class="task-item pa-4"
+          :style="{ '--task-index': index }"
+        >
           <template v-slot:prepend>
-            <v-checkbox :model-value="task.execution.status === 'completed'"
-              @update:model-value="toggleTaskComplete(task)" hide-details color="primary" class="task-checkbox" />
+            <v-checkbox
+              :model-value="task.execution.status === 'completed'"
+              @update:model-value="toggleTaskComplete(task)"
+              hide-details
+              color="primary"
+              class="task-checkbox"
+            />
           </template>
 
           <div class="task-content-wrapper flex-grow-1">
             <v-list-item-title
-              :class="{ 'text-decoration-line-through text-medium-emphasis': task.execution.status === 'completed' }"
-              class="task-title font-weight-medium mb-1">
+              :class="{
+                'text-decoration-line-through text-medium-emphasis':
+                  task.execution.status === 'completed',
+              }"
+              class="task-title font-weight-medium mb-1"
+            >
               {{ task.title }}
             </v-list-item-title>
 
             <div class="d-flex align-center">
               <v-icon size="14" color="medium-emphasis" class="mr-1">mdi-clock-outline</v-icon>
-              <v-list-item-subtitle class="text-caption">
-                任务实践信息
-              </v-list-item-subtitle>
+              <v-list-item-subtitle class="text-caption"> 任务实践信息 </v-list-item-subtitle>
             </div>
           </div>
 
           <template v-slot:append>
             <!-- 关键结果链接 -->
             <div v-if="task.goalLinks && task.goalLinks.length > 0" class="key-results-container">
-              <v-chip v-for="link in task.goalLinks" :key="link.keyResultId" size="small" variant="tonal"
-                color="primary" class="mr-1 mb-1 result-chip">
+              <v-chip
+                v-for="link in task.goalLinks"
+                :key="link.keyResultId"
+                size="small"
+                variant="tonal"
+                color="primary"
+                class="mr-1 mb-1 result-chip"
+              >
                 <v-icon start size="12">mdi-target</v-icon>
                 {{ getKeyResultName(link) }}
                 <v-chip size="x-small" color="success" variant="flat" class="ml-1 increment-chip">
@@ -75,16 +97,23 @@
 
       <!-- 空状态 -->
       <div v-else class="empty-state pa-8">
-        <v-empty-state icon="mdi-check-circle" title="今日任务已完成" text="恭喜！您已完成今天的所有任务">
+        <v-empty-state
+          icon="mdi-check-circle"
+          title="今日任务已完成"
+          text="恭喜！您已完成今天的所有任务"
+        >
           <template v-slot:media>
-            <v-icon color="success" size="64" class="empty-icon">
-              mdi-check-circle
-            </v-icon>
+            <v-icon color="success" size="64" class="empty-icon"> mdi-check-circle </v-icon>
           </template>
 
           <template v-slot:actions>
-            <v-btn color="primary" variant="outlined" prepend-icon="mdi-plus" size="small"
-              @click="navigateToTaskManagement">
+            <v-btn
+              color="primary"
+              variant="outlined"
+              prepend-icon="mdi-plus"
+              size="small"
+              @click="navigateToTaskManagement"
+            >
               添加新任务
             </v-btn>
           </template>
@@ -114,8 +143,8 @@ const navigateToTaskManagement = () => {
 
 // ✅ 获取今日任务列表 - 使用新的状态字段
 const todayTasks = computed(() => {
-  let tasks = taskStore.getTodayTaskInstances.filter(task =>
-    task.execution.status === 'pending' || task.execution.status === 'inProgress'
+  let tasks = taskStore.getTodayTaskInstances.filter(
+    (task) => task.execution.status === 'pending' || task.execution.status === 'inProgress',
   );
   return tasks;
 });
@@ -123,7 +152,7 @@ const todayTasks = computed(() => {
 // ✅ 计算完成百分比 - 使用新的状态字段
 const completionPercentage = computed(() => {
   const allTasks = taskStore.getTodayTaskInstances;
-  const completedTasks = allTasks.filter(task => task.execution.status === 'completed');
+  const completedTasks = allTasks.filter((task) => task.execution.status === 'completed');
   return allTasks.length > 0 ? Math.round((completedTasks.length / allTasks.length) * 100) : 0;
 });
 
@@ -135,12 +164,10 @@ const toggleTaskComplete = async (task: TaskInstance) => {
 // 获取关键结果名称的方法
 const getKeyResultName = (link: KeyResultLink) => {
   const goal: Goal = goalStore.getGoalByUuid(link.goalUuid);
-  const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
+  const kr = goal?.keyResults.find((kr) => kr.uuid === link.keyResultId);
   return kr?.name || '未知关键结果';
 };
 </script>
-
-
 
 <style scoped>
 .task-summary-card {
@@ -159,7 +186,11 @@ const getKeyResultName = (link: KeyResultLink) => {
 }
 
 .task-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-primary), 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.05) 0%,
+    rgba(var(--v-theme-primary), 0.02) 100%
+  );
   border-radius: 16px 16px 0 0;
 }
 
@@ -272,7 +303,6 @@ const getKeyResultName = (link: KeyResultLink) => {
 }
 
 @keyframes bounce {
-
   0%,
   20%,
   50%,

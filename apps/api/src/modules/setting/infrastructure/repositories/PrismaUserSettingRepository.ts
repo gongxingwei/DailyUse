@@ -5,7 +5,7 @@ import type { SettingContracts } from '@dailyuse/contracts';
 
 /**
  * UserSetting Prisma 仓储实现
- * 
+ *
  * 架构规范：
  * - PersistenceDTO = 实体属性扁平化 + 存储类型转换
  * - Prisma Schema 与 PersistenceDTO 一一对应
@@ -21,14 +21,14 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
     return {
       uuid: data.uuid,
       accountUuid: data.accountUuid,
-      
+
       // Appearance
       appearanceTheme: data.appearanceTheme,
       appearanceAccentColor: data.appearanceAccentColor,
       appearanceFontSize: data.appearanceFontSize,
       appearanceFontFamily: data.appearanceFontFamily,
       appearanceCompactMode: data.appearanceCompactMode,
-      
+
       // Locale
       localeLanguage: data.localeLanguage,
       localeTimezone: data.localeTimezone,
@@ -36,7 +36,7 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
       localeTimeFormat: data.localeTimeFormat,
       localeWeekStartsOn: data.localeWeekStartsOn,
       localeCurrency: data.localeCurrency,
-      
+
       // Workflow
       workflowDefaultTaskView: data.workflowDefaultTaskView,
       workflowDefaultGoalView: data.workflowDefaultGoalView,
@@ -44,22 +44,22 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
       workflowAutoSave: data.workflowAutoSave,
       workflowAutoSaveInterval: data.workflowAutoSaveInterval,
       workflowConfirmBeforeDelete: data.workflowConfirmBeforeDelete,
-      
+
       // Shortcuts
       shortcutsEnabled: data.shortcutsEnabled,
       shortcutsCustom: data.shortcutsCustom,
-      
+
       // Privacy
       privacyProfileVisibility: data.privacyProfileVisibility,
       privacyShowOnlineStatus: data.privacyShowOnlineStatus,
       privacyAllowSearchByEmail: data.privacyAllowSearchByEmail,
       privacyAllowSearchByPhone: data.privacyAllowSearchByPhone,
       privacyShareUsageData: data.privacyShareUsageData,
-      
+
       // Experimental
       experimentalEnabled: data.experimentalEnabled,
       experimentalFeatures: data.experimentalFeatures,
-      
+
       // Timestamps
       createdAt: data.createdAt.getTime(),
       updatedAt: data.updatedAt.getTime(),
@@ -73,14 +73,14 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
     return {
       uuid: dto.uuid,
       accountUuid: dto.accountUuid,
-      
+
       // Appearance
       appearanceTheme: dto.appearanceTheme,
       appearanceAccentColor: dto.appearanceAccentColor,
       appearanceFontSize: dto.appearanceFontSize,
       appearanceFontFamily: dto.appearanceFontFamily,
       appearanceCompactMode: dto.appearanceCompactMode,
-      
+
       // Locale
       localeLanguage: dto.localeLanguage,
       localeTimezone: dto.localeTimezone,
@@ -88,7 +88,7 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
       localeTimeFormat: dto.localeTimeFormat,
       localeWeekStartsOn: dto.localeWeekStartsOn,
       localeCurrency: dto.localeCurrency,
-      
+
       // Workflow
       workflowDefaultTaskView: dto.workflowDefaultTaskView,
       workflowDefaultGoalView: dto.workflowDefaultGoalView,
@@ -96,22 +96,22 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
       workflowAutoSave: dto.workflowAutoSave,
       workflowAutoSaveInterval: dto.workflowAutoSaveInterval,
       workflowConfirmBeforeDelete: dto.workflowConfirmBeforeDelete,
-      
+
       // Shortcuts
       shortcutsEnabled: dto.shortcutsEnabled,
       shortcutsCustom: dto.shortcutsCustom,
-      
+
       // Privacy
       privacyProfileVisibility: dto.privacyProfileVisibility,
       privacyShowOnlineStatus: dto.privacyShowOnlineStatus,
       privacyAllowSearchByEmail: dto.privacyAllowSearchByEmail,
       privacyAllowSearchByPhone: dto.privacyAllowSearchByPhone,
       privacyShareUsageData: dto.privacyShareUsageData,
-      
+
       // Experimental
       experimentalEnabled: dto.experimentalEnabled,
       experimentalFeatures: dto.experimentalFeatures,
-      
+
       // Timestamps
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
@@ -136,7 +136,7 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
       where: { uuid },
     });
     if (!data) return null;
-    
+
     const dto = this.toPersistenceDTO(data);
     return UserSettingServer.fromPersistenceDTO(dto);
   }
@@ -146,7 +146,7 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
       where: { accountUuid },
     });
     if (!data) return null;
-    
+
     const dto = this.toPersistenceDTO(data);
     return UserSettingServer.fromPersistenceDTO(dto);
   }

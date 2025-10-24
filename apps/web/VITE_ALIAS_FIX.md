@@ -14,6 +14,7 @@ Failed to resolve import "@dailyuse/assets/audio" from "..."
 Vite 无法自动解析 monorepo 中包的子路径导出（`exports` 字段中的 `./images` 和 `./audio`）。
 
 虽然 `package.json` 中定义了：
+
 ```json
 {
   "exports": {
@@ -38,7 +39,7 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
         // ... 其他别名 ...
-        
+
         // ✅ 添加 assets 包的别名
         '@dailyuse/assets': path.resolve(__dirname, '../../packages/assets/src'),
         '@dailyuse/assets/images': path.resolve(__dirname, '../../packages/assets/src/images'),
@@ -107,6 +108,7 @@ import { logo, successSound } from '@dailyuse/assets';
 ### 3. 浏览器控制台
 
 确保没有模块解析错误：
+
 - ✅ 无 404 错误
 - ✅ 无 "Failed to resolve import" 错误
 - ✅ 资源能正常加载
@@ -134,6 +136,7 @@ export default defineConfig({
 ## 生产构建
 
 这个配置同时适用于：
+
 - ✅ **开发环境** (`npm run dev`)
 - ✅ **生产构建** (`npm run build`)
 - ✅ **预览模式** (`npm run preview`)
@@ -161,33 +164,43 @@ Vite 会在所有模式下使用这些别名配置。
 ## 常见问题
 
 ### Q1: 修改后还是报错？
+
 **A**: 确保重启了 Vite 开发服务器，配置更改需要重启才能生效。
 
 ### Q2: TypeScript 还是找不到模块？
-**A**: 
+
+**A**:
+
 1. 重启 VS Code TypeScript Server: `Cmd/Ctrl + Shift + P` → "Restart TS Server"
 2. 检查 `tsconfig.base.json` 中是否有路径映射
 
 ### Q3: 生产构建失败？
+
 **A**: 检查别名路径是否正确，确保使用 `path.resolve(__dirname, ...)` 而不是相对路径。
 
 ### Q4: 其他包也需要这样配置吗？
-**A**: 
+
+**A**:
+
 - 如果包只导出主入口（`.`），不需要额外配置
 - 如果包有子路径导出（如 `./images`），需要添加对应的别名
 
 ## 最佳实践
 
 ### 1. 保持一致性
+
 所有消费 `@dailyuse/assets` 的项目都应该使用相同的别名配置。
 
 ### 2. 使用绝对路径
+
 始终使用 `path.resolve(__dirname, ...)` 而不是相对路径字符串。
 
 ### 3. 文档记录
+
 在项目 README 中记录特殊的别名配置，方便团队成员了解。
 
 ### 4. 验证脚本
+
 可以添加一个验证脚本来检查配置：
 
 ```typescript

@@ -1,7 +1,7 @@
-import type { Database } from "better-sqlite3";
-import { User } from "../../domain/entities/user";
-import type { IUserRepository } from "../../index";
-import { getDatabase } from "../../../../shared/database/index";
+import type { Database } from 'better-sqlite3';
+import { User } from '../../domain/entities/user';
+import type { IUserRepository } from '../../index';
+import { getDatabase } from '../../../../shared/database/index';
 /**
  * User 实体的 SQLite 仓库实现
  */
@@ -29,7 +29,7 @@ export class SqliteUserRepository implements IUserRepository {
 
       return this.mapRowToUser(row);
     } catch (error) {
-      console.error("Error finding user by uuid:", error);
+      console.error('Error finding user by uuid:', error);
       throw error;
     }
   }
@@ -45,7 +45,7 @@ export class SqliteUserRepository implements IUserRepository {
       const rows = stmt.all(firstName, lastName) as any[];
       return rows.map((row) => this.mapRowToUser(row));
     } catch (error) {
-      console.error("Error finding users by name:", error);
+      console.error('Error finding users by name:', error);
       throw error;
     }
   }
@@ -62,7 +62,7 @@ export class SqliteUserRepository implements IUserRepository {
 
       return this.mapRowToUser(row);
     } catch (error) {
-      console.error("Error finding user by uuid:", error);
+      console.error('Error finding user by uuid:', error);
       throw error;
     }
   }
@@ -77,12 +77,12 @@ export class SqliteUserRepository implements IUserRepository {
       const rows = stmt.all() as any[];
       return rows.map((row) => this.mapRowToUser(row));
     } catch (error) {
-      console.error("Error finding all users:", error);
+      console.error('Error finding all users:', error);
       throw error;
     }
   }
 
-  async save(user: User,account_uuid: string): Promise<void> {
+  async save(user: User, account_uuid: string): Promise<void> {
     console.log('开始新增用户信息:', user);
     try {
       const db = await this.getDB();
@@ -103,10 +103,10 @@ export class SqliteUserRepository implements IUserRepository {
         user.bio,
         JSON.stringify(Object.fromEntries(user.socialAccounts)),
         now,
-        now
+        now,
       );
     } catch (error) {
-      console.error("Error saving user:", error);
+      console.error('Error saving user:', error);
       throw error;
     }
   }
@@ -130,10 +130,10 @@ export class SqliteUserRepository implements IUserRepository {
         user.bio,
         JSON.stringify(Object.fromEntries(user.socialAccounts)),
         Date.now(),
-        user.uuid
+        user.uuid,
       );
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error('Error updating user:', error);
       throw error;
     }
   }
@@ -147,7 +147,7 @@ export class SqliteUserRepository implements IUserRepository {
 
       stmt.run(uuid);
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error('Error deleting user:', error);
       throw error;
     }
   }
@@ -158,7 +158,7 @@ export class SqliteUserRepository implements IUserRepository {
       lastName: row.last_name,
       sex: row.sex,
       avatar: row.avatar_url,
-      bio: row.bio
+      bio: row.bio,
     });
 
     // 恢复社交账号
@@ -169,10 +169,10 @@ export class SqliteUserRepository implements IUserRepository {
           user.addSocialAccount(platform, accountUuid as string);
         }
       } catch (error) {
-        console.warn("Failed to parse social accounts:", error);
+        console.warn('Failed to parse social accounts:', error);
       }
     }
-    console.log("[spliteUserRepository::mapRowToUser]", user)
+    console.log('[spliteUserRepository::mapRowToUser]', user);
     return user;
   }
 }

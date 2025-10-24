@@ -34,7 +34,7 @@ export enum ValidatorPriority {
   /** 中优先级 - 业务逻辑验证 */
   MEDIUM = 2,
   /** 低优先级 - 优化建议 */
-  LOW = 3
+  LOW = 3,
 }
 
 /**
@@ -78,7 +78,7 @@ export enum ValidationErrorType {
   /** 逻辑冲突 */
   CONFLICT = 'conflict',
   /** 业务规则违反 */
-  BUSINESS = 'business'
+  BUSINESS = 'business',
 }
 
 /**

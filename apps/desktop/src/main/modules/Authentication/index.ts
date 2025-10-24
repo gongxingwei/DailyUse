@@ -1,4 +1,3 @@
-
 // Authentication 模块仓库导出
 export { SqliteAuthCredentialRepository } from './infrastructure/repositories/sqliteAuthCredentialRepository';
 export { SqliteSessionRepository } from './infrastructure/repositories/sqliteUserSessionRepository';
@@ -10,26 +9,22 @@ export type {
   IAuthCredentialRepository,
   ISessionRepository,
   ITokenRepository,
-  IMFADeviceRepository
+  IMFADeviceRepository,
 } from './domain/repositories/authenticationRepository';
 
-export type { 
-  PasswordAuthenticationRequest,
-  PasswordAuthenticationResponse
-} from './domain/types';
+export type { PasswordAuthenticationRequest, PasswordAuthenticationResponse } from './domain/types';
 
 // Authentication 模块事件导出
-export type { 
-  LoginCredentialVerificationEvent, 
-  AccountUuidGetterRequestedEvent, 
-  UserLoggedOutEvent, 
-  AccountDeactivationVerificationResponseEvent, 
-  AccountDeactivationVerificationRequestedEvent, 
-  AccountStatusVerificationRequestedEvent, 
-  AllSessionsTerminatedEvent, 
-  SessionTerminatedEvent, 
+export type {
+  LoginCredentialVerificationEvent,
+  AccountUuidGetterRequestedEvent,
+  UserLoggedOutEvent,
+  AccountDeactivationVerificationResponseEvent,
+  AccountDeactivationVerificationRequestedEvent,
+  AccountStatusVerificationRequestedEvent,
+  AllSessionsTerminatedEvent,
+  SessionTerminatedEvent,
   LoginAttemptEvent,
   UserLoggedInEvent,
   LoginCredentialVerificationEventPayload,
-  
 } from './domain/events/authenticationEvents';

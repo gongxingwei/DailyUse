@@ -6,7 +6,13 @@
         <!-- 标签页导航 -->
         <div class="task-tabs">
           <v-btn-toggle v-model="activeTab" mandatory variant="outlined" divided class="tab-group">
-            <v-btn v-for="tab in tabs" :key="tab.value" :value="tab.value" class="tab-button" size="large">
+            <v-btn
+              v-for="tab in tabs"
+              :key="tab.value"
+              :value="tab.value"
+              class="tab-button"
+              size="large"
+            >
               <v-icon :icon="tab.icon" start />
               {{ tab.label }}
             </v-btn>
@@ -42,20 +48,24 @@ const tabs = [
   {
     label: '每日任务',
     value: 'daily',
-    icon: 'mdi-calendar-today'
+    icon: 'mdi-calendar-today',
   },
   {
     label: '任务管理',
     value: 'management',
-    icon: 'mdi-format-list-checks'
-  }
+    icon: 'mdi-format-list-checks',
+  },
 ];
 </script>
 
 <style scoped>
 #task-management {
   height: 100vh;
-  background: linear-gradient(135deg, rgba(var(--v-theme-surface), 0.8), rgba(var(--v-theme-background), 0.95));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-surface), 0.8),
+    rgba(var(--v-theme-background), 0.95)
+  );
   padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;

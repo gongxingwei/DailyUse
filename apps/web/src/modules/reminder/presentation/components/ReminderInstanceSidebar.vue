@@ -1,5 +1,11 @@
 <template>
-  <v-navigation-drawer permanent location="right" width="380" class="reminder-instance-sidebar" elevation="1">
+  <v-navigation-drawer
+    permanent
+    location="right"
+    width="380"
+    class="reminder-instance-sidebar"
+    elevation="1"
+  >
     <!-- 标题栏 -->
     <v-toolbar flat color="primary" dark>
       <v-icon>mdi-bell-clock</v-icon>
@@ -18,20 +24,35 @@
       <v-card v-show="showFilters" flat class="pa-4 border-b">
         <v-row>
           <v-col cols="12">
-            <v-select v-model="filters.days" label="时间范围" :items="[
-              { value: 1, title: '今天' },
-              { value: 3, title: '3天内' },
-              { value: 7, title: '一周内' },
-              { value: 30, title: '一个月内' }
-            ]" variant="outlined" density="compact" @update:model-value="applyFilters" />
+            <v-select
+              v-model="filters.days"
+              label="时间范围"
+              :items="[
+                { value: 1, title: '今天' },
+                { value: 3, title: '3天内' },
+                { value: 7, title: '一周内' },
+                { value: 30, title: '一个月内' },
+              ]"
+              variant="outlined"
+              density="compact"
+              @update:model-value="applyFilters"
+            />
           </v-col>
           <v-col cols="12">
-            <v-select v-model="filters.priorities" label="优先级" :items="[
-              { value: 'urgent', title: '紧急' },
-              { value: 'high', title: '高' },
-              { value: 'normal', title: '普通' },
-              { value: 'low', title: '低' }
-            ]" multiple variant="outlined" density="compact" @update:model-value="applyFilters" />
+            <v-select
+              v-model="filters.priorities"
+              label="优先级"
+              :items="[
+                { value: 'urgent', title: '紧急' },
+                { value: 'high', title: '高' },
+                { value: 'normal', title: '普通' },
+                { value: 'low', title: '低' },
+              ]"
+              multiple
+              variant="outlined"
+              density="compact"
+              @update:model-value="applyFilters"
+            />
           </v-col>
         </v-row>
       </v-card>
@@ -86,8 +107,13 @@
 
           <!-- 该日期的提醒列表 -->
           <v-list density="compact">
-            <v-list-item v-for="reminder in group.reminders" :key="reminder.uuid" :class="getReminderClass(reminder)"
-              @click="handleReminderClick(reminder)" class="reminder-item">
+            <v-list-item
+              v-for="reminder in group.reminders"
+              :key="reminder.uuid"
+              :class="getReminderClass(reminder)"
+              @click="handleReminderClick(reminder)"
+              class="reminder-item"
+            >
               <!-- 优先级指示器 -->
               <template #prepend>
                 <v-icon :color="getPriorityColor(reminder.priority)" size="small">
@@ -106,12 +132,21 @@
 
               <!-- 时间和标签 -->
               <div class="d-flex align-center justify-space-between mt-2">
-                <v-chip size="x-small" :color="isOverdue(reminder.scheduledTime) ? 'error' : 'primary'" variant="text">
+                <v-chip
+                  size="x-small"
+                  :color="isOverdue(reminder.scheduledTime) ? 'error' : 'primary'"
+                  variant="text"
+                >
                   {{ formatTime(reminder.scheduledTime) }}
                 </v-chip>
 
                 <div v-if="reminder.metadata?.tags?.length" class="d-flex gap-1">
-                  <v-chip v-for="tag in reminder.metadata.tags.slice(0, 2)" :key="tag" size="x-small" variant="outlined">
+                  <v-chip
+                    v-for="tag in reminder.metadata.tags.slice(0, 2)"
+                    :key="tag"
+                    size="x-small"
+                    variant="outlined"
+                  >
                     {{ tag }}
                   </v-chip>
                   <v-chip v-if="reminder.metadata.tags.length > 2" size="x-small" variant="text">
@@ -166,9 +201,7 @@
         <v-btn variant="text" size="small" @click="toggleFilters" prepend-icon="mdi-filter">
           过滤器
         </v-btn>
-        <v-btn variant="text" size="small" @click="openAllReminders">
-          查看全部
-        </v-btn>
+        <v-btn variant="text" size="small" @click="openAllReminders"> 查看全部 </v-btn>
       </div>
     </v-card>
 
@@ -182,24 +215,40 @@
         <v-card-text>
           <v-row>
             <v-col cols="12">
-              <v-select v-model="settings.defaultDays" label="默认显示天数" :items="[
-                { value: 1, title: '1天' },
-                { value: 3, title: '3天' },
-                { value: 7, title: '7天' },
-                { value: 30, title: '30天' }
-              ]" variant="outlined" />
+              <v-select
+                v-model="settings.defaultDays"
+                label="默认显示天数"
+                :items="[
+                  { value: 1, title: '1天' },
+                  { value: 3, title: '3天' },
+                  { value: 7, title: '7天' },
+                  { value: 30, title: '30天' },
+                ]"
+                variant="outlined"
+              />
             </v-col>
             <v-col cols="12">
-              <v-text-field v-model.number="settings.maxItems" label="最大显示数量" type="number" min="10" max="100"
-                variant="outlined" />
+              <v-text-field
+                v-model.number="settings.maxItems"
+                label="最大显示数量"
+                type="number"
+                min="10"
+                max="100"
+                variant="outlined"
+              />
             </v-col>
             <v-col cols="12">
-              <v-select v-model="settings.refreshInterval" label="自动刷新间隔（秒）" :items="[
-                { value: 0, title: '关闭' },
-                { value: 30, title: '30秒' },
-                { value: 60, title: '1分钟' },
-                { value: 300, title: '5分钟' }
-              ]" variant="outlined" />
+              <v-select
+                v-model="settings.refreshInterval"
+                label="自动刷新间隔（秒）"
+                :items="[
+                  { value: 0, title: '关闭' },
+                  { value: 30, title: '30秒' },
+                  { value: 60, title: '1分钟' },
+                  { value: 300, title: '5分钟' },
+                ]"
+                variant="outlined"
+              />
             </v-col>
             <v-col cols="12">
               <v-checkbox v-model="settings.showCompleted" label="显示已完成的提醒" />
@@ -245,7 +294,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   visible: true,
   filters: () => ({}),
-  settings: () => ({})
+  settings: () => ({}),
 });
 
 interface Emits {
@@ -307,7 +356,7 @@ const groupedReminders = computed(() => {
     .map(([date, reminders]) => ({
       date,
       reminders: reminders.sort(
-        (a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime()
+        (a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime(),
       ),
     }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -319,7 +368,7 @@ const groupedReminders = computed(() => {
 const todayCount = computed(() => {
   if (!upcomingData.value?.reminders) return 0;
   return upcomingData.value.reminders.filter((reminder: any) =>
-    isToday(new Date(reminder.scheduledTime))
+    isToday(new Date(reminder.scheduledTime)),
   ).length;
 });
 
@@ -329,7 +378,7 @@ const todayCount = computed(() => {
 const overdueCount = computed(() => {
   if (!upcomingData.value?.reminders) return 0;
   return upcomingData.value.reminders.filter((reminder: any) =>
-    isPast(new Date(reminder.scheduledTime))
+    isPast(new Date(reminder.scheduledTime)),
   ).length;
 });
 
@@ -415,7 +464,7 @@ function getPriorityColor(priority: string): string {
     urgent: 'red',
     high: 'orange',
     normal: 'blue',
-    low: 'grey'
+    low: 'grey',
   };
   return colors[priority as keyof typeof colors] || 'grey';
 }

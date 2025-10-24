@@ -48,12 +48,7 @@
               step="0.1"
             >
               <template v-slot:append>
-                <v-chip
-                  color="primary"
-                  variant="tonal"
-                  size="small"
-                  class="font-weight-medium"
-                >
+                <v-chip color="primary" variant="tonal" size="small" class="font-weight-medium">
                   单位
                 </v-chip>
               </template>
@@ -67,7 +62,9 @@
                   <v-icon color="primary" class="mr-3">mdi-clock-outline</v-icon>
                   <div>
                     <div class="text-body-1 font-weight-medium">记录时间</div>
-                    <div class="text-h6 text-primary">{{ format(localGoalRecord.lifecycle.createdAt, 'yyyy-MM-dd HH:mm:ss') }}</div>
+                    <div class="text-h6 text-primary">
+                      {{ format(localGoalRecord.lifecycle.createdAt, 'yyyy-MM-dd HH:mm:ss') }}
+                    </div>
                   </div>
                 </div>
               </v-card-text>
@@ -145,7 +142,7 @@ const isEditing = computed(() => !!props.record);
 const valueRules = [
   (v: number) => !!v || '增加值不能为空',
   (v: number) => v > 0 || '增加值必须大于0',
-  (v: number) => v <= 10000 || '增加值不能超过10000'
+  (v: number) => v <= 10000 || '增加值不能超过10000',
 ];
 
 const isValid = computed(() => formValid.value && localGoalRecord.value.value > 0);
@@ -173,9 +170,11 @@ watch(
   () => props.modelValue,
   (show) => {
     if (show) {
-      localGoalRecord.value = props.record ? props.record.clone() : GoalRecord.forCreate(props.goalUuid, props.keyResultUuid);
+      localGoalRecord.value = props.record
+        ? props.record.clone()
+        : GoalRecord.forCreate(props.goalUuid, props.keyResultUuid);
     }
-  }
+  },
 );
 </script>
 

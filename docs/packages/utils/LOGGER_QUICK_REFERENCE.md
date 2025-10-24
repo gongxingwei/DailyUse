@@ -23,26 +23,26 @@ logger.error('Database error', error, { query: 'SELECT *' });
 
 ## 📋 上下文命名规范
 
-| 模块类型 | 命名示例 |
-|---------|---------|
+| 模块类型 | 命名示例                        |
+| -------- | ------------------------------- |
 | 应用服务 | `AccountService`, `GoalService` |
-| 领域服务 | `GoalDomainService` |
-| 控制器 | `AccountController` |
-| 仓储 | `AccountRepository` |
-| 基础设施 | `EventSystem`, `Initializer` |
-| HTTP/API | `API`, `Express` |
-| Web 组件 | `WebApp`, `GoalActions` |
+| 领域服务 | `GoalDomainService`             |
+| 控制器   | `AccountController`             |
+| 仓储     | `AccountRepository`             |
+| 基础设施 | `EventSystem`, `Initializer`    |
+| HTTP/API | `API`, `Express`                |
+| Web 组件 | `WebApp`, `GoalActions`         |
 
 ---
 
 ## 🎨 日志级别
 
-| 级别 | 用途 | 示例 |
-|------|------|------|
-| DEBUG | 详细调试 | `logger.debug('Step 1', { data })` |
-| INFO | 正常流程 | `logger.info('User logged in')` |
-| WARN | 警告 | `logger.warn('API slow', { ms: 3000 })` |
-| ERROR | 错误 | `logger.error('DB failed', error)` |
+| 级别  | 用途     | 示例                                    |
+| ----- | -------- | --------------------------------------- |
+| DEBUG | 详细调试 | `logger.debug('Step 1', { data })`      |
+| INFO  | 正常流程 | `logger.info('User logged in')`         |
+| WARN  | 警告     | `logger.warn('API slow', { ms: 3000 })` |
+| ERROR | 错误     | `logger.error('DB failed', error)`      |
 
 ---
 
@@ -104,9 +104,7 @@ import { LoggerFactory, ConsoleTransport, LogLevel } from '@dailyuse/utils';
 LoggerFactory.configure({
   level: 'debug',
   enableInProduction: false,
-  transports: [
-    new ConsoleTransport({ level: LogLevel.DEBUG }),
-  ],
+  transports: [new ConsoleTransport({ level: LogLevel.DEBUG })],
 });
 ```
 
@@ -143,7 +141,7 @@ export class MyService {
 
   async doSomething() {
     this.logger.info('Starting operation');
-    
+
     try {
       const result = await operation();
       this.logger.info('Operation completed', { result });
@@ -166,7 +164,7 @@ const logger = createLogger('MyComposable');
 export function useMyAction() {
   const doAction = async () => {
     logger.debug('Action triggered');
-    
+
     try {
       const result = await api.call();
       logger.info('Action completed', { result });
@@ -227,8 +225,8 @@ logger.setLevel('info');
 
 ```typescript
 if (process.env.DEBUG_MODE === 'true') {
-  logger.debug('Detailed debug info', { 
-    data: expensiveOperation() 
+  logger.debug('Detailed debug info', {
+    data: expensiveOperation(),
   });
 }
 ```

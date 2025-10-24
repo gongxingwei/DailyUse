@@ -4,21 +4,39 @@
     <div class="top-bar">
       <span class="folder-name">{{ getFolderName }}</span>
       <div class="function-group">
-        <v-icon class="function-icon" :title="t('editor.explorer.create_folder')"
-          @click="createFolderForRepo">mdi-folder-plus</v-icon>
-        <v-icon class="function-icon" :title="t('editor.explorer.create_note')"
-          @click="createFileForRepo">mdi-language-markdown</v-icon>
+        <v-icon
+          class="function-icon"
+          :title="t('editor.explorer.create_folder')"
+          @click="createFolderForRepo"
+          >mdi-folder-plus</v-icon
+        >
+        <v-icon
+          class="function-icon"
+          :title="t('editor.explorer.create_note')"
+          @click="createFileForRepo"
+          >mdi-language-markdown</v-icon
+        >
       </div>
     </div>
     <div class="divider"></div>
     <v-divider></v-divider>
     <!-- 扁平化的文件树 -->
     <div v-if="folderData" class="tree-content">
-      <div v-for="item in flattenedItems" :key="item.node.key" class="tree-item"
-        :style="{ paddingLeft: `${item.level * 24}px` }">
-        <div class="tree-item-content"
-          :class="{ 'selected': selectedNode?.key === item.node.key, 'editing': activeNode?.key === item.node.key }"
-          @click="toggleNode(item.node)" @contextmenu.prevent="handleContextMenu($event, item.node)">
+      <div
+        v-for="item in flattenedItems"
+        :key="item.node.key"
+        class="tree-item"
+        :style="{ paddingLeft: `${item.level * 24}px` }"
+      >
+        <div
+          class="tree-item-content"
+          :class="{
+            selected: selectedNode?.key === item.node.key,
+            editing: activeNode?.key === item.node.key,
+          }"
+          @click="toggleNode(item.node)"
+          @contextmenu.prevent="handleContextMenu($event, item.node)"
+        >
           <v-icon v-if="item.node.fileType === 'directory'" class="mr-2">
             {{ openedNodes.includes(item.node.key) ? 'mdi-chevron-down' : 'mdi-chevron-right' }}
           </v-icon>
@@ -26,79 +44,104 @@
             {{ getItemIcon(item.node) }}
           </v-icon>
           <div v-if="editingNode === item.node.key" class="edit-container">
-            <input :ref="el => setInputRef(el as HTMLInputElement | null, item.node.key)" v-model="editValue"
-              type="text" @keydown.enter.prevent="e => (e.target as HTMLInputElement).blur()" @keyup.esc="cancelEdit"
-              @blur="handleEditComplete" />
+            <input
+              :ref="(el) => setInputRef(el as HTMLInputElement | null, item.node.key)"
+              v-model="editValue"
+              type="text"
+              @keydown.enter.prevent="(e) => (e.target as HTMLInputElement).blur()"
+              @keyup.esc="cancelEdit"
+              @blur="handleEditComplete"
+            />
           </div>
           <span v-else>{{ item.node.title }}</span>
         </div>
       </div>
     </div>
     <!-- 右键菜单 -->
-    <div v-show="showMenu" class="context-menu" :style="{
-      left: `${menuPosition.x}px`,
-      top: `${menuPosition.y}px`
-    }">
-      <div v-for="item in menuItems" :key="item.title" class="menu-item"
-        :class="{ 'menu-item-disabled': item.disabled }" @click="!item.disabled && handleMenuClick(item)">
+    <div
+      v-show="showMenu"
+      class="context-menu"
+      :style="{
+        left: `${menuPosition.x}px`,
+        top: `${menuPosition.y}px`,
+      }"
+    >
+      <div
+        v-for="item in menuItems"
+        :key="item.title"
+        class="menu-item"
+        :class="{ 'menu-item-disabled': item.disabled }"
+        @click="!item.disabled && handleMenuClick(item)"
+      >
         <v-icon v-if="item.icon" class="menu-icon">{{ item.icon }}</v-icon>
         <span class="menu-title">{{ item.title }}</span>
       </div>
     </div>
-
   </div>
-  <ConfirmDialog :model-value="isShowConfirm" :title="t('editor.explorer.delete_confirm_title')"
-    :message="t(deleteOperation?.type === 'folder' ? 'editor.explorer.delete_confirm_folder' : 'editor.explorer.delete_confirm_file')"
-    :cancel-text="t('common.2')" :confirm-text="t('common.3')" @cancel="cancelDelete" @confirm="handleDelete" />
+  <ConfirmDialog
+    :model-value="isShowConfirm"
+    :title="t('editor.explorer.delete_confirm_title')"
+    :message="
+      t(
+        deleteOperation?.type === 'folder'
+          ? 'editor.explorer.delete_confirm_folder'
+          : 'editor.explorer.delete_confirm_file',
+      )
+    "
+    :cancel-text="t('common.2')"
+    :confirm-text="t('common.3')"
+    @cancel="cancelDelete"
+    @confirm="handleDelete"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import ConfirmDialog from '@renderer/shared/components/ConfirmDialog.vue'
-import { fileSystem } from '@renderer/shared/utils/fileUtils'
-import { useSettingStore } from '@renderer/modules/Setting/stores/settingStore'
-import { useEditorGroupStore } from '@renderer/modules/Editor/stores/editorGroupStore'
-import { useI18n } from 'vue-i18n'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
+import ConfirmDialog from '@renderer/shared/components/ConfirmDialog.vue';
+import { fileSystem } from '@renderer/shared/utils/fileUtils';
+import { useSettingStore } from '@renderer/modules/Setting/stores/settingStore';
+import { useEditorGroupStore } from '@renderer/modules/Editor/stores/editorGroupStore';
+import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n()
+const { t } = useI18n();
 
-const editorGroupStore = useEditorGroupStore()
-const settingStore = useSettingStore()
+const editorGroupStore = useEditorGroupStore();
+const settingStore = useSettingStore();
 /*
-  * key：文件路径
-  * title：文件名称 eg：1.md
-  * fileType：文件类型 eg：md
-  * isLeaf：是否为叶节点
-  * children：如果为文件夹，则拥有子节点 
+ * key：文件路径
+ * title：文件名称 eg：1.md
+ * fileType：文件类型 eg：md
+ * isLeaf：是否为叶节点
+ * children：如果为文件夹，则拥有子节点
  */
 interface TreeNode {
-  key: string
-  title: string
-  fileType: string
-  isLeaf?: boolean
-  children?: TreeNode[]
+  key: string;
+  title: string;
+  fileType: string;
+  isLeaf?: boolean;
+  children?: TreeNode[];
 }
 
 interface FolderData {
-  folderPath: string
-  folderTreeData: TreeNode[]
+  folderPath: string;
+  folderTreeData: TreeNode[];
 }
 
 // 状态管理
-const folderData = ref<FolderData | null>(null)
-const openedNodes = ref<string[]>(['root'])
-const editingNode = ref<string | null>(null)
-const editValue = ref('')
-const editInputs = ref<Record<string, HTMLInputElement>>({})
-const showMenu = ref(false)
-const menuPosition = ref({ x: 0, y: 0 })
-const selectedNode = ref<TreeNode | null>(null)
-const activeNode = ref<TreeNode | null>(null)
-const isShowConfirm = ref(false)
+const folderData = ref<FolderData | null>(null);
+const openedNodes = ref<string[]>(['root']);
+const editingNode = ref<string | null>(null);
+const editValue = ref('');
+const editInputs = ref<Record<string, HTMLInputElement>>({});
+const showMenu = ref(false);
+const menuPosition = ref({ x: 0, y: 0 });
+const selectedNode = ref<TreeNode | null>(null);
+const activeNode = ref<TreeNode | null>(null);
+const isShowConfirm = ref(false);
 const deleteOperation = ref<{
-  type: 'file' | 'folder'
-  path: string
-} | null>(null)
+  type: 'file' | 'folder';
+  path: string;
+} | null>(null);
 
 // 文件图标映射
 const fileIcons = {
@@ -110,172 +153,156 @@ const fileIcons = {
   png: 'mdi-file-image',
   txt: 'mdi-file-document-outline',
   xls: 'mdi-file-excel',
-}
+};
 
 // 计算属性
 const isShowHiddenFiles = computed(() => {
-  return settingStore.showHiddenFiles
-})
+  return settingStore.showHiddenFiles;
+});
 
 const getFolderName = computed(() => {
   if (!folderData.value?.folderPath || !window?.shared?.path) {
     return '';
   }
   return window.shared.path.basename(folderData.value.folderPath);
-})
+});
 
 const sortedItems = computed(() => {
-  if (!folderData.value?.folderTreeData) return []
+  if (!folderData.value?.folderTreeData) return [];
   return [...folderData.value.folderTreeData].sort((a, b) => {
-    if (a.fileType === b.fileType) return a.title.localeCompare(b.title)
-    return a.fileType === 'directory' ? -1 : 1
-  })
-})
+    if (a.fileType === b.fileType) return a.title.localeCompare(b.title);
+    return a.fileType === 'directory' ? -1 : 1;
+  });
+});
 
 interface FlattenedNode {
-  node: TreeNode
-  level: number
-  parentKey: string | null
+  node: TreeNode;
+  level: number;
+  parentKey: string | null;
 }
 
 // 扁平化树结构
 const flattenedItems = computed(() => {
-  const items: FlattenedNode[] = []
+  const items: FlattenedNode[] = [];
 
   function flatten(nodes: TreeNode[], level: number = 0, parentKey: string | null = null) {
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       if (!isShowHiddenFiles.value && node.title.startsWith('.')) {
-        return
+        return;
       }
-      items.push({ node, level, parentKey })
+      items.push({ node, level, parentKey });
       if (node.children && openedNodes.value.includes(node.key)) {
-        flatten(node.children, level + 1, node.key)
+        flatten(node.children, level + 1, node.key);
       }
-    })
+    });
   }
 
   if (folderData.value?.folderTreeData) {
-    flatten(sortedItems.value)
+    flatten(sortedItems.value);
   }
-  return items
-})
-
+  return items;
+});
 
 // 仓库文件管理
 const createFolderForRepo = async () => {
-  if (!folderData.value?.folderPath) return
+  if (!folderData.value?.folderPath) return;
   try {
-    const newFolderPath = window.shared.path.join(
-      folderData.value.folderPath,
-      'NewFolder'
-    )
-    await fileSystem.createFolder(newFolderPath)
-    await refreshFolder()
-    startEdit(newFolderPath, 'NewFolder')
+    const newFolderPath = window.shared.path.join(folderData.value.folderPath, 'NewFolder');
+    await fileSystem.createFolder(newFolderPath);
+    await refreshFolder();
+    startEdit(newFolderPath, 'NewFolder');
   } catch (error) {
-    console.error('创建文件夹失败:', error)
+    console.error('创建文件夹失败:', error);
   }
-}
+};
 
 const createFileForRepo = async () => {
-  if (!folderData.value?.folderPath) return
+  if (!folderData.value?.folderPath) return;
   try {
-    const newFilePath = window.shared.path.join(
-      folderData.value.folderPath,
-      'untitled.md'
-    )
-    await fileSystem.createFile(newFilePath, '')
-    await refreshFolder()
-    startEdit(newFilePath, 'untitled')
+    const newFilePath = window.shared.path.join(folderData.value.folderPath, 'untitled.md');
+    await fileSystem.createFile(newFilePath, '');
+    await refreshFolder();
+    startEdit(newFilePath, 'untitled');
   } catch (error) {
-    console.error(t('editor.explorer.create_file_error'), error)
+    console.error(t('editor.explorer.create_file_error'), error);
   }
-}
+};
 
 const createFolder = async () => {
-  if (!selectedNode.value) return
+  if (!selectedNode.value) return;
   console.log('创建文件夹:', {
-    parentPath: selectedNode.value.key
-  })
+    parentPath: selectedNode.value.key,
+  });
 
   try {
     // 1. 构建新文件夹路径
-    const newFolderPath = window.shared.path.join(
-      selectedNode.value.key,
-      'NewFolder'
-    )
+    const newFolderPath = window.shared.path.join(selectedNode.value.key, 'NewFolder');
 
     // 2. 调用 Electron API 创建文件夹
-    await fileSystem.createFolder(newFolderPath)
+    await fileSystem.createFolder(newFolderPath);
 
     // 3. 展开父节点
-    openedNodes.value.push(selectedNode.value.key)
+    openedNodes.value.push(selectedNode.value.key);
 
     // 4. 刷新文件夹内容
-    await refreshFolder()
+    await refreshFolder();
 
     // 5. 进入重命名模式
-    startEdit(newFolderPath, 'NewFolder')
+    startEdit(newFolderPath, 'NewFolder');
   } catch (error) {
-    console.error('Failed to create folder:', error)
+    console.error('Failed to create folder:', error);
   }
-}
+};
 
 const createFile = async () => {
-  if (!selectedNode.value) return
+  if (!selectedNode.value) return;
   console.log('创建文件:', {
-    parentPath: selectedNode.value.key
-  })
+    parentPath: selectedNode.value.key,
+  });
 
   try {
-    const newFilePath = window.shared.path.join(
-      selectedNode.value.key,
-      'untitled.md'
-    )
-    await fileSystem.createFile(newFilePath, '')
-    openedNodes.value.push(selectedNode.value.key)
-    await refreshFolder()
-    startEdit(newFilePath, 'untitled')
+    const newFilePath = window.shared.path.join(selectedNode.value.key, 'untitled.md');
+    await fileSystem.createFile(newFilePath, '');
+    openedNodes.value.push(selectedNode.value.key);
+    await refreshFolder();
+    startEdit(newFilePath, 'untitled');
   } catch (error) {
-    console.error('创建文件失败:', error)
+    console.error('创建文件失败:', error);
   }
-}
+};
 
 const confirmDelete = async (type: 'file' | 'folder') => {
-  if (!selectedNode.value) return
+  if (!selectedNode.value) return;
   deleteOperation.value = {
     type,
-    path: selectedNode.value.key
-  }
-  isShowConfirm.value = true
-}
+    path: selectedNode.value.key,
+  };
+  isShowConfirm.value = true;
+};
 
 const cancelDelete = () => {
-  isShowConfirm.value = false
-  deleteOperation.value = null
-}
+  isShowConfirm.value = false;
+  deleteOperation.value = null;
+};
 
 const handleDelete = async () => {
-  if (!deleteOperation.value) return
+  if (!deleteOperation.value) return;
   try {
-    await fileSystem.delete(
-      deleteOperation.value.path,
-      deleteOperation.value.type === 'folder'
-    )
-    await refreshFolder()
+    await fileSystem.delete(deleteOperation.value.path, deleteOperation.value.type === 'folder');
+    await refreshFolder();
   } catch (error) {
-    console.error(t('editor.explorer.delete_error'), error)
+    console.error(t('editor.explorer.delete_error'), error);
   } finally {
-    isShowConfirm.value = false
-    deleteOperation.value = null
+    isShowConfirm.value = false;
+    deleteOperation.value = null;
   }
-}
+};
 
 const renameFileOrFolder = async () => {
-  if (!selectedNode.value) return
+  if (!selectedNode.value) return;
   // 直接进入编辑模式，使用当前名称作为初始值
-  startEdit(selectedNode.value.key, selectedNode.value.title)
-}
+  startEdit(selectedNode.value.key, selectedNode.value.title);
+};
 
 // const copyToClipboard = () => {
 //   if (!selectedNode.value) return
@@ -286,225 +313,226 @@ const renameFileOrFolder = async () => {
 function toggleNode(item: TreeNode) {
   if (item.fileType !== 'directory') {
     activeNode.value = item;
-    editorGroupStore.openFile(item.key)
+    editorGroupStore.openFile(item.key);
     emit('select-file', item.key);
   }
-  const index = openedNodes.value.indexOf(item.key)
+  const index = openedNodes.value.indexOf(item.key);
   if (index === -1) {
-    openedNodes.value.push(item.key)
+    openedNodes.value.push(item.key);
   } else {
-    openedNodes.value.splice(index, 1)
+    openedNodes.value.splice(index, 1);
   }
 }
 
 function getItemIcon(item: TreeNode) {
   if (item.fileType === 'directory') {
-    return openedNodes.value.includes(item.key) ? 'mdi-folder-open' : 'mdi-folder'
+    return openedNodes.value.includes(item.key) ? 'mdi-folder-open' : 'mdi-folder';
   }
-  return fileIcons[item.fileType as keyof typeof fileIcons] || 'mdi-file'
+  return fileIcons[item.fileType as keyof typeof fileIcons] || 'mdi-file';
 }
 
 // 编辑相关方法
 function startEdit(key: string, initialValue: string = '') {
-  editingNode.value = key
-  editValue.value = key.endsWith('.md')
-    ? initialValue.replace(/\.md$/, '')
-    : initialValue
+  editingNode.value = key;
+  editValue.value = key.endsWith('.md') ? initialValue.replace(/\.md$/, '') : initialValue;
   nextTick(() => {
-    const input = editInputs.value[key]
+    const input = editInputs.value[key];
     if (input) {
-      input.focus()
-      input.select()
+      input.focus();
+      input.select();
     }
-  })
+  });
 }
 
 async function handleEditComplete(_event?: Event) {
   if (!editingNode.value) {
-    return
+    return;
   }
 
-  const oldPath = editingNode.value
-  const oldName = window.shared.path.basename(oldPath)
-  const newName = editValue.value.trim()
-  const newNameWithExt = oldPath.endsWith('.md')
-    ? `${newName}.md`
-    : newName
+  const oldPath = editingNode.value;
+  const oldName = window.shared.path.basename(oldPath);
+  const newName = editValue.value.trim();
+  const newNameWithExt = oldPath.endsWith('.md') ? `${newName}.md` : newName;
   // 如果名称没有变化，直接取消编辑
   if (oldName === newNameWithExt) {
-    cancelEdit()
-    return
+    cancelEdit();
+    return;
   }
   if (newName) {
-    const newNameWithExt = oldPath.endsWith('.md')
-      ? `${newName}.md`
-      : newName
-    const parentPath = window.shared.path.dirname(oldPath)
-    const newPath = window.shared.path.join(parentPath, newNameWithExt)
+    const newNameWithExt = oldPath.endsWith('.md') ? `${newName}.md` : newName;
+    const parentPath = window.shared.path.dirname(oldPath);
+    const newPath = window.shared.path.join(parentPath, newNameWithExt);
 
     try {
-      const success = await fileSystem.rename(oldPath, newPath)
+      const success = await fileSystem.rename(oldPath, newPath);
       if (success) {
-        await refreshFolder()
+        await refreshFolder();
       }
     } catch (error) {
-      console.error(t('editor.explorer.rename_error'), error)
+      console.error(t('editor.explorer.rename_error'), error);
     }
   }
 
-  cancelEdit()
+  cancelEdit();
 }
 
 function cancelEdit() {
   if (editingNode.value) {
-    delete editInputs.value[editingNode.value]
+    delete editInputs.value[editingNode.value];
   }
-  editingNode.value = null
-  editValue.value = ''
+  editingNode.value = null;
+  editValue.value = '';
 }
 
 // 右键菜单
 function handleContextMenu(event: MouseEvent, item: TreeNode) {
-  event.preventDefault()
-  menuPosition.value = { x: event.clientX, y: event.clientY }
-  selectedNode.value = item
-  showMenu.value = true
+  event.preventDefault();
+  menuPosition.value = { x: event.clientX, y: event.clientY };
+  selectedNode.value = item;
+  showMenu.value = true;
 }
 
 const menuItems = computed(() => {
-  if (!selectedNode.value) return []
+  if (!selectedNode.value) return [];
   return selectedNode.value.fileType === 'directory'
     ? [
-      {
-        title: t('editor.explorer.create_folder'),
-        action: createFolder,
-        icon: 'mdi-folder-plus',
-        disabled: false
-      },
-      {
-        title: t('editor.explorer.create_note'),
-        action: createFile,
-        icon: 'mdi-language-markdown',
-        disabled: false
-      },
-      {
-        title: t('editor.explorer.rename'),
-        action: renameFileOrFolder,
-        icon: 'mdi-pencil',
-        disabled: false
-      },
-      {
-        title: t('editor.explorer.delete'),
-        action: () => confirmDelete('folder'),
-        icon: 'mdi-folder-remove',
-        disabled: false
-      },
-      // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
-    ]
+        {
+          title: t('editor.explorer.create_folder'),
+          action: createFolder,
+          icon: 'mdi-folder-plus',
+          disabled: false,
+        },
+        {
+          title: t('editor.explorer.create_note'),
+          action: createFile,
+          icon: 'mdi-language-markdown',
+          disabled: false,
+        },
+        {
+          title: t('editor.explorer.rename'),
+          action: renameFileOrFolder,
+          icon: 'mdi-pencil',
+          disabled: false,
+        },
+        {
+          title: t('editor.explorer.delete'),
+          action: () => confirmDelete('folder'),
+          icon: 'mdi-folder-remove',
+          disabled: false,
+        },
+        // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
+      ]
     : [
-      {
-        title: t('editor.explorer.rename'),
-        action: renameFileOrFolder,
-        icon: 'mdi-pencil',
-        disabled: false
-      },
-      {
-        title: t('editor.explorer.delete'),
-        action: () => confirmDelete('file'),
-        icon: 'mdi-file-remove',
-        disabled: false
-      },
-      // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
-    ]
-})
+        {
+          title: t('editor.explorer.rename'),
+          action: renameFileOrFolder,
+          icon: 'mdi-pencil',
+          disabled: false,
+        },
+        {
+          title: t('editor.explorer.delete'),
+          action: () => confirmDelete('file'),
+          icon: 'mdi-file-remove',
+          disabled: false,
+        },
+        // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
+      ];
+});
 
 function handleMenuClick(item: { title: string; action: () => void }) {
-  item.action()
-  showMenu.value = false
+  item.action();
+  showMenu.value = false;
 }
 
 function handleClickOutside(event: MouseEvent) {
-  const menu = event.target as HTMLElement
+  const menu = event.target as HTMLElement;
   if (!menu.closest('.context-menu')) {
-    showMenu.value = false
+    showMenu.value = false;
   }
 }
 
 // 刷新文件夹
 async function refreshFolder() {
   if (folderData.value?.folderPath) {
-    const response = await fileSystem.refreshFolder(folderData.value.folderPath)
+    const response = await fileSystem.refreshFolder(folderData.value.folderPath);
     if (response.success && response.data) {
-      folderData.value = response.data
+      folderData.value = response.data;
     }
   }
 }
 
 // 生命周期钩子
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
+  document.addEventListener('click', handleClickOutside);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+  document.removeEventListener('click', handleClickOutside);
+});
 
 const setInputRef = (el: HTMLInputElement | null, key: string) => {
   if (el) {
-    editInputs.value[key] = el
+    editInputs.value[key] = el;
   } else if (editInputs.value[key]) {
-    delete editInputs.value[key]
+    delete editInputs.value[key];
   }
-}
+};
 
 defineOptions({
-  name: 'FileExplorer'
-})
+  name: 'FileExplorer',
+});
 
 const props = defineProps<{
-  rootPath: string | undefined
-}>()
+  rootPath: string | undefined;
+}>();
 
 // 监听 rootPath 变化
-watch(() => props.rootPath, async (newPath) => {
-  if (newPath) {
-    try {
-      const response = await fileSystem.refreshFolder(newPath)
-      if (response.success && response.data) {
-        folderData.value = response.data
+watch(
+  () => props.rootPath,
+  async (newPath) => {
+    if (newPath) {
+      try {
+        const response = await fileSystem.refreshFolder(newPath);
+        if (response.success && response.data) {
+          folderData.value = response.data;
+        }
+      } catch (error) {
+        console.error('加载文件夹失败:', error);
       }
-    } catch (error) {
-      console.error('加载文件夹失败:', error)
     }
-  }
-}, { immediate: true })
+  },
+  { immediate: true },
+);
 
 // 监听文件夹数据变化
-watch(() => folderData.value?.folderPath, async (newPath) => {
-  if (newPath && newPath !== props.rootPath) {
-    try {
-      const response = await fileSystem.refreshFolder(newPath)
-      if (response.success && response.data) {
-        folderData.value = response.data
+watch(
+  () => folderData.value?.folderPath,
+  async (newPath) => {
+    if (newPath && newPath !== props.rootPath) {
+      try {
+        const response = await fileSystem.refreshFolder(newPath);
+        if (response.success && response.data) {
+          folderData.value = response.data;
+        }
+      } catch (error) {
+        console.error('刷新文件夹失败:', error);
       }
-    } catch (error) {
-      console.error('刷新文件夹失败:', error)
     }
-  }
-})
+  },
+);
 
 const updateFolderData = (data: FolderData) => {
-  folderData.value = data
-}
+  folderData.value = data;
+};
 
 defineExpose({
-  updateFolderData
-})
+  updateFolderData,
+});
 
 const emit = defineEmits<{
-  (e: 'settings'): void
-  (e: 'select-file', path: string): void
-}>()
+  (e: 'settings'): void;
+  (e: 'select-file', path: string): void;
+}>();
 </script>
 
 <style scoped>

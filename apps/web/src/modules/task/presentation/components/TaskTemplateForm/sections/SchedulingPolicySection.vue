@@ -15,21 +15,48 @@
         </v-col>
 
         <v-col cols="12" md="6">
-          <v-select v-model="scheduleMode" :items="scheduleModeOptions" label="调度模式" variant="outlined"
-            item-title="text" item-value="value" />
+          <v-select
+            v-model="scheduleMode"
+            :items="scheduleModeOptions"
+            label="调度模式"
+            variant="outlined"
+            item-title="text"
+            item-value="value"
+          />
         </v-col>
 
         <v-col cols="12" md="6" v-if="scheduleMode === 'intervalDays'">
-          <v-text-field v-model.number="intervalDays" label="间隔天数" type="number" variant="outlined" min="1" max="365" />
+          <v-text-field
+            v-model.number="intervalDays"
+            label="间隔天数"
+            type="number"
+            variant="outlined"
+            min="1"
+            max="365"
+          />
         </v-col>
 
         <v-col cols="12" md="6">
-          <v-text-field v-model="location" label="任务地点" variant="outlined" prepend-inner-icon="mdi-map-marker" />
+          <v-text-field
+            v-model="location"
+            label="任务地点"
+            variant="outlined"
+            prepend-inner-icon="mdi-map-marker"
+          />
         </v-col>
 
         <v-col cols="12">
-          <v-combobox v-model="tags" :items="[]" label="标签" variant="outlined" multiple chips clearable
-            prepend-inner-icon="mdi-tag-multiple" hint="按回车键添加新标签" />
+          <v-combobox
+            v-model="tags"
+            :items="[]"
+            label="标签"
+            variant="outlined"
+            multiple
+            chips
+            clearable
+            prepend-inner-icon="mdi-tag-multiple"
+            hint="按回车键添加新标签"
+          />
         </v-col>
       </v-row>
 
@@ -66,7 +93,7 @@ const scheduleModeOptions = [
   { text: '每日重复', value: 'daily' },
   { text: '每周重复', value: 'weekly' },
   { text: '每月重复', value: 'monthly' },
-  { text: '自定义间隔', value: 'intervalDays' }
+  { text: '自定义间隔', value: 'intervalDays' },
 ];
 
 const updateTemplate = (updater: (template: TaskTemplate) => void) => {
@@ -83,11 +110,11 @@ const scheduleMode = computed({
         ...template.timeConfig,
         schedule: {
           ...template.timeConfig.schedule,
-          mode: value
-        }
+          mode: value,
+        },
       };
     });
-  }
+  },
 });
 
 const intervalDays = computed({
@@ -98,11 +125,11 @@ const intervalDays = computed({
         ...template.timeConfig,
         schedule: {
           ...template.timeConfig.schedule,
-          intervalDays: value
-        }
+          intervalDays: value,
+        },
       };
     });
-  }
+  },
 });
 
 const location = computed({
@@ -111,10 +138,10 @@ const location = computed({
     updateTemplate((template) => {
       (template as any)._properties = {
         ...template.properties,
-        location: value
+        location: value,
       };
     });
-  }
+  },
 });
 
 const tags = computed({
@@ -123,10 +150,10 @@ const tags = computed({
     updateTemplate((template) => {
       (template as any)._properties = {
         ...template.properties,
-        tags: value
+        tags: value,
       };
     });
-  }
+  },
 });
 </script>
 

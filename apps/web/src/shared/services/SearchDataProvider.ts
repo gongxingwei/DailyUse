@@ -1,9 +1,9 @@
 /**
  * Search Data Provider
- * 
+ *
  * Provides data for global search by aggregating data from all modules.
  * Uses singleton pattern to cache data and reduce API calls.
- * 
+ *
  * @module SearchDataProvider
  */
 
@@ -38,25 +38,25 @@ interface SearchDataCache {
 
 /**
  * Search Data Provider Service
- * 
+ *
  * Singleton service that provides data for global search.
  * Implements caching with TTL (Time To Live) to reduce API calls.
  */
 export class SearchDataProvider {
   private static instance: SearchDataProvider;
-  
+
   private goalService = new GoalWebApplicationService();
   private taskService = new TaskWebApplicationService();
   private reminderService = new ReminderWebApplicationService();
-  
+
   private cache = ref<SearchDataCache | null>(null);
   private isLoading = ref(false);
   private cacheTTL = 5 * 60 * 1000; // 5 minutes
-  
+
   private constructor() {
     // Private constructor for singleton
   }
-  
+
   /**
    * Get singleton instance
    */
@@ -66,19 +66,19 @@ export class SearchDataProvider {
     }
     return SearchDataProvider.instance;
   }
-  
+
   /**
    * Check if cache is valid
    */
   private isCacheValid(): boolean {
     if (!this.cache.value) return false;
     const now = Date.now();
-    return (now - this.cache.value.lastUpdated) < this.cacheTTL;
+    return now - this.cache.value.lastUpdated < this.cacheTTL;
   }
-  
+
   /**
    * Load all data for search
-   * 
+   *
    * @param forceRefresh Force refresh even if cache is valid
    * @returns Promise that resolves when data is loaded
    */
@@ -87,22 +87,22 @@ export class SearchDataProvider {
     if (!forceRefresh && this.isCacheValid()) {
       return;
     }
-    
+
     // Prevent concurrent loads
     if (this.isLoading.value) {
       return;
     }
-    
+
     try {
       this.isLoading.value = true;
-      
+
       // Load data from all modules in parallel
       const [goalsResponse, tasksResponse, remindersResponse] = await Promise.all([
         this.loadGoals(),
         this.loadTasks(),
         this.loadReminders(),
       ]);
-      
+
       // Update cache
       this.cache.value = {
         goals: goalsResponse,
@@ -110,7 +110,7 @@ export class SearchDataProvider {
         reminders: remindersResponse,
         lastUpdated: Date.now(),
       };
-      
+
       console.log('Search data loaded:', {
         goals: goalsResponse.length,
         tasks: tasksResponse.length,
@@ -131,7 +131,7 @@ export class SearchDataProvider {
       this.isLoading.value = false;
     }
   }
-  
+
   /**
    * Load goals from API
    */
@@ -140,7 +140,7 @@ export class SearchDataProvider {
       const response = await this.goalService.getGoals({
         limit: 1000, // Get all goals (reasonable limit)
       });
-      
+
       // Response has { data: GoalClientDTO[], total, page, limit, hasMore }
       return response.data || [];
     } catch (error) {
@@ -148,7 +148,7 @@ export class SearchDataProvider {
       return [];
     }
   }
-  
+
   /**
    * Load tasks from API
    */
@@ -157,7 +157,7 @@ export class SearchDataProvider {
       const response = await this.taskService.getTaskTemplates({
         limit: 1000, // Get all tasks
       });
-      
+
       // Response has { data: TaskTemplateClientDTO[], total, page, limit, hasMore }
       return response.data || [];
     } catch (error) {
@@ -165,7 +165,7 @@ export class SearchDataProvider {
       return [];
     }
   }
-  
+
   /**
    * Load reminders from API
    */
@@ -176,11 +176,11 @@ export class SearchDataProvider {
         limit: 1000, // Get all reminders
         forceRefresh: true,
       });
-      
+
       // Get reminders from store
       const reminderStore = this.reminderService['reminderStore'];
       const reminders = reminderStore?.reminderTemplates || [];
-      
+
       // Convert to searchable items
       return reminders.map((reminder: any) => ({
         uuid: reminder.uuid,
@@ -195,35 +195,35 @@ export class SearchDataProvider {
       return [];
     }
   }
-  
+
   /**
    * Get goals (from cache)
    */
   public getGoals(): GoalContracts.GoalClientDTO[] {
     return this.cache.value?.goals || [];
   }
-  
+
   /**
    * Get tasks (from cache)
    */
   public getTasks(): TaskContracts.TaskTemplateClientDTO[] {
     return this.cache.value?.tasks || [];
   }
-  
+
   /**
    * Get reminders (from cache)
    */
   public getReminders(): SearchableItem[] {
     return this.cache.value?.reminders || [];
   }
-  
+
   /**
    * Get loading state
    */
   public get loading(): boolean {
     return this.isLoading.value;
   }
-  
+
   /**
    * Get cache status
    */
@@ -246,14 +246,14 @@ export class SearchDataProvider {
       },
     };
   }
-  
+
   /**
    * Clear cache
    */
   public clearCache(): void {
     this.cache.value = null;
   }
-  
+
   /**
    * Refresh data
    */

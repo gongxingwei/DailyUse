@@ -45,12 +45,7 @@ export class TaskDependencyService {
     const visited = new Set<string>();
     const path: string[] = [];
 
-    const hasCycle = await this.dfsDetectCycle(
-      successorUuid,
-      predecessorUuid,
-      visited,
-      path,
-    );
+    const hasCycle = await this.dfsDetectCycle(successorUuid, predecessorUuid, visited, path);
 
     if (hasCycle) {
       return {
@@ -122,11 +117,11 @@ export class TaskDependencyService {
 
     // 获取所有前置任务的状态
     const predecessorTasks = await Promise.all(
-      dependencies.map(dep => this.taskRepo.findByUuid(dep.predecessorTaskUuid)),
+      dependencies.map((dep) => this.taskRepo.findByUuid(dep.predecessorTaskUuid)),
     );
 
     // 检查是否有任务未找到
-    const notFound = predecessorTasks.some(task => task === null);
+    const notFound = predecessorTasks.some((task) => task === null);
     if (notFound) {
       return {
         status: 'BLOCKED' as DependencyStatus,
@@ -180,9 +175,7 @@ export class TaskDependencyService {
    * @param request 创建请求
    * @returns 创建的依赖关系
    */
-  async createDependency(
-    request: CreateTaskDependencyRequest,
-  ): Promise<TaskDependencyServerDTO> {
+  async createDependency(request: CreateTaskDependencyRequest): Promise<TaskDependencyServerDTO> {
     // 1. 验证任务存在
     const [predecessor, successor] = await Promise.all([
       this.taskRepo.findByUuid(request.predecessorTaskUuid),
@@ -367,7 +360,7 @@ export class TaskDependencyService {
     }
 
     const depths = await Promise.all(
-      dependencies.map(dep => this.calculateDepth(dep.predecessorTaskUuid)),
+      dependencies.map((dep) => this.calculateDepth(dep.predecessorTaskUuid)),
     );
 
     return Math.max(...depths) + 1;

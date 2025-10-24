@@ -15,6 +15,7 @@
 ### 1.1 业务目标
 
 用户主动退出当前登录会话，系统需要：
+
 - 注销当前会话（Session）
 - 使 access token 和 refresh token 失效
 - 记录登出历史
@@ -51,6 +52,7 @@
 #### Authentication 模块 (packages/domain-server/authentication/)
 
 **聚合根**: `AuthSession`
+
 - 属性:
   - `uuid`: 会话唯一标识
   - `accountUuid`: 关联账户 UUID
@@ -63,12 +65,14 @@
   - `recordActivity(type: string)`: 记录活动
 
 **领域服务**: `AuthenticationDomainService`
+
 - 职责:
   - 查询会话（getSessionByAccessToken）
   - 注销会话（revokeSession）
   - 注销所有会话（revokeAllSessions）
 
 **仓储接口**: `IAuthSessionRepository`
+
 ```typescript
 interface IAuthSessionRepository {
   findByUuid(uuid: string): Promise<AuthSession | null>;
@@ -89,27 +93,30 @@ interface IAuthSessionRepository {
 **核心用例**: `logout()`, `logoutAll()`
 
 **输入 DTO**:
+
 ```typescript
 interface LogoutRequest {
-  accessToken: string;       // 当前会话的 access token
+  accessToken: string; // 当前会话的 access token
 }
 
 interface LogoutAllRequest {
-  accountUuid: string;       // 账户 UUID
-  accessToken: string;       // 当前会话的 access token（用于验证身份）
+  accountUuid: string; // 账户 UUID
+  accessToken: string; // 当前会话的 access token（用于验证身份）
 }
 ```
 
 **输出 DTO**:
+
 ```typescript
 interface LogoutResponse {
   success: boolean;
   message: string;
-  revokedSessionsCount?: number;  // 注销的会话数量（logoutAll）
+  revokedSessionsCount?: number; // 注销的会话数量（logoutAll）
 }
 ```
 
 **职责**:
+
 1. 验证 access token 有效性
 2. 查询会话（通过 AuthSessionRepository）
 3. 注销会话：
@@ -127,6 +134,7 @@ interface LogoutResponse {
 #### 仓储实现 (apps/api/modules/authentication/infrastructure/repositories/)
 
 **PrismaAuthSessionRepository**:
+
 - 实现 `IAuthSessionRepository` 接口
 - 查询会话：`findByAccessToken(token)`
 - 更新会话：`save(session)`（更新 status 和 revokedAt）
@@ -508,12 +516,12 @@ export class AuthSession extends AggregateRoot implements IAuthSessionServer {
 
 ### 5.1 业务异常
 
-| 错误代码 | HTTP 状态 | 描述 | 处理方式 |
-|---------|---------|------|---------|
-| `SESSION_NOT_FOUND` | 404 | 会话不存在 | 提示已登出或会话过期 |
-| `UNAUTHORIZED` | 401 | Token 无效 | 要求重新登录 |
-| `ALREADY_REVOKED` | 400 | 会话已注销 | 提示已登出 |
-| `INTERNAL_SERVER_ERROR` | 500 | 服务器错误 | 提示稍后重试 |
+| 错误代码                | HTTP 状态 | 描述       | 处理方式             |
+| ----------------------- | --------- | ---------- | -------------------- |
+| `SESSION_NOT_FOUND`     | 404       | 会话不存在 | 提示已登出或会话过期 |
+| `UNAUTHORIZED`          | 401       | Token 无效 | 要求重新登录         |
+| `ALREADY_REVOKED`       | 400       | 会话已注销 | 提示已登出           |
+| `INTERNAL_SERVER_ERROR` | 500       | 服务器错误 | 提示稍后重试         |
 
 ### 5.2 容错处理
 
@@ -564,10 +572,10 @@ async function logout() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     sessionStorage.clear();
-    
+
     // 3. 清除应用状态
     store.commit('auth/clearUser');
-    
+
     // 4. 重定向到登录页
     router.push('/login');
   }
@@ -678,6 +686,6 @@ describe('Logout API Integration', () => {
 
 ## 11. 变更历史
 
-| 版本 | 日期 | 作者 | 变更说明 |
-|-----|------|------|---------|
-| 1.0 | 2025-10-17 | AI Assistant | 初始版本 |
+| 版本 | 日期       | 作者         | 变更说明 |
+| ---- | ---------- | ------------ | -------- |
+| 1.0  | 2025-10-17 | AI Assistant | 初始版本 |

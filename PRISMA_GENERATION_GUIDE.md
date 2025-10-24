@@ -3,6 +3,7 @@
 ## 问题描述
 
 出现错误：
+
 ```
 Module '"@prisma/client"' has no exported member 'PrismaClient'.ts(2305)
 ```
@@ -46,6 +47,7 @@ prisma generate --schema=apps/api/prisma/schema.prisma
 ```
 
 然后运行：
+
 ```bash
 pnpm prisma:generate
 ```
@@ -69,6 +71,7 @@ Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 **A:** 解决方案：
 
 1. 清除 VS Code 缓存
+
    ```bash
    # 重新启动 TypeScript 服务
    # 在 VS Code 中按 Cmd+Shift+P (macOS) 或 Ctrl+Shift+P (Windows)
@@ -88,6 +91,7 @@ Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 3. ✅ Prisma schema 文件有效（没有语法错误）
 
 可以验证：
+
 ```bash
 # 检查 schema 是否有效
 pnpm exec prisma validate
@@ -170,16 +174,19 @@ export default prisma;
 ## 完成状态
 
 ✅ **已成功执行命令：**
+
 ```
 pnpm exec prisma generate --schema=apps/api/prisma/schema.prisma
 ```
 
 ✅ **生成结果：**
+
 - Prisma Client v6.17.1 已生成
 - 位置：`node_modules/@prisma/client`
 - 耗时：352ms
 
 ✅ **所有 TypeScript 错误已解决**
+
 - `RegistrationApplicationService.ts` - No errors
 - `AccountDeletionApplicationService.ts` - No errors
 - `prisma.ts` - No errors

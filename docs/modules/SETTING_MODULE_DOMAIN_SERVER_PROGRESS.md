@@ -7,16 +7,19 @@
 ## 已完成
 
 ### 1. 值对象 (Value Objects) ✅
+
 - `ValidationRule.ts` - 验证规则值对象 (143行)
 - `UIConfig.ts` - UI配置值对象 (135行)
 - `SyncConfig.ts` - 同步配置值对象 (70行)
 
 ### 2. 实体 (Entities) ⏳
+
 - `SettingHistory.ts` - 设置历史实体 (完成，140行)
 - `SettingItem.ts` - ❌ 待创建
 - `SettingGroup.ts` - ❌ 待创建
 
 ### 3. 聚合根 (Aggregates) ⏳
+
 - `Setting.ts` - 设置聚合根 (部分完成，370行，有类型错误需修复)
 - `AppConfig.ts` - ❌ 待创建
 - `UserSetting.ts` - ❌ 待创建
@@ -84,16 +87,19 @@ contracts 包中的接口定义与实际实现需求存在差异：
 ## 下一步行动
 
 ### 立即行动
+
 1. 查看并理解 Authentication 模块的接口设计
 2. 对比 Setting contracts 包的接口定义
 3. 决定采用哪种解决方案
 
 ### 中期目标
+
 1. 完成所有实体类实现
 2. 完成所有聚合根实现
 3. 通过 typecheck 验证
 
 ### 长期目标
+
 1. 实现仓储接口
 2. 实现领域服务
 3. 编写单元测试
@@ -101,6 +107,7 @@ contracts 包中的接口定义与实际实现需求存在差异：
 ## 文件清单
 
 ### 已创建文件
+
 ```
 packages/domain-server/src/setting/
 ├── value-objects/
@@ -114,6 +121,7 @@ packages/domain-server/src/setting/
 ```
 
 ### 待创建文件
+
 ```
 packages/domain-server/src/setting/
 ├── entities/
@@ -144,6 +152,7 @@ packages/domain-server/src/setting/
 ## 备注
 
 Setting 模块比 Authentication 模块更复杂，因为：
+
 1. 支持多种值类型（STRING, NUMBER, BOOLEAN, JSON等）
 2. 包含验证规则、UI配置、同步配置等多个值对象
 3. 需要变更历史追踪

@@ -1,4 +1,8 @@
-import type { ISettingRepository, IUserSettingRepository, IAppConfigRepository } from '@dailyuse/domain-server';
+import type {
+  ISettingRepository,
+  IUserSettingRepository,
+  IAppConfigRepository,
+} from '@dailyuse/domain-server';
 import { PrismaSettingRepository } from '../repositories/PrismaSettingRepository';
 import { PrismaUserSettingRepository } from '../repositories';
 import { PrismaAppConfigRepository } from '../repositories';

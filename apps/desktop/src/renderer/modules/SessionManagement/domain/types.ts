@@ -1,9 +1,7 @@
-
-
 export enum SessionStatus {
-  ACTIVE = "active",
-  EXPIRED = "expired",
-  REVOKED = "revoked"
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  REVOKED = 'revoked',
 }
 
 export interface UserSession {

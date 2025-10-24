@@ -18,9 +18,7 @@
         <!-- 记录时间 -->
         <v-col cols="5">
           <div class="d-flex align-center">
-            <v-icon color="medium-emphasis" size="16" class="mr-2">
-              mdi-clock-outline
-            </v-icon>
+            <v-icon color="medium-emphasis" size="16" class="mr-2"> mdi-clock-outline </v-icon>
             <div>
               {{ format(record.createdAt, 'yyyy/MM/dd HH:mm') }}
             </div>
@@ -50,7 +48,6 @@ import { format } from 'date-fns';
 defineProps<{
   record: GoalRecord;
 }>();
-
 </script>
 
 <style scoped>

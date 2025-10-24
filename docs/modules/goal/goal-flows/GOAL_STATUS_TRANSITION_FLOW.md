@@ -50,7 +50,7 @@
     │        │ unarchive()
     │        │
     └────────┘
-    
+
     任意状态 ──softDelete()──▶ DELETED
     DELETED  ──restore()────▶ 原状态
 ```
@@ -77,6 +77,7 @@
 ### 2.1 激活目标 (Activate Goal)
 
 #### 业务场景
+
 用户完成目标规划，准备开始追踪进度。
 
 #### API
@@ -164,6 +165,7 @@ async activateGoal(goalUuid: string, accountUuid: string): Promise<GoalClientDTO
 ### 2.2 完成目标 (Complete Goal)
 
 #### 业务场景
+
 用户达成目标的所有关键结果，标记为完成。
 
 #### API
@@ -176,7 +178,7 @@ PUT /api/goals/:uuid/complete
 
 ```typescript
 interface CompleteGoalRequest {
-  forceComplete?: boolean;  // 强制完成（不检查关键结果）
+  forceComplete?: boolean; // 强制完成（不检查关键结果）
 }
 ```
 
@@ -192,7 +194,7 @@ public complete(forceComplete = false): void {
 
   // 2. 检查关键结果完成度（可选）
   if (!forceComplete) {
-    const allCompleted = this._keyResults.every(kr => 
+    const allCompleted = this._keyResults.every(kr =>
       kr.currentValue >= kr.targetValue
     );
     if (!allCompleted) {
@@ -225,6 +227,7 @@ public complete(forceComplete = false): void {
 ### 2.3 归档目标 (Archive Goal)
 
 #### 业务场景
+
 用户将不再追踪的目标归档（已完成或放弃的目标）。
 
 #### API
@@ -236,6 +239,7 @@ PUT /api/goals/:uuid/archive
 #### 领域逻辑实现
 
 ```typescript
+
 ```
 
 #### 领域逻辑
@@ -300,6 +304,7 @@ public unarchive(): void {
 ### 2.4 删除目标 (Soft Delete Goal)
 
 #### 业务场景
+
 用户删除目标（软删除，可恢复）。
 
 #### API
@@ -369,7 +374,6 @@ public restore(): void {
 ```typescript
 // GoalApplicationService.ts
 export class GoalApplicationService {
-  
   async activateGoal(goalUuid: string, accountUuid: string): Promise<GoalClientDTO> {
     return this.executeStateTransition(goalUuid, accountUuid, (goal) => {
       goal.activate();
@@ -377,9 +381,9 @@ export class GoalApplicationService {
   }
 
   async completeGoal(
-    goalUuid: string, 
-    accountUuid: string, 
-    forceComplete = false
+    goalUuid: string,
+    accountUuid: string,
+    forceComplete = false,
   ): Promise<GoalClientDTO> {
     return this.executeStateTransition(goalUuid, accountUuid, (goal) => {
       goal.complete(forceComplete);
@@ -414,7 +418,7 @@ export class GoalApplicationService {
   private async executeStateTransition(
     goalUuid: string,
     accountUuid: string,
-    transition: (goal: Goal) => void
+    transition: (goal: Goal) => void,
   ): Promise<GoalClientDTO | void> {
     // 1. 加载聚合根
     const goal = await this.goalRepository.findByUuid(goalUuid);
@@ -444,7 +448,7 @@ export class GoalApplicationService {
 
   private publishDomainEvents(goal: Goal): void {
     const events = goal.getDomainEvents();
-    events.forEach(event => {
+    events.forEach((event) => {
       eventBus.publish(event);
     });
     goal.clearDomainEvents();
@@ -463,9 +467,9 @@ export class GoalApplicationService {
 <template>
   <div class="goal-status-actions">
     <!-- 激活按钮 (DRAFT) -->
-    <el-button 
-      v-if="goal.status === 'DRAFT'" 
-      type="primary" 
+    <el-button
+      v-if="goal.status === 'DRAFT'"
+      type="primary"
       @click="handleActivate"
       :loading="isLoading"
     >
@@ -473,9 +477,9 @@ export class GoalApplicationService {
     </el-button>
 
     <!-- 完成按钮 (ACTIVE) -->
-    <el-button 
-      v-if="goal.status === 'ACTIVE'" 
-      type="success" 
+    <el-button
+      v-if="goal.status === 'ACTIVE'"
+      type="success"
       @click="handleComplete"
       :loading="isLoading"
     >
@@ -483,9 +487,9 @@ export class GoalApplicationService {
     </el-button>
 
     <!-- 归档按钮 (ACTIVE/COMPLETED) -->
-    <el-button 
-      v-if="['ACTIVE', 'COMPLETED'].includes(goal.status)" 
-      type="info" 
+    <el-button
+      v-if="['ACTIVE', 'COMPLETED'].includes(goal.status)"
+      type="info"
       @click="handleArchive"
       :loading="isLoading"
     >
@@ -493,18 +497,14 @@ export class GoalApplicationService {
     </el-button>
 
     <!-- 取消归档按钮 (ARCHIVED) -->
-    <el-button 
-      v-if="goal.status === 'ARCHIVED'" 
-      @click="handleUnarchive"
-      :loading="isLoading"
-    >
+    <el-button v-if="goal.status === 'ARCHIVED'" @click="handleUnarchive" :loading="isLoading">
       取消归档
     </el-button>
 
     <!-- 删除按钮 (所有非删除状态) -->
-    <el-button 
-      v-if="goal.status !== 'DELETED'" 
-      type="danger" 
+    <el-button
+      v-if="goal.status !== 'DELETED'"
+      type="danger"
       @click="handleDelete"
       :loading="isLoading"
     >
@@ -512,9 +512,9 @@ export class GoalApplicationService {
     </el-button>
 
     <!-- 恢复按钮 (DELETED) -->
-    <el-button 
-      v-if="goal.status === 'DELETED'" 
-      type="warning" 
+    <el-button
+      v-if="goal.status === 'DELETED'"
+      type="warning"
       @click="handleRestore"
       :loading="isLoading"
     >
@@ -552,20 +552,14 @@ async function handleComplete() {
   isLoading.value = true;
   try {
     // 检查关键结果完成度
-    const allCompleted = props.goal.keyResults.every(
-      kr => kr.currentValue >= kr.targetValue
-    );
+    const allCompleted = props.goal.keyResults.every((kr) => kr.currentValue >= kr.targetValue);
 
     if (!allCompleted) {
-      await ElMessageBox.confirm(
-        '部分关键结果未完成，确认要标记为完成吗？',
-        '确认',
-        {
-          confirmButtonText: '强制完成',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-      );
+      await ElMessageBox.confirm('部分关键结果未完成，确认要标记为完成吗？', '确认', {
+        confirmButtonText: '强制完成',
+        cancelButtonText: '取消',
+        type: 'warning',
+      });
     }
 
     await goalStore.completeGoal(props.goal.uuid, !allCompleted);
@@ -605,15 +599,11 @@ async function handleUnarchive() {
 
 async function handleDelete() {
   try {
-    await ElMessageBox.confirm(
-      '确认要删除此目标吗？删除后可在回收站恢复。',
-      '确认删除',
-      {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    );
+    await ElMessageBox.confirm('确认要删除此目标吗？删除后可在回收站恢复。', '确认删除', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
 
     isLoading.value = true;
     await goalStore.softDeleteGoal(props.goal.uuid);
@@ -669,8 +659,8 @@ eventBus.on('GoalArchivedEvent', async (event) => {
 eventBus.on('GoalDeletedEvent', async (event) => {
   // 从统计中移除
   await statisticsService.decrementGoalCount(
-    event.payload.accountUuid, 
-    event.payload.previousStatus
+    event.payload.accountUuid,
+    event.payload.previousStatus,
   );
 });
 ```

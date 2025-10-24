@@ -1,6 +1,6 @@
 /**
  * E2E Test Data Seeder
- * 
+ *
  * Seeds the test database with minimal required data for E2E tests.
  * Run this before E2E tests in CI environment.
  */
@@ -15,7 +15,7 @@ async function main() {
 
   // Create test account
   const hashedPassword = await bcrypt.hash('test123', 10);
-  
+
   const testAccount = await prisma.account.upsert({
     where: { username: 'testuser' },
     update: {},

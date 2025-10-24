@@ -434,9 +434,7 @@ export const useUserSettingStore = defineStore('userSetting', {
 
             // 将DTO转换回Domain实体
             userSetting:
-              parsed.userSetting &&
-              UserSetting &&
-              typeof UserSetting.fromClientDTO === 'function'
+              parsed.userSetting && UserSetting && typeof UserSetting.fromClientDTO === 'function'
                 ? UserSetting.fromClientDTO(parsed.userSetting)
                 : parsed.userSetting,
           };

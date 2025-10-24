@@ -18,12 +18,14 @@
 支持任务依赖关系管理和 DAG 可视化，帮助用户理解任务执行顺序、识别阻塞链路和关键路径，提升项目协调效率。
 
 **核心问题**:
+
 - ❌ 任务间存在依赖时，无法可视化依赖链路
 - ❌ 不知道哪些任务被阻塞，影响项目进度
 - ❌ 依赖关系复杂时，难以理解整体结构
 - ❌ 可能创建循环依赖，导致逻辑错误
 
 **解决方案**:
+
 - ✅ 配置前置/后置任务依赖关系
 - ✅ DAG (有向无环图) 可视化展示依赖结构
 - ✅ 自动检测循环依赖，阻止错误配置
@@ -76,20 +78,20 @@ Scenario: 定义依赖关系 Contracts
  * 依赖类型
  */
 export enum DependencyType {
-  FINISH_TO_START = 'finish_to_start',  // 完成后开始（最常见）
-  START_TO_START = 'start_to_start',    // 开始后开始
+  FINISH_TO_START = 'finish_to_start', // 完成后开始（最常见）
+  START_TO_START = 'start_to_start', // 开始后开始
   FINISH_TO_FINISH = 'finish_to_finish', // 完成后完成
-  START_TO_FINISH = 'start_to_finish'   // 开始后完成
+  START_TO_FINISH = 'start_to_finish', // 开始后完成
 }
 
 /**
  * 依赖状态
  */
 export enum DependencyStatus {
-  NONE = 'none',              // 无依赖
-  WAITING = 'waiting',        // 等待前置任务
-  READY = 'ready',            // 依赖已解除
-  BLOCKED = 'blocked'         // 被阻塞
+  NONE = 'none', // 无依赖
+  WAITING = 'waiting', // 等待前置任务
+  READY = 'ready', // 依赖已解除
+  BLOCKED = 'blocked', // 被阻塞
 }
 
 /**
@@ -97,8 +99,8 @@ export enum DependencyStatus {
  */
 export interface TaskDependency {
   readonly uuid: string;
-  readonly taskUuid: string;              // 此任务
-  readonly dependsOnTaskUuid: string;     // 依赖的任务
+  readonly taskUuid: string; // 此任务
+  readonly dependsOnTaskUuid: string; // 依赖的任务
   readonly dependencyType: DependencyType;
   readonly status: 'active' | 'resolved';
   readonly createdAt: number;
@@ -121,20 +123,20 @@ export interface TaskServerDTO {
 export class Task extends AggregateRoot {
   private _dependencies: TaskDependency[] = [];
   private _isBlocked: boolean = false;
-  
+
   /**
    * 添加依赖关系
    */
   addDependency(
     dependsOnTaskUuid: string,
     dependencyType: DependencyType,
-    createdBy: string
+    createdBy: string,
   ): void {
     // 检查是否已存在
     if (this.hasDependency(dependsOnTaskUuid)) {
       throw new DuplicateDependencyError();
     }
-    
+
     const dependency: TaskDependency = {
       uuid: generateUuid(),
       taskUuid: this.uuid,
@@ -142,26 +144,28 @@ export class Task extends AggregateRoot {
       dependencyType,
       status: 'active',
       createdAt: Date.now(),
-      createdBy
+      createdBy,
     };
-    
+
     this._dependencies.push(dependency);
     this.updateBlockedStatus();
-    
-    this.addDomainEvent(new TaskDependencyAddedEvent({
-      taskUuid: this.uuid,
-      dependsOnTaskUuid,
-      dependencyType
-    }));
+
+    this.addDomainEvent(
+      new TaskDependencyAddedEvent({
+        taskUuid: this.uuid,
+        dependsOnTaskUuid,
+        dependencyType,
+      }),
+    );
   }
-  
+
   /**
    * 更新阻塞状态
    */
   private updateBlockedStatus(): void {
-    const activeDeps = this._dependencies.filter(d => d.status === 'active');
+    const activeDeps = this._dependencies.filter((d) => d.status === 'active');
     this._isBlocked = activeDeps.length > 0;
-    
+
     if (this._isBlocked) {
       this._blockingReason = `等待 ${activeDeps.length} 个前置任务完成`;
       this._dependencyStatus = DependencyStatus.WAITING;
@@ -218,7 +222,7 @@ export class TaskDependencyService {
     private readonly taskRepository: TaskRepository,
     private readonly dependencyRepository: TaskDependencyRepository,
     private readonly graphService: DependencyGraphService,
-    private readonly eventBus: EventBus
+    private readonly eventBus: EventBus,
   ) {}
 
   /**
@@ -226,38 +230,38 @@ export class TaskDependencyService {
    */
   async addDependency(command: AddDependencyCommand): Promise<void> {
     const { taskUuid, dependsOnTaskUuid, dependencyType, userUuid } = command;
-    
+
     // 加载任务
     const task = await this.taskRepository.findByUuid(taskUuid);
     const dependsOnTask = await this.taskRepository.findByUuid(dependsOnTaskUuid);
-    
+
     if (!task || !dependsOnTask) {
       throw new TaskNotFoundException();
     }
-    
+
     // 检测循环依赖
     const allDeps = await this.dependencyRepository.findAll();
     const circularPath = this.graphService.detectCircularDependency(
       taskUuid,
       dependsOnTaskUuid,
-      allDeps
+      allDeps,
     );
-    
+
     if (circularPath) {
       throw new CircularDependencyError(circularPath);
     }
-    
+
     // 添加依赖
     task.addDependency(dependsOnTaskUuid, dependencyType, userUuid);
     await this.taskRepository.save(task);
-    
+
     // 发布事件
     await this.eventBus.publish(
       new TaskDependencyAddedEvent({
         taskUuid,
         dependsOnTaskUuid,
-        dependencyType
-      })
+        dependencyType,
+      }),
     );
   }
 
@@ -267,7 +271,7 @@ export class TaskDependencyService {
   async resolveDependency(taskUuid: string, completedTaskUuid: string): Promise<void> {
     const task = await this.taskRepository.findByUuid(taskUuid);
     if (!task) return;
-    
+
     task.resolveDependency(completedTaskUuid);
     await this.taskRepository.save(task);
   }
@@ -284,24 +288,24 @@ export class DependencyGraphService {
   detectCircularDependency(
     taskUuid: string,
     newDependencyUuid: string,
-    allDependencies: TaskDependency[]
+    allDependencies: TaskDependency[],
   ): string[] | null {
     // 构建邻接表
     const graph = this.buildGraph(allDependencies);
     graph[taskUuid] = graph[taskUuid] || [];
     graph[taskUuid].push(newDependencyUuid);
-    
+
     // DFS
     const visited = new Set<string>();
     const recStack = new Set<string>();
     const path: string[] = [];
-    
+
     const dfs = (node: string): boolean => {
       visited.add(node);
       recStack.add(node);
       path.push(node);
-      
-      for (const neighbor of (graph[node] || [])) {
+
+      for (const neighbor of graph[node] || []) {
         if (!visited.has(neighbor)) {
           if (dfs(neighbor)) return true;
         } else if (recStack.has(neighbor)) {
@@ -309,15 +313,15 @@ export class DependencyGraphService {
           return true;
         }
       }
-      
+
       recStack.delete(node);
       path.pop();
       return false;
     };
-    
+
     return dfs(taskUuid) ? path : null;
   }
-  
+
   /**
    * 计算关键路径
    */
@@ -326,14 +330,17 @@ export class DependencyGraphService {
     const graph = this.buildGraph(dependencies);
     const longestPath: Map<string, number> = new Map();
     const parent: Map<string, string> = new Map();
-    
+
     // 拓扑排序
-    const sorted = this.topologicalSort(tasks.map(t => t.uuid), graph);
-    
+    const sorted = this.topologicalSort(
+      tasks.map((t) => t.uuid),
+      graph,
+    );
+
     for (const node of sorted) {
       let maxPath = 0;
       let maxParent = null;
-      
+
       for (const [from, tos] of Object.entries(graph)) {
         if (tos.includes(node)) {
           const pathLength = (longestPath.get(from) || 0) + 1;
@@ -343,30 +350,30 @@ export class DependencyGraphService {
           }
         }
       }
-      
+
       longestPath.set(node, maxPath);
       if (maxParent) parent.set(node, maxParent);
     }
-    
+
     // 回溯构建关键路径
     let maxNode = sorted[0];
     let maxLength = 0;
-    
+
     for (const [node, length] of longestPath) {
       if (length > maxLength) {
         maxLength = length;
         maxNode = node;
       }
     }
-    
+
     const path: string[] = [];
     let current: string | undefined = maxNode;
-    
+
     while (current) {
       path.unshift(current);
       current = parent.get(current);
     }
-    
+
     return path;
   }
 }
@@ -405,11 +412,11 @@ Scenario: 创建 TaskDependency 表
 ```prisma
 model Task {
   // ...existing fields...
-  
+
   isBlocked            Boolean  @default(false) @map("is_blocked")
   blockingReason       String?  @map("blocking_reason")
   dependencyStatus     String   @default("none") @map("dependency_status")
-  
+
   dependencies         TaskDependency[] @relation("TaskDependencies")
   dependents           TaskDependency[] @relation("DependentTasks")
 }
@@ -422,10 +429,10 @@ model TaskDependency {
   status               String   @default("active")
   createdAt            BigInt   @map("created_at")
   createdBy            String   @map("created_by")
-  
+
   task                 Task     @relation("TaskDependencies", fields: [taskUuid], references: [uuid], onDelete: Cascade)
   dependsOnTask        Task     @relation("DependentTasks", fields: [dependsOnTaskUuid], references: [uuid], onDelete: Cascade)
-  
+
   @@unique([taskUuid, dependsOnTaskUuid])
   @@index([taskUuid])
   @@index([dependsOnTaskUuid])
@@ -449,7 +456,7 @@ CREATE TABLE "task_dependencies" (
   FOREIGN KEY ("depends_on_task_uuid") REFERENCES "Task"("uuid") ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX "task_dependencies_task_uuid_depends_on_task_uuid_key" 
+CREATE UNIQUE INDEX "task_dependencies_task_uuid_depends_on_task_uuid_key"
   ON "task_dependencies"("task_uuid", "depends_on_task_uuid");
 
 CREATE INDEX "task_dependencies_task_uuid_idx" ON "task_dependencies"("task_uuid");
@@ -507,7 +514,8 @@ Scenario: 获取依赖图数据
 
 ```typescript
 // 添加依赖
-router.post('/:id/dependencies',
+router.post(
+  '/:id/dependencies',
   authenticate,
   validateBody(AddDependencySchema),
   async (req, res) => {
@@ -516,61 +524,44 @@ router.post('/:id/dependencies',
         taskUuid: req.params.id,
         dependsOnTaskUuid: req.body.dependsOnTaskUuid,
         dependencyType: req.body.dependencyType,
-        userUuid: req.user.uuid
+        userUuid: req.user.uuid,
       });
-      
+
       const task = await taskApplicationService.getByUuid(req.params.id);
       res.status(201).json(toClientDTO(task));
     } catch (error) {
       if (error instanceof CircularDependencyError) {
         res.status(400).json({
           error: 'Circular dependency detected',
-          circularPath: error.path
+          circularPath: error.path,
         });
       } else {
         throw error;
       }
     }
-  }
+  },
 );
 
 // 删除依赖
-router.delete('/:id/dependencies/:depId',
-  authenticate,
-  async (req, res) => {
-    await taskDependencyService.removeDependency(
-      req.params.id,
-      req.params.depId
-    );
-    res.status(204).send();
-  }
-);
+router.delete('/:id/dependencies/:depId', authenticate, async (req, res) => {
+  await taskDependencyService.removeDependency(req.params.id, req.params.depId);
+  res.status(204).send();
+});
 
 // 获取依赖图数据
-router.get('/dependency-graph',
-  authenticate,
-  async (req, res) => {
-    const taskUuids = req.query.taskUuids ? 
-      (req.query.taskUuids as string).split(',') : 
-      undefined;
-    
-    const graphData = await taskDependencyService.getGraphData(taskUuids);
-    res.json(graphData);
-  }
-);
+router.get('/dependency-graph', authenticate, async (req, res) => {
+  const taskUuids = req.query.taskUuids ? (req.query.taskUuids as string).split(',') : undefined;
+
+  const graphData = await taskDependencyService.getGraphData(taskUuids);
+  res.json(graphData);
+});
 
 // 验证依赖（检测循环）
-router.post('/dependency-graph/validate',
-  authenticate,
-  async (req, res) => {
-    const { taskUuid, newDependencyUuid } = req.body;
-    const validation = await taskDependencyService.validateDependency(
-      taskUuid,
-      newDependencyUuid
-    );
-    res.json(validation);
-  }
-);
+router.post('/dependency-graph/validate', authenticate, async (req, res) => {
+  const { taskUuid, newDependencyUuid } = req.body;
+  const validation = await taskDependencyService.validateDependency(taskUuid, newDependencyUuid);
+  res.json(validation);
+});
 ```
 
 **Validation Schemas**:
@@ -578,7 +569,12 @@ router.post('/dependency-graph/validate',
 ```typescript
 const AddDependencySchema = z.object({
   dependsOnTaskUuid: z.string().uuid(),
-  dependencyType: z.enum(['finish_to_start', 'start_to_start', 'finish_to_finish', 'start_to_finish'])
+  dependencyType: z.enum([
+    'finish_to_start',
+    'start_to_start',
+    'finish_to_finish',
+    'start_to_finish',
+  ]),
 });
 ```
 
@@ -613,34 +609,28 @@ export class TaskDependencyService {
       `/api/v1/tasks/${params.taskUuid}/dependencies`,
       {
         dependsOnTaskUuid: params.dependsOnTaskUuid,
-        dependencyType: params.dependencyType
-      }
+        dependencyType: params.dependencyType,
+      },
     );
     return response.data;
   }
 
   async removeDependency(taskUuid: string, dependencyId: string): Promise<void> {
-    await apiClient.delete(
-      `/api/v1/tasks/${taskUuid}/dependencies/${dependencyId}`
-    );
+    await apiClient.delete(`/api/v1/tasks/${taskUuid}/dependencies/${dependencyId}`);
   }
 
   async getGraphData(taskUuids?: string[]): Promise<DependencyGraph> {
     const params = taskUuids ? { taskUuids: taskUuids.join(',') } : {};
-    const response = await apiClient.get<DependencyGraph>(
-      '/api/v1/tasks/dependency-graph',
-      { params }
-    );
+    const response = await apiClient.get<DependencyGraph>('/api/v1/tasks/dependency-graph', {
+      params,
+    });
     return response.data;
   }
 
-  async validateDependency(
-    taskUuid: string,
-    newDependencyUuid: string
-  ): Promise<ValidationResult> {
+  async validateDependency(taskUuid: string, newDependencyUuid: string): Promise<ValidationResult> {
     const response = await apiClient.post<ValidationResult>(
       '/api/v1/tasks/dependency-graph/validate',
-      { taskUuid, newDependencyUuid }
+      { taskUuid, newDependencyUuid },
     );
     return response.data;
   }
@@ -652,11 +642,11 @@ export class TaskDependencyService {
 ```typescript
 export function useDependencyGraph(taskUuids?: string[]) {
   const service = new TaskDependencyService();
-  
+
   return useQuery({
     queryKey: ['task-dependency-graph', taskUuids],
     queryFn: () => service.getGraphData(taskUuids),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -665,12 +655,11 @@ export function useAddDependency() {
   const service = new TaskDependencyService();
 
   return useMutation({
-    mutationFn: (params: AddDependencyParams) => 
-      service.addDependency(params),
+    mutationFn: (params: AddDependencyParams) => service.addDependency(params),
     onSuccess: (_, params) => {
       queryClient.invalidateQueries(['task', params.taskUuid]);
       queryClient.invalidateQueries(['task-dependency-graph']);
-    }
+    },
   });
 }
 ```
@@ -729,7 +718,7 @@ Scenario: 渲染依赖图
       <Background />
       <Controls />
       <MiniMap />
-      
+
       <template #node-task="{ data }">
         <TaskNode
           :task="data"
@@ -764,25 +753,25 @@ const showDetailPanel = ref(false);
 // 转换为 React Flow 数据格式
 const elements = computed(() => {
   if (!graphData.value) return [];
-  
-  const nodes = graphData.value.nodes.map(task => ({
+
+  const nodes = graphData.value.nodes.map((task) => ({
     id: task.uuid,
     type: 'task',
     data: task,
     position: calculatePosition(task),
-    style: getNodeStyle(task)
+    style: getNodeStyle(task),
   }));
-  
-  const edges = graphData.value.edges.map(dep => ({
+
+  const edges = graphData.value.edges.map((dep) => ({
     id: `${dep.from}-${dep.to}`,
     source: dep.from,
     target: dep.to,
     type: 'smoothstep',
     label: getDependencyTypeLabel(dep.type),
     style: getEdgeStyle(dep),
-    animated: dep.isOnCriticalPath && showCriticalPath.value
+    animated: dep.isOnCriticalPath && showCriticalPath.value,
   }));
-  
+
   return [...nodes, ...edges];
 });
 
@@ -791,17 +780,17 @@ function calculatePosition(task: any) {
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: 'TB', ranksep: 100, nodesep: 80 });
   g.setDefaultEdgeLabel(() => ({}));
-  
-  graphData.value?.nodes.forEach(n => {
+
+  graphData.value?.nodes.forEach((n) => {
     g.setNode(n.uuid, { width: 200, height: 80 });
   });
-  
-  graphData.value?.edges.forEach(e => {
+
+  graphData.value?.edges.forEach((e) => {
     g.setEdge(e.from, e.to);
   });
-  
+
   dagre.layout(g);
-  
+
   const node = g.node(task.uuid);
   return { x: node.x, y: node.y };
 }
@@ -825,8 +814,7 @@ function getEdgeStyle(edge: any) {
 }
 
 function isCriticalNode(uuid: string): boolean {
-  return showCriticalPath.value && 
-    graphData.value?.criticalPath?.includes(uuid);
+  return showCriticalPath.value && graphData.value?.criticalPath?.includes(uuid);
 }
 
 function onNodeClick(event: any) {
@@ -854,8 +842,13 @@ function fitView() {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 </style>
 ```
@@ -897,11 +890,11 @@ test.describe('任务依赖图', () => {
     await page.click('[data-testid="create-task"]');
     await page.fill('[data-testid="task-name"]', '设计原型');
     await page.click('[data-testid="save-task"]');
-    
+
     await page.click('[data-testid="create-task"]');
     await page.fill('[data-testid="task-name"]', '开发前端');
     await page.click('[data-testid="save-task"]');
-    
+
     // 配置依赖
     await page.click('[data-testid="task-item-2"]');
     await page.click('[data-testid="add-dependency"]');
@@ -909,15 +902,15 @@ test.describe('任务依赖图', () => {
     await page.click('[data-testid="dependency-result-1"]');
     await page.select('[data-testid="dependency-type"]', 'finish_to_start');
     await page.click('[data-testid="confirm-dependency"]');
-    
+
     // 验证阻塞状态
     await expect(page.locator('[data-testid="task-blocked-badge"]')).toBeVisible();
     await expect(page.locator('[data-testid="blocking-reason"]')).toContainText('等待任务');
-    
+
     // 完成前置任务
     await page.click('[data-testid="task-item-1"]');
     await page.click('[data-testid="mark-completed"]');
-    
+
     // 验证解除阻塞
     await page.click('[data-testid="task-item-2"]');
     await expect(page.locator('[data-testid="task-blocked-badge"]')).not.toBeVisible();
@@ -925,18 +918,18 @@ test.describe('任务依赖图', () => {
 
   test('查看依赖图并验证可视化', async ({ page }) => {
     await page.goto('/tasks/dependency-graph');
-    
+
     // 等待图形渲染
     await page.waitForSelector('[data-testid="vue-flow-container"]');
-    
+
     // 验证节点数量
     const nodes = await page.locator('.vue-flow__node').count();
     expect(nodes).toBeGreaterThan(0);
-    
+
     // 验证关键路径按钮
     await page.click('[data-testid="toggle-critical-path"]');
     await expect(page.locator('.critical-path-edge')).toBeVisible();
-    
+
     // 点击节点查看详情
     await page.click('.vue-flow__node:first-child');
     await expect(page.locator('[data-testid="task-detail-panel"]')).toBeVisible();
@@ -945,13 +938,13 @@ test.describe('任务依赖图', () => {
   test('检测循环依赖', async ({ page }) => {
     // 创建依赖链：A → B → C
     // 尝试创建 A → C (会形成循环)
-    
+
     await page.goto('/tasks/task-a-uuid');
     await page.click('[data-testid="add-dependency"]');
     await page.fill('[data-testid="search-dependency"]', '任务 C');
     await page.click('[data-testid="dependency-result-1"]');
     await page.click('[data-testid="confirm-dependency"]');
-    
+
     // 验证错误提示
     await expect(page.locator('[data-testid="circular-dependency-error"]')).toBeVisible();
     await expect(page.locator('[data-testid="circular-path"]')).toContainText('A → B → C → A');
@@ -964,11 +957,13 @@ test.describe('任务依赖图', () => {
 ## 3. 技术依赖
 
 ### 外部依赖
+
 - React Flow / Cytoscape.js (图形渲染)
 - Dagre (布局算法)
 - Prisma (数据库)
 
 ### 内部依赖
+
 - Task Contracts
 - Event Bus
 
@@ -991,10 +986,12 @@ test.describe('任务依赖图', () => {
 ### Sprint 4 (Week 7-8)
 
 **Week 1**:
+
 - Day 1-2: Story 001-002 (Contracts, Domain, Application)
 - Day 3-4: Story 003-004 (Infrastructure, API)
 
 **Week 2**:
+
 - Day 1-2: Story 005 (Client Services)
 - Day 3-5: Story 006 (UI Component - 依赖图)
 - Day 5: Story 007 (E2E Tests)
@@ -1021,5 +1018,5 @@ Feature: 任务依赖图
 
 ---
 
-*文档创建: 2025-10-21*  
-*Epic Owner: PM Agent*
+_文档创建: 2025-10-21_  
+_Epic Owner: PM Agent_

@@ -25,13 +25,13 @@ export class ModuleDebugger {
    */
   static async printModuleStatus(): Promise<void> {
     const status = await this.getModuleStatus();
-    
+
     console.table(status);
-    
+
     const total = Object.keys(status).length;
     const initialized = Object.values(status).filter(Boolean).length;
     const failed = total - initialized;
-    
+
     console.log(`📊 Summary: ${initialized}/${total} modules initialized`);
     if (failed > 0) {
       console.warn(`⚠️ ${failed} modules failed to initialize`);
@@ -52,14 +52,14 @@ export class ModuleDebugger {
    */
   static async waitForModule(moduleName: string, timeout: number = 10000): Promise<boolean> {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       if (await this.isModuleReady(moduleName)) {
         return true;
       }
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    
+
     console.warn(`⏰ Timeout waiting for module: ${moduleName}`);
     return false;
   }
@@ -69,19 +69,19 @@ export class ModuleDebugger {
    */
   static async waitForAllModules(timeout: number = 30000): Promise<boolean> {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       const status = await this.getModuleStatus();
       const allReady = Object.values(status).every(Boolean);
-      
+
       if (allReady && Object.keys(status).length > 0) {
         console.log('✅ All modules are ready');
         return true;
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 200));
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
-    
+
     console.warn('⏰ Timeout waiting for all modules');
     await this.printModuleStatus();
     return false;

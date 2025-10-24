@@ -8,15 +8,14 @@
         {{ isEditMode ? '编辑任务模板' : '创建任务模板' }}
       </v-card-title>
 
-      <v-card-text class="dialog-content"> <!-- 表单内容 -->
+      <v-card-text class="dialog-content">
+        <!-- 表单内容 -->
         <TaskTemplateForm ref="formRef" :is-edit-mode="isEditMode" />
       </v-card-text>
 
       <v-card-actions class="dialog-actions">
         <v-spacer />
-        <v-btn variant="text" @click="$emit('cancel')">
-          取消
-        </v-btn>
+        <v-btn variant="text" @click="$emit('cancel')"> 取消 </v-btn>
         <v-btn color="primary" variant="elevated" @click="handleSave" :disabled="!canSave">
           {{ props.isEditMode ? '更新' : '创建' }}
         </v-btn>
@@ -28,7 +27,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import TaskTemplateForm from '../TaskTemplateForm/TaskTemplateForm.vue';
-
 
 interface Props {
   visible: boolean;
@@ -43,22 +41,20 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   isEditMode: false,
-  template: null
+  template: null,
 });
 
 const emit = defineEmits<Emits>();
 const formRef = ref();
 
 const handleSave = async () => {
- 
-    emit('save');
+  emit('save');
 };
 
 const canSave = computed(() => {
-  console.log('Checking form validity...',formRef.value?.isValid);
+  console.log('Checking form validity...', formRef.value?.isValid);
   return formRef.value?.isValid ?? false;
-})
-
+});
 </script>
 
 <style scoped>
@@ -67,7 +63,11 @@ const canSave = computed(() => {
 }
 
 .dialog-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.1), rgba(var(--v-theme-secondary), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--v-theme-primary), 0.1),
+    rgba(var(--v-theme-secondary), 0.05)
+  );
   border-bottom: 1px solid rgba(var(--v-theme-outline), 0.12);
 }
 

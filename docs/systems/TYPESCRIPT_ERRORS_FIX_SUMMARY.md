@@ -1,6 +1,7 @@
 # TypeScript 错误修复总结
 
 ## 修复日期
+
 2025-10-04
 
 ## 修复的错误
@@ -8,20 +9,24 @@
 ### 1. Authentication 模块 - 导入错误 ✅
 
 #### 问题
+
 - `PrismaSessionRepository.ts`: `ClientInfo` 从 `@dailyuse/domain-core` 导入失败
 - `PrismaSessionRepository.ts`: `UserSessionPersistenceDTO` 直接导入失败
 - `PrismaTokenRepository.ts`: `AuthTokenPersistenceDTO` 直接导入失败
 
 #### 解决方案
+
 使用统一的 Contracts 命名空间导入模式（参考 Goal 模块）：
 
 **修改前:**
+
 ```typescript
 import type { ClientInfo } from '@dailyuse/domain-core';
 import type { UserSessionPersistenceDTO } from '@dailyuse/contracts';
 ```
 
 **修改后:**
+
 ```typescript
 import { sharedContracts, AuthenticationContracts } from '@dailyuse/contracts';
 
@@ -30,6 +35,7 @@ type UserSessionPersistenceDTO = AuthenticationContracts.UserSessionPersistenceD
 ```
 
 **涉及文件:**
+
 - `apps/api/src/modules/authentication/infrastructure/repositories/prisma/PrismaSessionRepository.ts`
 - `apps/api/src/modules/authentication/infrastructure/repositories/prisma/PrismaTokenRepository.ts`
 
@@ -38,12 +44,14 @@ type UserSessionPersistenceDTO = AuthenticationContracts.UserSessionPersistenceD
 ### 2. Authentication 模块 - 类型定义错误 ✅
 
 #### 问题
+
 - `AuthenticationLoginService.ts`: `AuthByRememberMeTokenRequest` 类型不存在
 - `AuthenticationServiceEventDemo.ts`: `IAccountCore` 导入错误
 
 #### 解决方案
 
 **AuthenticationLoginService.ts:**
+
 ```typescript
 // 添加本地类型定义（contracts 中暂未定义）
 type AuthByRememberMeTokenRequestDTO = {
@@ -54,6 +62,7 @@ type AuthByRememberMeTokenRequestDTO = {
 ```
 
 **AuthenticationServiceEventDemo.ts:**
+
 ```typescript
 // 修改前
 import type { IAccountCore } from '@dailyuse/contracts';
@@ -68,10 +77,12 @@ type IAccountCore = AccountContracts.IAccountCore;
 ### 3. Account 模块 - 字段不匹配错误 ✅
 
 #### 问题 1: `AccountValidationService.ts` - phone 字段
+
 - `UpdateAccountRequest` 类型中不存在 `phone` 字段
 
 **解决方案:**
 注释掉 phone 验证逻辑，添加 TODO 标记：
+
 ```typescript
 // 验证手机号格式（如果提供）
 // Note: phone is not in UpdateAccountRequest type, commenting out for now
@@ -80,11 +91,13 @@ type IAccountCore = AccountContracts.IAccountCore;
 ```
 
 #### 问题 2: `PrismaAccountRepository.ts` - roleIds 和字段名不匹配
+
 - `AccountPersistenceDTO` 中没有 `roleIds` 字段
 - `emailVerified/phoneVerified` 应该是 `isEmailVerified/isPhoneVerified`
 - `AccountPersistenceDTO` 中没有 `userProfile` 嵌套对象
 
 **解决方案:**
+
 ```typescript
 return {
   uuid: accountData.uuid,
@@ -97,8 +110,8 @@ return {
   lastLoginAt: accountData.lastLoginAt,
   emailVerificationToken: accountData.emailVerificationToken,
   phoneVerificationCode: accountData.phoneVerificationCode,
-  isEmailVerified: accountData.emailVerified ? 1 : 0,  // ✅ 修复字段名
-  isPhoneVerified: accountData.phoneVerified ? 1 : 0,  // ✅ 修复字段名
+  isEmailVerified: accountData.emailVerified ? 1 : 0, // ✅ 修复字段名
+  isPhoneVerified: accountData.phoneVerified ? 1 : 0, // ✅ 修复字段名
   createdAt: accountData.createdAt,
   updatedAt: accountData.updatedAt,
   userUuid: accountData.userProfile?.uuid || accountData.uuid,
@@ -111,6 +124,7 @@ return {
 ### 4. Account 模块 - PrismaUserRepository 类型错误 ✅
 
 #### 问题
+
 - `UserProfilePersistenceDTO` 导入错误
 - `save()` 方法签名不匹配（多余的 `accountUuid` 参数）
 - Prisma 日期类型转换问题（number vs Date）
@@ -119,12 +133,14 @@ return {
 #### 解决方案
 
 **导入修复:**
+
 ```typescript
 import { AccountContracts } from '@dailyuse/contracts';
 type UserProfilePersistenceDTO = AccountContracts.UserProfilePersistenceDTO;
 ```
 
 **save() 方法修复:**
+
 ```typescript
 // 修复前
 async save(user: User, accountUuid: string): Promise<void>
@@ -134,6 +150,7 @@ async save(user: User): Promise<void>
 ```
 
 **Prisma 日期转换:**
+
 ```typescript
 await prisma.userProfile.upsert({
   where: { uuid: user.uuid },
@@ -150,6 +167,7 @@ await prisma.userProfile.upsert({
 ```
 
 **mapToPersistenceDTO 修复:**
+
 ```typescript
 private mapToPersistenceDTO(data: any): UserProfilePersistenceDTO {
   return {
@@ -173,10 +191,13 @@ private mapToPersistenceDTO(data: any): UserProfilePersistenceDTO {
 ### 5. tempTypes.ts - 导入错误 ✅
 
 #### 问题
+
 从 `@dailyuse/domain-client` 导入 `AccountType` 和 `AccountDTO` 失败
 
 #### 解决方案
+
 改用 `AccountContracts`:
+
 ```typescript
 // 修改前
 import { AccountType, type AccountDTO } from '@dailyuse/domain-client';
@@ -193,17 +214,20 @@ type AccountDTO = AccountContracts.AccountDTO;
 ## 修复的文件列表
 
 ### Authentication 模块（4个文件）
+
 1. ✅ `apps/api/src/modules/authentication/infrastructure/repositories/prisma/PrismaSessionRepository.ts`
 2. ✅ `apps/api/src/modules/authentication/infrastructure/repositories/prisma/PrismaTokenRepository.ts`
 3. ✅ `apps/api/src/modules/authentication/application/services/AuthenticationLoginService.ts`
 4. ✅ `apps/api/src/modules/authentication/application/services/AuthenticationServiceEventDemo.ts`
 
 ### Account 模块（3个文件）
+
 5. ✅ `apps/api/src/modules/account/infrastructure/AccountValidationService.ts`
 6. ✅ `apps/api/src/modules/account/infrastructure/repositories/prisma/PrismaAccountRepository.ts`
 7. ✅ `apps/api/src/modules/account/infrastructure/repositories/prisma/PrismaUserRepository.ts`
 
 ### 其他（1个文件）
+
 8. ✅ `apps/api/src/tempTypes.ts`
 
 ---
@@ -230,12 +254,12 @@ import type { ClientInfo } from '@dailyuse/domain-core';
 
 ### DTO 字段命名规范
 
-| 领域对象 | PersistenceDTO | 说明 |
-|---------|----------------|------|
-| `emailVerified: boolean` | `isEmailVerified: number` | 布尔值 → 0/1 |
-| `phoneVerified: boolean` | `isPhoneVerified: number` | 布尔值 → 0/1 |
-| `createdAt: Date` | `createdAt: number` | Date → timestamp |
-| `updatedAt: Date` | `updatedAt: number` | Date → timestamp |
+| 领域对象                 | PersistenceDTO            | 说明             |
+| ------------------------ | ------------------------- | ---------------- |
+| `emailVerified: boolean` | `isEmailVerified: number` | 布尔值 → 0/1     |
+| `phoneVerified: boolean` | `isPhoneVerified: number` | 布尔值 → 0/1     |
+| `createdAt: Date`        | `createdAt: number`       | Date → timestamp |
+| `updatedAt: Date`        | `updatedAt: number`       | Date → timestamp |
 
 ### Prisma 日期转换
 
@@ -244,7 +268,7 @@ import type { ClientInfo } from '@dailyuse/domain-core';
 await prisma.model.create({
   data: {
     createdAt: new Date(timestamp), // number → Date
-  }
+  },
 });
 
 // 读取数据库
@@ -260,21 +284,26 @@ const dto = {
 这些错误不在本次修复范围内（其他模块的问题）：
 
 ### Repository 模块
+
 - `PrismaRepositoryRepository.ts`: 50+ errors (Prisma schema 不匹配)
 - `PrismaResourceRepository.ts`: 31 errors (Prisma model 缺失)
 
 ### Editor 模块
+
 - `EditorDomainService.ts`: 25 errors
 - `editor.integration.test.ts`: 16 errors
 
 ### Reminder 模块
+
 - `ReminderApplicationService.ts`: 3 errors
 - `ReminderDomainService.ts`: 3 errors
 
 ### Theme 模块
+
 - `themes.test.ts`: 34 errors (Prisma model 缺失)
 
 ### 其他
+
 - `responseBuilder.ts`: 6 errors (ResponseBuilderOptions 类型不完整)
 - `userDataInitializationService.ts`: 2 errors
 - 等等...
@@ -288,6 +317,7 @@ const dto = {
 Authentication 和 Account 模块的导入和类型错误已全部修复 ✅。
 
 剩余错误主要集中在：
+
 - Repository 模块（Prisma schema 需要更新）
 - Editor 模块
 - Theme 模块（测试文件）

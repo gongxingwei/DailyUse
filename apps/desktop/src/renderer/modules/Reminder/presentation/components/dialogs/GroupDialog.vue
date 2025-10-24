@@ -27,9 +27,7 @@
 
       <v-card-actions class="pa-6 pt-0">
         <v-spacer />
-        <v-btn variant="text" @click="closeDialog">
-          取消
-        </v-btn>
+        <v-btn variant="text" @click="closeDialog"> 取消 </v-btn>
         <v-btn color="primary" :disabled="!isFormValid" @click="handleSubmit">
           {{ isEditing ? '更新' : '创建' }}
         </v-btn>
@@ -50,7 +48,7 @@ interface Props {
   group?: ReminderTemplateGroup | null; // 编辑时传入的分组对象
 }
 const props = withDefaults(defineProps<Props>(), {
-  group: null
+  group: null,
 });
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
@@ -63,7 +61,7 @@ const emit = defineEmits<{
 // =====================
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => emit('update:modelValue', value),
 });
 const isEditing = computed(() => !!props.group);
 
@@ -73,7 +71,7 @@ const isEditing = computed(() => !!props.group);
 
 // 当前编辑的分组数据（编辑时 clone，新增时 forCreate）
 const groupModel = ref<ReminderTemplateGroup>(
-  props.group ? props.group.clone() : ReminderTemplateGroup.forCreate()
+  props.group ? props.group.clone() : ReminderTemplateGroup.forCreate(),
 );
 
 // 监听弹窗和 group 变化，弹窗打开时重置表单内容和校验
@@ -85,13 +83,13 @@ watch(
       formRef.value?.resetValidation?.();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // 分组名称的双向绑定
 const groupModelName = computed({
   get: () => groupModel.value.name,
-  set: (val: string) => (groupModel.value.name = val)
+  set: (val: string) => (groupModel.value.name = val),
 });
 
 // =====================
@@ -99,7 +97,7 @@ const groupModelName = computed({
 // =====================
 const nameRules = [
   (v: string) => !!v || '分组名称不能为空',
-  (v: string) => v.length >= 2 || '分组名称至少2个字符'
+  (v: string) => v.length >= 2 || '分组名称至少2个字符',
 ];
 
 // =====================

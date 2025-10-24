@@ -1,6 +1,6 @@
-import { AggregateRoot } from "@dailyuse/utils";
-import type { IGoalDir } from "@common/modules/goal";
-import { isValid } from "date-fns";
+import { AggregateRoot } from '@dailyuse/utils';
+import type { IGoalDir } from '@common/modules/goal';
+import { isValid } from 'date-fns';
 
 /**
  * 目标目录领域实体
@@ -44,7 +44,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     this._lifecycle = {
       createdAt: now,
       updatedAt: now,
-      status: "active",
+      status: 'active',
     };
   }
 
@@ -53,7 +53,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     return this._name;
   }
   set name(value: string) {
-    if (!value.trim()) throw new Error("目录名称不能为空");
+    if (!value.trim()) throw new Error('目录名称不能为空');
     this._name = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -78,7 +78,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     return this._parentUuid;
   }
   set parentUuid(value: string | undefined) {
-    if (value === this.uuid) throw new Error("目录不能设置自己为父目录");
+    if (value === this.uuid) throw new Error('目录不能设置自己为父目录');
     this._parentUuid = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -95,7 +95,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     return this._sortConfig;
   }
   set sortConfig(value: { sortKey: string; sortOrder: number }) {
-    if (!value.sortKey) throw new Error("排序键不能为空");
+    if (!value.sortKey) throw new Error('排序键不能为空');
     this._sortConfig = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -103,8 +103,6 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   get lifecycle(): IGoalDir['lifecycle'] {
     return this._lifecycle;
   }
-
-
 
   /**
    * 保证返回 GoalDir 实例或 null
@@ -134,9 +132,12 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
    * 判断对象是否为 GoalDir 或 IGoalDir
    */
   static isGoalDir(obj: any): obj is GoalDir | IGoalDir {
-    return obj instanceof GoalDir || (obj && typeof obj === 'object' && 'uuid' in obj && 'name' in obj && 'icon' in obj);
+    return (
+      obj instanceof GoalDir ||
+      (obj && typeof obj === 'object' && 'uuid' in obj && 'name' in obj && 'icon' in obj)
+    );
   }
-  
+
   /**
    * 转换为数据传输对象
    */
@@ -170,9 +171,13 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
       sortOrder: data.sortConfig.sortOrder || 0,
     };
     goalDir._lifecycle = {
-      createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
-      updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
-      status: data.lifecycle.status || "active",
+      createdAt: isValid(data.lifecycle.createdAt)
+        ? new Date(data.lifecycle.createdAt)
+        : new Date(),
+      updatedAt: isValid(data.lifecycle.updatedAt)
+        ? new Date(data.lifecycle.updatedAt)
+        : new Date(),
+      status: data.lifecycle.status || 'active',
     };
     return goalDir;
   }
@@ -209,11 +214,11 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     const errors: string[] = [];
 
     if (!data.name?.trim()) {
-      errors.push("目录名称不能为空");
+      errors.push('目录名称不能为空');
     }
 
     if (!data.icon?.trim()) {
-      errors.push("目录图标不能为空");
+      errors.push('目录图标不能为空');
     }
 
     return {

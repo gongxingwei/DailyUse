@@ -268,8 +268,7 @@ export class TaskTemplate extends AggregateRoot {
   // 激活模板
   public activate(): void {
     // 1. 验证当前状态
-    if (this._status !== TaskTemplateStatus.DRAFT && 
-        this._status !== TaskTemplateStatus.PAUSED) {
+    if (this._status !== TaskTemplateStatus.DRAFT && this._status !== TaskTemplateStatus.PAUSED) {
       throw new Error(`无法从状态 ${this._status} 激活模板`);
     }
 
@@ -292,13 +291,15 @@ export class TaskTemplate extends AggregateRoot {
     this._updatedAt = Date.now();
 
     // 4. 发布事件
-    this.addDomainEvent(new TemplateActivatedEvent({
-      templateUuid: this._uuid,
-      userId: this._userId,
-      taskType: this._taskType,
-      recurrenceRule: this._recurrenceRule,
-      activatedAt: this._lastActivatedAt,
-    }));
+    this.addDomainEvent(
+      new TemplateActivatedEvent({
+        templateUuid: this._uuid,
+        userId: this._userId,
+        taskType: this._taskType,
+        recurrenceRule: this._recurrenceRule,
+        activatedAt: this._lastActivatedAt,
+      }),
+    );
   }
 
   // 暂停模板
@@ -314,12 +315,14 @@ export class TaskTemplate extends AggregateRoot {
     this._updatedAt = Date.now();
 
     // 3. 发布事件
-    this.addDomainEvent(new TemplatePausedEvent({
-      templateUuid: this._uuid,
-      userId: this._userId,
-      reason: reason || null,
-      pausedAt: this._lastPausedAt,
-    }));
+    this.addDomainEvent(
+      new TemplatePausedEvent({
+        templateUuid: this._uuid,
+        userId: this._userId,
+        reason: reason || null,
+        pausedAt: this._lastPausedAt,
+      }),
+    );
   }
 
   // 恢复模板
@@ -335,25 +338,26 @@ export class TaskTemplate extends AggregateRoot {
     this._updatedAt = Date.now();
 
     // 3. 发布事件
-    this.addDomainEvent(new TemplateResumedEvent({
-      templateUuid: this._uuid,
-      userId: this._userId,
-      resumedAt: this._lastActivatedAt,
-    }));
+    this.addDomainEvent(
+      new TemplateResumedEvent({
+        templateUuid: this._uuid,
+        userId: this._userId,
+        resumedAt: this._lastActivatedAt,
+      }),
+    );
   }
 
   // 归档模板
   public archive(pendingInstancesCount: number, forceArchive: boolean = false): void {
     // 1. 验证当前状态
-    if (this._status !== TaskTemplateStatus.ACTIVE && 
-        this._status !== TaskTemplateStatus.PAUSED) {
+    if (this._status !== TaskTemplateStatus.ACTIVE && this._status !== TaskTemplateStatus.PAUSED) {
       throw new Error(`无法从状态 ${this._status} 归档模板`);
     }
 
     // 2. 验证是否有待办实例
     if (pendingInstancesCount > 0 && !forceArchive) {
       throw new Error(
-        `模板还有 ${pendingInstancesCount} 个待办实例，请先完成或取消这些实例，或使用强制归档`
+        `模板还有 ${pendingInstancesCount} 个待办实例，请先完成或取消这些实例，或使用强制归档`,
       );
     }
 
@@ -363,13 +367,15 @@ export class TaskTemplate extends AggregateRoot {
     this._updatedAt = Date.now();
 
     // 4. 发布事件
-    this.addDomainEvent(new TemplateArchivedEvent({
-      templateUuid: this._uuid,
-      userId: this._userId,
-      archivedAt: this._archivedAt,
-      forceArchived: forceArchive,
-      affectedInstancesCount: forceArchive ? pendingInstancesCount : 0,
-    }));
+    this.addDomainEvent(
+      new TemplateArchivedEvent({
+        templateUuid: this._uuid,
+        userId: this._userId,
+        archivedAt: this._archivedAt,
+        forceArchived: forceArchive,
+        affectedInstancesCount: forceArchive ? pendingInstancesCount : 0,
+      }),
+    );
   }
 
   // 软删除模板
@@ -386,12 +392,14 @@ export class TaskTemplate extends AggregateRoot {
     this._updatedAt = Date.now();
 
     // 3. 发布事件
-    this.addDomainEvent(new TemplateDeletedEvent({
-      templateUuid: this._uuid,
-      userId: this._userId,
-      deletedAt: this._deletedAt,
-      statusBeforeDelete: this._statusBeforeDelete,
-    }));
+    this.addDomainEvent(
+      new TemplateDeletedEvent({
+        templateUuid: this._uuid,
+        userId: this._userId,
+        deletedAt: this._deletedAt,
+        statusBeforeDelete: this._statusBeforeDelete,
+      }),
+    );
   }
 
   // 恢复删除
@@ -413,12 +421,14 @@ export class TaskTemplate extends AggregateRoot {
     this._updatedAt = Date.now();
 
     // 3. 发布事件
-    this.addDomainEvent(new TemplateRestoredEvent({
-      templateUuid: this._uuid,
-      userId: this._userId,
-      restoredToStatus: restoredStatus,
-      restoredAt: Date.now(),
-    }));
+    this.addDomainEvent(
+      new TemplateRestoredEvent({
+        templateUuid: this._uuid,
+        userId: this._userId,
+        restoredToStatus: restoredStatus,
+        restoredAt: Date.now(),
+      }),
+    );
   }
 
   // 判断是否可以生成实例
@@ -428,8 +438,7 @@ export class TaskTemplate extends AggregateRoot {
 
   // 判断是否可以修改
   public canEdit(): boolean {
-    return this._status === TaskTemplateStatus.DRAFT || 
-           this._status === TaskTemplateStatus.PAUSED;
+    return this._status === TaskTemplateStatus.DRAFT || this._status === TaskTemplateStatus.PAUSED;
   }
 
   // Getters
@@ -488,11 +497,14 @@ export class TaskTemplateStatusService {
     private taskTemplateRepository: ITaskTemplateRepository,
     private taskInstanceRepository: ITaskInstanceRepository,
     private reminderService: IReminderService,
-    private eventBus: IEventBus
+    private eventBus: IEventBus,
   ) {}
 
   // 激活模板
-  async activate(templateUuid: string, userId: string): Promise<{
+  async activate(
+    templateUuid: string,
+    userId: string,
+  ): Promise<{
     template: TaskTemplate;
     generatedInstancesCount: number;
   }> {
@@ -515,12 +527,10 @@ export class TaskTemplateStatusService {
     if (template.taskType !== TaskType.ONE_TIME) {
       const now = Date.now();
       const endDate = now + template.generateAheadDays * 24 * 60 * 60 * 1000;
-      
+
       const occurrences = template.recurrenceRule!.getOccurrencesUntil(now, endDate);
-      
-      const instances = occurrences.map(date => 
-        TaskInstance.createFromTemplate(template, date)
-      );
+
+      const instances = occurrences.map((date) => TaskInstance.createFromTemplate(template, date));
 
       await this.taskInstanceRepository.saveAll(instances);
       generatedCount = instances.length;
@@ -528,10 +538,7 @@ export class TaskTemplateStatusService {
       // 创建提醒
       for (const instance of instances) {
         if (template.reminderConfig) {
-          await this.reminderService.createTaskReminders(
-            instance,
-            template.reminderConfig
-          );
+          await this.reminderService.createTaskReminders(instance, template.reminderConfig);
         }
       }
 
@@ -553,11 +560,7 @@ export class TaskTemplateStatusService {
   }
 
   // 暂停模板
-  async pause(
-    templateUuid: string,
-    userId: string,
-    reason?: string
-  ): Promise<TaskTemplate> {
+  async pause(templateUuid: string, userId: string, reason?: string): Promise<TaskTemplate> {
     // 1. 加载模板
     const template = await this.taskTemplateRepository.findByUuid(templateUuid);
     if (!template) {
@@ -586,7 +589,10 @@ export class TaskTemplateStatusService {
   }
 
   // 恢复模板
-  async resume(templateUuid: string, userId: string): Promise<{
+  async resume(
+    templateUuid: string,
+    userId: string,
+  ): Promise<{
     template: TaskTemplate;
     generatedInstancesCount: number;
   }> {
@@ -610,21 +616,19 @@ export class TaskTemplateStatusService {
       const now = Date.now();
       const startDate = template.lastGeneratedDate || now;
       const endDate = now + template.generateAheadDays * 24 * 60 * 60 * 1000;
-      
+
       const occurrences = template.recurrenceRule!.getOccurrencesUntil(startDate, endDate);
-      
+
       // 过滤已存在的实例
       const existingInstances = await this.taskInstanceRepository.findByTemplateAndDateRange(
         templateUuid,
         startDate,
-        endDate
+        endDate,
       );
-      const existingDates = new Set(existingInstances.map(i => i.instanceDate));
-      const newDates = occurrences.filter(date => !existingDates.has(date));
-      
-      const instances = newDates.map(date => 
-        TaskInstance.createFromTemplate(template, date)
-      );
+      const existingDates = new Set(existingInstances.map((i) => i.instanceDate));
+      const newDates = occurrences.filter((date) => !existingDates.has(date));
+
+      const instances = newDates.map((date) => TaskInstance.createFromTemplate(template, date));
 
       if (instances.length > 0) {
         await this.taskInstanceRepository.saveAll(instances);
@@ -633,10 +637,7 @@ export class TaskTemplateStatusService {
         // 创建提醒
         for (const instance of instances) {
           if (template.reminderConfig) {
-            await this.reminderService.createTaskReminders(
-              instance,
-              template.reminderConfig
-            );
+            await this.reminderService.createTaskReminders(instance, template.reminderConfig);
           }
         }
 
@@ -662,7 +663,7 @@ export class TaskTemplateStatusService {
   async archive(
     templateUuid: string,
     userId: string,
-    forceArchive: boolean = false
+    forceArchive: boolean = false,
   ): Promise<{
     template: TaskTemplate;
     affectedInstancesCount: number;
@@ -679,9 +680,7 @@ export class TaskTemplateStatusService {
     }
 
     // 3. 统计待办实例
-    const pendingInstances = await this.taskInstanceRepository.findPendingByTemplate(
-      templateUuid
-    );
+    const pendingInstances = await this.taskInstanceRepository.findPendingByTemplate(templateUuid);
 
     // 4. 如果强制归档，取消所有待办实例
     let affectedCount = 0;
@@ -716,7 +715,7 @@ export class TaskTemplateStatusService {
   async softDelete(
     templateUuid: string,
     userId: string,
-    deleteInstances: boolean = false
+    deleteInstances: boolean = false,
   ): Promise<{
     template: TaskTemplate;
     affectedInstancesCount: number;
@@ -780,14 +779,9 @@ export class TaskTemplateStatusService {
 
     // 4. 如果恢复到 ACTIVE 状态，重新创建提醒
     if (template.isActive && template.reminderConfig) {
-      const futureInstances = await this.taskInstanceRepository.findFutureByTemplate(
-        templateUuid
-      );
+      const futureInstances = await this.taskInstanceRepository.findFutureByTemplate(templateUuid);
       for (const instance of futureInstances) {
-        await this.reminderService.createTaskReminders(
-          instance,
-          template.reminderConfig
-        );
+        await this.reminderService.createTaskReminders(instance, template.reminderConfig);
       }
     }
 
@@ -888,11 +882,7 @@ export class TaskTemplateStatusService {
     </div>
 
     <!-- 暂停对话框 -->
-    <el-dialog
-      v-model="pauseDialogVisible"
-      title="暂停模板"
-      width="500px"
-    >
+    <el-dialog v-model="pauseDialogVisible" title="暂停模板" width="500px">
       <el-form :model="pauseForm" label-width="80px">
         <el-form-item label="暂停原因">
           <el-input
@@ -906,40 +896,20 @@ export class TaskTemplateStatusService {
 
       <template #footer>
         <el-button @click="pauseDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="loading"
-          @click="confirmPause"
-        >
-          确认暂停
-        </el-button>
+        <el-button type="primary" :loading="loading" @click="confirmPause"> 确认暂停 </el-button>
       </template>
     </el-dialog>
 
     <!-- 归档对话框 -->
-    <el-dialog
-      v-model="archiveDialogVisible"
-      title="归档模板"
-      width="500px"
-    >
-      <el-alert
-        v-if="pendingInstancesCount > 0"
-        type="warning"
-        :closable="false"
-        show-icon
-      >
-        <template #title>
-          此模板还有 {{ pendingInstancesCount }} 个待办实例
-        </template>
+    <el-dialog v-model="archiveDialogVisible" title="归档模板" width="500px">
+      <el-alert v-if="pendingInstancesCount > 0" type="warning" :closable="false" show-icon>
+        <template #title> 此模板还有 {{ pendingInstancesCount }} 个待办实例 </template>
         <p>建议先完成或取消这些实例，或选择强制归档（将自动取消所有待办实例）。</p>
       </el-alert>
 
       <el-form :model="archiveForm" label-width="100px" style="margin-top: 20px;">
         <el-form-item label="强制归档">
-          <el-switch
-            v-model="archiveForm.forceArchive"
-            :disabled="pendingInstancesCount === 0"
-          />
+          <el-switch v-model="archiveForm.forceArchive" :disabled="pendingInstancesCount === 0" />
           <el-text type="info" size="small" style="margin-left: 8px;">
             自动取消所有待办实例
           </el-text>
@@ -960,19 +930,9 @@ export class TaskTemplateStatusService {
     </el-dialog>
 
     <!-- 删除对话框 -->
-    <el-dialog
-      v-model="deleteDialogVisible"
-      title="删除模板"
-      width="500px"
-    >
-      <el-alert
-        type="error"
-        :closable="false"
-        show-icon
-      >
-        <template #title>
-          确认删除模板？
-        </template>
+    <el-dialog v-model="deleteDialogVisible" title="删除模板" width="500px">
+      <el-alert type="error" :closable="false" show-icon>
+        <template #title> 确认删除模板？ </template>
         <p>删除后可以在回收站中恢复，但如果选择同时删除实例，所有任务实例也将被删除。</p>
       </el-alert>
 
@@ -987,13 +947,7 @@ export class TaskTemplateStatusService {
 
       <template #footer>
         <el-button @click="deleteDialogVisible = false">取消</el-button>
-        <el-button
-          type="danger"
-          :loading="loading"
-          @click="confirmDelete"
-        >
-          确认删除
-        </el-button>
+        <el-button type="danger" :loading="loading" @click="confirmDelete"> 确认删除 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -1002,13 +956,7 @@ export class TaskTemplateStatusService {
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import {
-  VideoPlay,
-  VideoPause,
-  FolderOpened,
-  Delete,
-  RefreshLeft,
-} from '@element-plus/icons-vue';
+import { VideoPlay, VideoPause, FolderOpened, Delete, RefreshLeft } from '@element-plus/icons-vue';
 import { taskTemplateApi } from '@/api/task-template';
 import type { TaskTemplateClientDTO } from '@packages/contracts';
 
@@ -1067,9 +1015,7 @@ async function handleActivate() {
   try {
     loading.value = true;
     const { data } = await taskTemplateApi.activate(props.template.uuid);
-    ElMessage.success(
-      `模板已激活，生成了 ${data.generatedInstancesCount} 个任务实例`
-    );
+    ElMessage.success(`模板已激活，生成了 ${data.generatedInstancesCount} 个任务实例`);
     emit('status-changed', data.template);
   } catch (error: any) {
     ElMessage.error(error.message || '激活失败');
@@ -1089,7 +1035,7 @@ async function confirmPause() {
     loading.value = true;
     const { data } = await taskTemplateApi.pause(
       props.template.uuid,
-      pauseForm.value.reason || undefined
+      pauseForm.value.reason || undefined,
     );
     ElMessage.success('模板已暂停');
     pauseDialogVisible.value = false;
@@ -1106,9 +1052,7 @@ async function handleResume() {
   try {
     loading.value = true;
     const { data } = await taskTemplateApi.resume(props.template.uuid);
-    ElMessage.success(
-      `模板已恢复，生成了 ${data.generatedInstancesCount} 个任务实例`
-    );
+    ElMessage.success(`模板已恢复，生成了 ${data.generatedInstancesCount} 个任务实例`);
     emit('status-changed', data.template);
   } catch (error: any) {
     ElMessage.error(error.message || '恢复失败');
@@ -1128,13 +1072,13 @@ async function confirmArchive() {
     loading.value = true;
     const { data } = await taskTemplateApi.archive(
       props.template.uuid,
-      archiveForm.value.forceArchive
+      archiveForm.value.forceArchive,
     );
-    
+
     const message = archiveForm.value.forceArchive
       ? `模板已归档，取消了 ${data.affectedInstancesCount} 个待办实例`
       : '模板已归档';
-    
+
     ElMessage.success(message);
     archiveDialogVisible.value = false;
     emit('status-changed', data.template);
@@ -1156,13 +1100,13 @@ async function confirmDelete() {
     loading.value = true;
     const { data } = await taskTemplateApi.softDelete(
       props.template.uuid,
-      deleteForm.value.deleteInstances
+      deleteForm.value.deleteInstances,
     );
-    
+
     const message = deleteForm.value.deleteInstances
       ? `模板已删除，同时删除了 ${data.affectedInstancesCount} 个任务实例`
       : '模板已删除';
-    
+
     ElMessage.success(message);
     deleteDialogVisible.value = false;
     emit('status-changed', data.template);
@@ -1176,15 +1120,11 @@ async function confirmDelete() {
 // 恢复删除
 async function handleRestore() {
   try {
-    await ElMessageBox.confirm(
-      '确认恢复此模板吗？',
-      '恢复模板',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'info',
-      }
-    );
+    await ElMessageBox.confirm('确认恢复此模板吗？', '恢复模板', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'info',
+    });
 
     loading.value = true;
     const { data } = await taskTemplateApi.restore(props.template.uuid);

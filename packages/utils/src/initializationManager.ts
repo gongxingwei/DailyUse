@@ -63,7 +63,7 @@ export class InitializationManager {
     console.log(`[init] executePhase start: ${phase}`);
 
     const phaseTasks = Array.from(this.tasks.values())
-      .filter(t => t.phase === phase)
+      .filter((t) => t.phase === phase)
       .sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
 
     // 按 priority 分组执行，同 priority 内根据 parallel 决定并行/串行
@@ -81,9 +81,9 @@ export class InitializationManager {
       console.log(`[init] executing priority group ${currentPriority} (${group.length} tasks)`);
 
       // Execute group: if all tasks in group have parallel=true, run in parallel; else run sequentially
-      const allParallel = group.every(t => t.parallel);
+      const allParallel = group.every((t) => t.parallel);
       if (allParallel) {
-        await Promise.all(group.map(t => this.executeTaskWithDependencies(t, context)));
+        await Promise.all(group.map((t) => this.executeTaskWithDependencies(t, context)));
       } else {
         for (const task of group) {
           await this.executeTaskWithDependencies(task, context);
@@ -97,7 +97,11 @@ export class InitializationManager {
   /**
    * 执行单个任务（含依赖处理）并检测循环依赖
    */
-  private async executeTaskWithDependencies(task: InitializationTask, context?: any, path: Set<string> = new Set()): Promise<void> {
+  private async executeTaskWithDependencies(
+    task: InitializationTask,
+    context?: any,
+    path: Set<string> = new Set(),
+  ): Promise<void> {
     if (this.completedTasks.has(task.name)) return;
 
     if (path.has(task.name)) {
@@ -147,7 +151,10 @@ export class InitializationManager {
 
     if (task.timeoutMs && task.timeoutMs > 0) {
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Task timeout after ${task.timeoutMs}ms: ${task.name}`)), task.timeoutMs),
+        setTimeout(
+          () => reject(new Error(`Task timeout after ${task.timeoutMs}ms: ${task.name}`)),
+          task.timeoutMs,
+        ),
       );
       await Promise.race([exec, timeout]);
     } else {
@@ -162,7 +169,7 @@ export class InitializationManager {
   async cleanupPhase(phase: InitializationPhase, context?: any): Promise<void> {
     console.log(`[init] cleanupPhase start: ${phase}`);
     const phaseTasks = Array.from(this.tasks.values())
-      .filter(t => t.phase === phase && typeof t.cleanup === 'function')
+      .filter((t) => t.phase === phase && typeof t.cleanup === 'function')
       .sort((a, b) => (b.priority ?? 100) - (a.priority ?? 100)); // 逆序
 
     for (const task of phaseTasks) {

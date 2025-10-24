@@ -1,310 +1,334 @@
 <template>
-    <v-dialog v-model="isOpen" max-width="800" persistent scrollable>
-        <v-card>
-            <v-card-title class="d-flex align-center justify-space-between">
-                <span class="text-h5">
-                    <v-icon icon="mdi-folder-multiple" class="mr-2" />
-                    仓库管理
-                </span>
-                <v-btn icon="mdi-close" variant="text" @click="close" />
-            </v-card-title>
+  <v-dialog v-model="isOpen" max-width="800" persistent scrollable>
+    <v-card>
+      <v-card-title class="d-flex align-center justify-space-between">
+        <span class="text-h5">
+          <v-icon icon="mdi-folder-multiple" class="mr-2" />
+          仓库管理
+        </span>
+        <v-btn icon="mdi-close" variant="text" @click="close" />
+      </v-card-title>
 
-            <v-divider />
+      <v-divider />
 
-            <v-card-text class="px-0">
-                <!-- 操作按钮 -->
-                <div class="px-4 py-2">
-                    <v-btn prepend-icon="mdi-plus" color="primary" @click="showCreateDialog">
-                        新建仓库
-                    </v-btn>
-                </div>
+      <v-card-text class="px-0">
+        <!-- 操作按钮 -->
+        <div class="px-4 py-2">
+          <v-btn prepend-icon="mdi-plus" color="primary" @click="showCreateDialog">
+            新建仓库
+          </v-btn>
+        </div>
 
-                <v-divider />
+        <v-divider />
 
-                <!-- 仓库列表 -->
-                <v-list lines="two">
-                    <v-list-item v-for="repo in repositories" :key="repo.uuid"
-                        :class="{ 'bg-primary-lighten-5': currentRepositoryUuid === repo.uuid }"
-                        @click="selectRepository(repo.uuid)">
-                        <template #prepend>
-                            <v-avatar :color="getRepositoryColor(repo.type)">
-                                <v-icon :icon="getRepositoryIcon(repo.type)" />
-                            </v-avatar>
-                        </template>
+        <!-- 仓库列表 -->
+        <v-list lines="two">
+          <v-list-item
+            v-for="repo in repositories"
+            :key="repo.uuid"
+            :class="{ 'bg-primary-lighten-5': currentRepositoryUuid === repo.uuid }"
+            @click="selectRepository(repo.uuid)"
+          >
+            <template #prepend>
+              <v-avatar :color="getRepositoryColor(repo.type)">
+                <v-icon :icon="getRepositoryIcon(repo.type)" />
+              </v-avatar>
+            </template>
 
-                        <v-list-item-title>
-                            {{ repo.name }}
-                        </v-list-item-title>
+            <v-list-item-title>
+              {{ repo.name }}
+            </v-list-item-title>
 
-                        <v-list-item-subtitle>
-                            <div class="d-flex align-center">
-                                <v-chip :color="getStatusColor(repo.status)" size="x-small" class="mr-2">
-                                    {{ getStatusText(repo.status) }}
-                                </v-chip>
-                                <span class="text-caption">{{ repo.path }}</span>
-                            </div>
-                        </v-list-item-subtitle>
+            <v-list-item-subtitle>
+              <div class="d-flex align-center">
+                <v-chip :color="getStatusColor(repo.status)" size="x-small" class="mr-2">
+                  {{ getStatusText(repo.status) }}
+                </v-chip>
+                <span class="text-caption">{{ repo.path }}</span>
+              </div>
+            </v-list-item-subtitle>
 
-                        <template #append>
-                            <div class="d-flex align-center">
-                                <v-btn icon="mdi-cog" variant="text" size="small"
-                                    @click.stop="openSettings(repo.uuid)" />
-                                <v-btn icon="mdi-delete" variant="text" size="small" color="error"
-                                    @click.stop="deleteRepository(repo.uuid)" />
-                            </div>
-                        </template>
-                    </v-list-item>
+            <template #append>
+              <div class="d-flex align-center">
+                <v-btn
+                  icon="mdi-cog"
+                  variant="text"
+                  size="small"
+                  @click.stop="openSettings(repo.uuid)"
+                />
+                <v-btn
+                  icon="mdi-delete"
+                  variant="text"
+                  size="small"
+                  color="error"
+                  @click.stop="deleteRepository(repo.uuid)"
+                />
+              </div>
+            </template>
+          </v-list-item>
 
-                    <v-list-item v-if="repositories.length === 0">
-                        <v-list-item-title class="text-center text-medium-emphasis">
-                            暂无仓库，点击上方按钮创建
-                        </v-list-item-title>
-                    </v-list-item>
-                </v-list>
-            </v-card-text>
+          <v-list-item v-if="repositories.length === 0">
+            <v-list-item-title class="text-center text-medium-emphasis">
+              暂无仓库，点击上方按钮创建
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
 
-            <v-divider />
+      <v-divider />
 
-            <v-card-actions>
-                <v-spacer />
-                <v-btn variant="text" @click="close">
-                    关闭
-                </v-btn>
-            </v-card-actions>
-        </v-card>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="close"> 关闭 </v-btn>
+      </v-card-actions>
+    </v-card>
 
-        <!-- 创建仓库对话框 -->
-        <v-dialog v-model="createDialogOpen" max-width="600" persistent>
-            <v-card>
-                <v-card-title>新建仓库</v-card-title>
-                <v-divider />
+    <!-- 创建仓库对话框 -->
+    <v-dialog v-model="createDialogOpen" max-width="600" persistent>
+      <v-card>
+        <v-card-title>新建仓库</v-card-title>
+        <v-divider />
 
-                <v-card-text>
-                    <v-form ref="createForm" v-model="isValid">
-                        <v-text-field v-model="newRepository.name" label="仓库名称"
-                            :rules="[rules.required, rules.nameLength]" counter="50" required />
+        <v-card-text>
+          <v-form ref="createForm" v-model="isValid">
+            <v-text-field
+              v-model="newRepository.name"
+              label="仓库名称"
+              :rules="[rules.required, rules.nameLength]"
+              counter="50"
+              required
+            />
 
-                        <v-text-field v-model="newRepository.path" label="仓库路径" :rules="[rules.required]"
-                            hint="本地文件系统路径" persistent-hint required />
+            <v-text-field
+              v-model="newRepository.path"
+              label="仓库路径"
+              :rules="[rules.required]"
+              hint="本地文件系统路径"
+              persistent-hint
+              required
+            />
 
-                        <v-select v-model="newRepository.type" :items="repositoryTypes" label="仓库类型"
-                            :rules="[rules.required]" required />
+            <v-select
+              v-model="newRepository.type"
+              :items="repositoryTypes"
+              label="仓库类型"
+              :rules="[rules.required]"
+              required
+            />
 
-                        <v-textarea v-model="newRepository.description" label="描述" rows="3" counter="200" />
-                    </v-form>
-                </v-card-text>
+            <v-textarea v-model="newRepository.description" label="描述" rows="3" counter="200" />
+          </v-form>
+        </v-card-text>
 
-                <v-divider />
+        <v-divider />
 
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="closeCreateDialog">
-                        取消
-                    </v-btn>
-                    <v-btn color="primary" :disabled="!isValid" :loading="creating" @click="createRepository">
-                        创建
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeCreateDialog"> 取消 </v-btn>
+          <v-btn color="primary" :disabled="!isValid" :loading="creating" @click="createRepository">
+            创建
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useRepositoryStore } from '../../stores/repositoryStore'
-import { useMessage } from '@dailyuse/ui'
-import { RepositoryContracts } from '@dailyuse/contracts'
-import { repositoryApplicationService } from '../../application/services/repositoryApplicationService'
+import { ref, computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useRepositoryStore } from '../../stores/repositoryStore';
+import { useMessage } from '@dailyuse/ui';
+import { RepositoryContracts } from '@dailyuse/contracts';
+import { repositoryApplicationService } from '../../application/services/repositoryApplicationService';
 
 const props = defineProps<{
-    modelValue: boolean
-}>()
+  modelValue: boolean;
+}>();
 
 const emit = defineEmits<{
-    'update:modelValue': [value: boolean]
-    'repository-selected': [uuid: string]
-}>()
+  'update:modelValue': [value: boolean];
+  'repository-selected': [uuid: string];
+}>();
 
-const message = useMessage()
-const repositoryStore = useRepositoryStore()
-const { repositories } = storeToRefs(repositoryStore)
+const message = useMessage();
+const repositoryStore = useRepositoryStore();
+const { repositories } = storeToRefs(repositoryStore);
 
 // 对话框状态
 const isOpen = computed({
-    get: () => props.modelValue,
-    set: (value) => emit('update:modelValue', value),
-})
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value),
+});
 
 // 创建仓库对话框
-const createDialogOpen = ref(false)
-const isValid = ref(false)
-const creating = ref(false)
-const createForm = ref<any>(null)
+const createDialogOpen = ref(false);
+const isValid = ref(false);
+const creating = ref(false);
+const createForm = ref<any>(null);
 
 // 当前选中的仓库
-const currentRepositoryUuid = ref<string | null>(repositoryStore.selectedRepository)
+const currentRepositoryUuid = ref<string | null>(repositoryStore.selectedRepository);
 
 // 新建仓库数据
 const newRepository = ref({
-    name: '',
-    path: '',
-    type: RepositoryContracts.RepositoryType.LOCAL,
-    description: '',
-})
+  name: '',
+  path: '',
+  type: RepositoryContracts.RepositoryType.LOCAL,
+  description: '',
+});
 
 // 仓库类型选项
 const repositoryTypes = [
-    { title: '本地仓库', value: RepositoryContracts.RepositoryType.LOCAL },
-    { title: 'Git 仓库', value: RepositoryContracts.RepositoryType.GIT },
-    { title: '云端仓库', value: RepositoryContracts.RepositoryType.CLOUD },
-]
+  { title: '本地仓库', value: RepositoryContracts.RepositoryType.LOCAL },
+  { title: 'Git 仓库', value: RepositoryContracts.RepositoryType.GIT },
+  { title: '云端仓库', value: RepositoryContracts.RepositoryType.CLOUD },
+];
 
 // 表单验证规则
 const rules = {
-    required: (v: string) => !!v || '此字段必填',
-    nameLength: (v: string) => (v && v.length <= 50) || '名称不能超过50个字符',
-}
+  required: (v: string) => !!v || '此字段必填',
+  nameLength: (v: string) => (v && v.length <= 50) || '名称不能超过50个字符',
+};
 
 // 获取仓库图标
 function getRepositoryIcon(type: RepositoryContracts.RepositoryType): string {
-    switch (type) {
-        case RepositoryContracts.RepositoryType.LOCAL:
-            return 'mdi-folder'
-        case RepositoryContracts.RepositoryType.GIT:
-            return 'mdi-git'
-        case RepositoryContracts.RepositoryType.CLOUD:
-            return 'mdi-cloud'
-        default:
-            return 'mdi-folder'
-    }
+  switch (type) {
+    case RepositoryContracts.RepositoryType.LOCAL:
+      return 'mdi-folder';
+    case RepositoryContracts.RepositoryType.GIT:
+      return 'mdi-git';
+    case RepositoryContracts.RepositoryType.CLOUD:
+      return 'mdi-cloud';
+    default:
+      return 'mdi-folder';
+  }
 }
 
 // 获取仓库颜色
 function getRepositoryColor(type: RepositoryContracts.RepositoryType): string {
-    switch (type) {
-        case RepositoryContracts.RepositoryType.LOCAL:
-            return 'blue'
-        case RepositoryContracts.RepositoryType.GIT:
-            return 'orange'
-        case RepositoryContracts.RepositoryType.CLOUD:
-            return 'purple'
-        default:
-            return 'grey'
-    }
+  switch (type) {
+    case RepositoryContracts.RepositoryType.LOCAL:
+      return 'blue';
+    case RepositoryContracts.RepositoryType.GIT:
+      return 'orange';
+    case RepositoryContracts.RepositoryType.CLOUD:
+      return 'purple';
+    default:
+      return 'grey';
+  }
 }
 
 // 获取状态颜色
 function getStatusColor(status: RepositoryContracts.RepositoryStatus): string {
-    switch (status) {
-        case RepositoryContracts.RepositoryStatus.ACTIVE:
-            return 'success'
-        case RepositoryContracts.RepositoryStatus.ARCHIVED:
-            return 'grey'
-        case RepositoryContracts.RepositoryStatus.SYNCING:
-            return 'info'
-        case RepositoryContracts.RepositoryStatus.INACTIVE:
-            return 'warning'
-        default:
-            return 'grey'
-    }
+  switch (status) {
+    case RepositoryContracts.RepositoryStatus.ACTIVE:
+      return 'success';
+    case RepositoryContracts.RepositoryStatus.ARCHIVED:
+      return 'grey';
+    case RepositoryContracts.RepositoryStatus.SYNCING:
+      return 'info';
+    case RepositoryContracts.RepositoryStatus.INACTIVE:
+      return 'warning';
+    default:
+      return 'grey';
+  }
 }
 
 // 获取状态文本
 function getStatusText(status: RepositoryContracts.RepositoryStatus): string {
-    switch (status) {
-        case RepositoryContracts.RepositoryStatus.ACTIVE:
-            return '活跃'
-        case RepositoryContracts.RepositoryStatus.ARCHIVED:
-            return '已归档'
-        case RepositoryContracts.RepositoryStatus.SYNCING:
-            return '同步中'
-        case RepositoryContracts.RepositoryStatus.INACTIVE:
-            return '未激活'
-        default:
-            return '未知'
-    }
+  switch (status) {
+    case RepositoryContracts.RepositoryStatus.ACTIVE:
+      return '活跃';
+    case RepositoryContracts.RepositoryStatus.ARCHIVED:
+      return '已归档';
+    case RepositoryContracts.RepositoryStatus.SYNCING:
+      return '同步中';
+    case RepositoryContracts.RepositoryStatus.INACTIVE:
+      return '未激活';
+    default:
+      return '未知';
+  }
 }
 
 // 选择仓库
 function selectRepository(uuid: string) {
-    currentRepositoryUuid.value = uuid
-    repositoryStore.setSelectedRepository(uuid)
-    emit('repository-selected', uuid)
+  currentRepositoryUuid.value = uuid;
+  repositoryStore.setSelectedRepository(uuid);
+  emit('repository-selected', uuid);
 }
 
 // 显示创建对话框
 function showCreateDialog() {
-    createDialogOpen.value = true
+  createDialogOpen.value = true;
 }
 
 // 关闭创建对话框
 function closeCreateDialog() {
-    createDialogOpen.value = false
-    newRepository.value = {
-        name: '',
-        path: '',
-        type: RepositoryContracts.RepositoryType.LOCAL,
-        description: '',
-    }
-    createForm.value?.reset()
+  createDialogOpen.value = false;
+  newRepository.value = {
+    name: '',
+    path: '',
+    type: RepositoryContracts.RepositoryType.LOCAL,
+    description: '',
+  };
+  createForm.value?.reset();
 }
 
 // 创建仓库
 async function createRepository() {
-    if (!isValid.value) return
+  if (!isValid.value) return;
 
-    try {
-        creating.value = true
+  try {
+    creating.value = true;
 
-        await repositoryApplicationService.createRepository({
-            name: newRepository.value.name,
-            path: newRepository.value.path,
-            type: newRepository.value.type,
-            description: newRepository.value.description,
-        })
+    await repositoryApplicationService.createRepository({
+      name: newRepository.value.name,
+      path: newRepository.value.path,
+      type: newRepository.value.type,
+      description: newRepository.value.description,
+    });
 
-        message.success('仓库创建成功')
-        closeCreateDialog()
-    } catch (error: any) {
-        message.error(error.message || '创建失败')
-    } finally {
-        creating.value = false
-    }
+    message.success('仓库创建成功');
+    closeCreateDialog();
+  } catch (error: any) {
+    message.error(error.message || '创建失败');
+  } finally {
+    creating.value = false;
+  }
 }
 
 // 打开设置
 function openSettings(uuid: string) {
-    message.info('设置功能开发中')
-    // TODO: 实现设置功能
+  message.info('设置功能开发中');
+  // TODO: 实现设置功能
 }
 
 // 删除仓库
 async function deleteRepository(uuid: string) {
-    try {
-        await message.delConfirm('确定要删除此仓库吗？此操作不可撤销。')
+  try {
+    await message.delConfirm('确定要删除此仓库吗？此操作不可撤销。');
 
-        await repositoryApplicationService.deleteRepository(uuid)
-        message.success('删除成功')
+    await repositoryApplicationService.deleteRepository(uuid);
+    message.success('删除成功');
 
-        // 如果删除的是当前选中的仓库，清除选中状态
-        if (currentRepositoryUuid.value === uuid) {
-            currentRepositoryUuid.value = null
-        }
-    } catch {
-        // 用户取消
+    // 如果删除的是当前选中的仓库，清除选中状态
+    if (currentRepositoryUuid.value === uuid) {
+      currentRepositoryUuid.value = null;
     }
+  } catch {
+    // 用户取消
+  }
 }
 
 // 关闭主对话框
 function close() {
-    isOpen.value = false
+  isOpen.value = false;
 }
 </script>
 
 <style scoped>
 .bg-primary-lighten-5 {
-    background-color: rgba(var(--v-theme-primary), 0.08);
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 </style>

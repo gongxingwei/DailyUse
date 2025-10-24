@@ -8,7 +8,7 @@ import { addMinutes } from 'date-fns/addMinutes';
 /**
  * 任务实例服务
  * 负责任务实例的创建、生成、验证、冲突检测等操作。
- * 
+ *
  * 常用场景：从模板批量生成实例、校验实例、判断时间冲突、状态流转等。
  */
 export class TaskInstanceService {
@@ -31,7 +31,7 @@ export class TaskInstanceService {
       description?: string;
       priority?: 1 | 2 | 3 | 4;
       endTime?: Date;
-    }
+    },
   ): TaskInstance {
     const instanceId = uuidv4();
     const instanceScheduledTime = scheduledTime || taskTemplate.timeConfig.baseTime.start;
@@ -47,10 +47,10 @@ export class TaskInstanceService {
         metadata: taskTemplate.metadata,
         keyResultLinks: taskTemplate.keyResultLinks,
         reminderConfig: taskTemplate.reminderConfig,
-        schedulingPolicy: taskTemplate.schedulingPolicy
+        schedulingPolicy: taskTemplate.schedulingPolicy,
       },
       instanceScheduledTime,
-      instanceEndTime
+      instanceEndTime,
     );
   }
 
@@ -66,7 +66,7 @@ export class TaskInstanceService {
    */
   generateInstancesFromTemplate(
     taskTemplate: TaskTemplate,
-    maxInstances: number = 100
+    maxInstances: number = 100,
   ): TaskInstance[] {
     const instances: TaskInstance[] = [];
     const { timeConfig } = taskTemplate;
@@ -88,7 +88,10 @@ export class TaskInstanceService {
       // 只生成未来的实例
       if (nextTime.getTime() >= now.getTime()) {
         const endTime = timeConfig.baseTime.end
-          ? addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end))
+          ? addMinutes(
+              nextTime,
+              TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end),
+            )
           : undefined;
         instances.push(this.createInstanceFromTemplate(taskTemplate, nextTime, { endTime }));
       }
@@ -118,7 +121,7 @@ export class TaskInstanceService {
   generateInstancesInRange(
     taskTemplate: TaskTemplate,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): TaskInstance[] {
     const instances: TaskInstance[] = [];
     const { timeConfig } = taskTemplate;
@@ -144,7 +147,10 @@ export class TaskInstanceService {
       if (this.shouldStopGeneration(timeConfig, nextTime, count)) break;
 
       const endTime = timeConfig.baseTime.end
-        ? addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end))
+        ? addMinutes(
+            nextTime,
+            TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end),
+          )
         : undefined;
 
       instances.push(this.createInstanceFromTemplate(taskTemplate, nextTime, { endTime }));
@@ -167,12 +173,15 @@ export class TaskInstanceService {
    */
   canChangeStatus(taskInstance: TaskInstance, newStatus: string): boolean {
     const currentStatus = taskInstance.status;
-    const allowedTransitions: Record<"pending" | "inProgress" | "completed" | "cancelled" | "overdue", string[]> = {
-      'pending': ['inProgress', 'cancelled'],
-      'inProgress': ['completed', 'cancelled', 'pending'],
-      'completed': ['pending'],
-      'cancelled': ['pending'],
-      'overdue': ['pending', 'inProgress', 'cancelled']
+    const allowedTransitions: Record<
+      'pending' | 'inProgress' | 'completed' | 'cancelled' | 'overdue',
+      string[]
+    > = {
+      pending: ['inProgress', 'cancelled'],
+      inProgress: ['completed', 'cancelled', 'pending'],
+      completed: ['pending'],
+      cancelled: ['pending'],
+      overdue: ['pending', 'inProgress', 'cancelled'],
     };
     return allowedTransitions[currentStatus]?.includes(newStatus) ?? false;
   }
@@ -187,11 +196,8 @@ export class TaskInstanceService {
    * const conflicts = service.checkTimeConflicts(existing, newInstance);
    * ```
    */
-  checkTimeConflicts(
-    taskInstances: TaskInstance[],
-    newTaskInstance: TaskInstance
-  ): TaskInstance[] {
-    return taskInstances.filter(taskInstance => {
+  checkTimeConflicts(taskInstances: TaskInstance[], newTaskInstance: TaskInstance): TaskInstance[] {
+    return taskInstances.filter((taskInstance) => {
       if (taskInstance.uuid === newTaskInstance.uuid) return false;
       if (taskInstance.status === 'completed' || taskInstance.status === 'cancelled') return false;
       return this.hasTimeOverlap(taskInstance, newTaskInstance);
@@ -219,14 +225,16 @@ export class TaskInstanceService {
     if (taskInstance.timeConfig.type === 'timeRange' && !taskInstance.timeConfig.endTime) {
       errors.push('时间段类型的任务必须设置结束时间');
     }
-    if (taskInstance.timeConfig.endTime &&
-      taskInstance.timeConfig.endTime.getTime() <= taskInstance.timeConfig.scheduledTime.getTime()) {
+    if (
+      taskInstance.timeConfig.endTime &&
+      taskInstance.timeConfig.endTime.getTime() <= taskInstance.timeConfig.scheduledTime.getTime()
+    ) {
       errors.push('结束时间必须晚于开始时间');
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -241,11 +249,7 @@ export class TaskInstanceService {
    * service.rescheduleInstance(instance, newTime, newEndTime);
    * ```
    */
-  rescheduleInstance(
-    taskInstance: TaskInstance,
-    newScheduledTime: Date,
-    newEndTime?: Date
-  ): void {
+  rescheduleInstance(taskInstance: TaskInstance, newScheduledTime: Date, newEndTime?: Date): void {
     try {
       taskInstance.reschedule(newScheduledTime, newEndTime);
     } catch (error) {
@@ -265,9 +269,13 @@ export class TaskInstanceService {
    */
   private hasTimeOverlap(taskInstance1: TaskInstance, taskInstance2: TaskInstance): boolean {
     const start1 = taskInstance1.timeConfig.scheduledTime.getTime();
-    const end1 = taskInstance1.timeConfig.endTime?.getTime() || start1 + (taskInstance1.timeConfig.estimatedDuration || 60) * 60 * 1000;
+    const end1 =
+      taskInstance1.timeConfig.endTime?.getTime() ||
+      start1 + (taskInstance1.timeConfig.estimatedDuration || 60) * 60 * 1000;
     const start2 = taskInstance2.timeConfig.scheduledTime.getTime();
-    const end2 = taskInstance2.timeConfig.endTime?.getTime() || start2 + (taskInstance2.timeConfig.estimatedDuration || 60) * 60 * 1000;
+    const end2 =
+      taskInstance2.timeConfig.endTime?.getTime() ||
+      start2 + (taskInstance2.timeConfig.estimatedDuration || 60) * 60 * 1000;
     return start1 < end2 && start2 < end1;
   }
 
@@ -279,14 +287,18 @@ export class TaskInstanceService {
    * @returns 是否应该停止生成
    */
   private shouldStopGeneration(timeConfig: any, nextTime: Date, count: number): boolean {
-    if (timeConfig.recurrence.endCondition.type === 'date' &&
+    if (
+      timeConfig.recurrence.endCondition.type === 'date' &&
       timeConfig.recurrence.endCondition.endDate &&
-      nextTime.getTime() > timeConfig.recurrence.endCondition.endDate.getTime()) {
+      nextTime.getTime() > timeConfig.recurrence.endCondition.endDate.getTime()
+    ) {
       return true;
     }
-    if (timeConfig.recurrence.endCondition.type === 'count' &&
+    if (
+      timeConfig.recurrence.endCondition.type === 'count' &&
       timeConfig.recurrence.endCondition.count &&
-      count >= timeConfig.recurrence.endCondition.count) {
+      count >= timeConfig.recurrence.endCondition.count
+    ) {
       return true;
     }
     return false;

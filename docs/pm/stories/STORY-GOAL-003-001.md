@@ -77,6 +77,7 @@ class DAGExportService {
 ### Implementation Steps
 
 #### 1. Install Dependencies
+
 ```bash
 cd apps/web
 pnpm add html2canvas jspdf
@@ -96,18 +97,14 @@ export class DAGExportService {
   /**
    * Export ECharts chart to PNG using native ECharts API
    */
-  async exportPNG(
-    chartInstance: echarts.ECharts,
-    options: ExportOptions
-  ): Promise<Blob> {
+  async exportPNG(chartInstance: echarts.ECharts, options: ExportOptions): Promise<Blob> {
     const url = chartInstance.getDataURL({
       type: 'png',
       pixelRatio: options.resolution,
-      backgroundColor: options.backgroundColor === 'transparent' 
-        ? 'rgba(0,0,0,0)' 
-        : options.backgroundColor,
+      backgroundColor:
+        options.backgroundColor === 'transparent' ? 'rgba(0,0,0,0)' : options.backgroundColor,
     });
-    
+
     const response = await fetch(url);
     return response.blob();
   }
@@ -115,10 +112,7 @@ export class DAGExportService {
   /**
    * Export to SVG using ECharts native SVG renderer
    */
-  async exportSVG(
-    chartInstance: echarts.ECharts,
-    options: ExportOptions
-  ): Promise<Blob> {
+  async exportSVG(chartInstance: echarts.ECharts, options: ExportOptions): Promise<Blob> {
     // ECharts must be initialized with SVG renderer
     const svgString = chartInstance.renderToSVGString();
     return new Blob([svgString], { type: 'image/svg+xml' });
@@ -130,21 +124,21 @@ export class DAGExportService {
   async exportPDF(
     chartInstance: echarts.ECharts,
     options: ExportOptions,
-    metadata: { title: string; author: string; date: string }
+    metadata: { title: string; author: string; date: string },
   ): Promise<Blob> {
     // First get PNG data
     const pngBlob = await this.exportPNG(chartInstance, {
       ...options,
       resolution: 2, // Use 2x for better PDF quality
     });
-    
+
     // Create PDF
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'px',
       format: [1200, 800],
     });
-    
+
     // Add metadata
     pdf.setProperties({
       title: metadata.title,
@@ -153,17 +147,17 @@ export class DAGExportService {
       creator: 'DailyUse App',
       keywords: 'goal, dag, okr',
     });
-    
+
     // Add image to PDF
     const imgData = await this.blobToDataURL(pngBlob);
     pdf.addImage(imgData, 'PNG', 0, 0, 1200, 800);
-    
+
     // Add footer with metadata
     pdf.setFontSize(10);
     pdf.setTextColor(128);
     pdf.text(`Generated: ${metadata.date}`, 20, 780);
     pdf.text(metadata.title, 600, 780, { align: 'center' });
-    
+
     return pdf.output('blob');
   }
 
@@ -187,7 +181,7 @@ export class DAGExportService {
   <v-dialog v-model="isOpen" max-width="500">
     <v-card>
       <v-card-title>导出 DAG 可视化</v-card-title>
-      
+
       <v-card-text>
         <v-select
           v-model="format"
@@ -196,37 +190,27 @@ export class DAGExportService {
           item-title="label"
           item-value="value"
         />
-        
+
         <v-select
           v-if="format === 'png'"
           v-model="resolution"
           :items="resolutionOptions"
           label="分辨率"
         />
-        
-        <v-select
-          v-model="backgroundColor"
-          :items="bgOptions"
-          label="背景颜色"
-        />
-        
+
+        <v-select v-model="backgroundColor" :items="bgOptions" label="背景颜色" />
+
         <v-checkbox
           v-if="format === 'pdf'"
           v-model="includeMetadata"
           label="包含元数据（标题、日期、作者）"
         />
       </v-card-text>
-      
+
       <v-card-actions>
         <v-spacer />
         <v-btn @click="isOpen = false">取消</v-btn>
-        <v-btn
-          color="primary"
-          :loading="isExporting"
-          @click="handleExport"
-        >
-          导出
-        </v-btn>
+        <v-btn color="primary" :loading="isExporting" @click="handleExport"> 导出 </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -269,7 +253,7 @@ const toast = useToast();
 
 async function handleExport() {
   isExporting.value = true;
-  
+
   try {
     emit('export', {
       format: format.value,
@@ -277,7 +261,7 @@ async function handleExport() {
       backgroundColor: backgroundColor.value,
       includeMetadata: includeMetadata.value,
     });
-    
+
     toast.success('导出成功！');
     isOpen.value = false;
   } catch (error) {
@@ -303,30 +287,17 @@ defineExpose({ open });
   <div class="goal-dag-visualization">
     <!-- Toolbar -->
     <div class="dag-toolbar">
-      <v-btn
-        icon="mdi-download"
-        size="small"
-        @click="exportDialog?.open()"
-        title="导出 (Ctrl+E)"
-      >
+      <v-btn icon="mdi-download" size="small" @click="exportDialog?.open()" title="导出 (Ctrl+E)">
         <v-icon>mdi-download</v-icon>
       </v-btn>
       <!-- ... other toolbar buttons -->
     </div>
-    
+
     <!-- Chart -->
-    <v-chart
-      ref="chartRef"
-      :option="chartOption"
-      :autoresize="true"
-      @click="handleNodeClick"
-    />
-    
+    <v-chart ref="chartRef" :option="chartOption" :autoresize="true" @click="handleNodeClick" />
+
     <!-- Export Dialog -->
-    <ExportDialog
-      ref="exportDialog"
-      @export="handleExport"
-    />
+    <ExportDialog ref="exportDialog" @export="handleExport" />
   </div>
 </template>
 
@@ -347,9 +318,9 @@ async function handleExport(options: ExportOptions) {
   if (!chartInstance) {
     throw new Error('Chart instance not found');
   }
-  
+
   let blob: Blob;
-  
+
   switch (options.format) {
     case 'png':
       blob = await exportService.exportPNG(chartInstance, options);
@@ -365,7 +336,7 @@ async function handleExport(options: ExportOptions) {
       });
       break;
   }
-  
+
   // Download file
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -383,7 +354,7 @@ onMounted(() => {
       exportDialog.value?.open();
     }
   };
-  
+
   window.addEventListener('keydown', handleKeydown);
   onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 });
@@ -395,6 +366,7 @@ onMounted(() => {
 ## 📝 Subtasks
 
 ### Phase 1: Setup & Service (0.5 SP)
+
 - [ ] Install html2canvas and jsPDF dependencies
 - [ ] Create DAGExportService.ts
 - [ ] Implement PNG export method
@@ -403,6 +375,7 @@ onMounted(() => {
 - [ ] Write unit tests for export service
 
 ### Phase 2: UI Components (0.75 SP)
+
 - [ ] Create ExportDialog.vue component
 - [ ] Add export button to DAG toolbar
 - [ ] Implement format selection dropdown
@@ -412,6 +385,7 @@ onMounted(() => {
 - [ ] Add toast notifications
 
 ### Phase 3: Integration & Testing (0.75 SP)
+
 - [ ] Integrate ExportDialog into GoalDAGVisualization
 - [ ] Add keyboard shortcut (Ctrl+E)
 - [ ] Test all export formats
@@ -426,13 +400,14 @@ onMounted(() => {
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 describe('DAGExportService', () => {
   it('should export PNG at correct resolution', async () => {
     const blob = await service.exportPNG(chart, { resolution: 2 });
     expect(blob.type).toBe('image/png');
   });
-  
+
   it('should include metadata in PDF', async () => {
     const blob = await service.exportPDF(chart, options, metadata);
     // Verify PDF contains metadata
@@ -441,13 +416,14 @@ describe('DAGExportService', () => {
 ```
 
 ### E2E Tests
+
 ```typescript
 test('should export DAG to PNG', async ({ page }) => {
   await page.goto('/goals/123');
   await page.click('[data-testid="export-button"]');
   await page.click('text=PNG 图片');
   await page.click('text=导出');
-  
+
   // Verify download started
   const download = await page.waitForEvent('download');
   expect(download.suggestedFilename()).toContain('.png');

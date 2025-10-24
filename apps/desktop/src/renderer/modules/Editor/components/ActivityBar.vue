@@ -1,9 +1,9 @@
 <template>
   <div class="activity-bar">
-    <button 
-      v-for="item in store.activityBarItems" 
+    <button
+      v-for="item in store.activityBarItems"
       class="function-icon"
-      :class="{ 'active': store.activeActivityBarItemId === item.uuid }"
+      :class="{ active: store.activeActivityBarItemId === item.uuid }"
       :key="item.uuid"
       :title="item.title"
       @click="store.setActiveActivityBarItemId(item.uuid)"

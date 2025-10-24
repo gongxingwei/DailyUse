@@ -1,10 +1,10 @@
-
-
-export { GoalDomainApplicationService, getGoalDomainApplicationService } from "./application/services/goalDomainApplicationService";
-
+export {
+  GoalDomainApplicationService,
+  getGoalDomainApplicationService,
+} from './application/services/goalDomainApplicationService';
 
 // initialization
-export { registerGoalInitializationTasks } from "./initialization/goalInitialization";
+export { registerGoalInitializationTasks } from './initialization/goalInitialization';
 
 // domains
-export { Goal } from "./domain/aggregates/goal";
+export { Goal } from './domain/aggregates/goal';

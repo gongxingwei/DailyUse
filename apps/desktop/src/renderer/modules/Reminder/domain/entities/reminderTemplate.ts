@@ -1,16 +1,13 @@
-import { Entity } from "@dailyuse/utils";
-import type { IReminderTemplate } from "../../../../../common/modules/reminder/types/reminder";
-import { ImportanceLevel } from "@dailyuse/contracts";
-import { SYSTEM_GROUP_ID } from "@common/modules/reminder/types/reminder";
+import { Entity } from '@dailyuse/utils';
+import type { IReminderTemplate } from '../../../../../common/modules/reminder/types/reminder';
+import { ImportanceLevel } from '@dailyuse/contracts';
+import { SYSTEM_GROUP_ID } from '@common/modules/reminder/types/reminder';
 
 /**
  * ReminderTemplate 实体类
  * 表示一个提醒模板，包含提醒的所有配置信息
  */
-export class ReminderTemplate 
-  extends Entity
-  implements IReminderTemplate
-{
+export class ReminderTemplate extends Entity implements IReminderTemplate {
   // 分组UUID
   private _groupUuid: string;
   // 模板名称
@@ -18,7 +15,7 @@ export class ReminderTemplate
   // 模板描述
   private _description?: string;
   // 重要级别
-  private _importanceLevel: IReminderTemplate["importanceLevel"];
+  private _importanceLevel: IReminderTemplate['importanceLevel'];
   // 自身启用状态
   private _selfEnabled: boolean = true;
   // 通知设置
@@ -28,7 +25,7 @@ export class ReminderTemplate
     popup: boolean;
   };
   // 时间配置
-  private _timeConfig: IReminderTemplate["timeConfig"];
+  private _timeConfig: IReminderTemplate['timeConfig'];
 
   /**
    * 构造函数（对象参数方式）
@@ -48,14 +45,14 @@ export class ReminderTemplate
   constructor(params: {
     groupUuid: string;
     name: string;
-    importanceLevel: IReminderTemplate["importanceLevel"];
+    importanceLevel: IReminderTemplate['importanceLevel'];
     selfEnabled: boolean;
     notificationSettings: {
       sound: boolean;
       vibration: boolean;
       popup: boolean;
     };
-    timeConfig: IReminderTemplate["timeConfig"];
+    timeConfig: IReminderTemplate['timeConfig'];
     uuid?: string;
     description?: string;
     enabled?: boolean;
@@ -95,10 +92,10 @@ export class ReminderTemplate
   }
 
   // 重要级别 getter/setter
-  get importanceLevel(): IReminderTemplate["importanceLevel"] {
+  get importanceLevel(): IReminderTemplate['importanceLevel'] {
     return this._importanceLevel;
   }
-  set importanceLevel(val: IReminderTemplate["importanceLevel"]) {
+  set importanceLevel(val: IReminderTemplate['importanceLevel']) {
     this._importanceLevel = val;
   }
 
@@ -122,7 +119,7 @@ export class ReminderTemplate
   get timeConfig() {
     return this._timeConfig;
   }
-  set timeConfig(val: IReminderTemplate["timeConfig"]) {
+  set timeConfig(val: IReminderTemplate['timeConfig']) {
     this._timeConfig = val;
   }
 
@@ -133,15 +130,15 @@ export class ReminderTemplate
     return (
       obj instanceof ReminderTemplate ||
       (obj &&
-        typeof obj === "object" &&
-        "id" in obj &&
-        "groupUuid" in obj &&
-        "name" in obj &&
-        "importanceLevel" in obj &&
-        "selfEnabled" in obj &&
-        "enabled" in obj &&
-        "notificationSettings" in obj &&
-        "timeConfig" in obj)
+        typeof obj === 'object' &&
+        'id' in obj &&
+        'groupUuid' in obj &&
+        'name' in obj &&
+        'importanceLevel' in obj &&
+        'selfEnabled' in obj &&
+        'enabled' in obj &&
+        'notificationSettings' in obj &&
+        'timeConfig' in obj)
     );
   }
 
@@ -183,7 +180,7 @@ export class ReminderTemplate
    * @param template 可能为 DTO、实体或 null
    */
   static ensureReminderTemplate(
-    template: IReminderTemplate | ReminderTemplate | null
+    template: IReminderTemplate | ReminderTemplate | null,
   ): ReminderTemplate | null {
     if (ReminderTemplate.isReminderTemplate(template)) {
       return template instanceof ReminderTemplate ? template : ReminderTemplate.fromDTO(template);
@@ -197,7 +194,7 @@ export class ReminderTemplate
    * @param template 可能为 DTO、实体或 null
    */
   static ensureReminderTemplateNeverNull(
-    template: IReminderTemplate | ReminderTemplate | null
+    template: IReminderTemplate | ReminderTemplate | null,
   ): ReminderTemplate {
     if (ReminderTemplate.isReminderTemplate(template)) {
       return template instanceof ReminderTemplate ? template : ReminderTemplate.fromDTO(template);
@@ -228,11 +225,11 @@ export class ReminderTemplate
   static forCreate(): ReminderTemplate {
     return new ReminderTemplate({
       groupUuid: SYSTEM_GROUP_ID,
-      name: "",
+      name: '',
       importanceLevel: ImportanceLevel.Important,
       selfEnabled: true,
       notificationSettings: { sound: true, vibration: true, popup: true },
-      timeConfig: { name: "", type: "absolute", schedule: {} } as IReminderTemplate["timeConfig"],
+      timeConfig: { name: '', type: 'absolute', schedule: {} } as IReminderTemplate['timeConfig'],
     });
   }
 }

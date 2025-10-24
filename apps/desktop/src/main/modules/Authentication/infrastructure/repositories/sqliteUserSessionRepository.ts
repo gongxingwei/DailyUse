@@ -1,7 +1,7 @@
-import type { Database } from "better-sqlite3";
-import { Session } from "../../domain/entities/session";
-import { ISessionRepository } from "../../domain/repositories/authenticationRepository";
-import { getDatabase } from "../../../../shared/database/index";
+import type { Database } from 'better-sqlite3';
+import { Session } from '../../domain/entities/session';
+import { ISessionRepository } from '../../domain/repositories/authenticationRepository';
+import { getDatabase } from '../../../../shared/database/index';
 
 /**
  * SQLite 用户会话存储库实现
@@ -26,7 +26,7 @@ export class SqliteSessionRepository implements ISessionRepository {
     const db = await this.database;
     try {
       const data = session.toDTO();
-      console.log("Saving session data:", data);
+      console.log('Saving session data:', data);
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO auth_sessions (
           uuid, account_uuid, session_token, device_info, ip_address, user_agent, location_info, created_at, last_active_at, expires_at, is_active, terminated_at, termination_reason
@@ -45,7 +45,7 @@ export class SqliteSessionRepository implements ISessionRepository {
         data.expiresAt,
         data.isActive ? 1 : 0,
         data.terminatedAt || null,
-        data.terminationReason || null
+        data.terminationReason || null,
       );
     } catch (error) {
       console.error('Failed to save session:', error);
@@ -75,9 +75,11 @@ export class SqliteSessionRepository implements ISessionRepository {
   async findByAccountUuid(accountUuid: string): Promise<Session[]> {
     const db = await this.database;
     try {
-      const stmt = db.prepare(`SELECT * FROM auth_sessions WHERE account_uuid = ? ORDER BY last_active_at DESC`);
+      const stmt = db.prepare(
+        `SELECT * FROM auth_sessions WHERE account_uuid = ? ORDER BY last_active_at DESC`,
+      );
       const rows = stmt.all(accountUuid) as any[];
-      return Promise.all(rows.map(async row => await this.mapRowToSession(row)));
+      return Promise.all(rows.map(async (row) => await this.mapRowToSession(row)));
     } catch (error) {
       console.error('Failed to find sessions by account uuid:', error);
       return [];
@@ -91,9 +93,11 @@ export class SqliteSessionRepository implements ISessionRepository {
     const db = await this.database;
     try {
       const now = Date.now();
-      const stmt = db.prepare(`SELECT * FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ? ORDER BY last_active_at DESC`);
+      const stmt = db.prepare(
+        `SELECT * FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ? ORDER BY last_active_at DESC`,
+      );
       const rows = stmt.all(accountUuid, now) as any[];
-      return Promise.all(rows.map(async row => await this.mapRowToSession(row)));
+      return Promise.all(rows.map(async (row) => await this.mapRowToSession(row)));
     } catch (error) {
       console.error('Failed to find active sessions by account uuid:', error);
       return [];
@@ -135,7 +139,9 @@ export class SqliteSessionRepository implements ISessionRepository {
     const db = await this.database;
     try {
       const now = Date.now();
-      const stmt = db.prepare(`DELETE FROM auth_sessions WHERE expires_at <= ? OR (is_active = 0 AND last_active_at <= ?)`);
+      const stmt = db.prepare(
+        `DELETE FROM auth_sessions WHERE expires_at <= ? OR (is_active = 0 AND last_active_at <= ?)`,
+      );
       const result = stmt.run(now, now - 7 * 24 * 60 * 60 * 1000);
       return result.changes;
     } catch (error) {
@@ -178,7 +184,9 @@ export class SqliteSessionRepository implements ISessionRepository {
   async terminateOtherSessions(accountUuid: string, keepSessionId: string): Promise<number> {
     const db = await this.database;
     try {
-      const stmt = db.prepare(`UPDATE auth_sessions SET is_active = 0, last_active_at = ? WHERE account_uuid = ? AND uuid != ? AND is_active = 1`);
+      const stmt = db.prepare(
+        `UPDATE auth_sessions SET is_active = 0, last_active_at = ? WHERE account_uuid = ? AND uuid != ? AND is_active = 1`,
+      );
       const result = stmt.run(Date.now(), accountUuid, keepSessionId);
       return result.changes;
     } catch (error) {
@@ -194,7 +202,9 @@ export class SqliteSessionRepository implements ISessionRepository {
     const db = await this.database;
     try {
       const now = Date.now();
-      const stmt = db.prepare(`SELECT COUNT(*) as count FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?`);
+      const stmt = db.prepare(
+        `SELECT COUNT(*) as count FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?`,
+      );
       const result = stmt.get(accountUuid, now) as any;
       return result.count;
     } catch (error) {
@@ -210,7 +220,9 @@ export class SqliteSessionRepository implements ISessionRepository {
     try {
       const now = Date.now();
       const placeholders = sessionIds.map(() => '?').join(',');
-      const stmt = db.prepare(`UPDATE auth_sessions SET last_active_at = ? WHERE uuid IN (${placeholders})`);
+      const stmt = db.prepare(
+        `UPDATE auth_sessions SET last_active_at = ? WHERE uuid IN (${placeholders})`,
+      );
       stmt.run(now, ...sessionIds);
     } catch (error) {
       console.error('Failed to batch update last active:', error);
@@ -219,23 +231,38 @@ export class SqliteSessionRepository implements ISessionRepository {
   }
 
   // 获取活跃会话统计
-  async getActiveSessionStats(accountUuid: string): Promise<{ totalSessions: number; activeSessions: number; devicesCount: number; recentActivity: Date | null; }> {
+  async getActiveSessionStats(
+    accountUuid: string,
+  ): Promise<{
+    totalSessions: number;
+    activeSessions: number;
+    devicesCount: number;
+    recentActivity: Date | null;
+  }> {
     const db = await this.database;
     try {
       const now = Date.now();
-      const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM auth_sessions WHERE account_uuid = ?`);
+      const totalStmt = db.prepare(
+        `SELECT COUNT(*) as count FROM auth_sessions WHERE account_uuid = ?`,
+      );
       const totalResult = totalStmt.get(accountUuid) as any;
-      const activeStmt = db.prepare(`SELECT COUNT(*) as count FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?`);
+      const activeStmt = db.prepare(
+        `SELECT COUNT(*) as count FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?`,
+      );
       const activeResult = activeStmt.get(accountUuid, now) as any;
-      const devicesStmt = db.prepare(`SELECT COUNT(DISTINCT device_info) as count FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?`);
+      const devicesStmt = db.prepare(
+        `SELECT COUNT(DISTINCT device_info) as count FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?`,
+      );
       const devicesResult = devicesStmt.get(accountUuid, now) as any;
-      const recentStmt = db.prepare(`SELECT MAX(last_active_at) as recent FROM auth_sessions WHERE account_uuid = ? AND is_active = 1`);
+      const recentStmt = db.prepare(
+        `SELECT MAX(last_active_at) as recent FROM auth_sessions WHERE account_uuid = ? AND is_active = 1`,
+      );
       const recentResult = recentStmt.get(accountUuid) as any;
       return {
         totalSessions: totalResult.count,
         activeSessions: activeResult.count,
         devicesCount: devicesResult.count,
-        recentActivity: recentResult.recent ? new Date(recentResult.recent) : null
+        recentActivity: recentResult.recent ? new Date(recentResult.recent) : null,
       };
     } catch (error) {
       console.error('Failed to get session stats:', error);
@@ -249,9 +276,11 @@ export class SqliteSessionRepository implements ISessionRepository {
     try {
       const now = Date.now();
       const oneHourAgo = now - 60 * 60 * 1000;
-      const stmt = db.prepare(`SELECT * FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ? AND created_at > ? AND ip_address IN (SELECT ip_address FROM auth_sessions WHERE account_uuid = ? AND created_at > ? GROUP BY ip_address HAVING COUNT(DISTINCT ip_address) > 1) ORDER BY created_at DESC`);
+      const stmt = db.prepare(
+        `SELECT * FROM auth_sessions WHERE account_uuid = ? AND is_active = 1 AND expires_at > ? AND created_at > ? AND ip_address IN (SELECT ip_address FROM auth_sessions WHERE account_uuid = ? AND created_at > ? GROUP BY ip_address HAVING COUNT(DISTINCT ip_address) > 1) ORDER BY created_at DESC`,
+      );
       const rows = stmt.all(accountUuid, now, oneHourAgo, accountUuid, oneHourAgo) as any[];
-      return Promise.all(rows.map(async row => await this.mapRowToSession(row)));
+      return Promise.all(rows.map(async (row) => await this.mapRowToSession(row)));
     } catch (error) {
       console.error('Failed to find suspicious sessions:', error);
       return [];
@@ -272,7 +301,7 @@ export class SqliteSessionRepository implements ISessionRepository {
       expiresAt: row.expires_at,
       isActive: row.is_active === 1,
       terminatedAt: row.terminated_at,
-      terminationReason: row.termination_reason
+      terminationReason: row.termination_reason,
     });
   }
 }

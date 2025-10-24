@@ -4,7 +4,7 @@ import { useTaskStore } from '@renderer/modules/Task/presentation/stores/taskSto
 
 /**
  * 基于 Pinia Store 的任务状态仓库实现
- * 
+ *
  * 这是 ITaskStateRepository 接口的具体实现
  * 将抽象的状态管理操作映射到 Pinia store 的具体方法
  */
@@ -22,7 +22,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   }
 
   // === 任务模板状态管理 ===
-  
+
   async addTaskTemplate(template: ITaskTemplate): Promise<void> {
     try {
       await this.taskStore.addTaskTemplate(template);
@@ -32,7 +32,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async updateTaskTemplate(template: ITaskTemplate): Promise<void> {
     try {
       await this.taskStore.updateTaskTemplate(template);
@@ -42,7 +42,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async removeTaskTemplate(templateId: string): Promise<void> {
     try {
       await this.taskStore.removeTaskTemplateById(templateId);
@@ -52,7 +52,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async setTaskTemplates(templates: ITaskTemplate[]): Promise<void> {
     try {
       this.taskStore.setTaskTemplates(templates);
@@ -62,7 +62,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async clearAllTaskTemplates(): Promise<void> {
     try {
       this.taskStore.clearAllTaskTemplates();
@@ -72,7 +72,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async removeInstancesByTemplateId(templateId: string): Promise<void> {
     try {
       await this.taskStore.removeInstancesByTemplateId(templateId);
@@ -84,7 +84,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   }
 
   // === 任务实例状态管理 ===
-  
+
   async addTaskInstance(instance: ITaskInstance): Promise<void> {
     try {
       await this.taskStore.addTaskInstance(instance);
@@ -94,7 +94,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async updateTaskInstance(instance: ITaskInstance): Promise<void> {
     try {
       await this.taskStore.updateTaskInstance(instance);
@@ -104,7 +104,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async removeTaskInstance(instanceId: string): Promise<void> {
     try {
       await this.taskStore.removeTaskInstanceById(instanceId);
@@ -114,7 +114,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
       throw error;
     }
   }
-  
+
   async setTaskInstances(instances: ITaskInstance[]): Promise<void> {
     try {
       this.taskStore.setTaskInstances(instances);
@@ -136,7 +136,7 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   }
 
   // === 元模板状态管理 ===
-  
+
   async setMetaTemplates(metaTemplates: any[]): Promise<void> {
     try {
       this.taskStore.setMetaTemplates(metaTemplates);
@@ -159,21 +159,23 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   }
 
   // === 综合状态同步 ===
-  
+
   async syncAllTaskData(
-    templates: ITaskTemplate[], 
-    instances: ITaskInstance[], 
-    metaTemplates: any[]
+    templates: ITaskTemplate[],
+    instances: ITaskInstance[],
+    metaTemplates: any[],
   ): Promise<void> {
     try {
       this.taskStore.syncAllData(templates, instances, metaTemplates);
-      console.log(`✅ [StateRepo] 全量同步任务数据: ${templates.length} 模板, ${instances.length} 实例, ${metaTemplates.length} 元模板`);
+      console.log(
+        `✅ [StateRepo] 全量同步任务数据: ${templates.length} 模板, ${instances.length} 实例, ${metaTemplates.length} 元模板`,
+      );
     } catch (error) {
       console.error('❌ [StateRepo] 全量同步失败', error);
       throw error;
     }
   }
-  
+
   isAvailable(): boolean {
     try {
       // 简单检查 store 是否可用

@@ -1,4 +1,4 @@
-import type { Database } from "better-sqlite3";
+import type { Database } from 'better-sqlite3';
 
 /**
  * 目标模块数据表管理
@@ -9,8 +9,6 @@ export class GoalTables {
    * 创建目标相关表
    */
   static createTables(db: Database): void {
-
-
     // db.exec(`
     //   DROP TABLE IF EXISTS goal_relationships;
     //   DROP TABLE IF EXISTS goal_reviews;

@@ -1,12 +1,11 @@
-import { useGoalServices } from "./useGoalService";
-import { ref } from "vue";
-import { Goal } from "../../domain/aggregates/goal";
-import { KeyResult } from "../../domain/entities/keyResult";
+import { useGoalServices } from './useGoalService';
+import { ref } from 'vue';
+import { Goal } from '../../domain/aggregates/goal';
+import { KeyResult } from '../../domain/entities/keyResult';
 
-import router from "@renderer/shared/router";
+import router from '@renderer/shared/router';
 export function useGoalDialog() {
-  const { handleCreateGoal, handleUpdateGoal, handleDeleteGoal } =
-    useGoalServices();
+  const { handleCreateGoal, handleUpdateGoal, handleDeleteGoal } = useGoalServices();
   const goalDialog = ref<{
     show: boolean;
     goal: Goal | null;
@@ -83,7 +82,7 @@ export function useGoalDialog() {
 
   const startCreateGoalReview = (goalUuid: string) => {
     router.push({
-      name: "goal-review",
+      name: 'goal-review',
       params: {
         goalUuid: goalUuid,
       },

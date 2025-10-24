@@ -9,6 +9,7 @@
 ### 2025-10-14 V2 更新
 
 #### Authentication 模块 V2
+
 - ⭐️ **新增**: AuthCredential 聚合根（认证凭证管理）
 - ⭐️ **新增**: PasswordCredential 实体（密码凭证）
 - ⭐️ **新增**: ApiKeyCredential 实体（API Key 凭证）
@@ -17,6 +18,7 @@
 - 📄 文档: `docs/modules/authentication/AUTHENTICATION_MODEL_INTERFACES_V2.md`
 
 #### Task 模块 V2
+
 - 🔄 **重构**: 采用 **任务模板-任务实例** 架构
 - ⭐️ **新增**: TaskTemplate 聚合根（任务模板，定义规则）
 - ⭐️ **新增**: TaskInstance 聚合根（任务实例，表示执行）
@@ -27,6 +29,7 @@
 - 📄 文档: `docs/modules/task/TASK_MODEL_INTERFACES_V2.md`
 
 #### Reminder 模块 V2
+
 - 🔄 **重构**: 专注于独立的循环重复提醒功能
 - ✨ **支持**: 固定时间触发（每天 XX:XX）
 - ✨ **支持**: 间隔时间触发（每隔 XX 分钟）
@@ -42,18 +45,18 @@
 
 ## 模块列表
 
-| 模块 | 文档路径 | 状态 | 版本 |
-|------|---------|------|------|
-| Goal | `docs/modules/goal/GOAL_MODULE_INTERFACES.md` | ✅ 已完成 | V1 |
-| Task | `docs/modules/task/TASK_MODEL_INTERFACES_V2.md` | ✅ 已完成 | V2 ⭐️ |
-| Reminder | `docs/modules/reminder/REMINDER_MODEL_INTERFACES_V2.md` | ✅ 已完成 | V2 ⭐️ |
-| Account | `docs/modules/account/ACCOUNT_MODEL_INTERFACES.md` | ✅ 已完成 | V1 |
+| 模块           | 文档路径                                                            | 状态      | 版本   |
+| -------------- | ------------------------------------------------------------------- | --------- | ------ |
+| Goal           | `docs/modules/goal/GOAL_MODULE_INTERFACES.md`                       | ✅ 已完成 | V1     |
+| Task           | `docs/modules/task/TASK_MODEL_INTERFACES_V2.md`                     | ✅ 已完成 | V2 ⭐️ |
+| Reminder       | `docs/modules/reminder/REMINDER_MODEL_INTERFACES_V2.md`             | ✅ 已完成 | V2 ⭐️ |
+| Account        | `docs/modules/account/ACCOUNT_MODEL_INTERFACES.md`                  | ✅ 已完成 | V1     |
 | Authentication | `docs/modules/authentication/AUTHENTICATION_MODEL_INTERFACES_V2.md` | ✅ 已完成 | V2 ⭐️ |
-| Notification | `docs/modules/notification/NOTIFICATION_MODEL_INTERFACES.md` | ✅ 已完成 | V1 |
-| Setting | `docs/modules/setting/SETTING_MODEL_INTERFACES.md` | ✅ 已完成 | V1 |
-| Repository | `docs/modules/repository/实体接口设计.md` | ✅ 已完成 | V1 |
-| Schedule | `docs/modules/schedule/` | ✅ 已完成 | V1 |
-| Editor | `docs/modules/editor/` | ✅ 已完成 | V1 |
+| Notification   | `docs/modules/notification/NOTIFICATION_MODEL_INTERFACES.md`        | ✅ 已完成 | V1     |
+| Setting        | `docs/modules/setting/SETTING_MODEL_INTERFACES.md`                  | ✅ 已完成 | V1     |
+| Repository     | `docs/modules/repository/实体接口设计.md`                           | ✅ 已完成 | V1     |
+| Schedule       | `docs/modules/schedule/`                                            | ✅ 已完成 | V1     |
+| Editor         | `docs/modules/editor/`                                              | ✅ 已完成 | V1     |
 
 ---
 
@@ -70,6 +73,7 @@ deletedAt?: number | null; // epoch ms
 ```
 
 **优势:**
+
 - ✅ 所有层次统一: Persistence / Server / Client / Entity
 - ✅ 性能优势: 传输、存储、序列化性能提升 70%+
 - ✅ date-fns 兼容: 完全支持 `number | Date` 参数
@@ -142,6 +146,7 @@ TaskStatistics (聚合根)
 ```
 
 **特点 V2:**
+
 - ✅ **模板-实例架构**: 单次任务和重复任务统一管理
 - ✅ **时间类型**: 全天任务、时间点任务、时间段任务
 - ✅ **重复规则**: 支持日/周/月/年级别的复杂重复
@@ -162,6 +167,7 @@ ReminderStatistics (聚合根)
 ```
 
 **特点 V2:**
+
 - ✅ **独立提醒系统**: 不依赖任务或日程
 - ✅ **固定时间触发**: 每天 XX:XX
 - ✅ **间隔时间触发**: 每隔 XX 分钟
@@ -178,6 +184,7 @@ Account (聚合根)
 ```
 
 **特点:**
+
 - 用户资料管理
 - 订阅管理
 - 存储配额管理
@@ -196,6 +203,7 @@ Permission (聚合根)
 ```
 
 **特点:**
+
 - 会话管理
 - 令牌管理
 - OAuth 集成
@@ -213,6 +221,7 @@ NotificationPreference (聚合根)
 ```
 
 **特点:**
+
 - 多渠道通知(应用内、邮件、推送、短信)
 - 通知模板
 - 用户偏好
@@ -231,6 +240,7 @@ UserSetting (聚合根)
 ```
 
 **特点:**
+
 - 层级设置管理
 - 多作用域(系统、用户、设备)
 - 类型验证
@@ -240,18 +250,18 @@ UserSetting (聚合根)
 
 ## 聚合根统计
 
-| 模块 | 聚合根数量 | 主要聚合根 |
-|------|-----------|----------|
-| Goal | 3 | Goal, GoalFolder, GoalStatistics |
-| Task | 3 | Task, TaskFolder, TaskStatistics |
-| Reminder | 3 | Reminder, ReminderGroup, ReminderStatistics |
-| Account | 1 | Account |
-| Authentication | 3 | AuthSession, AuthProvider, Permission |
-| Notification | 3 | Notification, NotificationTemplate, NotificationPreference |
-| Setting | 3 | Setting, AppConfig, UserSetting |
-| Repository | 1 | Repository |
-| Schedule | 2 | Schedule, ScheduleTemplate |
-| Editor | 1 | Document |
+| 模块           | 聚合根数量 | 主要聚合根                                                 |
+| -------------- | ---------- | ---------------------------------------------------------- |
+| Goal           | 3          | Goal, GoalFolder, GoalStatistics                           |
+| Task           | 3          | Task, TaskFolder, TaskStatistics                           |
+| Reminder       | 3          | Reminder, ReminderGroup, ReminderStatistics                |
+| Account        | 1          | Account                                                    |
+| Authentication | 3          | AuthSession, AuthProvider, Permission                      |
+| Notification   | 3          | Notification, NotificationTemplate, NotificationPreference |
+| Setting        | 3          | Setting, AppConfig, UserSetting                            |
+| Repository     | 1          | Repository                                                 |
+| Schedule       | 2          | Schedule, ScheduleTemplate                                 |
+| Editor         | 1          | Document                                                   |
 
 **总计: 23 个聚合根**
 
@@ -259,18 +269,18 @@ UserSetting (聚合根)
 
 ## 实体统计
 
-| 模块 | 实体数量 | 主要实体 |
-|------|---------|---------|
-| Goal | 3 | KeyResult, GoalRecord, GoalReview |
-| Task | 4 | TaskStep, TaskAttachment, TaskDependency, TaskHistory |
-| Reminder | 2 | ReminderOccurrence, ReminderHistory |
-| Account | 2 | Subscription, AccountHistory |
-| Authentication | 3 | RefreshToken, SessionHistory, Role |
-| Notification | 2 | NotificationChannel, NotificationHistory |
-| Setting | 3 | SettingGroup, SettingItem, SettingHistory |
-| Repository | 4 | Resource, ResourceReference, LinkedContent, RepositoryExplorer |
-| Schedule | 2 | ScheduleEvent, Recurrence |
-| Editor | 3 | Block, Version, Comment |
+| 模块           | 实体数量 | 主要实体                                                       |
+| -------------- | -------- | -------------------------------------------------------------- |
+| Goal           | 3        | KeyResult, GoalRecord, GoalReview                              |
+| Task           | 4        | TaskStep, TaskAttachment, TaskDependency, TaskHistory          |
+| Reminder       | 2        | ReminderOccurrence, ReminderHistory                            |
+| Account        | 2        | Subscription, AccountHistory                                   |
+| Authentication | 3        | RefreshToken, SessionHistory, Role                             |
+| Notification   | 2        | NotificationChannel, NotificationHistory                       |
+| Setting        | 3        | SettingGroup, SettingItem, SettingHistory                      |
+| Repository     | 4        | Resource, ResourceReference, LinkedContent, RepositoryExplorer |
+| Schedule       | 2        | ScheduleEvent, Recurrence                                      |
+| Editor         | 3        | Block, Version, Comment                                        |
 
 **总计: 28 个实体**
 
@@ -278,14 +288,14 @@ UserSetting (聚合根)
 
 ## 领域服务统计
 
-| 模块 | 领域服务 |
-|------|---------|
-| Task | TaskDependencyService, TaskRecurrenceService |
-| Reminder | ReminderTriggerService, ReminderRecurrenceService, LocationReminderService |
-| Account | AccountValidationService, StorageManagementService |
-| Authentication | TokenService, PasswordService, TwoFactorService |
-| Notification | NotificationSenderService, NotificationTemplateService |
-| Setting | SettingValidationService, SettingSyncService |
+| 模块           | 领域服务                                                                   |
+| -------------- | -------------------------------------------------------------------------- |
+| Task           | TaskDependencyService, TaskRecurrenceService                               |
+| Reminder       | ReminderTriggerService, ReminderRecurrenceService, LocationReminderService |
+| Account        | AccountValidationService, StorageManagementService                         |
+| Authentication | TokenService, PasswordService, TwoFactorService                            |
+| Notification   | NotificationSenderService, NotificationTemplateService                     |
+| Setting        | SettingValidationService, SettingSyncService                               |
 
 **总计: 13 个领域服务**
 
@@ -352,7 +362,7 @@ UserSetting (聚合根)
 export interface TaskServer {
   // 子实体
   steps: TaskStepServer[];
-  
+
   // 子实体管理方法
   addStep(step: TaskStepServer): void;
   removeStep(stepUuid: string): void;
@@ -454,22 +464,22 @@ fromPersistenceDTO(dto: TaskPersistenceDTO): TaskServer;
 
 ```typescript
 // Domain Entity -> Persistence
-task.toPersistenceDTO() // 保存到数据库
+task.toPersistenceDTO(); // 保存到数据库
 
 // Persistence -> Domain Entity
-Task.fromPersistenceDTO(dto) // 从数据库加载
+Task.fromPersistenceDTO(dto); // 从数据库加载
 
 // Domain Entity -> Server
-task.toServerDTO() // 发送到前端
+task.toServerDTO(); // 发送到前端
 
 // Server -> Domain Entity
-Task.fromServerDTO(dto) // 接收前端数据
+Task.fromServerDTO(dto); // 接收前端数据
 
 // Server -> Client
-task.toClientDTO() // 转换为 UI 格式
+task.toClientDTO(); // 转换为 UI 格式
 
 // Client -> Server
-task.toServerDTO() // 提交到服务端
+task.toServerDTO(); // 提交到服务端
 ```
 
 ---

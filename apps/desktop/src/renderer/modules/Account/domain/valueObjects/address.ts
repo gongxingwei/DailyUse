@@ -14,12 +14,12 @@ export class Address {
     city: string,
     district: string,
     street: string,
-    postalCode?: string
+    postalCode?: string,
   ) {
     if (!province || !city || !district || !street) {
       throw new Error('Address components cannot be empty');
     }
-    
+
     this._province = province.trim();
     this._city = city.trim();
     this._district = district.trim();
@@ -59,11 +59,13 @@ export class Address {
    * 值对象相等性比较
    */
   equals(other: Address): boolean {
-    return this._province === other._province &&
-           this._city === other._city &&
-           this._district === other._district &&
-           this._street === other._street &&
-           this._postalCode === other._postalCode;
+    return (
+      this._province === other._province &&
+      this._city === other._city &&
+      this._district === other._district &&
+      this._street === other._street &&
+      this._postalCode === other._postalCode
+    );
   }
 
   toString(): string {

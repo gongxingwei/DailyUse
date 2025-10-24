@@ -11,20 +11,21 @@ pnpm add @tiptap/vue-3 @tiptap/starter-kit @tiptap/extension-placeholder @tiptap
 
 ### 依赖说明
 
-| 包名 | 版本 | 用途 |
-|------|------|------|
-| `@tiptap/vue-3` | ^2.x | Tiptap Vue 3 集成 |
-| `@tiptap/starter-kit` | ^2.x | Tiptap 核心功能包 |
-| `@tiptap/extension-placeholder` | ^2.x | 占位符扩展 |
-| `@tiptap/extension-link` | ^2.x | 链接扩展 |
-| `@tiptap/extension-image` | ^2.x | 图片扩展 |
-| `marked` | ^14.x | Markdown 转 HTML（预览模式） |
+| 包名                            | 版本  | 用途                         |
+| ------------------------------- | ----- | ---------------------------- |
+| `@tiptap/vue-3`                 | ^2.x  | Tiptap Vue 3 集成            |
+| `@tiptap/starter-kit`           | ^2.x  | Tiptap 核心功能包            |
+| `@tiptap/extension-placeholder` | ^2.x  | 占位符扩展                   |
+| `@tiptap/extension-link`        | ^2.x  | 链接扩展                     |
+| `@tiptap/extension-image`       | ^2.x  | 图片扩展                     |
+| `marked`                        | ^14.x | Markdown 转 HTML（预览模式） |
 
 ## 🎯 组件说明
 
 ### 1. EditorContainer（主容器组件）
 
 **职责：**
+
 - 多标签页管理
 - 文件打开/关闭
 - 内容自动保存协调
@@ -75,11 +76,13 @@ function handleSaveRequest(tab) {
 ### 2. EditorTabBar（标签栏组件）
 
 **职责：**
+
 - 显示标签页列表
 - 标签页切换
 - 标签页关闭
 
 **特性：**
+
 - 显示文件类型图标
 - 显示未保存标识（小圆点）
 - 支持标签页滚动（多标签）
@@ -87,17 +90,20 @@ function handleSaveRequest(tab) {
 ### 3. MarkdownEditor（Markdown 编辑器）
 
 **职责：**
+
 - Markdown 内容编辑
 - 实时预览
 - 所见即所得编辑
 
 **特性：**
+
 - **编辑模式**：所见即所得编辑器（Tiptap）
 - **预览模式**：渲染后的 Markdown HTML
 - **工具栏**：加粗、斜体、标题、列表、代码块、链接、图片
 - **字数统计**
 
 **快捷键：**
+
 - `Ctrl/Cmd + B`：加粗
 - `Ctrl/Cmd + I`：斜体
 - `Ctrl/Cmd + K`：插入链接
@@ -106,11 +112,13 @@ function handleSaveRequest(tab) {
 ### 4. MediaViewer（媒体查看器）
 
 **职责：**
+
 - 图片查看
 - 视频播放
 - 音频播放
 
 **支持格式：**
+
 - **图片**：jpg, png, gif, svg, webp
 - **视频**：mp4, webm, ogg
 - **音频**：mp3, wav, ogg
@@ -125,15 +133,15 @@ function handleSaveRequest(tab) {
 import { useEditor } from '@/modules/editor';
 
 const {
-  setEditorInstance,     // 设置编辑器实例
-  openFile,              // 打开文件
-  closeFile,             // 关闭文件
-  closeAllFiles,         // 关闭所有文件
-  saveCurrentFile,       // 保存当前文件
-  saveAllFiles,          // 保存所有文件
-  openTabs,              // 打开的标签列表（响应式）
-  activeTab,             // 当前激活的标签（响应式）
-  hasUnsavedChanges,     // 是否有未保存的更改（响应式）
+  setEditorInstance, // 设置编辑器实例
+  openFile, // 打开文件
+  closeFile, // 关闭文件
+  closeAllFiles, // 关闭所有文件
+  saveCurrentFile, // 保存当前文件
+  saveAllFiles, // 保存所有文件
+  openTabs, // 打开的标签列表（响应式）
+  activeTab, // 当前激活的标签（响应式）
+  hasUnsavedChanges, // 是否有未保存的更改（响应式）
 } = useEditor();
 ```
 
@@ -144,13 +152,13 @@ const {
   <div>
     <!-- 在 Repository 页面中使用 -->
     <editor-container ref="editorRef" />
-    
+
     <!-- 显示状态 -->
     <div>
       打开的文件数：{{ openTabs.length }}
       <v-chip v-if="hasUnsavedChanges" color="warning">未保存</v-chip>
     </div>
-    
+
     <!-- 操作按钮 -->
     <v-btn @click="saveAllFiles">保存所有</v-btn>
   </div>
@@ -161,12 +169,7 @@ import { onMounted } from 'vue';
 import { EditorContainer, useEditor } from '@/modules/editor';
 
 const editorRef = ref();
-const {
-  setEditorInstance,
-  openTabs,
-  hasUnsavedChanges,
-  saveAllFiles,
-} = useEditor();
+const { setEditorInstance, openTabs, hasUnsavedChanges, saveAllFiles } = useEditor();
 
 onMounted(() => {
   // 注册编辑器实例
@@ -187,7 +190,7 @@ Editor 模块作为组件嵌入到 Repository 模块的编辑器页面。
     <div class="file-tree">
       <repository-file-tree @file-click="handleFileClick" />
     </div>
-    
+
     <!-- 右侧：编辑器（Editor 模块提供） -->
     <div class="editor-area">
       <editor-container
@@ -212,7 +215,7 @@ const editorRef = ref();
 function handleFileClick(file) {
   // 根据文件类型判断
   const fileType = getFileType(file.path);
-  
+
   editorRef.value.openFile({
     uuid: file.uuid,
     title: file.name,
@@ -227,12 +230,12 @@ function handleFileClick(file) {
  */
 function getFileType(path) {
   const ext = path.split('.').pop().toLowerCase();
-  
+
   if (ext === 'md') return 'markdown';
   if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) return 'image';
   if (['mp4', 'webm', 'ogg'].includes(ext)) return 'video';
   if (['mp3', 'wav', 'ogg'].includes(ext)) return 'audio';
-  
+
   return 'markdown'; // 默认
 }
 
@@ -253,7 +256,7 @@ async function handleSaveRequest(tab) {
     await repositoryApi.updateResource(tab.uuid, {
       content: tab.content,
     });
-    
+
     console.log('File saved:', tab.title);
   } catch (error) {
     console.error('Save failed:', error);
@@ -283,6 +286,7 @@ async function handleSaveRequest(tab) {
 所有组件都支持通过 Vuetify 主题变量进行样式自定义。
 
 **可自定义的颜色变量：**
+
 - `--v-theme-surface`：背景色
 - `--v-theme-on-surface`：文字色
 - `--v-theme-primary`：主色调
@@ -295,31 +299,34 @@ async function handleSaveRequest(tab) {
  * 编辑器标签页
  */
 export interface EditorTab {
-  uuid: string;                                // 标签唯一标识
-  title: string;                               // 标签标题
+  uuid: string; // 标签唯一标识
+  title: string; // 标签标题
   fileType: 'markdown' | 'image' | 'video' | 'audio'; // 文件类型
-  filePath: string;                            // 文件路径
-  content?: string;                            // 文件内容（Markdown）
-  isDirty: boolean;                            // 是否有未保存的更改
-  isPinned?: boolean;                          // 是否固定（可选）
+  filePath: string; // 文件路径
+  content?: string; // 文件内容（Markdown）
+  isDirty: boolean; // 是否有未保存的更改
+  isPinned?: boolean; // 是否固定（可选）
 }
 ```
 
 ## 🚀 未来改进
 
 ### 短期（1-2 周）
+
 - [ ] 添加代码高亮（Shiki 或 Prism）
 - [ ] 添加拖拽排序标签页
 - [ ] 添加快捷键支持
 - [ ] 添加搜索/替换功能
 
 ### 中期（1 个月）
+
 - [ ] 添加图表支持（Mermaid）
 - [ ] 添加公式支持（KaTeX）
 - [ ] 添加表格编辑器
 - [ ] 添加文件历史版本
 
 ### 长期（3 个月+）
+
 - [ ] 添加协同编辑（WebSocket）
 - [ ] 添加插件系统
 - [ ] 添加主题自定义

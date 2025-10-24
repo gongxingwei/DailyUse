@@ -2,14 +2,9 @@
 <template>
   <div class="weekday-selector">
     <v-label class="mb-2">选择星期</v-label>
-    <v-chip-group 
-      v-model="localSelected" 
-      multiple 
-      variant="outlined"
-      selected-class="text-primary"
-    >
-      <v-chip 
-        v-for="(day, index) in weekdayOptions" 
+    <v-chip-group v-model="localSelected" multiple variant="outlined" selected-class="text-primary">
+      <v-chip
+        v-for="(day, index) in weekdayOptions"
         :key="index"
         :value="index"
         filter
@@ -18,39 +13,15 @@
         {{ day }}
       </v-chip>
     </v-chip-group>
-    
+
     <div class="mt-2">
-      <v-btn 
-        size="small" 
-        variant="text" 
-        @click="selectWorkdays"
-      >
-        工作日
-      </v-btn>
-      
-      <v-btn 
-        size="small" 
-        variant="text" 
-        @click="selectWeekends"
-      >
-        周末
-      </v-btn>
-      
-      <v-btn 
-        size="small" 
-        variant="text" 
-        @click="selectAll"
-      >
-        全选
-      </v-btn>
-      
-      <v-btn 
-        size="small" 
-        variant="text" 
-        @click="clearAll"
-      >
-        清空
-      </v-btn>
+      <v-btn size="small" variant="text" @click="selectWorkdays"> 工作日 </v-btn>
+
+      <v-btn size="small" variant="text" @click="selectWeekends"> 周末 </v-btn>
+
+      <v-btn size="small" variant="text" @click="selectAll"> 全选 </v-btn>
+
+      <v-btn size="small" variant="text" @click="clearAll"> 清空 </v-btn>
     </div>
   </div>
 </template>
@@ -71,7 +42,7 @@ const emit = defineEmits<Emits>();
 
 const localSelected = computed({
   get: () => props.modelValue || [],
-  set: (value: number[]) => emit('update:modelValue', value)
+  set: (value: number[]) => emit('update:modelValue', value),
 });
 
 const weekdayOptions = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];

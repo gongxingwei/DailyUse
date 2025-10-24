@@ -1,9 +1,9 @@
 /**
  * Keyboard Shortcuts Composable
- * 
+ *
  * Provides a simple API for registering and managing keyboard shortcuts.
  * Handles platform differences (Cmd on Mac, Ctrl on Windows/Linux).
- * 
+ *
  * @module useKeyboardShortcuts
  */
 
@@ -106,7 +106,7 @@ export function useKeyboardShortcuts() {
 
   /**
    * Register a keyboard shortcut
-   * 
+   *
    * @param id Unique identifier for the shortcut
    * @param config Shortcut configuration
    * @returns Cleanup function
@@ -122,15 +122,11 @@ export function useKeyboardShortcuts() {
       // Skip if user is typing in an input field
       const target = event.target as HTMLElement;
       const isInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       // Allow shortcuts with modifiers even in input fields
       const hasModifiers =
-        config.modifiers?.ctrl ||
-        config.modifiers?.meta ||
-        config.modifiers?.alt;
+        config.modifiers?.ctrl || config.modifiers?.meta || config.modifiers?.alt;
 
       if (isInput && !hasModifiers) {
         return;
@@ -166,7 +162,7 @@ export function useKeyboardShortcuts() {
 
   /**
    * Unregister a keyboard shortcut
-   * 
+   *
    * @param id Shortcut identifier
    */
   function unregister(id: string): void {
@@ -221,7 +217,7 @@ export function useKeyboardShortcuts() {
 
 /**
  * Global keyboard shortcut composable
- * 
+ *
  * Use this for shortcuts that should always be active,
  * regardless of which component is mounted.
  */
@@ -230,7 +226,7 @@ export function useGlobalKeyboardShortcuts() {
 
   /**
    * Register a global shortcut
-   * 
+   *
    * Unlike regular shortcuts, these are not automatically cleaned up on unmount.
    * You must call unregister() or unregisterAll() manually.
    */

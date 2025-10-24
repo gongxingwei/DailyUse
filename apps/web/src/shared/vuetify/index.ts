@@ -115,37 +115,37 @@ const vuetify = createVuetify({
         dark: false,
         colors: {
           // ===== 核心颜色 =====
-          primary: '#8C6A3D',          // 主色（深卡其色）
-          'on-primary': '#FFF9F0',     // 主色上的文本（米白）
+          primary: '#8C6A3D', // 主色（深卡其色）
+          'on-primary': '#FFF9F0', // 主色上的文本（米白）
           'primary-container': '#E8D8C0', // 主色容器（浅卡其）
-          
-          secondary: '#A38B5E',        // 次要色（黄铜色）
-          'on-secondary': '#FFF9F0',   
+
+          secondary: '#A38B5E', // 次要色（黄铜色）
+          'on-secondary': '#FFF9F0',
           'secondary-container': '#F0E6D0',
-          
-          tertiary: '#9A7B4F',         // 强调色（深黄褐）
-          'on-tertiary': '#FFF9F0',    
+
+          tertiary: '#9A7B4F', // 强调色（深黄褐）
+          'on-tertiary': '#FFF9F0',
           'tertiary-container': '#EADBC5',
-          
-          error: '#B4716D',            // 错误色（灰粉）
-          'on-error': '#FFF9F0',       
+
+          error: '#B4716D', // 错误色（灰粉）
+          'on-error': '#FFF9F0',
           'error-container': '#F0D8D6',
-          
-          success: '#7A8C69',          // 成功色（橄榄绿）
-          info: '#7A8C9C',             // 信息色（灰蓝）
-          warning: '#C9A86B',          // 警告色（金黄）
+
+          success: '#7A8C69', // 成功色（橄榄绿）
+          info: '#7A8C9C', // 信息色（灰蓝）
+          warning: '#C9A86B', // 警告色（金黄）
 
           // ===== 背景与表面 =====
-          background: '#F5F0E6',       // 全局背景（米黄）
-          surface: '#FDF5E8',          // 卡片背景（象牙白）
-          'on-surface': '#4A3C2A',     // 主文本（深褐）
+          background: '#F5F0E6', // 全局背景（米黄）
+          surface: '#FDF5E8', // 卡片背景（象牙白）
+          'on-surface': '#4A3C2A', // 主文本（深褐）
           'surface-variant': '#F0E6D6', // 次级表面
           'on-surface-variant': '#5D4E3A',
-          
+
           // ===== 功能色 =====
-          outline: '#D4C8B8',          // 边框（亚麻色）
+          outline: '#D4C8B8', // 边框（亚麻色）
           'outline-variant': '#E0D6C5',
-          'surface-dim': '#EDE4D4',    // 低亮度表面
+          'surface-dim': '#EDE4D4', // 低亮度表面
           'surface-bright': '#FDF8ED', // 高亮度表面
 
           // ===== 滚动条/交互 =====
@@ -153,12 +153,12 @@ const vuetify = createVuetify({
           'scrollbar-thumb-hover': 'rgba(140, 106, 61, 0.5)',
           'scrollbar-track': '#F0E6D6',
           'hover-state': 'rgba(140, 106, 61, 0.08)', // 悬停状态
-          
+
           // ===== 扩展 =====
-          'text-disabled': '#B8A98E',   // 禁用文本
-          'link': '#9A7B4F',            // 链接色（同强调色）
-          'selection': 'rgba(232, 216, 192, 0.5)' // 文本选中背景
-        }
+          'text-disabled': '#B8A98E', // 禁用文本
+          link: '#9A7B4F', // 链接色（同强调色）
+          selection: 'rgba(232, 216, 192, 0.5)', // 文本选中背景
+        },
       },
       lightBlue: {
         dark: false, // 显式声明浅色模式

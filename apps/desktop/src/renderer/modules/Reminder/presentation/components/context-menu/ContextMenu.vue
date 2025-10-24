@@ -1,17 +1,9 @@
 <template>
   <teleport to="body">
-    <div 
-      v-if="props.show"
-      class="context-menu-overlay"
-      @click="$emit('close')"
-    >
-      <div 
-        class="context-menu"
-        :style="{ left: x + 'px', top: y + 'px' }"
-        @click.stop
-      >
-        <div 
-          v-for="item in items" 
+    <div v-if="props.show" class="context-menu-overlay" @click="$emit('close')">
+      <div class="context-menu" :style="{ left: x + 'px', top: y + 'px' }" @click.stop>
+        <div
+          v-for="item in items"
           :key="item.label"
           class="context-menu-item"
           @click="$emit('select', item.action)"
@@ -25,7 +17,6 @@
 </template>
 
 <script setup lang="ts">
-
 interface MenuItem {
   label: string;
   icon: string;
@@ -40,14 +31,13 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  show: false
+  show: false,
 });
 
 defineEmits<{
   select: [action: () => void];
   close: [];
 }>();
-
 </script>
 
 <style scoped>
@@ -62,8 +52,8 @@ defineEmits<{
 }
 
 .context-menu {
-    width: 200px;
-    height: 200px;
+  width: 200px;
+  height: 200px;
   position: absolute;
   background: rgba(var(--v-theme-surface), 1);
   border-radius: 8px;

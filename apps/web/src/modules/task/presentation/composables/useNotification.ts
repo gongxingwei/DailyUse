@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref } from 'vue';
 
 /**
  * 通知 Composable
@@ -17,19 +17,19 @@ export function useNotification() {
     show: false,
     message: '',
     color: 'success',
-    timeout: 4000
+    timeout: 4000,
   });
 
   const showSnackbar = (
-    message: string, 
+    message: string,
     color: SnackbarConfig['color'] = 'success',
-    timeout: number = 4000
+    timeout: number = 4000,
   ) => {
     snackbar.value = {
       show: true,
       message,
       color,
-      timeout
+      timeout,
     };
   };
 
@@ -60,6 +60,6 @@ export function useNotification() {
     showSuccess,
     showError,
     showWarning,
-    showInfo
+    showInfo,
   };
 }

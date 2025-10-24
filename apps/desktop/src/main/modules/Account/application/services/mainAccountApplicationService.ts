@@ -1,14 +1,17 @@
-import type { AccountDTO, IAccountRepository } from "../../../Account";
+import type { AccountDTO, IAccountRepository } from '../../../Account';
 // import type { IUserRepository } from "../../../Account";
-import { Account } from "../../domain/aggregates/account";
-import { User } from "../../domain/entities/user";
-import { Email } from "../../domain/valueObjects/email";
-import { PhoneNumber } from "../../domain/valueObjects/phoneNumber";
-import type { ApiResponse } from "@dailyuse/contracts";
-import { AccountRegistrationRequest, AccountType } from "../../../../../common/modules/account/types/account";
-import { generateUUID } from "@dailyuse/utils";
-import { eventBus } from "@dailyuse/utils";
-import { AccountContainer } from "../../infrastructure/di/accountContainer";
+import { Account } from '../../domain/aggregates/account';
+import { User } from '../../domain/entities/user';
+import { Email } from '../../domain/valueObjects/email';
+import { PhoneNumber } from '../../domain/valueObjects/phoneNumber';
+import type { ApiResponse } from '@dailyuse/contracts';
+import {
+  AccountRegistrationRequest,
+  AccountType,
+} from '../../../../../common/modules/account/types/account';
+import { generateUUID } from '@dailyuse/utils';
+import { eventBus } from '@dailyuse/utils';
+import { AccountContainer } from '../../infrastructure/di/accountContainer';
 
 /**
  * 主进程中的账号应用服务
@@ -19,7 +22,7 @@ export class MainAccountApplicationService {
   private static instance: MainAccountApplicationService;
   private accountRepository: IAccountRepository;
   // private userRepository: IUserRepository;
-  
+
   constructor() {
     const container = AccountContainer.getInstance();
     this.accountRepository = container.getAccountRepository();
@@ -45,7 +48,7 @@ export class MainAccountApplicationService {
         return {
           success: false,
           message: '用户名已存在',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -56,7 +59,7 @@ export class MainAccountApplicationService {
           return {
             success: false,
             message: '邮箱已被使用',
-            data: undefined
+            data: undefined,
           };
         }
       }
@@ -68,7 +71,7 @@ export class MainAccountApplicationService {
           return {
             success: false,
             message: '手机号已被使用',
-            data: undefined
+            data: undefined,
           };
         }
       }
@@ -91,8 +94,7 @@ export class MainAccountApplicationService {
         user: user,
         email: registerData.email ? new Email(registerData.email) : undefined,
         phoneNumber: registerData.phone ? new PhoneNumber(registerData.phone) : undefined,
-      })
-      
+      });
 
       // 6. 保存 Account（包含 User）
       await this.accountRepository.save(account);
@@ -112,30 +114,26 @@ export class MainAccountApplicationService {
       return {
         success: true,
         message: '账号注册成功，请完成认证设置',
-        data: account
+        data: account,
       };
-
     } catch (error) {
       console.error('❌ [主进程-注册] 注册账号失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '注册失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
 
-  async updateUserProfile(
-    accountUuid: string,
-    userDTO: User
-  ): Promise<ApiResponse<void>> {
+  async updateUserProfile(accountUuid: string, userDTO: User): Promise<ApiResponse<void>> {
     try {
       const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
       const user = User.fromDTO(userDTO);
@@ -154,7 +152,7 @@ export class MainAccountApplicationService {
       return {
         success: false,
         message: error instanceof Error ? error.message : '更新用户信息失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -165,23 +163,22 @@ export class MainAccountApplicationService {
   async getAllUsers(): Promise<ApiResponse<Account[]>> {
     try {
       console.log('🔄 [主进程-查询] 开始获取用户列表');
-      
+
       const accounts = await this.accountRepository.findAll();
-      
+
       console.log('✅ [主进程-查询] 获取用户列表完成');
-      
+
       return {
         success: true,
         message: '获取成功',
-        data: accounts
+        data: accounts,
       };
-
     } catch (error) {
       console.error('❌ [主进程-查询] 获取用户列表失败:', error);
       return {
         success: false,
         message: '获取失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -192,27 +189,26 @@ export class MainAccountApplicationService {
   async getAccountById(accountUuid: string): Promise<ApiResponse<Account>> {
     try {
       const account = await this.accountRepository.findById(accountUuid);
-      
+
       if (!account) {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
       return {
         success: true,
         message: '获取成功',
-        data: account
+        data: account,
       };
-
     } catch (error) {
       console.error('❌ [主进程-查询] 获取账号失败:', error);
       return {
         success: false,
         message: '获取账号失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -223,27 +219,26 @@ export class MainAccountApplicationService {
   async getAccountByUsername(username: string): Promise<ApiResponse<Account>> {
     try {
       const account = await this.accountRepository.findByUsername(username);
-      
+
       if (!account) {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
       return {
         success: true,
         message: '获取成功',
-        data: account
+        data: account,
       };
-
     } catch (error) {
       console.error('❌ [主进程-查询] 获取账号失败:', error);
       return {
         success: false,
         message: '获取账号失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -260,35 +255,31 @@ export class MainAccountApplicationService {
       lastName?: string;
       bio?: string;
       avatar?: string;
-    }
+    },
   ): Promise<ApiResponse<Account>> {
     try {
       console.log('🔄 [主进程-更新] 开始更新账号信息流程');
-      
+
       const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
       if (updateData.email) {
         account.updateEmail(updateData.email);
       }
-      
+
       if (updateData.phone) {
         account.updatePhone(updateData.phone);
       }
 
       // 更新用户实体信息
       if (updateData.firstName || updateData.lastName || updateData.bio) {
-        account.user.updateProfile(
-          updateData.firstName,
-          updateData.lastName,
-          updateData.bio
-        );
+        account.user.updateProfile(updateData.firstName, updateData.lastName, updateData.bio);
       }
 
       if (updateData.avatar) {
@@ -302,15 +293,14 @@ export class MainAccountApplicationService {
       return {
         success: true,
         message: '账号信息更新成功',
-        data: account
+        data: account,
       };
-
     } catch (error) {
       console.error('❌ [主进程-更新] 更新账号信息失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '更新账号信息失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -325,7 +315,7 @@ export class MainAccountApplicationService {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -338,14 +328,14 @@ export class MainAccountApplicationService {
       return {
         success: true,
         message: '账号禁用成功',
-        data: undefined
+        data: undefined,
       };
     } catch (error) {
       console.error('❌ [主进程-禁用] 禁用账号失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '禁用账号失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -360,7 +350,7 @@ export class MainAccountApplicationService {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -370,14 +360,14 @@ export class MainAccountApplicationService {
       return {
         success: true,
         message: '账号启用成功',
-        data: undefined
+        data: undefined,
       };
     } catch (error) {
       console.error('❌ [主进程-启用] 启用账号失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '启用账号失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -392,7 +382,7 @@ export class MainAccountApplicationService {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -402,15 +392,14 @@ export class MainAccountApplicationService {
       return {
         success: true,
         message: '邮箱验证成功',
-        data: undefined
+        data: undefined,
       };
-
     } catch (error) {
       console.error('❌ [主进程-验证] 邮箱验证失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '邮箱验证失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -425,7 +414,7 @@ export class MainAccountApplicationService {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
@@ -435,15 +424,14 @@ export class MainAccountApplicationService {
       return {
         success: true,
         message: '手机号验证成功',
-        data: undefined
+        data: undefined,
       };
-
     } catch (error) {
       console.error('❌ [主进程-验证] 手机号验证失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '手机号验证失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -459,21 +447,21 @@ export class MainAccountApplicationService {
         return {
           success: false,
           message: '账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
       return {
         success: true,
         message: '获取账号ID成功',
-        data: account
-      }
+        data: account,
+      };
     } catch (error) {
       console.error('❌ [主进程-获取] 获取账号ID失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '获取账号ID失败',
-        data: undefined
+        data: undefined,
       };
     }
   }
@@ -485,21 +473,21 @@ export class MainAccountApplicationService {
         return {
           success: false,
           message: '当前账号不存在',
-          data: undefined
+          data: undefined,
         };
       }
 
       return {
         success: true,
         message: '获取当前账号成功',
-        data: account.toDTO()
+        data: account.toDTO(),
       };
     } catch (error) {
       console.error('❌ [主进程-获取] 获取当前账号失败:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : '获取当前账号失败',
-        data: undefined
+        data: undefined,
       };
     }
   }

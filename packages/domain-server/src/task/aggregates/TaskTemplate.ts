@@ -202,14 +202,11 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
 
     // Only generate instances for active templates
     if (this._status !== 'ACTIVE') {
-      throw new InvalidTaskTemplateStateError(
-        'Can only generate instances for active templates',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'generateInstances'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Can only generate instances for active templates', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'generateInstances',
+      });
     }
 
     if (this._taskType === 'ONE_TIME') {
@@ -323,24 +320,18 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    */
   public activate(): void {
     if (this._status === 'DELETED') {
-      throw new InvalidTaskTemplateStateError(
-        'Cannot activate a deleted template',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'activate'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Cannot activate a deleted template', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'activate',
+      });
     }
     if (this._status === 'ACTIVE') {
-      throw new InvalidTaskTemplateStateError(
-        'Template is already active',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'activate'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Template is already active', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'activate',
+      });
     }
     this._status = 'ACTIVE' as TaskTemplateStatus;
     this._updatedAt = Date.now();
@@ -352,14 +343,11 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    */
   public pause(): void {
     if (this._status !== 'ACTIVE') {
-      throw new InvalidTaskTemplateStateError(
-        'Can only pause active templates',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'pause'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Can only pause active templates', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'pause',
+      });
     }
     this._status = 'PAUSED' as TaskTemplateStatus;
     this._updatedAt = Date.now();
@@ -371,14 +359,11 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    */
   public archive(): void {
     if (this._status === 'DELETED') {
-      throw new InvalidTaskTemplateStateError(
-        'Cannot archive a deleted template',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'archive'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Cannot archive a deleted template', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'archive',
+      });
     }
     if (this._status === 'ARCHIVED') {
       throw new TaskTemplateArchivedError(this.uuid);
@@ -393,14 +378,11 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    */
   public softDelete(): void {
     if (this._status === 'DELETED') {
-      throw new InvalidTaskTemplateStateError(
-        'Template is already deleted',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'softDelete'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Template is already deleted', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'softDelete',
+      });
     }
     this._status = 'DELETED' as TaskTemplateStatus;
     this._deletedAt = Date.now();
@@ -413,14 +395,11 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    */
   public restore(): void {
     if (this._status !== 'DELETED') {
-      throw new InvalidTaskTemplateStateError(
-        'Can only restore deleted templates',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'restore'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Can only restore deleted templates', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'restore',
+      });
     }
     this._status = 'ACTIVE' as TaskTemplateStatus;
     this._deletedAt = null;
@@ -506,24 +485,18 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   public bindToGoal(goalUuid: string, keyResultUuid: string, incrementValue: number): void {
     // Validate parameters
     if (!goalUuid || !keyResultUuid) {
-      throw new InvalidGoalBindingError(
-        'Goal UUID and Key Result UUID are required',
-        {
-          goalUuid,
-          reason: 'Missing required parameters'
-        }
-      );
+      throw new InvalidGoalBindingError('Goal UUID and Key Result UUID are required', {
+        goalUuid,
+        reason: 'Missing required parameters',
+      });
     }
 
     // Check if already bound
     if (this._goalBinding) {
-      throw new InvalidGoalBindingError(
-        'Template is already bound to a goal',
-        {
-          goalUuid: this._goalBinding.goalUuid,
-          reason: 'Template already has a goal binding'
-        }
-      );
+      throw new InvalidGoalBindingError('Template is already bound to a goal', {
+        goalUuid: this._goalBinding.goalUuid,
+        reason: 'Template already has a goal binding',
+      });
     }
 
     // Check if template is archived
@@ -546,12 +519,9 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   public unbindFromGoal(): void {
     // Check if template has goal binding
     if (!this._goalBinding) {
-      throw new InvalidGoalBindingError(
-        'Template is not bound to any goal',
-        {
-          reason: 'No goal binding exists'
-        }
-      );
+      throw new InvalidGoalBindingError('Template is not bound to any goal', {
+        reason: 'No goal binding exists',
+      });
     }
 
     // Check if template is archived
@@ -597,26 +567,20 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       throw new TaskTemplateArchivedError(this.uuid);
     }
     if (this._status === 'DELETED') {
-      throw new InvalidTaskTemplateStateError(
-        'Cannot create instance from deleted template',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'createInstance'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Cannot create instance from deleted template', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'createInstance',
+      });
     }
 
     // Validate instance date
     if (!params.instanceDate || typeof params.instanceDate !== 'number') {
-      throw new InvalidTaskTemplateStateError(
-        'Invalid instance date provided',
-        {
-          templateUuid: this.uuid,
-          currentStatus: this._status,
-          attemptedAction: 'createInstance'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Invalid instance date provided', {
+        templateUuid: this.uuid,
+        currentStatus: this._status,
+        attemptedAction: 'createInstance',
+      });
     }
 
     const instance = TaskInstance.create({
@@ -819,34 +783,25 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   }): TaskTemplate {
     // Validate required parameters
     if (!params.accountUuid || params.accountUuid.trim().length === 0) {
-      throw new InvalidTaskTemplateStateError(
-        'Account UUID is required',
-        {
-          templateUuid: '',
-          currentStatus: 'N/A',
-          attemptedAction: 'create'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Account UUID is required', {
+        templateUuid: '',
+        currentStatus: 'N/A',
+        attemptedAction: 'create',
+      });
     }
     if (!params.title || params.title.trim().length === 0) {
-      throw new InvalidTaskTemplateStateError(
-        'Title is required',
-        {
-          templateUuid: '',
-          currentStatus: 'N/A',
-          attemptedAction: 'create'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Title is required', {
+        templateUuid: '',
+        currentStatus: 'N/A',
+        attemptedAction: 'create',
+      });
     }
     if (!params.timeConfig) {
-      throw new InvalidTaskTemplateStateError(
-        'Time configuration is required',
-        {
-          templateUuid: '',
-          currentStatus: 'N/A',
-          attemptedAction: 'create'
-        }
-      );
+      throw new InvalidTaskTemplateStateError('Time configuration is required', {
+        templateUuid: '',
+        currentStatus: 'N/A',
+        attemptedAction: 'create',
+      });
     }
 
     const now = Date.now();

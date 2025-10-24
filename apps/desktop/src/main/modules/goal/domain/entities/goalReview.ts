@@ -1,6 +1,6 @@
-import { Entity } from "@dailyuse/utils";
-import type { IGoalReview } from "@common/modules/goal";
-import { isValid } from "date-fns";
+import { Entity } from '@dailyuse/utils';
+import type { IGoalReview } from '@common/modules/goal';
+import { isValid } from 'date-fns';
 
 /**
  * 目标复盘领域实体
@@ -9,22 +9,22 @@ import { isValid } from "date-fns";
 export class GoalReview extends Entity implements IGoalReview {
   private _goalUuid: string;
   private _title: string;
-  private _type: IGoalReview["type"];
+  private _type: IGoalReview['type'];
   private _reviewDate: Date;
-  private _content: IGoalReview["content"];
-  private _snapshot: IGoalReview["snapshot"];
-  private _rating: IGoalReview["rating"];
-  private _lifecycle: IGoalReview["lifecycle"];
+  private _content: IGoalReview['content'];
+  private _snapshot: IGoalReview['snapshot'];
+  private _rating: IGoalReview['rating'];
+  private _lifecycle: IGoalReview['lifecycle'];
 
   constructor(params: {
     uuid?: string;
     goalUuid: string;
     title: string;
-    type: IGoalReview["type"];
+    type: IGoalReview['type'];
     reviewDate: Date;
-    content: IGoalReview["content"];
-    snapshot: IGoalReview["snapshot"];
-    rating: IGoalReview["rating"];
+    content: IGoalReview['content'];
+    snapshot: IGoalReview['snapshot'];
+    rating: IGoalReview['rating'];
   }) {
     super(params.uuid || GoalReview.generateUUID());
     const now = new Date();
@@ -48,7 +48,7 @@ export class GoalReview extends Entity implements IGoalReview {
     return this._goalUuid;
   }
   set goalUuid(value: string) {
-    if (!value.trim()) throw new Error("目标ID不能为空");
+    if (!value.trim()) throw new Error('目标ID不能为空');
     this._goalUuid = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -57,15 +57,15 @@ export class GoalReview extends Entity implements IGoalReview {
     return this._title;
   }
   set title(value: string) {
-    if (!value.trim()) throw new Error("复盘标题不能为空");
+    if (!value.trim()) throw new Error('复盘标题不能为空');
     this._title = value;
     this._lifecycle.updatedAt = new Date();
   }
 
-  get type(): IGoalReview["type"] {
+  get type(): IGoalReview['type'] {
     return this._type;
   }
-  set type(value: IGoalReview["type"]) {
+  set type(value: IGoalReview['type']) {
     this._type = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -74,46 +74,46 @@ export class GoalReview extends Entity implements IGoalReview {
     return this._reviewDate;
   }
   set reviewDate(value: Date) {
-    if (!isValid(value)) throw new Error("复盘日期无效");
+    if (!isValid(value)) throw new Error('复盘日期无效');
     this._reviewDate = value;
     this._lifecycle.updatedAt = new Date();
   }
 
-  get content(): IGoalReview["content"] {
+  get content(): IGoalReview['content'] {
     return this._content;
   }
-  set content(value: IGoalReview["content"]) {
+  set content(value: IGoalReview['content']) {
     this._content = value;
     this._lifecycle.updatedAt = new Date();
   }
 
-  get snapshot(): IGoalReview["snapshot"] {
+  get snapshot(): IGoalReview['snapshot'] {
     return this._snapshot;
   }
-  set snapshot(value: IGoalReview["snapshot"]) {
+  set snapshot(value: IGoalReview['snapshot']) {
     this._snapshot = value;
     this._lifecycle.updatedAt = new Date();
   }
 
-  get rating(): IGoalReview["rating"] {
+  get rating(): IGoalReview['rating'] {
     return this._rating;
   }
-  set rating(value: IGoalReview["rating"]) {
+  set rating(value: IGoalReview['rating']) {
     if (value) {
       const validateRating = (score: number, name: string) => {
         if (score < 1 || score > 10) {
           throw new Error(`${name}评分必须在1-10之间`);
         }
       };
-      validateRating(value.progressSatisfaction, "进度满意度");
-      validateRating(value.executionEfficiency, "执行效率");
-      validateRating(value.goalReasonableness, "目标合理性");
+      validateRating(value.progressSatisfaction, '进度满意度');
+      validateRating(value.executionEfficiency, '执行效率');
+      validateRating(value.goalReasonableness, '目标合理性');
     }
     this._rating = value;
     this._lifecycle.updatedAt = new Date();
   }
 
-  get lifecycle(): IGoalReview["lifecycle"] {
+  get lifecycle(): IGoalReview['lifecycle'] {
     return this._lifecycle;
   }
 
@@ -134,23 +134,21 @@ export class GoalReview extends Entity implements IGoalReview {
    * 检查是否为重要的复盘节点
    */
   get isImportantMilestone(): boolean {
-    return this._type === "midterm" || this._type === "final";
+    return this._type === 'midterm' || this._type === 'final';
   }
 
   /**
    * 获取复盘时的进度变化
    */
-  calculateProgressChange(previousSnapshot?: IGoalReview["snapshot"]): {
+  calculateProgressChange(previousSnapshot?: IGoalReview['snapshot']): {
     progressChange: number;
     completedKeyResultsChange: number;
   } | null {
     if (!previousSnapshot) return null;
     return {
-      progressChange:
-        this._snapshot.overallProgress - previousSnapshot.overallProgress,
+      progressChange: this._snapshot.overallProgress - previousSnapshot.overallProgress,
       completedKeyResultsChange:
-        this._snapshot.completedKeyResults -
-        previousSnapshot.completedKeyResults,
+        this._snapshot.completedKeyResults - previousSnapshot.completedKeyResults,
     };
   }
 
@@ -161,11 +159,11 @@ export class GoalReview extends Entity implements IGoalReview {
     return (
       obj instanceof GoalReview ||
       (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "goalUuid" in obj &&
-        "title" in obj &&
-        "type" in obj)
+        typeof obj === 'object' &&
+        'uuid' in obj &&
+        'goalUuid' in obj &&
+        'title' in obj &&
+        'type' in obj)
     );
   }
 
@@ -173,9 +171,7 @@ export class GoalReview extends Entity implements IGoalReview {
    * 保证返回 GoalReview 实例或 null
    * @param review 可能为 DTO、实体或 null
    */
-  static ensureGoalReview(
-    review: IGoalReview | GoalReview | null
-  ): GoalReview | null {
+  static ensureGoalReview(review: IGoalReview | GoalReview | null): GoalReview | null {
     if (GoalReview.isGoalReview(review)) {
       return review instanceof GoalReview ? review : GoalReview.fromDTO(review);
     } else {
@@ -225,20 +221,20 @@ export class GoalReview extends Entity implements IGoalReview {
   }
   static forCreate(
     goalUuid: string,
-    type: GoalReview["type"],
-    snapshot: IGoalReview["snapshot"]
+    type: GoalReview['type'],
+    snapshot: IGoalReview['snapshot'],
   ): GoalReview {
     const goalReview = new GoalReview({
       goalUuid: goalUuid,
-      title: "",
+      title: '',
       type: type,
       reviewDate: new Date(),
       snapshot: snapshot,
       content: {
-        achievements: "",
-        challenges: "",
-        learnings: "",
-        nextSteps: "",
+        achievements: '',
+        challenges: '',
+        learnings: '',
+        nextSteps: '',
       },
       rating: {
         progressSatisfaction: 0,

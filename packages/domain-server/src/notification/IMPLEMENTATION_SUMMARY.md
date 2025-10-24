@@ -35,6 +35,7 @@
 聚合根继承自 `AggregateRoot`，是事务边界和持久化单元：
 
 #### **Notification** (500+ 行)
+
 - **职责**：管理通知的完整生命周期
 - **子实体**：NotificationChannel[], NotificationHistory[]
 - **核心业务方法**：
@@ -50,6 +51,7 @@
   - `getHistory()`
 
 #### **NotificationTemplate** (280+ 行)
+
 - **职责**：通知模板的创建和管理
 - **核心业务方法**：
   - 激活管理：`activate()`, `deactivate()`
@@ -62,6 +64,7 @@
 - **模板变量替换**：支持 `{{variableName}}` 语法
 
 #### **NotificationPreference** (340+ 行)
+
 - **职责**：用户通知偏好设置管理
 - **核心业务方法**：
   - 全局开关：`enableAll()`, `disableAll()`
@@ -78,6 +81,7 @@
 遵循 DDD 仓储模式，只定义接口，由基础设施层实现：
 
 #### **INotificationRepository**
+
 - 基础 CRUD：`save()`, `findById()`, `delete()`
 - 批量操作：`saveMany()`, `deleteMany()`, `markManyAsRead()`, `markAllAsRead()`
 - 查询方法：
@@ -90,6 +94,7 @@
 - 维护方法：`cleanupExpired()`, `cleanupDeleted()`
 
 #### **INotificationTemplateRepository**
+
 - 基础 CRUD：`save()`, `findById()`, `delete()`
 - 查询方法：
   - `findAll()` - 支持过滤未激活
@@ -101,6 +106,7 @@
 - 统计方法：`count()`
 
 #### **INotificationPreferenceRepository**
+
 - 基础 CRUD：`save()`, `findById()`, `delete()`
 - 账户查询：`findByAccountUuid()`, `existsForAccount()`
 - 便捷方法：`getOrCreate()` - 获取或创建默认设置
@@ -110,6 +116,7 @@
 协调跨聚合根的业务逻辑：
 
 #### **NotificationDomainService** (320+ 行)
+
 - **依赖注入**：3个仓储接口
 - **核心功能**：
   - 创建与发送：
@@ -129,6 +136,7 @@
   - 维护任务：`cleanupExpiredNotifications()`, `cleanupDeletedNotifications()`
 
 #### **NotificationTemplateDomainService** (250+ 行)
+
 - **依赖注入**：templateRepo
 - **核心功能**：
   - 创建管理：`createTemplate()` - 验证名称唯一性
@@ -145,6 +153,7 @@
   - 统计：`countTemplates()`
 
 #### **NotificationPreferenceDomainService** (200+ 行)
+
 - **依赖注入**：preferenceRepo
 - **核心功能**：
   - 获取管理：`getOrCreatePreference()`, `getPreference()`
@@ -160,12 +169,14 @@
 ## 🎯 技术特性
 
 ### DDD 架构最佳实践
+
 1. **聚合根边界明确**：每个聚合根管理自己的子实体
 2. **仓储模式**：只定义接口，由基础设施层实现
 3. **领域服务**：协调跨聚合根的业务逻辑
 4. **依赖注入**：服务通过构造函数注入仓储接口
 
 ### 代码质量
+
 1. **类型安全**：所有实现都正确实现了 contracts 接口
 2. **不可变性**：值对象使用 `Object.freeze()` 确保不可变
 3. **枚举使用**：正确使用枚举值（`ChannelStatus.PENDING`）
@@ -173,6 +184,7 @@
 5. **编译检查**：0 TypeScript 编译错误
 
 ### 业务逻辑完整性
+
 1. **状态管理**：完整的状态机实现（通知、渠道）
 2. **偏好控制**：多层级控制（全局、渠道、分类）
 3. **模板系统**：支持变量替换、多渠道渲染
@@ -234,23 +246,27 @@ packages/domain-server/src/notification/
 ## 🚀 下一步建议
 
 ### 1. 基础设施层实现 (Infrastructure)
+
 - Prisma Schema 定义（数据库表结构）
 - 仓储实现类（实现仓储接口）
 - 领域事件发布器（EventBus）
 - 外部服务集成（邮件、推送服务）
 
 ### 2. 应用层 (Application)
+
 - API 控制器（NestJS Controllers）
 - DTO 验证（class-validator）
 - 用例编排（Application Services）
 - 权限控制（Guards）
 
 ### 3. 测试
+
 - 单元测试（聚合根、实体、值对象）
 - 集成测试（领域服务）
 - E2E 测试（API 端点）
 
 ### 4. 前端集成 (Web/Desktop)
+
 - domain-client 实现
 - API 客户端封装
 - UI 组件开发

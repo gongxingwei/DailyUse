@@ -301,6 +301,7 @@ Scenario: 单元测试覆盖率
 ### Application DTOs
 
 **src/setting/application/dtos/CreateUserPreferenceDTO.ts**:
+
 ```typescript
 import type {
   ThemeType,
@@ -322,6 +323,7 @@ export interface CreateUserPreferenceDTO {
 ```
 
 **src/setting/application/dtos/UpdateUserPreferenceDTO.ts**:
+
 ```typescript
 export interface UpdateUserPreferenceDTO {
   accountUuid: string;
@@ -337,6 +339,7 @@ export interface UpdateUserPreferenceDTO {
 ### Repository Interface
 
 **src/setting/domain/repositories/IUserPreferenceRepository.ts**:
+
 ```typescript
 import type { UserPreference } from '../entities/UserPreference';
 
@@ -371,14 +374,12 @@ export interface IUserPreferenceRepository {
 ### UserPreferenceService
 
 **src/setting/application/services/UserPreferenceService.ts**:
+
 ```typescript
 import type { UserPreferenceServerDTO } from '@dailyuse/contracts';
 import type { IUserPreferenceRepository } from '../../domain/repositories/IUserPreferenceRepository';
 import { UserPreference } from '../../domain/entities/UserPreference';
-import {
-  UserPreferenceAlreadyExistsError,
-  UserPreferenceNotFoundError,
-} from '../errors';
+import { UserPreferenceAlreadyExistsError, UserPreferenceNotFoundError } from '../errors';
 import type {
   CreateUserPreferenceDTO,
   UpdateUserPreferenceDTO,
@@ -387,9 +388,7 @@ import type {
 } from '../dtos';
 
 export class UserPreferenceService {
-  constructor(
-    private readonly repository: IUserPreferenceRepository
-  ) {}
+  constructor(private readonly repository: IUserPreferenceRepository) {}
 
   /**
    * 创建用户偏好 (使用默认值 + 自定义值)
@@ -471,7 +470,7 @@ export class UserPreferenceService {
    * 更新通知设置
    */
   async updateNotificationSettings(
-    dto: UpdateNotificationSettingsDTO
+    dto: UpdateNotificationSettingsDTO,
   ): Promise<UserPreferenceServerDTO> {
     const entity = await this.getEntityOrThrow(dto.accountUuid);
     entity.updateNotificationSettings(dto.notifications);
@@ -555,15 +554,13 @@ export class UserPreferenceService {
 
 ### 单元测试示例
 
-**src/setting/application/services/__tests__/UserPreferenceService.test.ts**:
+**src/setting/application/services/**tests**/UserPreferenceService.test.ts**:
+
 ```typescript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UserPreferenceService } from '../UserPreferenceService';
 import { UserPreference } from '../../../domain/entities/UserPreference';
-import {
-  UserPreferenceAlreadyExistsError,
-  UserPreferenceNotFoundError,
-} from '../../errors';
+import { UserPreferenceAlreadyExistsError, UserPreferenceNotFoundError } from '../../errors';
 import type { IUserPreferenceRepository } from '../../../domain/repositories/IUserPreferenceRepository';
 
 // Mock Repository
@@ -615,9 +612,9 @@ describe('UserPreferenceService', () => {
     it('应该在用户已有偏好时抛出错误', async () => {
       vi.mocked(mockRepository.existsByAccountUuid).mockResolvedValue(true);
 
-      await expect(
-        service.create({ accountUuid: 'user-123' })
-      ).rejects.toThrow(UserPreferenceAlreadyExistsError);
+      await expect(service.create({ accountUuid: 'user-123' })).rejects.toThrow(
+        UserPreferenceAlreadyExistsError,
+      );
 
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
@@ -629,7 +626,9 @@ describe('UserPreferenceService', () => {
         accountUuid: 'user-123',
         theme: 'dark',
         language: 'zh-CN',
-        notifications: { /* ... */ },
+        notifications: {
+          /* ... */
+        },
         shortcuts: {},
         sidebarPosition: 'left',
         fontSize: 14,
@@ -648,9 +647,9 @@ describe('UserPreferenceService', () => {
     it('应该在用户不存在时抛出错误', async () => {
       vi.mocked(mockRepository.findByAccountUuid).mockResolvedValue(null);
 
-      await expect(
-        service.getByAccountUuid('user-999')
-      ).rejects.toThrow(UserPreferenceNotFoundError);
+      await expect(service.getByAccountUuid('user-999')).rejects.toThrow(
+        UserPreferenceNotFoundError,
+      );
     });
   });
 
@@ -672,9 +671,9 @@ describe('UserPreferenceService', () => {
     it('应该在用户不存在时抛出错误', async () => {
       vi.mocked(mockRepository.findByAccountUuid).mockResolvedValue(null);
 
-      await expect(
-        service.updateTheme({ accountUuid: 'user-999', theme: 'dark' })
-      ).rejects.toThrow(UserPreferenceNotFoundError);
+      await expect(service.updateTheme({ accountUuid: 'user-999', theme: 'dark' })).rejects.toThrow(
+        UserPreferenceNotFoundError,
+      );
     });
   });
 
@@ -709,28 +708,33 @@ function createMockEntity(accountUuid: string): UserPreference {
 这个 Story 被认为完成，当且仅当：
 
 ### 功能完整性
+
 - [x] UserPreferenceService 实现所有 CRUD 操作
 - [x] Repository 接口定义完整
 - [x] 所有 Application DTOs 定义完整
 - [x] 默认值逻辑正确实现
 
 ### 代码质量
+
 - [x] TypeScript strict 模式无错误
 - [x] ESLint 无警告
 - [x] 所有公共方法有 JSDoc 注释
 - [x] 单元测试覆盖率 ≥ 80%
 
 ### 测试
+
 - [x] 所有单元测试通过
 - [x] Mock repository 正确实现
 - [x] 测试覆盖成功和失败场景
 - [x] 测试覆盖边界条件
 
 ### 文档
+
 - [x] Service 方法 JSDoc 完整
 - [x] README 已更新 (如有必要)
 
 ### Code Review
+
 - [x] Code Review 完成 (至少 1 人)
 - [x] Code Review 反馈已解决
 
@@ -738,13 +742,13 @@ function createMockEntity(accountUuid: string): UserPreference {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| DTOs & Repository Interface | 1 小时 |
-| UserPreferenceService 开发 | 3 小时 |
-| 单元测试编写 | 2.5 小时 |
-| Code Review & 修复 | 1.5 小时 |
-| **总计** | **8 小时** |
+| 任务                        | 预估时间   |
+| --------------------------- | ---------- |
+| DTOs & Repository Interface | 1 小时     |
+| UserPreferenceService 开发  | 3 小时     |
+| 单元测试编写                | 2.5 小时   |
+| Code Review & 修复          | 1.5 小时   |
+| **总计**                    | **8 小时** |
 
 **Story Points**: 3 SP (对应 8 小时工作量)
 
@@ -753,9 +757,11 @@ function createMockEntity(accountUuid: string): UserPreference {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-001 (Contracts & Domain 层) - **必须完成**
 
 ### 下游依赖
+
 - STORY-SETTING-001-003 (Infrastructure & Repository) 依赖此 Story
 - STORY-SETTING-001-004 (API Endpoints) 依赖此 Story
 
@@ -764,12 +770,14 @@ function createMockEntity(accountUuid: string): UserPreference {
 ## 🚨 风险与注意事项
 
 ### 技术风险
+
 1. **Repository 未实现**: Application Service 依赖 Repository 接口
    - 缓解: 单元测试使用 Mock Repository
 2. **默认值变更**: 默认快捷键可能随产品迭代变化
    - 缓解: 将默认值提取为常量，易于维护
 
 ### 业务风险
+
 1. **并发更新**: 多个客户端同时更新同一用户的偏好
    - 缓解: 使用乐观锁 (后续 Story 实现)
 
@@ -778,11 +786,13 @@ function createMockEntity(accountUuid: string): UserPreference {
 ## 📝 开发笔记
 
 ### 技术决策
+
 - Repository 接口定义在 Domain 层: 符合 DDD 原则
 - 使用 DTO 分离输入和输出: 提高灵活性
 - 批量更新方法: 减少网络请求次数
 
 ### 待讨论问题
+
 - 是否需要在 create 时验证 accountUuid 存在？(需要调用 Account 模块)
 - 默认快捷键列表是否需要配置化？
 

@@ -12,13 +12,7 @@
     <!-- 警告横幅 -->
     <v-row>
       <v-col cols="12">
-        <v-alert
-          type="warning"
-          variant="tonal"
-          prominent
-          border="start"
-          class="mb-4"
-        >
+        <v-alert type="warning" variant="tonal" prominent border="start" class="mb-4">
           <v-alert-title>注意</v-alert-title>
           <div class="text-body-2">
             实验性功能可能不稳定，可能会在未来版本中更改或移除。
@@ -67,12 +61,7 @@
 
         <!-- 功能卡片列表 -->
         <v-row v-else>
-          <v-col
-            v-for="feature in availableFeatures"
-            :key="feature.key"
-            cols="12"
-            md="6"
-          >
+          <v-col v-for="feature in availableFeatures" :key="feature.key" cols="12" md="6">
             <v-card
               :color="isFeatureEnabled(feature.key) ? 'primary' : undefined"
               :variant="isFeatureEnabled(feature.key) ? 'tonal' : 'outlined'"
@@ -82,12 +71,7 @@
                 <div class="d-flex align-center mb-2">
                   <span class="text-h5 mr-2">{{ feature.icon }}</span>
                   <span class="text-h6 flex-grow-1">{{ feature.name }}</span>
-                  <v-chip
-                    v-if="feature.isNew"
-                    color="success"
-                    size="small"
-                    class="ml-2"
-                  >
+                  <v-chip v-if="feature.isNew" color="success" size="small" class="ml-2">
                     新
                   </v-chip>
                   <v-switch
@@ -121,13 +105,7 @@
         >
           保存更改
         </v-btn>
-        <v-btn
-          variant="outlined"
-          @click="handleReset"
-          :disabled="loading"
-        >
-          重置
-        </v-btn>
+        <v-btn variant="outlined" @click="handleReset" :disabled="loading"> 重置 </v-btn>
       </v-col>
     </v-row>
   </v-container>
@@ -214,7 +192,7 @@ watch(
       };
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 // ===== 工具方法 =====
@@ -227,7 +205,7 @@ const handleExperimentalChange = async () => {
   if (!localExperimental.value.enabled) {
     localExperimental.value.features = [];
   }
-  
+
   if (props.autoSave) {
     await updateExperimental(localExperimental.value);
   }
@@ -239,7 +217,7 @@ const handleFeatureToggle = async (featureKey: string) => {
   }
 
   const index = localExperimental.value.features.indexOf(featureKey);
-  
+
   if (index > -1) {
     localExperimental.value.features.splice(index, 1);
   } else {

@@ -48,7 +48,6 @@ export interface DoNotDisturbConfigServerDTO {
   daysOfWeek: number[];
 }
 
-
 /**
  * DoNotDisturbConfig Persistence DTO
  */

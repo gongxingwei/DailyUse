@@ -1,16 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { TaskPage } from '../page-objects/TaskPage';
-import { login, navigateToTasks, createTestTask, cleanupTask, TEST_USER } from '../helpers/testHelpers';
+import {
+  login,
+  navigateToTasks,
+  createTestTask,
+  cleanupTask,
+  TEST_USER,
+} from '../helpers/testHelpers';
 
 /**
  * Task Drag & Drop E2E Tests
- * 
+ *
  * Tests the drag-and-drop functionality for task management:
  * - Dragging tasks to reorder them in the list
  * - Dragging tasks to create dependencies
  * - Visual feedback during drag operations
  * - Invalid drop zone handling
- * 
+ *
  * Covers: STORY-027 (Drag & Drop Dependency Creation)
  */
 test.describe('Task Drag & Drop', () => {
@@ -25,10 +31,10 @@ test.describe('Task Drag & Drop', () => {
 
     // Login
     await login(page, TEST_USER.username, TEST_USER.password);
-    
+
     // Navigate to Tasks page
     await navigateToTasks(page);
-    
+
     console.log('✅ Setup complete\n');
   });
 
@@ -56,7 +62,7 @@ test.describe('Task Drag & Drop', () => {
 
   /**
    * Scenario 4.1: Drag Task to Create Dependency
-   * 
+   *
    * Given: Two independent tasks exist
    * When: User drags Task A to Task B
    * Then: Dependency creation dialog appears
@@ -68,7 +74,7 @@ test.describe('Task Drag & Drop', () => {
 
     // Arrange: Create two tasks
     console.log('Step 1: Creating two tasks...');
-    
+
     await taskPage.createTask(createTestTask('E2E Drag - Task 1', { duration: 120 }));
     await taskPage.createTask(createTestTask('E2E Drag - Task 2', { duration: 180 }));
 
@@ -81,7 +87,7 @@ test.describe('Task Drag & Drop', () => {
 
     // Act: Drag Task 2 to Task 1
     console.log('Step 2: Dragging Task 2 to Task 1...');
-    
+
     // Get task cards
     const sourceTask = taskPage.taskCard('E2E Drag - Task 2');
     const targetTask = taskPage.taskCard('E2E Drag - Task 1');
@@ -98,7 +104,7 @@ test.describe('Task Drag & Drop', () => {
     // Get bounding boxes
     const sourceBox = await sourceTask.boundingBox();
     const targetBox = await targetTask.boundingBox();
-    
+
     expect(sourceBox).toBeTruthy();
     expect(targetBox).toBeTruthy();
 
@@ -114,7 +120,7 @@ test.describe('Task Drag & Drop', () => {
     await page.mouse.move(
       targetBox!.x + targetBox!.width / 2,
       targetBox!.y + targetBox!.height / 2,
-      { steps: 10 }
+      { steps: 10 },
     );
     await page.waitForTimeout(300);
 
@@ -128,17 +134,22 @@ test.describe('Task Drag & Drop', () => {
 
     // Assert: Dependency creation dialog or notification appears
     console.log('Step 3: Verifying dependency creation...');
-    
+
     // Check if dependency was created
     // (This might show a confirmation dialog or automatically create)
-    const hasDialog = await page.locator('dialog, .v-dialog, [role="dialog"]').isVisible().catch(() => false);
-    
+    const hasDialog = await page
+      .locator('dialog, .v-dialog, [role="dialog"]')
+      .isVisible()
+      .catch(() => false);
+
     if (hasDialog) {
       console.log('Dialog appeared, confirming dependency...');
-      
+
       // Select finish-to-start type (default)
       // Click confirm button
-      const confirmBtn = page.locator('button:has-text("确认"), button:has-text("创建"), button:has-text("OK")').first();
+      const confirmBtn = page
+        .locator('button:has-text("确认"), button:has-text("创建"), button:has-text("OK")')
+        .first();
       await confirmBtn.click();
       await page.waitForTimeout(500);
     }
@@ -167,7 +178,7 @@ test.describe('Task Drag & Drop', () => {
 
   /**
    * Scenario 4.2: Visual Feedback During Drag
-   * 
+   *
    * Given: User starts dragging a task
    * When: Task is being dragged
    * Then: Visual indicators show drag state
@@ -179,7 +190,7 @@ test.describe('Task Drag & Drop', () => {
 
     // Arrange: Create tasks with existing dependency
     console.log('Step 1: Creating tasks...');
-    
+
     await taskPage.createTask(createTestTask('E2E Drag - Task 1', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Drag - Task 2', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Drag - Task 3', { duration: 60 }));
@@ -198,7 +209,7 @@ test.describe('Task Drag & Drop', () => {
 
     // Act: Start dragging Task 3
     console.log('Step 2: Starting drag operation...');
-    
+
     const sourceTask = taskPage.taskCard('E2E Drag - Task 3');
     const dragHandle = sourceTask.getByTestId('drag-handle');
 
@@ -216,21 +227,21 @@ test.describe('Task Drag & Drop', () => {
 
     // Act: Hover over valid drop zone (Task 1 - independent task)
     console.log('Step 3: Hovering over valid drop zone...');
-    
+
     const validTarget = taskPage.taskCard('E2E Drag - Task 1');
     const validTargetBox = await validTarget.boundingBox();
-    
+
     await page.mouse.move(
       validTargetBox!.x + validTargetBox!.width / 2,
       validTargetBox!.y + validTargetBox!.height / 2,
-      { steps: 5 }
+      { steps: 5 },
     );
     await page.waitForTimeout(300);
 
     // Assert: Check valid drop zone styling
     const validDropZone = validTarget.getByTestId('drop-zone-valid');
     const isValidVisible = await validDropZone.isVisible().catch(() => false);
-    
+
     if (isValidVisible) {
       console.log('✅ Valid drop zone highlighted\n');
     }
@@ -240,21 +251,21 @@ test.describe('Task Drag & Drop', () => {
 
     // Act: Hover over invalid drop zone (Task 2 - would create circular dependency)
     console.log('Step 4: Hovering over invalid drop zone...');
-    
+
     const invalidTarget = taskPage.taskCard('E2E Drag - Task 2');
     const invalidTargetBox = await invalidTarget.boundingBox();
-    
+
     await page.mouse.move(
       invalidTargetBox!.x + invalidTargetBox!.width / 2,
       invalidTargetBox!.y + invalidTargetBox!.height / 2,
-      { steps: 5 }
+      { steps: 5 },
     );
     await page.waitForTimeout(300);
 
     // Assert: Check invalid drop zone styling
     const invalidDropZone = invalidTarget.getByTestId('drop-zone-invalid');
     const isInvalidVisible = await invalidDropZone.isVisible().catch(() => false);
-    
+
     if (isInvalidVisible) {
       console.log('✅ Invalid drop zone indicated\n');
     }
@@ -287,7 +298,7 @@ test.describe('Task Drag & Drop', () => {
 
   /**
    * Scenario 4.3: Prevent Invalid Dependency via Drag
-   * 
+   *
    * Given: Task A depends on Task B
    * When: User drags Task B to Task A (would create cycle)
    * Then: Drop is prevented with visual feedback
@@ -298,7 +309,7 @@ test.describe('Task Drag & Drop', () => {
 
     // Arrange: Create tasks with dependency chain
     console.log('Step 1: Creating dependency chain...');
-    
+
     await taskPage.createTask(createTestTask('E2E Drag - Task 1', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Drag - Task 2', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Drag - Task 3', { duration: 60 }));
@@ -306,7 +317,7 @@ test.describe('Task Drag & Drop', () => {
     // Create chain: Task 2 -> Task 1, Task 3 -> Task 2
     await taskPage.createDependency('E2E Drag - Task 2', 'E2E Drag - Task 1', 'finish-to-start');
     await page.waitForTimeout(500);
-    
+
     await taskPage.createDependency('E2E Drag - Task 3', 'E2E Drag - Task 2', 'finish-to-start');
     await page.waitForTimeout(500);
 
@@ -318,7 +329,7 @@ test.describe('Task Drag & Drop', () => {
 
     // Act: Attempt to drag Task 1 to Task 3 (would create cycle)
     console.log('Step 2: Attempting to create circular dependency...');
-    
+
     const sourceTask = taskPage.taskCard('E2E Drag - Task 1');
     const targetTask = taskPage.taskCard('E2E Drag - Task 3');
 
@@ -333,7 +344,7 @@ test.describe('Task Drag & Drop', () => {
     await page.mouse.move(
       targetBox!.x + targetBox!.width / 2,
       targetBox!.y + targetBox!.height / 2,
-      { steps: 10 }
+      { steps: 10 },
     );
     await page.waitForTimeout(300);
 
@@ -352,20 +363,22 @@ test.describe('Task Drag & Drop', () => {
     // Assert: Error message appears
     const errorMessage = page.locator('text=/会形成循环依赖|circular|cycle/i').first();
     const hasError = await errorMessage.isVisible().catch(() => false);
-    
+
     if (hasError) {
       console.log('✅ Error message displayed\n');
-      
+
       // Screenshot: Error message
       await page.screenshot({ path: 'test-results/43-circular-error.png', fullPage: true });
     }
 
     // Assert: Dependency was NOT created
     console.log('Step 3: Verifying dependency was not created...');
-    
-    const dependencyExists = await page.locator('text=/Task 1.*depends.*Task 3/i').isVisible()
+
+    const dependencyExists = await page
+      .locator('text=/Task 1.*depends.*Task 3/i')
+      .isVisible()
       .catch(() => false);
-    
+
     expect(dependencyExists).toBe(false);
     console.log('✅ Circular dependency prevented\n');
 
@@ -381,7 +394,7 @@ test.describe('Task Drag & Drop', () => {
 
   /**
    * Scenario 4.4: Drag to Reorder Tasks (Bonus)
-   * 
+   *
    * Given: Multiple tasks in a list
    * When: User drags a task to a different position
    * Then: Task order is updated
@@ -392,7 +405,7 @@ test.describe('Task Drag & Drop', () => {
 
     // Arrange: Create tasks
     console.log('Step 1: Creating tasks...');
-    
+
     await taskPage.createTask(createTestTask('E2E Drag - Task 1', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Drag - Task 2', { duration: 60 }));
     await taskPage.createTask(createTestTask('E2E Drag - Task 3', { duration: 60 }));
@@ -405,10 +418,10 @@ test.describe('Task Drag & Drop', () => {
 
     // Act: Try to reorder (drag Task 4 to position 2)
     console.log('Step 2: Attempting to reorder tasks...');
-    
+
     // Note: Task reordering might not be implemented
     // This test is exploratory to document behavior
-    
+
     const sourceTask = taskPage.taskCard('E2E Drag - Task 4');
     const targetTask = taskPage.taskCard('E2E Drag - Task 2');
 
@@ -421,18 +434,17 @@ test.describe('Task Drag & Drop', () => {
 
       // Check if order changed (this is optional behavior)
       console.log('✅ Reorder operation completed\n');
-      
+
       console.log('╔════════════════════════════════════════════════════════════╗');
       console.log('║  ✅ Test Passed: Task Reordering                          ║');
       console.log('╠════════════════════════════════════════════════════════════╣');
       console.log('║  Feature: Task reordering via drag-drop                   ║');
       console.log('║  Status: ✅ Supported                                      ║');
       console.log('╚════════════════════════════════════════════════════════════╝\n');
-      
     } catch (error) {
       console.log('⚠️  Task reordering not implemented or not supported\n');
       console.log('This is expected - reordering may be future feature\n');
-      
+
       console.log('╔════════════════════════════════════════════════════════════╗');
       console.log('║  ✅ Test Passed: Reordering Check                         ║');
       console.log('╠════════════════════════════════════════════════════════════╣');

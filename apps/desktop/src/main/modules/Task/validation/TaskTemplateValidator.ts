@@ -1,6 +1,11 @@
 // 任务模板验证器主文件
 import type { ITaskTemplate } from '@common/modules/task/types/task';
-import type { ITemplateValidator, ValidationResult, ValidationContext, EnhancedValidationResult } from './types';
+import type {
+  ITemplateValidator,
+  ValidationResult,
+  ValidationContext,
+  EnhancedValidationResult,
+} from './types';
 import { ValidationUtils } from './ValidationUtils';
 import { BasicInfoValidator } from './BasicInfoValidator';
 import { TimeConfigValidator } from './TimeConfigValidator';
@@ -20,7 +25,7 @@ export class TaskTemplateValidator {
     new RecurrenceValidator(),
     new ReminderValidator(),
     new SchedulingPolicyValidator(),
-    new MetadataValidator()
+    new MetadataValidator(),
   ];
 
   /**
@@ -35,7 +40,7 @@ export class TaskTemplateValidator {
    */
   static validateWithContext(
     template: ITaskTemplate,
-    context: ValidationContext = { mode: 'create' }
+    context: ValidationContext = { mode: 'create' },
   ): EnhancedValidationResult {
     const startTime = Date.now();
     const results: ValidationResult[] = [];
@@ -52,15 +57,15 @@ export class TaskTemplateValidator {
           totalValidators: 0,
           passedValidators: 0,
           failedValidators: 1,
-          executionTime: Date.now() - startTime
-        }
+          executionTime: Date.now() - startTime,
+        },
       };
     }
 
     // 执行各个验证器
     for (const validator of this.validators) {
       const validatorName = validator.constructor.name;
-      
+
       // 检查是否跳过此验证器
       if (context.skipValidators?.includes(validatorName)) {
         continue;
@@ -69,12 +74,12 @@ export class TaskTemplateValidator {
       try {
         const result = validator.validate(template);
         results.push(result);
-        
+
         if (result.isValid) {
           passedValidators++;
         } else {
           failedValidators++;
-          
+
           // 在严格模式下，遇到错误立即停止
           if (context.strict) {
             break;
@@ -97,8 +102,8 @@ export class TaskTemplateValidator {
         totalValidators: this.validators.length,
         passedValidators,
         failedValidators,
-        executionTime
-      }
+        executionTime,
+      },
     };
   }
 
@@ -108,14 +113,14 @@ export class TaskTemplateValidator {
   static quickValidate(template: ITaskTemplate): ValidationResult {
     const context: ValidationContext = {
       mode: 'create',
-      skipValidators: ['MetadataValidator', 'SchedulingPolicyValidator']
+      skipValidators: ['MetadataValidator', 'SchedulingPolicyValidator'],
     };
 
     const result = this.validateWithContext(template, context);
     return {
       isValid: result.isValid,
       errors: result.errors,
-      warnings: result.warnings
+      warnings: result.warnings,
     };
   }
 
@@ -125,7 +130,7 @@ export class TaskTemplateValidator {
   static validateForCreate(template: ITaskTemplate): ValidationResult {
     const context: ValidationContext = {
       mode: 'create',
-      strict: false
+      strict: false,
     };
 
     return this.validateWithContext(template, context);
@@ -137,7 +142,7 @@ export class TaskTemplateValidator {
   static validateForUpdate(template: ITaskTemplate): ValidationResult {
     const context: ValidationContext = {
       mode: 'update',
-      strict: false
+      strict: false,
     };
 
     return this.validateWithContext(template, context);
@@ -149,7 +154,7 @@ export class TaskTemplateValidator {
   static strictValidate(template: ITaskTemplate): ValidationResult {
     const context: ValidationContext = {
       mode: 'create',
-      strict: true
+      strict: true,
     };
 
     return this.validateWithContext(template, context);
@@ -159,9 +164,9 @@ export class TaskTemplateValidator {
    * 获取验证器信息
    */
   static getValidatorInfo() {
-    return this.validators.map(validator => ({
+    return this.validators.map((validator) => ({
       name: validator.constructor.name,
-      description: this.getValidatorDescription(validator.constructor.name)
+      description: this.getValidatorDescription(validator.constructor.name),
     }));
   }
 
@@ -170,12 +175,12 @@ export class TaskTemplateValidator {
    */
   private static getValidatorDescription(name: string): string {
     const descriptions: Record<string, string> = {
-      'BasicInfoValidator': '验证基础信息：标题、描述、优先级等',
-      'TimeConfigValidator': '验证时间配置：时间类型、基础时间、时区等',
-      'RecurrenceValidator': '验证重复规则：重复类型、间隔、结束条件等',
-      'ReminderValidator': '验证提醒配置：提醒列表、稍后提醒等',
-      'SchedulingPolicyValidator': '验证调度策略：重新调度、延迟、时间限制等',
-      'MetadataValidator': '验证元数据：分类、标签、难度、地点等'
+      BasicInfoValidator: '验证基础信息：标题、描述、优先级等',
+      TimeConfigValidator: '验证时间配置：时间类型、基础时间、时区等',
+      RecurrenceValidator: '验证重复规则：重复类型、间隔、结束条件等',
+      ReminderValidator: '验证提醒配置：提醒列表、稍后提醒等',
+      SchedulingPolicyValidator: '验证调度策略：重新调度、延迟、时间限制等',
+      MetadataValidator: '验证元数据：分类、标签、难度、地点等',
     };
 
     return descriptions[name] || '未知验证器';
@@ -192,7 +197,7 @@ export class TaskTemplateValidator {
    * 移除验证器
    */
   static removeValidator(validatorName: string): boolean {
-    const index = this.validators.findIndex(v => v.constructor.name === validatorName);
+    const index = this.validators.findIndex((v) => v.constructor.name === validatorName);
     if (index !== -1) {
       this.validators.splice(index, 1);
       return true;

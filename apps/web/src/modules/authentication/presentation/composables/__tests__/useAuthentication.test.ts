@@ -135,7 +135,3 @@ describe('useAuthentication', () => {
     expect(auth.currentOperation.value).toBe(null);
   });
 });
-
-
-
-

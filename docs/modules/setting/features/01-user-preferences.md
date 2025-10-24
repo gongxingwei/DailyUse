@@ -15,6 +15,7 @@
 ### 价值主张
 
 **核心收益**:
+
 - ✅ 个性化界面设置
 - ✅ 主题切换（亮/暗/自动）
 - ✅ 通知偏好配置
@@ -111,13 +112,13 @@
 ```typescript
 export interface UserPreferenceServerDTO {
   readonly userId: string;
-  
+
   // 外观
   readonly theme: 'light' | 'dark' | 'auto';
   readonly language: 'zh-CN' | 'en-US';
   readonly fontSize: number;
   readonly sidebarPosition: 'left' | 'right';
-  
+
   // 通知
   readonly notificationSettings: {
     readonly enabled: boolean;
@@ -127,15 +128,15 @@ export interface UserPreferenceServerDTO {
     readonly dndEndTime?: string;
     readonly soundEnabled: boolean;
   };
-  
+
   // 快捷键
   readonly shortcuts: Record<string, string>;
-  
+
   // 其他
   readonly timezone: string;
-  readonly weekStartDay: 0 | 1;           // 周日或周一
-  readonly dateFormat: string;            // 'YYYY-MM-DD'
-  
+  readonly weekStartDay: 0 | 1; // 周日或周一
+  readonly dateFormat: string; // 'YYYY-MM-DD'
+
   readonly updatedAt: number;
 }
 ```
@@ -152,4 +153,3 @@ export interface UserPreferenceServerDTO {
 ---
 
 **文档状态**: ✅ Ready
-

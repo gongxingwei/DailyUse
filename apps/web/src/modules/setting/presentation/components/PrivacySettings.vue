@@ -128,13 +128,7 @@
         >
           保存更改
         </v-btn>
-        <v-btn
-          variant="outlined"
-          @click="handleReset"
-          :disabled="loading"
-        >
-          重置
-        </v-btn>
+        <v-btn variant="outlined" @click="handleReset" :disabled="loading"> 重置 </v-btn>
       </v-col>
     </v-row>
   </v-container>
@@ -191,7 +185,7 @@ watch(
       originalPrivacy.value = { ...localPrivacy.value };
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 // ===== 事件处理 =====

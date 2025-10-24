@@ -22,12 +22,14 @@
 ## 🎯 Business Value
 
 ### Why This Matters
+
 - **Intuitive UX**: Drag-and-drop is more natural than form-based dependency creation
 - **Visual Feedback**: Users can see relationship creation in real-time
 - **Efficiency**: Faster than clicking through multiple menus
 - **Error Prevention**: Visual cues prevent invalid dependencies
 
 ### Success Metrics
+
 - 80% of dependency creation happens via drag-and-drop (vs forms)
 - < 2s to create a dependency (vs 10s+ with forms)
 - 50% reduction in dependency validation errors
@@ -38,6 +40,7 @@
 ## ✅ Acceptance Criteria
 
 ### AC-1: Task Card Reordering
+
 - **AC-1.1**: User can drag a task card within a list to reorder
 - **AC-1.2**: Task order persists after page reload
 - **AC-1.3**: Smooth animation during drag (opacity 0.6, scale 1.05)
@@ -45,6 +48,7 @@
 - **AC-1.5**: Works on both desktop (mouse) and mobile (touch)
 
 ### AC-2: Dependency Creation via Drop
+
 - **AC-2.1**: User can drag Task A onto Task B to create dependency (A depends on B)
 - **AC-2.2**: Drop target highlights when valid task is dragged over
 - **AC-2.3**: Invalid drop shows clear visual feedback (red border,禁止 icon)
@@ -55,6 +59,7 @@
   - Cannot depend on completed tasks
 
 ### AC-3: Visual Feedback
+
 - **AC-3.1**: Dragging task shows semi-transparent ghost (opacity 0.4)
 - **AC-3.2**: Valid drop zone shows green highlight
 - **AC-3.3**: Invalid drop zone shows red highlight + cursor icon
@@ -62,18 +67,21 @@
 - **AC-3.5**: Animation duration: 200ms (enter), 150ms (exit)
 
 ### AC-4: Integration with Existing Features
+
 - **AC-4.1**: Dependency creation updates DAG visualization in real-time
 - **AC-4.2**: Critical path recalculates after dependency changes
 - **AC-4.3**: Task detail panel shows updated dependencies immediately
 - **AC-4.4**: Undo/redo works for drag-drop operations
 
 ### AC-5: Performance
+
 - **AC-5.1**: Drag operation starts within 50ms of mouse down
 - **AC-5.2**: Drop operation completes within 200ms
 - **AC-5.3**: Smooth 60 FPS during drag (no frame drops)
 - **AC-5.4**: Works with lists of 100+ tasks
 
 ### AC-6: Accessibility
+
 - **AC-6.1**: Keyboard support: Space to grab, Arrow keys to move, Enter to drop
 - **AC-6.2**: Screen reader announces drag state and drop result
 - **AC-6.3**: Focus management: Focus follows dragged item
@@ -86,6 +94,7 @@
 ### Drag States
 
 #### 1. Idle State
+
 ```
 ┌─────────────────────────────────┐
 │ 📋 Task Card                    │
@@ -97,6 +106,7 @@
 ```
 
 #### 2. Hover State (Grabbable)
+
 ```
 ┌─────────────────────────────────┐
 │ 📋 Task Card         ⋮⋮ [grip] │ ← Cursor: grab
@@ -108,6 +118,7 @@
 ```
 
 #### 3. Dragging State
+
 ```
 ┌─────────────────────────────────┐ ← Opacity: 0.4
 │ 📋 Task Card         ⋮⋮         │   Cursor: grabbing
@@ -121,6 +132,7 @@
 ```
 
 #### 4. Valid Drop Target
+
 ```
 ┌═════════════════════════════════┐ ← Border: 2px solid green
 ║ 📋 Target Task      ✓ Valid     ║   Background: rgba(0,255,0,0.1)
@@ -132,6 +144,7 @@
 ```
 
 #### 5. Invalid Drop Target
+
 ```
 ┌─────────────────────────────────┐ ← Border: 2px solid red
 │ 📋 Target Task      🚫 Invalid  │   Background: rgba(255,0,0,0.1)
@@ -150,18 +163,18 @@ stateDiagram-v2
     Idle --> Hover: Mouse Enter
     Hover --> Idle: Mouse Leave
     Hover --> Dragging: Mouse Down + Move
-    
+
     Dragging --> ValidTarget: Over Valid Task
     Dragging --> InvalidTarget: Over Invalid Task
     Dragging --> Reordering: Over Empty Space
-    
+
     ValidTarget --> Creating: Mouse Up
     InvalidTarget --> Cancelled: Mouse Up
     Reordering --> Reordered: Mouse Up
-    
+
     Creating --> Success: API Success
     Creating --> Error: API Error
-    
+
     Success --> Idle
     Error --> Idle
     Cancelled --> Idle
@@ -229,17 +242,17 @@ sequenceDiagram
     participant TaskDepService
     participant TaskDepAPI
     participant DAGVisualization
-    
+
     User->>TaskCard: Mouse Down + Drag
     TaskCard->>useDragAndDrop: onDragStart(task)
     useDragAndDrop->>TaskCard: Set isDragging=true
-    
+
     User->>TaskCard: Drag Over Target
     TaskCard->>useDragAndDrop: onDragOver(target)
     useDragAndDrop->>TaskDepService: validateDependency()
     TaskDepService-->>useDragAndDrop: isValid=true/false
     useDragAndDrop->>TaskCard: Update drop visual
-    
+
     User->>TaskCard: Mouse Up (Drop)
     TaskCard->>useDragAndDrop: onDrop(source, target)
     useDragAndDrop->>TaskDepService: createDependency()
@@ -273,18 +286,21 @@ type TaskTemplateClientDTO = TaskContracts.TaskTemplateClientDTO;
 export interface DragOptions {
   // Enable drag operations
   enabled?: boolean;
-  
+
   // Drag mode: 'reorder' only reorders, 'dependency' creates dependencies
   mode?: 'reorder' | 'dependency' | 'both';
-  
+
   // Custom validation function
   validateDrop?: (source: TaskTemplateClientDTO, target: TaskTemplateClientDTO) => boolean;
-  
+
   // Callbacks
   onDragStart?: (task: TaskTemplateClientDTO) => void;
   onDragEnd?: () => void;
   onReorder?: (task: TaskTemplateClientDTO, newIndex: number) => Promise<void>;
-  onDependencyCreate?: (source: TaskTemplateClientDTO, target: TaskTemplateClientDTO) => Promise<void>;
+  onDependencyCreate?: (
+    source: TaskTemplateClientDTO,
+    target: TaskTemplateClientDTO,
+  ) => Promise<void>;
 }
 
 export function useDragAndDrop(options: DragOptions = {}) {
@@ -297,40 +313,40 @@ export function useDragAndDrop(options: DragOptions = {}) {
     onReorder,
     onDependencyCreate,
   } = options;
-  
+
   // State
   const isDragging = ref(false);
   const draggedTask = ref<TaskTemplateClientDTO | null>(null);
   const dropTarget = ref<TaskTemplateClientDTO | null>(null);
   const dragOperation = ref<'reorder' | 'dependency' | null>(null);
-  
+
   // Computed
   const isValidDrop = computed(() => {
     if (!draggedTask.value || !dropTarget.value) return false;
-    
+
     // Cannot drop on self
     if (draggedTask.value.uuid === dropTarget.value.uuid) return false;
-    
+
     // Custom validation
     if (validateDrop) {
       return validateDrop(draggedTask.value, dropTarget.value);
     }
-    
+
     return true;
   });
-  
+
   // Methods
   const handleDragStart = (task: TaskTemplateClientDTO) => {
     if (!enabled) return;
-    
+
     isDragging.value = true;
     draggedTask.value = task;
     onDragStart?.(task);
   };
-  
+
   const handleDragOver = (target: TaskTemplateClientDTO | null) => {
     dropTarget.value = target;
-    
+
     // Determine operation type
     if (target && mode === 'both') {
       // Heuristic: if hovering over another task, it's dependency creation
@@ -339,10 +355,10 @@ export function useDragAndDrop(options: DragOptions = {}) {
       dragOperation.value = 'reorder';
     }
   };
-  
+
   const handleDrop = async (target: TaskTemplateClientDTO | null, newIndex?: number) => {
     if (!draggedTask.value) return;
-    
+
     try {
       if (dragOperation.value === 'dependency' && target) {
         await onDependencyCreate?.(draggedTask.value, target);
@@ -353,7 +369,7 @@ export function useDragAndDrop(options: DragOptions = {}) {
       handleDragEnd();
     }
   };
-  
+
   const handleDragEnd = () => {
     isDragging.value = false;
     draggedTask.value = null;
@@ -361,7 +377,7 @@ export function useDragAndDrop(options: DragOptions = {}) {
     dragOperation.value = null;
     onDragEnd?.();
   };
-  
+
   return {
     // State
     isDragging,
@@ -369,7 +385,7 @@ export function useDragAndDrop(options: DragOptions = {}) {
     dropTarget,
     dragOperation,
     isValidDrop,
-    
+
     // Methods
     handleDragStart,
     handleDragOver,
@@ -404,7 +420,7 @@ Add drag-and-drop attributes:
     <div class="drag-handle" v-if="!isDragging">
       <v-icon>mdi-drag-vertical</v-icon>
     </div>
-    
+
     <!-- Card content -->
     <slot />
   </v-card>
@@ -462,7 +478,7 @@ export class TaskDependencyService {
    */
   async createDependencyFromDrop(
     sourceTask: TaskTemplateClientDTO,
-    targetTask: TaskTemplateClientDTO
+    targetTask: TaskTemplateClientDTO,
   ): Promise<void> {
     // 1. Validate
     const validation = await this.validateDependency({
@@ -470,21 +486,21 @@ export class TaskDependencyService {
       dependsOnUuid: targetTask.uuid,
       dependencyType: 'FINISH_TO_START',
     });
-    
+
     if (!validation.isValid) {
       throw new Error(validation.reason);
     }
-    
+
     // 2. Show confirmation (optional)
     const confirmed = await this.confirmDependencyCreation(sourceTask, targetTask);
     if (!confirmed) return;
-    
+
     // 3. Create
     await taskDependencyApiClient.createDependency(sourceTask.uuid, {
       dependsOnUuid: targetTask.uuid,
       dependencyType: 'FINISH_TO_START',
     });
-    
+
     // 4. Notify
     useSnackbar().success(`依赖关系已创建: ${sourceTask.title} 依赖于 ${targetTask.title}`);
   }
@@ -507,7 +523,7 @@ describe('useDragAndDrop', () => {
       handleDragStart(mockTask);
       expect(isDragging.value).toBe(true);
     });
-    
+
     it('should clear state on handleDragEnd', () => {
       const { isDragging, draggedTask, handleDragEnd } = useDragAndDrop();
       handleDragEnd();
@@ -515,7 +531,7 @@ describe('useDragAndDrop', () => {
       expect(draggedTask.value).toBeNull();
     });
   });
-  
+
   describe('Drop Validation', () => {
     it('should mark drop as invalid when dropping on self', () => {
       const { isValidDrop, handleDragStart, handleDragOver } = useDragAndDrop();
@@ -524,7 +540,7 @@ describe('useDragAndDrop', () => {
       handleDragOver(task);
       expect(isValidDrop.value).toBe(false);
     });
-    
+
     it('should use custom validateDrop function', () => {
       const validateDrop = vi.fn(() => false);
       const { isValidDrop, handleDragStart, handleDragOver } = useDragAndDrop({
@@ -536,18 +552,18 @@ describe('useDragAndDrop', () => {
       expect(isValidDrop.value).toBe(false);
     });
   });
-  
+
   describe('Dependency Creation', () => {
     it('should call onDependencyCreate when dropping on task', async () => {
       const onDependencyCreate = vi.fn();
       const { handleDragStart, handleDragOver, handleDrop } = useDragAndDrop({
         onDependencyCreate,
       });
-      
+
       handleDragStart(mockTask);
       handleDragOver(mockTask2);
       await handleDrop(mockTask2);
-      
+
       expect(onDependencyCreate).toHaveBeenCalledWith(mockTask, mockTask2);
     });
   });
@@ -561,43 +577,43 @@ describe('useDragAndDrop', () => {
 ```typescript
 describe('Task Drag and Drop Integration', () => {
   it('should create dependency when dropping task A on task B', async () => {
-    const { result } = renderHook(() => useDragAndDrop({
-      onDependencyCreate: taskDependencyService.createDependencyFromDrop,
-    }));
-    
+    const { result } = renderHook(() =>
+      useDragAndDrop({
+        onDependencyCreate: taskDependencyService.createDependencyFromDrop,
+      }),
+    );
+
     // Simulate drag
     act(() => result.current.handleDragStart(taskA));
     act(() => result.current.handleDragOver(taskB));
-    
+
     // Mock API
     vi.mocked(taskDependencyApiClient.createDependency).mockResolvedValue(mockDependency);
-    
+
     // Drop
     await act(() => result.current.handleDrop(taskB));
-    
+
     // Verify
     expect(taskDependencyApiClient.createDependency).toHaveBeenCalledWith(
       taskA.uuid,
-      expect.objectContaining({ dependsOnUuid: taskB.uuid })
+      expect.objectContaining({ dependsOnUuid: taskB.uuid }),
     );
   });
-  
+
   it('should reject circular dependency', async () => {
     // Setup: taskA already depends on taskB
     vi.mocked(taskDependencyApiClient.validateDependency).mockResolvedValue({
       isValid: false,
       reason: 'Circular dependency detected',
     });
-    
+
     // Try to create reverse dependency
     const { result } = renderHook(() => useDragAndDrop());
     act(() => result.current.handleDragStart(taskB));
     act(() => result.current.handleDragOver(taskA));
-    
+
     // Should show error
-    await expect(
-      result.current.handleDrop(taskA)
-    ).rejects.toThrow('Circular dependency detected');
+    await expect(result.current.handleDrop(taskA)).rejects.toThrow('Circular dependency detected');
   });
 });
 ```
@@ -606,24 +622,26 @@ describe('Task Drag and Drop Integration', () => {
 
 ## 📊 Performance Targets
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Drag start latency | < 50ms | Time from mousedown to visual feedback |
-| Drop operation time | < 200ms | Time from drop to UI update |
-| Frame rate during drag | 60 FPS | No frame drops on 100+ task lists |
-| API response time | < 500ms | Dependency creation API call |
-| Animation smoothness | 100% | No jank during transitions |
+| Metric                 | Target  | Measurement                            |
+| ---------------------- | ------- | -------------------------------------- |
+| Drag start latency     | < 50ms  | Time from mousedown to visual feedback |
+| Drop operation time    | < 200ms | Time from drop to UI update            |
+| Frame rate during drag | 60 FPS  | No frame drops on 100+ task lists      |
+| API response time      | < 500ms | Dependency creation API call           |
+| Animation smoothness   | 100%    | No jank during transitions             |
 
 ---
 
 ## 🔗 Integration Points
 
 ### Upstream Dependencies
+
 - STORY-022: Task Dependency Data Model (for dependency validation)
 - STORY-023: DAG Visualization (for graph updates)
 - STORY-024: Dependency Validation (for drop validation)
 
 ### Downstream Impacts
+
 - DAG Visualization will auto-refresh after drag-drop
 - Critical Path Analysis will recalculate
 - Task Detail Panel will show updated dependencies
@@ -633,21 +651,25 @@ describe('Task Drag and Drop Integration', () => {
 ## 🚀 Rollout Plan
 
 ### Phase 1: Core Functionality (Day 1)
+
 - Install vue-draggable-plus
 - Implement useDragAndDrop composable
 - Add basic drag-drop to task cards
 
 ### Phase 2: Dependency Creation (Day 1)
+
 - Integrate dependency validation
 - Implement drop-to-create-dependency
 - Add confirmation modal
 
 ### Phase 3: Visual Polish (Day 2)
+
 - Add drag ghost/placeholder
 - Implement drop zone highlighting
 - Add animations and transitions
 
 ### Phase 4: Testing & Documentation (Day 2)
+
 - Write unit tests
 - Write integration tests
 - Update user documentation
@@ -656,12 +678,12 @@ describe('Task Drag and Drop Integration', () => {
 
 ## 🐛 Known Risks & Mitigations
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Mobile touch events conflict | High | Medium | Use touch-action CSS, test on mobile |
-| Performance issues with large lists | High | Low | Virtual scrolling, throttle drag events |
-| Circular dependency bugs | Medium | Medium | Robust validation, comprehensive tests |
-| Browser compatibility | Low | Low | Use vue-draggable-plus (cross-browser) |
+| Risk                                | Impact | Probability | Mitigation                              |
+| ----------------------------------- | ------ | ----------- | --------------------------------------- |
+| Mobile touch events conflict        | High   | Medium      | Use touch-action CSS, test on mobile    |
+| Performance issues with large lists | High   | Low         | Virtual scrolling, throttle drag events |
+| Circular dependency bugs            | Medium | Medium      | Robust validation, comprehensive tests  |
+| Browser compatibility               | Low    | Low         | Use vue-draggable-plus (cross-browser)  |
 
 ---
 

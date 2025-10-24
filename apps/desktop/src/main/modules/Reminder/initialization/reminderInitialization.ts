@@ -1,5 +1,12 @@
-import { InitializationTask, InitializationPhase, InitializationManager } from '../../../shared/initialization/initializationManager';
-import { registerReminderIpcHandlers, unregisterReminderIpcHandlers } from '../infrastructure/ipcs/reminderIpcHandlers';
+import {
+  InitializationTask,
+  InitializationPhase,
+  InitializationManager,
+} from '../../../shared/initialization/initializationManager';
+import {
+  registerReminderIpcHandlers,
+  unregisterReminderIpcHandlers,
+} from '../infrastructure/ipcs/reminderIpcHandlers';
 import { MainReminderApplicationService } from '../application/services/reminderApplicationService';
 
 const reminderAppService = new MainReminderApplicationService();
@@ -16,7 +23,7 @@ const reminderModuleInitializationTask: InitializationTask = {
       throw new Error(`提醒模块初始化失败: ${response.message}`);
     }
     console.log('【主进程初始化根分组】');
-  }
+  },
 };
 
 /**
@@ -34,7 +41,7 @@ const reminderIpcHandlersInitializationTask: InitializationTask = {
   cleanup: async () => {
     unregisterReminderIpcHandlers();
     console.log('✓ Reminder IPC handlers cleaned up');
-  }
+  },
 };
 
 const reminderSchedulesInitializationTask: InitializationTask = {
@@ -45,7 +52,7 @@ const reminderSchedulesInitializationTask: InitializationTask = {
   initialize: async (context: { accountUuid: string }) => {
     reminderAppService.initializeReminderSchedule(context.accountUuid);
     console.log('✓ Reminder schedules initialized');
-  }
+  },
 };
 
 /**

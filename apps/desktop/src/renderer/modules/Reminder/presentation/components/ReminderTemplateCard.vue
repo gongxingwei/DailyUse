@@ -45,14 +45,16 @@
 </template>
 
 <script setup lang="ts">
-import type { ReminderTemplate } from "../../domain/entities/reminderTemplate";
-import { computed, inject } from "vue";
-import { useReminderStore } from "../stores/reminderStore";
-import { ImportanceLevel } from "@dailyuse/contracts";
-import { recurrenceRuleToText, type RecurrenceRule } from "@dailyuse/utils";
+import type { ReminderTemplate } from '../../domain/entities/reminderTemplate';
+import { computed, inject } from 'vue';
+import { useReminderStore } from '../stores/reminderStore';
+import { ImportanceLevel } from '@dailyuse/contracts';
+import { recurrenceRuleToText, type RecurrenceRule } from '@dailyuse/utils';
 const reminderStore = useReminderStore();
 
-const onSetTemplateEnabled = inject<((uuid: string, enabled: boolean) => void) | undefined>('onSetTemplateEnabled');
+const onSetTemplateEnabled = inject<((uuid: string, enabled: boolean) => void) | undefined>(
+  'onSetTemplateEnabled',
+);
 
 const props = defineProps<{
   show: boolean;
@@ -70,10 +72,10 @@ const isTemplateEnabled = computed({
       try {
         onSetTemplateEnabled?.(props.template.uuid, value);
       } catch (error) {
-        console.error("Failed to update template enabled status:", error);
+        console.error('Failed to update template enabled status:', error);
       }
     }
-  }
+  },
 });
 
 const groupName = computed(() => {
@@ -83,28 +85,40 @@ const groupName = computed(() => {
 
 const getImportanceText = (level?: string) => {
   switch (level) {
-    case ImportanceLevel.Vital: return "极其重要";
-    case ImportanceLevel.Important: return "非常重要";
-    case ImportanceLevel.Moderate: return "中等重要";
-    case ImportanceLevel.Minor: return "不太重要";
-    case ImportanceLevel.Trivial: return "无关紧要";
-    default: return "普通";
+    case ImportanceLevel.Vital:
+      return '极其重要';
+    case ImportanceLevel.Important:
+      return '非常重要';
+    case ImportanceLevel.Moderate:
+      return '中等重要';
+    case ImportanceLevel.Minor:
+      return '不太重要';
+    case ImportanceLevel.Trivial:
+      return '无关紧要';
+    default:
+      return '普通';
   }
 };
 const getImportanceColor = (level?: string) => {
   switch (level) {
-    case ImportanceLevel.Vital: return "error";
-    case ImportanceLevel.Important: return "warning";
-    case ImportanceLevel.Moderate: return "info";
-    case ImportanceLevel.Minor: return "success";
-    case ImportanceLevel.Trivial: return "default";
-    default: return "primary";
+    case ImportanceLevel.Vital:
+      return 'error';
+    case ImportanceLevel.Important:
+      return 'warning';
+    case ImportanceLevel.Moderate:
+      return 'info';
+    case ImportanceLevel.Minor:
+      return 'success';
+    case ImportanceLevel.Trivial:
+      return 'default';
+    default:
+      return 'primary';
   }
 };
 
 const timeConfigText = computed(() => {
-  console.log("Recurrence Rule:", props.template?.timeConfig);
-  const text = recurrenceRuleToText(props.template?.timeConfig.schedule ?? {} as RecurrenceRule);
+  console.log('Recurrence Rule:', props.template?.timeConfig);
+  const text = recurrenceRuleToText(props.template?.timeConfig.schedule ?? ({} as RecurrenceRule));
   return text;
 });
 

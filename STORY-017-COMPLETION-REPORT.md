@@ -2,19 +2,20 @@
 
 ## 📋 基本信息
 
-| 项目 | 内容 |
-|------|------|
-| Story ID | STORY-017 |
-| Story 名称 | Timeline Animation for DAG (目标时间线动画) |
-| Story Points | 2 SP |
-| 优先级 | P2 |
-| 状态 | ✅ **已完成** |
-| 完成日期 | 2024-10-23 |
-| Sprint | Sprint 3 |
+| 项目         | 内容                                        |
+| ------------ | ------------------------------------------- |
+| Story ID     | STORY-017                                   |
+| Story 名称   | Timeline Animation for DAG (目标时间线动画) |
+| Story Points | 2 SP                                        |
+| 优先级       | P2                                          |
+| 状态         | ✅ **已完成**                               |
+| 完成日期     | 2024-10-23                                  |
+| Sprint       | Sprint 3                                    |
 
 ## 🎯 Story 目标
 
 为目标 DAG 创建时间线动画系统，支持：
+
 1. ⏱️ 时间线滑块控制
 2. ▶️ 播放/暂停控制
 3. ⚡ 速度调节 (0.5x/1x/2x)
@@ -34,45 +35,46 @@
 ```typescript
 // 时间线快照点
 export interface TimelineSnapshot {
-  timestamp: number;           // 快照时间戳
-  date: Date;                  // 快照时间
-  goalUuid: string;            // 目标 UUID
+  timestamp: number; // 快照时间戳
+  date: Date; // 快照时间
+  goalUuid: string; // 目标 UUID
   data: {
-    keyResults: Array<{        // 关键结果及权重
+    keyResults: Array<{
+      // 关键结果及权重
       uuid: string;
       title: string;
       weight: number;
       progress: number;
     }>;
-    totalWeight: number;       // 总权重
-    totalProgress: number;     // 总进度
+    totalWeight: number; // 总权重
+    totalProgress: number; // 总进度
   };
-  trigger?: string;            // 触发原因
-  reason?: string;             // 变更描述
+  trigger?: string; // 触发原因
+  reason?: string; // 变更描述
 }
 
 // 时间线数据
 export interface TimelineData {
   goalUuid: string;
   goalTitle: string;
-  snapshots: TimelineSnapshot[];  // 所有快照
+  snapshots: TimelineSnapshot[]; // 所有快照
   timeRange: {
     start: number;
     end: number;
   };
   stats: {
-    totalSnapshots: number;    // 总快照数
-    totalChanges: number;      // 总变更次数
-    avgWeightChange: number;   // 平均权重变化
+    totalSnapshots: number; // 总快照数
+    totalChanges: number; // 总变更次数
+    avgWeightChange: number; // 平均权重变化
   };
 }
 
 // 播放状态
 export interface TimelinePlayState {
-  currentIndex: number;        // 当前快照索引
-  isPlaying: boolean;          // 播放状态
-  speed: 0.5 | 1 | 2;         // 播放速度
-  loop: boolean;               // 循环播放
+  currentIndex: number; // 当前快照索引
+  isPlaying: boolean; // 播放状态
+  speed: 0.5 | 1 | 2; // 播放速度
+  loop: boolean; // 循环播放
 }
 ```
 
@@ -82,14 +84,14 @@ export interface TimelinePlayState {
 // 从目标和权重快照生成时间线
 export function generateTimelineFromGoal(
   goal: GoalClientDTO,
-  weightSnapshots: KeyResultWeightSnapshotClientDTO[]
+  weightSnapshots: KeyResultWeightSnapshotClientDTO[],
 ): TimelineData;
 
 // 快照间插值（平滑过渡）
 export function interpolateSnapshots(
   snapshot1: TimelineSnapshot,
   snapshot2: TimelineSnapshot,
-  progress: number  // 0-1
+  progress: number, // 0-1
 ): TimelineSnapshot;
 
 // 格式化时间戳
@@ -98,6 +100,7 @@ export function formatTimelineTimestamp(timestamp: number): string;
 ```
 
 **时间线生成流程**:
+
 1. 创建初始快照（目标创建时）
 2. 基于权重快照生成中间快照
 3. 添加当前状态快照
@@ -110,12 +113,14 @@ export function formatTimelineTimestamp(timestamp: number): string;
 **组件功能** (450 行代码):
 
 #### 2.1 时间线滑块
+
 - 拖拽式时间线滑块
 - 自动播放进度条
 - 时间点标记（可点击跳转）
 - 当前位置高亮
 
 #### 2.2 播放控制
+
 ```vue
 <template>
   <div class="play-controls">
@@ -124,7 +129,7 @@ export function formatTimelineTimestamp(timestamp: number): string;
       <PlayIcon v-if="!isPlaying" />
       <PauseIcon v-else />
     </button>
-    
+
     <!-- 上一个/下一个 -->
     <button @click="previousSnapshot" :disabled="currentIndex === 0">
       <PreviousIcon />
@@ -132,7 +137,7 @@ export function formatTimelineTimestamp(timestamp: number): string;
     <button @click="nextSnapshot" :disabled="currentIndex === maxIndex">
       <NextIcon />
     </button>
-    
+
     <!-- 循环播放 -->
     <button @click="toggleLoop" :class="{ active: loop }">
       <LoopIcon />
@@ -142,11 +147,13 @@ export function formatTimelineTimestamp(timestamp: number): string;
 ```
 
 #### 2.3 速度控制
+
 - 0.5x: 慢速播放（每个快照 2 秒）
 - 1x: 正常速度（每个快照 1 秒）
 - 2x: 快速播放（每个快照 0.5 秒）
 
 #### 2.4 快照信息显示
+
 ```vue
 <div class="snapshot-info">
   <div class="snapshot-reason">
@@ -161,6 +168,7 @@ export function formatTimelineTimestamp(timestamp: number): string;
 ```
 
 **Props**:
+
 - `snapshots`: 快照列表
 - `currentIndex`: 当前快照索引 (v-model)
 - `isPlaying`: 播放状态 (v-model)
@@ -168,6 +176,7 @@ export function formatTimelineTimestamp(timestamp: number): string;
 - `loop`: 循环播放 (v-model)
 
 **Events**:
+
 - `snapshotChange`: 快照变化事件
 
 ### 3. 时间线 Composable (useGoalTimeline.ts)
@@ -177,6 +186,7 @@ export function formatTimelineTimestamp(timestamp: number): string;
 **功能** (250 行代码):
 
 #### 3.1 状态管理
+
 ```typescript
 export function useGoalTimeline(goal: Ref<GoalClientDTO | null>) {
   const timelineData = ref<TimelineData | null>(null);
@@ -186,47 +196,52 @@ export function useGoalTimeline(goal: Ref<GoalClientDTO | null>) {
     speed: 1,
     loop: false,
   });
-  const interpolationProgress = ref(0);  // 快照间插值进度
-  
+  const interpolationProgress = ref(0); // 快照间插值进度
+
   return {
     // State
     timelineData,
-    currentSnapshot,       // 当前快照（支持插值）
+    currentSnapshot, // 当前快照（支持插值）
     playState,
     loadingSnapshots,
-    
+
     // Computed
-    hasTimeline,           // 是否有时间线数据
-    canPlay,               // 能否播放
-    canPause,              // 能否暂停
-    
+    hasTimeline, // 是否有时间线数据
+    canPlay, // 能否播放
+    canPause, // 能否暂停
+
     // Methods
-    loadTimeline,          // 加载时间线
-    togglePlay,            // 切换播放
-    play,                  // 播放
-    pause,                 // 暂停
-    seekToSnapshot,        // 跳转到指定快照
-    nextSnapshot,          // 下一个快照
-    previousSnapshot,      // 上一个快照
-    setSpeed,              // 设置速度
-    toggleLoop,            // 切换循环
-    reset,                 // 重置
-    setInterpolationProgress,  // 设置插值进度
+    loadTimeline, // 加载时间线
+    togglePlay, // 切换播放
+    play, // 播放
+    pause, // 暂停
+    seekToSnapshot, // 跳转到指定快照
+    nextSnapshot, // 下一个快照
+    previousSnapshot, // 上一个快照
+    setSpeed, // 设置速度
+    toggleLoop, // 切换循环
+    reset, // 重置
+    setInterpolationProgress, // 设置插值进度
   };
 }
 ```
 
 #### 3.2 自动加载机制
+
 ```typescript
 // 当目标变化时，自动加载时间线
-watch(goal, (newGoal) => {
-  if (newGoal) {
-    loadTimeline(newGoal.uuid);
-  } else {
-    timelineData.value = null;
-    reset();
-  }
-}, { immediate: true });
+watch(
+  goal,
+  (newGoal) => {
+    if (newGoal) {
+      loadTimeline(newGoal.uuid);
+    } else {
+      timelineData.value = null;
+      reset();
+    }
+  },
+  { immediate: true },
+);
 ```
 
 ### 4. 时间线视图 (GoalTimelineView.vue)
@@ -236,6 +251,7 @@ watch(goal, (newGoal) => {
 **组件功能** (400 行代码):
 
 #### 4.1 整体布局
+
 ```
 ┌─────────────────────────────────────────┐
 │  时间线头部                              │
@@ -259,37 +275,42 @@ watch(goal, (newGoal) => {
 ```
 
 #### 4.2 权重可视化 (ECharts 饼图)
+
 ```typescript
 function updateWeightChart() {
-  const data = currentSnapshot.value.data.keyResults.map(kr => ({
+  const data = currentSnapshot.value.data.keyResults.map((kr) => ({
     name: kr.title,
     value: kr.weight,
   }));
-  
+
   const option = {
-    series: [{
-      type: 'pie',
-      radius: ['40%', '70%'],  // 环形图
-      data,
-      label: {
-        formatter: '{b}: {c}%',
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '70%'], // 环形图
+        data,
+        label: {
+          formatter: '{b}: {c}%',
+        },
+        animation: true,
+        animationDuration: 500, // 平滑过渡
       },
-      animation: true,
-      animationDuration: 500,  // 平滑过渡
-    }],
+    ],
   };
-  
+
   weightChart.setOption(option);
 }
 ```
 
 **特性**:
+
 - ✅ 响应式布局（桌面/移动端）
 - ✅ 自动更新图表
 - ✅ 平滑动画过渡
 - ✅ 悬停提示详情
 
 #### 4.3 关键结果列表
+
 ```vue
 <div class="kr-items">
   <div v-for="kr in currentSnapshot.data.keyResults" class="kr-item">
@@ -299,8 +320,8 @@ function updateWeightChart() {
     </div>
     <div class="kr-progress">
       <div class="progress-bar">
-        <div 
-          class="progress-fill" 
+        <div
+          class="progress-fill"
           :style="{ width: kr.progress + '%' }"
         />
       </div>
@@ -311,14 +332,15 @@ function updateWeightChart() {
 ```
 
 #### 4.4 导出功能
+
 ```typescript
 async function exportAsImage() {
   const imageData = weightChart.getDataURL({
     type: 'png',
-    pixelRatio: 2,          // 高清导出
+    pixelRatio: 2, // 高清导出
     backgroundColor: '#fff',
   });
-  
+
   const link = document.createElement('a');
   link.href = imageData;
   link.download = `${goalTitle}-时间线-${Date.now()}.png`;
@@ -327,6 +349,7 @@ async function exportAsImage() {
 ```
 
 **导出特性**:
+
 - ✅ PNG 格式
 - ✅ 2x 像素比（Retina 屏幕）
 - ✅ 白色背景
@@ -335,6 +358,7 @@ async function exportAsImage() {
 ### 5. 状态管理
 
 #### 5.1 加载状态
+
 ```vue
 <div v-if="loadingSnapshots" class="loading-state">
   <div class="spinner" />
@@ -343,6 +367,7 @@ async function exportAsImage() {
 ```
 
 #### 5.2 空状态
+
 ```vue
 <div v-else-if="!hasTimeline" class="empty-state">
   <svg class="empty-icon">...</svg>
@@ -354,6 +379,7 @@ async function exportAsImage() {
 ## 📊 技术特性
 
 ### 1. 平滑插值动画
+
 ```typescript
 // 在两个快照间插值，创建平滑过渡
 export function interpolateSnapshots(snap1, snap2, progress) {
@@ -375,36 +401,41 @@ export function interpolateSnapshots(snap1, snap2, progress) {
 ```
 
 ### 2. 自动播放系统
+
 ```typescript
-watch(() => props.isPlaying, (playing) => {
-  if (playing) {
-    const interval = 1000 / props.speed;  // 基于速度计算间隔
-    playInterval = setInterval(() => {
-      if (currentIndex < maxIndex) {
-        nextSnapshot();
-      } else if (loop) {
-        currentIndex = 0;  // 循环
-      } else {
-        isPlaying = false;  // 停止
-      }
-    }, interval);
-  } else {
-    clearInterval(playInterval);
-  }
-});
+watch(
+  () => props.isPlaying,
+  (playing) => {
+    if (playing) {
+      const interval = 1000 / props.speed; // 基于速度计算间隔
+      playInterval = setInterval(() => {
+        if (currentIndex < maxIndex) {
+          nextSnapshot();
+        } else if (loop) {
+          currentIndex = 0; // 循环
+        } else {
+          isPlaying = false; // 停止
+        }
+      }, interval);
+    } else {
+      clearInterval(playInterval);
+    }
+  },
+);
 ```
 
 ### 3. 响应式设计
+
 ```css
 @media (max-width: 1024px) {
   .visualization-area {
-    grid-template-columns: 1fr;  /* 单列布局 */
+    grid-template-columns: 1fr; /* 单列布局 */
   }
 }
 
 @media (max-width: 768px) {
   .controls-row {
-    flex-wrap: wrap;  /* 控制按钮换行 */
+    flex-wrap: wrap; /* 控制按钮换行 */
   }
 }
 ```
@@ -413,57 +444,62 @@ watch(() => props.isPlaying, (playing) => {
 
 ### 新增文件
 
-| 文件路径 | 行数 | 说明 |
-|---------|------|------|
-| `apps/web/src/modules/goal/application/services/GoalTimelineService.ts` | 300 | 时间线数据服务 |
-| `apps/web/src/modules/goal/presentation/components/timeline/TimelineControls.vue` | 450 | 时间线控制组件 |
-| `apps/web/src/modules/goal/presentation/composables/useGoalTimeline.ts` | 250 | 时间线 Composable |
-| `apps/web/src/modules/goal/presentation/components/timeline/GoalTimelineView.vue` | 400 | 时间线视图 |
-| `STORY-017-COMPLETION-REPORT.md` | 600 | 本完成报告 |
+| 文件路径                                                                          | 行数 | 说明              |
+| --------------------------------------------------------------------------------- | ---- | ----------------- |
+| `apps/web/src/modules/goal/application/services/GoalTimelineService.ts`           | 300  | 时间线数据服务    |
+| `apps/web/src/modules/goal/presentation/components/timeline/TimelineControls.vue` | 450  | 时间线控制组件    |
+| `apps/web/src/modules/goal/presentation/composables/useGoalTimeline.ts`           | 250  | 时间线 Composable |
+| `apps/web/src/modules/goal/presentation/components/timeline/GoalTimelineView.vue` | 400  | 时间线视图        |
+| `STORY-017-COMPLETION-REPORT.md`                                                  | 600  | 本完成报告        |
 
 **总计**: ~2,000 行代码 + 文档
 
 ## 🎯 验收标准
 
-| 标准 | 要求 | 实际结果 | 状态 |
-|------|------|---------|------|
-| 时间线滑块 | 支持拖拽和跳转 | ✅ 完整实现 | ✅ |
-| 播放/暂停 | 自动播放控制 | ✅ 支持 + 循环 | ✅ |
-| 速度调节 | 0.5x/1x/2x | ✅ 3 档速度 | ✅ |
-| 权重可视化 | 饼图展示 | ✅ ECharts | ✅ |
-| 平滑过渡 | 快照间动画 | ✅ 插值系统 | ✅ |
-| 导出功能 | PNG 图片 | ✅ 高清导出 | ✅ |
-| 响应式 | 移动端适配 | ✅ 完整支持 | ✅ |
-| 状态管理 | 加载/空状态 | ✅ 完整处理 | ✅ |
+| 标准       | 要求           | 实际结果       | 状态 |
+| ---------- | -------------- | -------------- | ---- |
+| 时间线滑块 | 支持拖拽和跳转 | ✅ 完整实现    | ✅   |
+| 播放/暂停  | 自动播放控制   | ✅ 支持 + 循环 | ✅   |
+| 速度调节   | 0.5x/1x/2x     | ✅ 3 档速度    | ✅   |
+| 权重可视化 | 饼图展示       | ✅ ECharts     | ✅   |
+| 平滑过渡   | 快照间动画     | ✅ 插值系统    | ✅   |
+| 导出功能   | PNG 图片       | ✅ 高清导出    | ✅   |
+| 响应式     | 移动端适配     | ✅ 完整支持    | ✅   |
+| 状态管理   | 加载/空状态    | ✅ 完整处理    | ✅   |
 
 **验收结果**: 8/8 标准达成 ✅
 
 ## 💡 技术亮点
 
 ### 1. 完整的时间线系统
+
 - ✅ 从权重快照自动生成时间线
 - ✅ 支持初始状态、中间变更、当前状态
 - ✅ 完整的统计信息（快照数、变更次数、平均变化）
 
 ### 2. 高级播放控制
+
 - ✅ 播放/暂停/上一个/下一个
 - ✅ 3 档播放速度
 - ✅ 循环播放模式
 - ✅ 精确的时间轴控制
 
 ### 3. 平滑动画系统
+
 - ✅ 快照间线性插值
 - ✅ ECharts 自动动画
 - ✅ 进度条平滑过渡
 - ✅ 可配置动画时长
 
 ### 4. 数据可视化
+
 - ✅ ECharts 环形饼图
 - ✅ 实时权重分布
 - ✅ 自适应图例
 - ✅ 悬停提示详情
 
 ### 5. 用户体验优化
+
 - ✅ 加载状态指示
 - ✅ 空状态友好提示
 - ✅ 响应式布局
@@ -496,14 +532,8 @@ const currentGoal = ref({
 import { useGoalTimeline } from '@/modules/goal/presentation/composables/useGoalTimeline';
 
 const goal = ref(currentGoal);
-const {
-  timelineData,
-  currentSnapshot,
-  play,
-  pause,
-  seekToSnapshot,
-  setSpeed,
-} = useGoalTimeline(goal);
+const { timelineData, currentSnapshot, play, pause, seekToSnapshot, setSpeed } =
+  useGoalTimeline(goal);
 
 // 播放时间线
 play();
@@ -522,33 +552,33 @@ setSpeed(2);
 
 ### Sprint 3 总览
 
-| 状态 | 数量 | Story Points | 占比 |
-|------|------|--------------|------|
-| ✅ 已完成 | 8 | 19.4 | 92.4% |
-| 🔄 进行中 | 0 | 0 | 0% |
-| ⏳ 待开始 | 2 | 1.6 | 7.6% |
-| **总计** | **10** | **21** | **100%** |
+| 状态      | 数量   | Story Points | 占比     |
+| --------- | ------ | ------------ | -------- |
+| ✅ 已完成 | 8      | 19.4         | 92.4%    |
+| 🔄 进行中 | 0      | 0            | 0%       |
+| ⏳ 待开始 | 2      | 1.6          | 7.6%     |
+| **总计**  | **10** | **21**       | **100%** |
 
 ### 已完成 Stories (19.4 SP)
 
-| Story | 名称 | SP | 完成日期 | 状态 |
-|-------|------|-----|---------|------|
-| STORY-015 | DAG Export | 2 | 2024-10-18 | ✅ |
-| STORY-020 | Template Recommendations | 2 | 2024-10-19 | ✅ |
-| STORY-019 | AI Weight Allocation | 3 | 2024-10-20 | ✅ |
-| STORY-016 | Multi-Goal Comparison | 3.5 | 2024-10-21 | ✅ |
-| STORY-021 | Auto Status Rules | 2 | 2024-10-22 | ✅ |
-| STORY-014 | Performance Benchmarks | 1 | 2024-10-22 | ✅ |
-| STORY-018 | DAG Optimization | 1 | 2024-10-23 | ✅ |
-| **STORY-017** | **Timeline Animation** | **2** | **2024-10-23** | ✅ |
-| Weight Refactor | KeyResult Weight | 2.9 | 2024-10-15 | ✅ |
+| Story           | 名称                     | SP    | 完成日期       | 状态 |
+| --------------- | ------------------------ | ----- | -------------- | ---- |
+| STORY-015       | DAG Export               | 2     | 2024-10-18     | ✅   |
+| STORY-020       | Template Recommendations | 2     | 2024-10-19     | ✅   |
+| STORY-019       | AI Weight Allocation     | 3     | 2024-10-20     | ✅   |
+| STORY-016       | Multi-Goal Comparison    | 3.5   | 2024-10-21     | ✅   |
+| STORY-021       | Auto Status Rules        | 2     | 2024-10-22     | ✅   |
+| STORY-014       | Performance Benchmarks   | 1     | 2024-10-22     | ✅   |
+| STORY-018       | DAG Optimization         | 1     | 2024-10-23     | ✅   |
+| **STORY-017**   | **Timeline Animation**   | **2** | **2024-10-23** | ✅   |
+| Weight Refactor | KeyResult Weight         | 2.9   | 2024-10-15     | ✅   |
 
 ### 待开始 Stories (1.6 SP)
 
-| Story | 名称 | SP | 优先级 | 阻塞原因 |
-|-------|------|-----|--------|---------|
-| STORY-012 | Test Environment | 3 | P0 | ⏳ 需要技术决策 |
-| STORY-013 | DTO Tests | 2 | P1 | ⏳ 依赖 STORY-012 |
+| Story     | 名称             | SP  | 优先级 | 阻塞原因          |
+| --------- | ---------------- | --- | ------ | ----------------- |
+| STORY-012 | Test Environment | 3   | P0     | ⏳ 需要技术决策   |
+| STORY-013 | DTO Tests        | 2   | P1     | ⏳ 依赖 STORY-012 |
 
 **Sprint 3 完成度**: **92.4%** (19.4/21 SP)
 

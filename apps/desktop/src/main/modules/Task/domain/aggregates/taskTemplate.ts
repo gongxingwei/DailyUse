@@ -1,13 +1,13 @@
-import { AggregateRoot } from "@dailyuse/utils";
+import { AggregateRoot } from '@dailyuse/utils';
 import type {
   TaskTimeConfig,
   TaskReminderConfig,
   KeyResultLink,
   ITaskTemplate,
   ITaskTemplateDTO,
-} from "@common/modules/task/types/task";
-import { ImportanceLevel } from "@dailyuse/contracts";
-import { UrgencyLevel } from "@dailyuse/contracts";
+} from '@common/modules/task/types/task';
+import { ImportanceLevel } from '@dailyuse/contracts';
+import { UrgencyLevel } from '@dailyuse/contracts';
 
 export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _title: string;
@@ -30,7 +30,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     location?: string;
   };
   private _lifecycle: {
-    status: "draft" | "active" | "paused" | "archived";
+    status: 'draft' | 'active' | 'paused' | 'archived';
     createdAt: Date;
     updatedAt: Date;
     activatedAt?: Date;
@@ -85,7 +85,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     };
 
     this._metadata = {
-      category: params.category || "general",
+      category: params.category || 'general',
       tags: params.tags || [],
       importance: params.importance || ImportanceLevel.Moderate,
       urgency: params.urgency || UrgencyLevel.Medium,
@@ -94,7 +94,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     };
 
     this._lifecycle = {
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -197,27 +197,26 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   removeKeyResultLink(goalUuid: string, keyResultId: string): void {
     if (this._keyResultLinks) {
       this._keyResultLinks = this._keyResultLinks.filter(
-        (link) =>
-          !(link.goalUuid === goalUuid && link.keyResultId === keyResultId)
+        (link) => !(link.goalUuid === goalUuid && link.keyResultId === keyResultId),
       );
       this._lifecycle.updatedAt = new Date();
     }
   }
 
   activate(): void {
-    this._lifecycle.status = "active";
+    this._lifecycle.status = 'active';
     this._lifecycle.activatedAt = new Date();
     this._lifecycle.updatedAt = new Date();
   }
 
   pause(): void {
-    this._lifecycle.status = "paused";
+    this._lifecycle.status = 'paused';
     this._lifecycle.pausedAt = new Date();
     this._lifecycle.updatedAt = new Date();
   }
 
   archive(): void {
-    this._lifecycle.status = "archived";
+    this._lifecycle.status = 'archived';
     this._lifecycle.updatedAt = new Date();
   }
 
@@ -228,8 +227,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       if (completionTime) {
         const currentAvg = this._analytics.averageCompletionTime || 0;
         const count = this._analytics.completedInstances;
-        this._analytics.averageCompletionTime =
-          (currentAvg * (count - 1) + completionTime) / count;
+        this._analytics.averageCompletionTime = (currentAvg * (count - 1) + completionTime) / count;
       }
     }
     this._analytics.successRate =
@@ -253,19 +251,19 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   }
 
   isActive(): boolean {
-    return this._lifecycle.status === "active";
+    return this._lifecycle.status === 'active';
   }
 
   isDraft(): boolean {
-    return this._lifecycle.status === "draft";
+    return this._lifecycle.status === 'draft';
   }
 
   isPaused(): boolean {
-    return this._lifecycle.status === "paused";
+    return this._lifecycle.status === 'paused';
   }
 
   isArchived(): boolean {
-    return this._lifecycle.status === "archived";
+    return this._lifecycle.status === 'archived';
   }
 
   // ============= 数据辅助方法 =============
@@ -291,8 +289,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
           endCondition: this._timeConfig.recurrence.endCondition
             ? {
                 type: this._timeConfig.recurrence.endCondition.type,
-                endDate:
-                  this._timeConfig.recurrence.endCondition.endDate?.getTime(),
+                endDate: this._timeConfig.recurrence.endCondition.endDate?.getTime(),
                 count: this._timeConfig.recurrence.endCondition.count,
               }
             : undefined,
@@ -363,9 +360,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       type: data.timeConfig.type,
       baseTime: {
         start: new Date(data.timeConfig.baseTime.start),
-        end: data.timeConfig.baseTime.end
-          ? new Date(data.timeConfig.baseTime.end)
-          : undefined,
+        end: data.timeConfig.baseTime.end ? new Date(data.timeConfig.baseTime.end) : undefined,
         duration: data.timeConfig.baseTime.duration,
       },
       recurrence: {
@@ -394,9 +389,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
         timing: {
           type: alert.timing.type,
           minutesBefore: alert.timing.minutesBefore,
-          absoluteTime: alert.timing.absoluteTime
-            ? new Date(alert.timing.absoluteTime)
-            : undefined,
+          absoluteTime: alert.timing.absoluteTime ? new Date(alert.timing.absoluteTime) : undefined,
         },
         type: alert.type,
         message: alert.message,
@@ -436,15 +429,11 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     // 恢复生命周期状态
     if (data.lifecycle) {
       taskTemplate._lifecycle = {
-        status: data.lifecycle.status || "draft",
+        status: data.lifecycle.status || 'draft',
         createdAt: new Date(data.lifecycle.createdAt),
         updatedAt: new Date(data.lifecycle.updatedAt),
-        activatedAt: data.lifecycle.activatedAt
-          ? new Date(data.lifecycle.activatedAt)
-          : undefined,
-        pausedAt: data.lifecycle.pausedAt
-          ? new Date(data.lifecycle.pausedAt)
-          : undefined,
+        activatedAt: data.lifecycle.activatedAt ? new Date(data.lifecycle.activatedAt) : undefined,
+        pausedAt: data.lifecycle.pausedAt ? new Date(data.lifecycle.pausedAt) : undefined,
       };
     }
 

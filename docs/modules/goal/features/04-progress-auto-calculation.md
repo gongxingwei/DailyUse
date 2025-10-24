@@ -15,6 +15,7 @@
 ### 背景与痛点
 
 在 OKR 目标管理中，目标进度通常需要根据 KR（关键结果）的完成情况综合计算，但现状存在以下问题：
+
 - ❌ 用户需要手动更新目标进度，费时费力且容易遗忘
 - ❌ 目标进度与 KR 进度不一致，导致数据混乱
 - ❌ 没有统一的进度计算规则，不同用户计算方式不同
@@ -31,6 +32,7 @@
 **一句话价值**: 根据 KR 完成情况和权重自动计算目标进度，确保数据实时准确
 
 **核心收益**:
+
 - ✅ 自动计算目标进度，无需手动更新
 - ✅ 支持加权平均算法，考虑 KR 的不同重要性
 - ✅ KR 或权重变化时自动重算，保持数据一致性
@@ -46,6 +48,7 @@
 用户更新某个 KR 的进度后，系统自动根据所有 KR 的进度和权重计算目标总进度。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 系统根据 KR 进度自动计算目标进度
@@ -53,6 +56,7 @@ So that 我无需手动更新目标进度，数据始终准确
 ```
 
 **操作流程**:
+
 1. 用户打开目标详情页
 2. 更新某个 KR 的进度（如 KR1 从 50% 改为 70%）
 3. 点击"保存"
@@ -64,11 +68,13 @@ So that 我无需手动更新目标进度，数据始终准确
 6. 进度变化被记录到历史快照
 
 **预期结果**:
+
 - Goal 表的 `progress` 字段自动更新
 - 计算公式透明，用户可查看计算细节
 - 进度变化触发事件通知
 
 **计算示例**:
+
 ```
 目标：2025 Q4 收入增长
 ├─ KR1: 新客户增长 20%  (权重 40%, 进度 70%)
@@ -88,6 +94,7 @@ So that 我无需手动更新目标进度，数据始终准确
 用户调整某个 KR 的权重后，系统自动重新计算目标进度。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 调整 KR 权重后自动重算目标进度
@@ -95,6 +102,7 @@ So that 进度反映最新的优先级分配
 ```
 
 **操作流程**:
+
 1. 用户在"KR 权重快照"功能中调整权重：
    - KR1: 40% → 50%
    - KR2: 30% → 25%
@@ -105,6 +113,7 @@ So that 进度反映最新的优先级分配
 5. 显示进度变化提示："目标进度因权重调整从 61% 变为 60%"
 
 **预期结果**:
+
 - 权重调整后立即重算进度
 - 记录进度变化历史（含变化原因："权重调整"）
 - 用户可对比调整前后的进度
@@ -117,6 +126,7 @@ So that 进度反映最新的优先级分配
 用户查看目标进度的计算明细，了解每个 KR 的贡献度。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 查看目标进度的计算公式和每个 KR 的贡献度
@@ -124,28 +134,32 @@ So that 我可以理解进度是如何得出的
 ```
 
 **操作流程**:
+
 1. 用户打开目标详情页
 2. 点击目标进度旁的"查看计算详情"图标
 3. 系统展示进度分解面板：
+
    ```
    目标进度: 61%
    ━━━━━━━━━━━━━━━━━━━━━━━━━━
    计算模式: 加权平均
-   
+
    各 KR 贡献度：
    ├─ KR1 (权重 40%): 70% → 贡献 28%
    ├─ KR2 (权重 30%): 60% → 贡献 18%
    └─ KR3 (权重 30%): 50% → 贡献 15%
-   
+
    计算公式:
    (70% × 40% + 60% × 30% + 50% × 30%) / 100% = 61%
-   
+
    最后更新: 2025-10-21 14:30
    触发原因: KR1 进度更新
    ```
+
 4. 用户可点击某个 KR 查看其进度历史
 
 **预期结果**:
+
 - 进度计算透明化，用户理解进度来源
 - 识别哪些 KR 对目标进度贡献最大
 - 便于优化资源分配
@@ -158,6 +172,7 @@ So that 我可以理解进度是如何得出的
 用户根据目标特性，选择不同的进度计算模式（加权平均 / 最小值 / 自定义）。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 为目标选择合适的进度计算模式
@@ -165,6 +180,7 @@ So that 进度反映更符合实际情况
 ```
 
 **操作流程**:
+
 1. 用户打开目标设置
 2. 选择"进度计算模式"：
    - **加权平均**（默认）: 适用于并行 KR，各自独立贡献
@@ -183,6 +199,7 @@ So that 进度反映更符合实际情况
 | 自定义 | 用户自定义 | 特殊业务逻辑 |
 
 **预期结果**:
+
 - Goal 表新增 `progressCalculationMode` 字段
 - 不同模式下进度可能差异较大
 - 模式变更记录到目标历史
@@ -195,6 +212,7 @@ So that 进度反映更符合实际情况
 用户在特殊情况下需要手动覆盖自动计算的进度（如部分 KR 数据不准确）。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 在必要时手动覆盖自动计算的进度
@@ -202,6 +220,7 @@ So that 我可以处理数据异常的特殊情况
 ```
 
 **操作流程**:
+
 1. 用户发现自动计算的进度不准确（如 KR 数据滞后）
 2. 点击"手动设置进度"
 3. 输入进度值（如 75%）
@@ -211,6 +230,7 @@ So that 我可以处理数据异常的特殊情况
 7. 目标进度显示为 75%，带有"手动设置"标记
 
 **预期结果**:
+
 - Goal 表新增 `progressOverride` 字段：
   ```typescript
   {
@@ -238,24 +258,24 @@ So that 我可以处理数据异常的特殊情况
 ```typescript
 export interface GoalServerDTO {
   // ...existing fields...
-  
+
   // 进度相关字段
-  readonly progress: number;                       // 目标进度 (0-100) - 自动计算
+  readonly progress: number; // 目标进度 (0-100) - 自动计算
   readonly progressCalculationMode: ProgressCalculationMode; // 计算模式
-  readonly progressOverride?: ProgressOverride;    // 手动覆盖配置
-  readonly progressBreakdown?: ProgressBreakdown;  // 进度分解详情
-  readonly lastProgressUpdateTime: number;         // 最后进度更新时间
-  readonly progressUpdateTrigger: string;          // 触发原因
+  readonly progressOverride?: ProgressOverride; // 手动覆盖配置
+  readonly progressBreakdown?: ProgressBreakdown; // 进度分解详情
+  readonly lastProgressUpdateTime: number; // 最后进度更新时间
+  readonly progressUpdateTrigger: string; // 触发原因
 }
 
 /**
  * 进度计算模式
  */
 export enum ProgressCalculationMode {
-  WEIGHTED_AVERAGE = 'weighted_average',  // 加权平均（默认）
-  MIN_VALUE = 'min_value',                // 最小值模式
-  THRESHOLD = 'threshold',                // 阈值模式
-  CUSTOM = 'custom'                       // 自定义公式
+  WEIGHTED_AVERAGE = 'weighted_average', // 加权平均（默认）
+  MIN_VALUE = 'min_value', // 最小值模式
+  THRESHOLD = 'threshold', // 阈值模式
+  CUSTOM = 'custom', // 自定义公式
 }
 
 /**
@@ -281,7 +301,7 @@ export interface ProgressBreakdown {
     keyResultName: string;
     progress: number;
     weight: number;
-    contribution: number;  // 贡献度 = progress × weight
+    contribution: number; // 贡献度 = progress × weight
   }>;
   readonly calculationFormula: string;
   readonly updatedAt: number;
@@ -309,12 +329,9 @@ export interface ProgressBreakdown {
 function calculateWeightedAverage(keyResults: KeyResult[]): number {
   const totalWeight = keyResults.reduce((sum, kr) => sum + kr.weight, 0);
   if (totalWeight === 0) return 0;
-  
-  const weightedSum = keyResults.reduce(
-    (sum, kr) => sum + (kr.progress * kr.weight),
-    0
-  );
-  
+
+  const weightedSum = keyResults.reduce((sum, kr) => sum + kr.progress * kr.weight, 0);
+
   return Math.round((weightedSum / totalWeight) * 100) / 100;
 }
 
@@ -323,14 +340,14 @@ function calculateWeightedAverage(keyResults: KeyResult[]): number {
  */
 function calculateMinValue(keyResults: KeyResult[]): number {
   if (keyResults.length === 0) return 0;
-  return Math.min(...keyResults.map(kr => kr.progress));
+  return Math.min(...keyResults.map((kr) => kr.progress));
 }
 
 /**
  * 阈值模式
  */
 function calculateThreshold(keyResults: KeyResult[], threshold: number = 80): number {
-  const allAboveThreshold = keyResults.every(kr => kr.progress >= threshold);
+  const allAboveThreshold = keyResults.every((kr) => kr.progress >= threshold);
   return allAboveThreshold ? 100 : 0;
 }
 ```
@@ -348,12 +365,14 @@ function calculateThreshold(keyResults: KeyResult[], threshold: number = 80): nu
 ### MVP: 基础自动计算（1-1.5 周）
 
 **范围**:
+
 - ✅ 加权平均模式（默认唯一模式）
 - ✅ KR 进度/权重变化时自动重算
 - ✅ 进度分解详情查看
 - ✅ 进度变化历史记录
 
 **技术要点**:
+
 - Contracts: 定义 `ProgressBreakdown`, `ProgressCalculationMode`
 - Domain: Goal 聚合根添加 `calculateProgress()` 方法
 - Application: `UpdateGoalProgressService` 应用服务
@@ -362,6 +381,7 @@ function calculateThreshold(keyResults: KeyResult[], threshold: number = 80): nu
 - UI: 进度分解面板组件
 
 **验收标准**:
+
 ```gherkin
 Given 目标有 3 个 KR：
   | KR   | 进度 | 权重 |
@@ -378,6 +398,7 @@ And 进度分解详情应显示 KR1 贡献 32%（80% × 40%）
 ### MMP: 多种计算模式（+1-2 周）
 
 **在 MVP 基础上新增**:
+
 - ✅ 最小值模式
 - ✅ 阈值模式
 - ✅ 计算模式切换功能
@@ -385,11 +406,13 @@ And 进度分解详情应显示 KR1 贡献 32%（80% × 40%）
 - ✅ 进度异常检测（如 KR 进度总和 ≠ 100%）
 
 **技术要点**:
+
 - 策略模式实现多种计算算法
 - 进度覆盖状态管理
 - 异常检测规则引擎
 
 **验收标准**:
+
 ```gherkin
 Given 目标当前使用"加权平均"模式，进度 61%
 When 用户切换到"最小值"模式
@@ -403,6 +426,7 @@ And 计算模式变更应记录到历史
 ### Full Release: 智能进度分析（+2-3 周）
 
 **在 MMP 基础上新增**:
+
 - ✅ 自定义计算公式（支持表达式解析）
 - ✅ 进度趋势预测（基于历史数据预测完成时间）
 - ✅ 进度健康度评分（识别进度异常）
@@ -410,11 +434,13 @@ And 计算模式变更应记录到历史
 - ✅ 进度里程碑庆祝动画
 
 **技术要点**:
+
 - 表达式解析引擎（如 mathjs）
 - 线性回归算法预测趋势
 - 进度健康度评分模型
 
 **验收标准**:
+
 ```gherkin
 Given 目标过去 4 周的进度为：20%, 35%, 50%, 61%
 When 用户查看"进度趋势"
@@ -655,6 +681,7 @@ Feature: 进度自动计算
 | 进度分解查看率 | >30% | 查看详情的用户数 / 更新进度的用户数 |
 
 **定性指标**:
+
 - 用户反馈"进度更新更及时"
 - 减少手动更新进度的操作次数
 - 目标进度与 KR 进度一致性提升
@@ -668,12 +695,12 @@ Feature: 进度自动计算
 ```prisma
 model Goal {
   // ...existing fields...
-  
+
   progress                    Int      @default(0) @map("progress")  // 0-100
   progressCalculationMode     String   @default("weighted_average") @map("progress_calculation_mode")
   lastProgressUpdateTime      BigInt?  @map("last_progress_update_time")
   progressUpdateTrigger       String?  @map("progress_update_trigger")
-  
+
   // 手动覆盖相关字段
   progressIsOverridden        Boolean  @default(false) @map("progress_is_overridden")
   progressManualValue         Int?     @map("progress_manual_value")
@@ -733,8 +760,8 @@ export class Goal {
     if (totalWeight === 0) return 0;
 
     const weightedSum = this.keyResults.reduce(
-      (sum, kr) => sum + (kr.progress * kr.weight / 100),
-      0
+      (sum, kr) => sum + (kr.progress * kr.weight) / 100,
+      0,
     );
 
     return Math.round((weightedSum / totalWeight) * 100);
@@ -744,12 +771,12 @@ export class Goal {
    * 获取进度分解详情
    */
   getProgressBreakdown(): ProgressBreakdown {
-    const krContributions = this.keyResults.map(kr => ({
+    const krContributions = this.keyResults.map((kr) => ({
       keyResultUuid: kr.uuid,
       keyResultName: kr.name,
       progress: kr.progress,
       weight: kr.weight,
-      contribution: (kr.progress * kr.weight) / 100
+      contribution: (kr.progress * kr.weight) / 100,
     }));
 
     return {
@@ -757,7 +784,7 @@ export class Goal {
       calculationMode: this.progressCalculationMode,
       krContributions,
       calculationFormula: this.buildCalculationFormula(),
-      updatedAt: this.lastProgressUpdateTime
+      updatedAt: this.lastProgressUpdateTime,
     };
   }
 }
@@ -785,8 +812,8 @@ export class UpdateGoalProgressService {
       new GoalProgressUpdatedEvent({
         goalUuid: goal.uuid,
         newProgress: goal.progress,
-        trigger
-      })
+        trigger,
+      }),
     );
   }
 }
@@ -818,13 +845,13 @@ Response: GoalClientDTO
 
 ## 8. 风险与缓解
 
-| 风险 | 可能性 | 影响 | 缓解措施 |
-|------|-------|------|---------|
-| 进度计算错误 | 低 | 高 | 单元测试 + 集成测试 + 计算日志 |
-| 频繁重算影响性能 | 中 | 中 | 防抖机制（批量操作合并计算） + 异步计算 |
-| 用户不理解计算逻辑 | 中 | 中 | 提供计算详情面板 + 示例说明 |
-| 手动覆盖滥用 | 低 | 中 | 记录覆盖原因 + 定期审计 |
-| KR 权重不等于 100% | 中 | 中 | 前端校验 + 自动归一化 |
+| 风险               | 可能性 | 影响 | 缓解措施                                |
+| ------------------ | ------ | ---- | --------------------------------------- |
+| 进度计算错误       | 低     | 高   | 单元测试 + 集成测试 + 计算日志          |
+| 频繁重算影响性能   | 中     | 中   | 防抖机制（批量操作合并计算） + 异步计算 |
+| 用户不理解计算逻辑 | 中     | 中   | 提供计算详情面板 + 示例说明             |
+| 手动覆盖滥用       | 低     | 中   | 记录覆盖原因 + 定期审计                 |
+| KR 权重不等于 100% | 中     | 中   | 前端校验 + 自动归一化                   |
 
 ---
 
@@ -842,7 +869,8 @@ Response: GoalClientDTO
 ---
 
 **文档维护**:
+
 - 创建: 2025-10-21
-- 创建者: PO Agent  
+- 创建者: PO Agent
 - 版本: 1.0
 - 下次更新: Sprint Planning 前

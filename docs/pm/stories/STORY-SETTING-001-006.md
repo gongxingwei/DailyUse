@@ -188,28 +188,19 @@ Scenario: 移动侧边栏到右侧
       <!-- 主题切换 -->
       <section class="setting-section">
         <h2>{{ t('settings.appearance.theme') }}</h2>
-        <ThemeSelector
-          :value="currentTheme"
-          @change="handleThemeChange"
-        />
+        <ThemeSelector :value="currentTheme" @change="handleThemeChange" />
       </section>
 
       <!-- 语言选择 -->
       <section class="setting-section">
         <h2>{{ t('settings.appearance.language') }}</h2>
-        <LanguageSelector
-          :value="currentLanguage"
-          @change="handleLanguageChange"
-        />
+        <LanguageSelector :value="currentLanguage" @change="handleLanguageChange" />
       </section>
 
       <!-- 字体大小 -->
       <section class="setting-section">
         <h2>{{ t('settings.appearance.fontSize') }}</h2>
-        <FontSizeSlider
-          :value="currentFontSize"
-          @change="handleFontSizeChange"
-        />
+        <FontSizeSlider :value="currentFontSize" @change="handleFontSizeChange" />
       </section>
 
       <!-- 侧边栏位置 -->
@@ -367,15 +358,15 @@ function handleSelect(theme: ThemeType) {
   margin-bottom: 0.5rem;
 }
 
-.theme-preview[data-theme="light"] {
+.theme-preview[data-theme='light'] {
   background: #ffffff;
 }
 
-.theme-preview[data-theme="dark"] {
+.theme-preview[data-theme='dark'] {
   background: #1a1a1a;
 }
 
-.theme-preview[data-theme="auto"] {
+.theme-preview[data-theme='auto'] {
   background: linear-gradient(90deg, #ffffff 50%, #1a1a1a 50%);
 }
 
@@ -496,16 +487,16 @@ function handleInput(event: Event) {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| 页面布局 | 1 小时 |
-| 主题选择器 | 2 小时 |
-| 语言选择器 | 1.5 小时 |
-| 字体滑块 | 1.5 小时 |
-| 侧边栏切换 | 1 小时 |
-| 样式和动画 | 1.5 小时 |
-| 组件测试 | 2 小时 |
-| **总计** | **10.5 小时** |
+| 任务       | 预估时间      |
+| ---------- | ------------- |
+| 页面布局   | 1 小时        |
+| 主题选择器 | 2 小时        |
+| 语言选择器 | 1.5 小时      |
+| 字体滑块   | 1.5 小时      |
+| 侧边栏切换 | 1 小时        |
+| 样式和动画 | 1.5 小时      |
+| 组件测试   | 2 小时        |
+| **总计**   | **10.5 小时** |
 
 **Story Points**: 3 SP
 
@@ -514,6 +505,7 @@ function handleInput(event: Event) {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - ✅ STORY-SETTING-001-005 (Client Services)
 
 ---

@@ -18,16 +18,18 @@ export function useContextMenu() {
     show: false,
     x: 0,
     y: 0,
-    items: [{
-      label: '操作一',
-      icon: 'mdi-pencil',
-      action: () => alert('点击了操作一'),
-    },
-    {
-      label: '操作二',
-      icon: 'mdi-delete',
-      action: () => alert('点击了操作二'),
-    },]
+    items: [
+      {
+        label: '操作一',
+        icon: 'mdi-pencil',
+        action: () => alert('点击了操作一'),
+      },
+      {
+        label: '操作二',
+        icon: 'mdi-delete',
+        action: () => alert('点击了操作二'),
+      },
+    ],
   });
 
   const showContextMenu = (e: MouseEvent, items: MenuItem[]) => {
@@ -55,7 +57,7 @@ export function useContextMenu() {
       show: true,
       x: Math.max(0, adjustedX),
       y: Math.max(0, adjustedY),
-      items: items
+      items: items,
     };
     console.log('Context menu shown at:', adjustedX, adjustedY);
   };
@@ -84,6 +86,6 @@ export function useContextMenu() {
   return {
     contextMenu,
     showContextMenu,
-    closeContextMenu
+    closeContextMenu,
   };
 }

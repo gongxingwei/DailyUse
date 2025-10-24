@@ -32,16 +32,19 @@
 ### 改进方案
 
 ✅ **用户级别连接**
+
 - 使用 `accountUuid` 作为客户端 ID
 - 每个用户有独立的 SSE 连接
 - 支持同一用户多设备登录
 
 ✅ **正确的连接时机**
+
 - 在用户登录阶段（`USER_LOGIN`）建立连接
 - 用户登出时自动断开连接
 - 确保连接与用户会话绑定
 
 ✅ **增强的安全性**
+
 - 后端验证 `accountUuid` 参数
 - 可以针对特定用户推送事件
 - 支持扩展 token 验证
@@ -202,6 +205,7 @@ router.get('/events', sseController.connect);
 **文件位置：** `docs/systems/SSE_IMPLEMENTATION_GUIDE.md`
 
 **新增内容：**
+
 - 用户级别连接实现说明
 - 迁移指南
 - API 变更说明
@@ -212,21 +216,25 @@ router.get('/events', sseController.connect);
 ### 功能增强
 
 ✅ **用户身份绑定**
+
 - 每个 SSE 连接关联到特定用户
 - 使用 `accountUuid` 作为唯一标识
 - 支持用户级别的事件推送
 
 ✅ **多设备支持**
+
 - 同一用户可以在多个设备登录
 - 每个设备都有独立的 SSE 连接
 - 所有设备同步接收该用户的事件
 
 ✅ **生命周期管理**
+
 - 用户登录时自动建立连接
 - 用户登出时自动清理连接
 - 避免无效连接占用资源
 
 ✅ **安全性提升**
+
 - 后端验证 `accountUuid` 参数
 - 可以针对特定用户发送事件
 - 支持扩展 token 验证
@@ -247,13 +255,13 @@ router.get('/events', sseController.connect);
 
 ### 代码变更
 
-| 文件 | 变更类型 | 说明 |
-|------|---------|------|
-| `SSEClient.ts` | 重构 | 添加 accountUuid 参数，移除自动连接 |
-| `sseInitialization.ts` | 重构 | 改为 USER_LOGIN 阶段初始化 |
-| `SSEController.ts` | 增强 | 使用 accountUuid，新增用户级推送 |
-| `routes.ts` | 更新 | API 文档添加 accountUuid 参数 |
-| `SSE_IMPLEMENTATION_GUIDE.md` | 更新 | 添加用户级连接说明 |
+| 文件                          | 变更类型 | 说明                                |
+| ----------------------------- | -------- | ----------------------------------- |
+| `SSEClient.ts`                | 重构     | 添加 accountUuid 参数，移除自动连接 |
+| `sseInitialization.ts`        | 重构     | 改为 USER_LOGIN 阶段初始化          |
+| `SSEController.ts`            | 增强     | 使用 accountUuid，新增用户级推送    |
+| `routes.ts`                   | 更新     | API 文档添加 accountUuid 参数       |
+| `SSE_IMPLEMENTATION_GUIDE.md` | 更新     | 添加用户级连接说明                  |
 
 ### 兼容性
 
@@ -294,13 +302,11 @@ expect(sseClient.isConnected()).toBe(false);
 
 ```typescript
 // 1. 测试缺少 accountUuid 参数
-const response = await request(app)
-  .get('/api/v1/schedules/events');
+const response = await request(app).get('/api/v1/schedules/events');
 expect(response.status).toBe(400);
 
 // 2. 测试正常连接
-const response = await request(app)
-  .get('/api/v1/schedules/events?accountUuid=test-uuid');
+const response = await request(app).get('/api/v1/schedules/events?accountUuid=test-uuid');
 expect(response.status).toBe(200);
 expect(response.headers['content-type']).toContain('text/event-stream');
 

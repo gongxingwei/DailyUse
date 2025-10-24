@@ -1,14 +1,14 @@
-import { AggregateRoot } from "@dailyuse/utils";
+import { AggregateRoot } from '@dailyuse/utils';
 import type {
   TaskTimeConfig,
   TaskReminderConfig,
   KeyResultLink,
   ITaskTemplate,
   ITaskTemplateDTO,
-} from "@common/modules/task/types/task";
-import { ImportanceLevel } from "@dailyuse/contracts";
-import { UrgencyLevel } from "@dailyuse/contracts";
-import { addMinutes } from "date-fns";
+} from '@common/modules/task/types/task';
+import { ImportanceLevel } from '@dailyuse/contracts';
+import { UrgencyLevel } from '@dailyuse/contracts';
+import { addMinutes } from 'date-fns';
 
 export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _title: string;
@@ -31,7 +31,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     location?: string;
   };
   private _lifecycle: {
-    status: "draft" | "active" | "paused" | "archived";
+    status: 'draft' | 'active' | 'paused' | 'archived';
     createdAt: Date;
     updatedAt: Date;
     activatedAt?: Date;
@@ -86,7 +86,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     };
 
     this._metadata = {
-      category: params.category || "general",
+      category: params.category || 'general',
       tags: params.tags || [],
       importance: params.importance || ImportanceLevel.Moderate,
       urgency: params.urgency || UrgencyLevel.Medium,
@@ -95,7 +95,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     };
 
     this._lifecycle = {
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -151,7 +151,6 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     return this._version;
   }
 
-
   // Methods
   updateTitle(title: string): void {
     this._title = title;
@@ -199,24 +198,24 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   removeKeyResultLink(goalUuid: string, keyResultId: string): void {
     if (this._keyResultLinks) {
       this._keyResultLinks = this._keyResultLinks.filter(
-        (link) => !(link.goalUuid === goalUuid && link.keyResultId === keyResultId)
+        (link) => !(link.goalUuid === goalUuid && link.keyResultId === keyResultId),
       );
       this._lifecycle.updatedAt = new Date();
     }
   }
   // ===== UI 校验和操作预览方法 =====
-  
-  switchTimeConfigType(type: "timeRange" | "timed" | "allDay"): void {
+
+  switchTimeConfigType(type: 'timeRange' | 'timed' | 'allDay'): void {
     this._timeConfig.type = type;
     this._lifecycle.updatedAt = new Date();
-    if (type === "timeRange") {
+    if (type === 'timeRange') {
       this._timeConfig.baseTime.duration = 0;
       this._timeConfig.baseTime.start = new Date();
       this._timeConfig.baseTime.end = addMinutes(this._timeConfig.baseTime.start, 60);
-    } else if (type === "timed") {
+    } else if (type === 'timed') {
       this._timeConfig.baseTime.duration = 0;
       this._timeConfig.baseTime.start = new Date();
-    } else if (type === "allDay") {
+    } else if (type === 'allDay') {
       this._timeConfig.baseTime.duration = 0;
       const now = new Date();
       const zeroHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
@@ -229,8 +228,8 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 检查是否可以激活模板（UI 校验）
    */
   canActivate(): { canActivate: boolean; reason?: string } {
-    if (this._lifecycle.status === "active") {
-      return { canActivate: false, reason: "模板已激活" };
+    if (this._lifecycle.status === 'active') {
+      return { canActivate: false, reason: '模板已激活' };
     }
     return { canActivate: true };
   }
@@ -239,8 +238,8 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 检查是否可以暂停模板（UI 校验）
    */
   canPause(): { canPause: boolean; reason?: string } {
-    if (this._lifecycle.status !== "active") {
-      return { canPause: false, reason: "只能暂停已激活的模板" };
+    if (this._lifecycle.status !== 'active') {
+      return { canPause: false, reason: '只能暂停已激活的模板' };
     }
     return { canPause: true };
   }
@@ -249,8 +248,8 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 检查是否可以归档模板（UI 校验）
    */
   canArchive(): { canArchive: boolean; reason?: string } {
-    if (this._lifecycle.status === "archived") {
-      return { canArchive: false, reason: "模板已归档" };
+    if (this._lifecycle.status === 'archived') {
+      return { canArchive: false, reason: '模板已归档' };
     }
     return { canArchive: true };
   }
@@ -259,8 +258,8 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 检查是否可以编辑模板（UI 校验）
    */
   canEdit(): { canEdit: boolean; reason?: string } {
-    if (this._lifecycle.status === "archived") {
-      return { canEdit: false, reason: "已归档的模板无法编辑" };
+    if (this._lifecycle.status === 'archived') {
+      return { canEdit: false, reason: '已归档的模板无法编辑' };
     }
     return { canEdit: true };
   }
@@ -270,9 +269,9 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    */
   canDelete(): { canDelete: boolean; reason?: string } {
     if (this._analytics.totalInstances > 0) {
-      return { 
-        canDelete: false, 
-        reason: `模板已有 ${this._analytics.totalInstances} 个实例，无法删除` 
+      return {
+        canDelete: false,
+        reason: `模板已有 ${this._analytics.totalInstances} 个实例，无法删除`,
       };
     }
     return { canDelete: true };
@@ -289,32 +288,32 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   }> {
     const actions = [
       {
-        action: "activate",
-        label: "激活模板",
+        action: 'activate',
+        label: '激活模板',
         ...this.canActivate(),
         available: this.canActivate().canActivate,
       },
       {
-        action: "pause",
-        label: "暂停模板",
+        action: 'pause',
+        label: '暂停模板',
         ...this.canPause(),
         available: this.canPause().canPause,
       },
       {
-        action: "archive",
-        label: "归档模板",
+        action: 'archive',
+        label: '归档模板',
         ...this.canArchive(),
         available: this.canArchive().canArchive,
       },
       {
-        action: "edit",
-        label: "编辑模板",
+        action: 'edit',
+        label: '编辑模板',
         ...this.canEdit(),
         available: this.canEdit().canEdit,
       },
       {
-        action: "delete",
-        label: "删除模板",
+        action: 'delete',
+        label: '删除模板',
         ...this.canDelete(),
         available: this.canDelete().canDelete,
       },
@@ -333,33 +332,33 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     error?: string;
   } {
     switch (action) {
-      case "activate":
+      case 'activate':
         if (!this.canActivate().canActivate) {
           return { success: false, error: this.canActivate().reason };
         }
         return {
           success: true,
-          newStatus: "active",
-          changes: { activatedAt: "当前时间" },
+          newStatus: 'active',
+          changes: { activatedAt: '当前时间' },
         };
 
-      case "pause":
+      case 'pause':
         if (!this.canPause().canPause) {
           return { success: false, error: this.canPause().reason };
         }
         return {
           success: true,
-          newStatus: "paused",
-          changes: { pausedAt: "当前时间" },
+          newStatus: 'paused',
+          changes: { pausedAt: '当前时间' },
         };
 
-      case "archive":
+      case 'archive':
         if (!this.canArchive().canArchive) {
           return { success: false, error: this.canArchive().reason };
         }
         return {
           success: true,
-          newStatus: "archived",
+          newStatus: 'archived',
           changes: {},
         };
 
@@ -378,23 +377,26 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     const errors: Array<{ field: string; message: string }> = [];
 
     // 校验标题
-    if (!this._title || this._title.trim() === "") {
-      errors.push({ field: "title", message: "标题不能为空" });
+    if (!this._title || this._title.trim() === '') {
+      errors.push({ field: 'title', message: '标题不能为空' });
     }
 
     // 校验时间配置
     if (!this._timeConfig.baseTime?.start && !this._timeConfig.baseTime?.end) {
-      errors.push({ field: "timeConfig", message: "时间配置不完整" });
+      errors.push({ field: 'timeConfig', message: '时间配置不完整' });
     }
 
     // 校验提醒配置
-    if (this._reminderConfig.enabled && (!this._reminderConfig.alerts || this._reminderConfig.alerts.length === 0)) {
-      errors.push({ field: "reminderConfig", message: "启用提醒时必须配置至少一个提醒" });
+    if (
+      this._reminderConfig.enabled &&
+      (!this._reminderConfig.alerts || this._reminderConfig.alerts.length === 0)
+    ) {
+      errors.push({ field: 'reminderConfig', message: '启用提醒时必须配置至少一个提醒' });
     }
 
     // 校验预估时长
     if (this._metadata.estimatedDuration !== undefined && this._metadata.estimatedDuration <= 0) {
-      errors.push({ field: "estimatedDuration", message: "预估时长必须大于 0" });
+      errors.push({ field: 'estimatedDuration', message: '预估时长必须大于 0' });
     }
 
     return {
@@ -404,19 +406,19 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   }
 
   isActive(): boolean {
-    return this._lifecycle.status === "active";
+    return this._lifecycle.status === 'active';
   }
 
   isDraft(): boolean {
-    return this._lifecycle.status === "draft";
+    return this._lifecycle.status === 'draft';
   }
 
   isPaused(): boolean {
-    return this._lifecycle.status === "paused";
+    return this._lifecycle.status === 'paused';
   }
 
   isArchived(): boolean {
-    return this._lifecycle.status === "archived";
+    return this._lifecycle.status === 'archived';
   }
 
   /**
@@ -438,20 +440,26 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
         },
         recurrence: {
           ...data.timeConfig.recurrence,
-          endCondition: data.timeConfig.recurrence.endCondition ? {
-            ...data.timeConfig.recurrence.endCondition,
-            endDate: data.timeConfig.recurrence.endCondition.endDate ? new Date(data.timeConfig.recurrence.endCondition.endDate) : undefined,
-          } : undefined,
+          endCondition: data.timeConfig.recurrence.endCondition
+            ? {
+                ...data.timeConfig.recurrence.endCondition,
+                endDate: data.timeConfig.recurrence.endCondition.endDate
+                  ? new Date(data.timeConfig.recurrence.endCondition.endDate)
+                  : undefined,
+              }
+            : undefined,
         },
       },
       reminderConfig: {
         ...data.reminderConfig,
         enabled: !!data.reminderConfig.enabled,
-        alerts: data.reminderConfig.alerts.map(alert => ({
+        alerts: data.reminderConfig.alerts.map((alert) => ({
           ...alert,
           timing: {
             ...alert.timing,
-            absoluteTime: alert.timing.absoluteTime ? new Date(alert.timing.absoluteTime) : undefined,
+            absoluteTime: alert.timing.absoluteTime
+              ? new Date(alert.timing.absoluteTime)
+              : undefined,
           },
         })),
         snooze: {
@@ -490,7 +498,9 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       completedInstances: data.analytics.completedInstances,
       averageCompletionTime: data.analytics.averageCompletionTime,
       successRate: data.analytics.successRate,
-      lastInstanceDate: data.analytics.lastInstanceDate ? new Date(data.analytics.lastInstanceDate) : undefined,
+      lastInstanceDate: data.analytics.lastInstanceDate
+        ? new Date(data.analytics.lastInstanceDate)
+        : undefined,
     };
 
     // 恢复版本号
@@ -498,7 +508,6 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
 
     return instance;
   }
-
 
   isTaskTemplate(): this is TaskTemplate {
     return this instanceof TaskTemplate;
@@ -537,11 +546,13 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
         recurrence: {
           type: this._timeConfig.recurrence.type,
           interval: this._timeConfig.recurrence.interval,
-          endCondition: this._timeConfig.recurrence.endCondition ? {
-            type: this._timeConfig.recurrence.endCondition.type,
-            endDate: this._timeConfig.recurrence.endCondition.endDate?.getTime(),
-            count: this._timeConfig.recurrence.endCondition.count,
-          } : undefined,
+          endCondition: this._timeConfig.recurrence.endCondition
+            ? {
+                type: this._timeConfig.recurrence.endCondition.type,
+                endDate: this._timeConfig.recurrence.endCondition.endDate?.getTime(),
+                count: this._timeConfig.recurrence.endCondition.count,
+              }
+            : undefined,
           config: this._timeConfig.recurrence.config,
         },
         timezone: this._timeConfig.timezone,
@@ -549,7 +560,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       },
       reminderConfig: {
         enabled: this._reminderConfig.enabled ? 1 : 0,
-        alerts: this._reminderConfig.alerts.map(alert => ({
+        alerts: this._reminderConfig.alerts.map((alert) => ({
           uuid: alert.uuid,
           timing: {
             type: alert.timing.type,

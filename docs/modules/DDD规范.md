@@ -21,6 +21,7 @@ apps/api/src/modules/account/application/services/
 ```
 
 **理由**：
+
 - ✅ **单一职责原则**：每个服务只负责一个用例的编排
 - ✅ **易于测试**：测试范围明确，依赖清晰
 - ✅ **易于维护**：修改某个用例不影响其他用例
@@ -31,20 +32,21 @@ apps/api/src/modules/account/application/services/
 ```typescript
 // ❌ 不推荐：God Service
 export class AccountApplicationService {
-  async register() { }
-  async login() { }
-  async logout() { }
-  async deleteAccount() { }
-  async updateProfile() { }
-  async changePassword() { }
-  async verifyEmail() { }
-  async resetPassword() { }
-  async enable2FA() { }
+  async register() {}
+  async login() {}
+  async logout() {}
+  async deleteAccount() {}
+  async updateProfile() {}
+  async changePassword() {}
+  async verifyEmail() {}
+  async resetPassword() {}
+  async enable2FA() {}
   // ... 几十个方法
 }
 ```
 
 **问题**：
+
 - ❌ 违反单一职责原则
 - ❌ 文件过大，难以维护
 - ❌ 测试困难，需要 mock 大量依赖
@@ -57,9 +59,9 @@ export class AccountApplicationService {
 ```typescript
 // ✅ 简单 CRUD 可以合并
 export class UserPreferenceApplicationService {
-  async getPreferences(accountUuid: string) { }
-  async updatePreferences(accountUuid: string, data) { }
-  async resetToDefault(accountUuid: string) { }
+  async getPreferences(accountUuid: string) {}
+  async updatePreferences(accountUuid: string, data) {}
+  async resetToDefault(accountUuid: string) {}
 }
 ```
 
@@ -252,6 +254,7 @@ export class AccountDomainService {
 ```
 
 **为什么错误**：
+
 - 这些逻辑应该由 **ApplicationService** 编排
 - DomainService 不应该直接处理 CRUD，应该聚焦于复杂的业务规则
 
@@ -292,11 +295,7 @@ export class Account extends AggregateRoot implements IAccountServer {
   /**
    * 创建新账户（工厂方法）
    */
-  public static create(params: {
-    username: string;
-    email: string;
-    displayName: string;
-  }): Account {
+  public static create(params: { username: string; email: string; displayName: string }): Account {
     // ✅ 在创建时进行验证（不变量保护）
     if (!this.isValidUsername(params.username)) {
       throw new Error('Invalid username format');
@@ -484,16 +483,16 @@ export class Account extends AggregateRoot implements IAccountServer {
 
 #### 📊 聚合根功能分类总结
 
-| 功能类别 | 说明 | 示例 |
-|---------|------|------|
-| **1. 私有字段** | 封装内部状态，防止外部直接修改 | `private _username: string` |
-| **2. Getter 属性** | 只读访问内部状态 | `public get username()` |
-| **3. 工厂方法** | 创建实例（`create`）和恢复实例（`from*DTO`） | `Account.create()` |
-| **4. 业务方法** | 改变状态的核心业务逻辑 | `updateProfile()`, `verifyEmail()` |
-| **5. 查询方法** | 不改变状态的查询逻辑 | `canModify()`, `isDeleted()` |
-| **6. 验证方法** | 私有的验证逻辑，保护不变量 | `isValidUsername()` |
-| **7. DTO 转换** | 序列化/反序列化方法 | `toServerDTO()`, `toPersistenceDTO()` |
-| **8. 领域事件** | 发布状态变化事件 | `this.addDomainEvent()` |
+| 功能类别           | 说明                                         | 示例                                  |
+| ------------------ | -------------------------------------------- | ------------------------------------- |
+| **1. 私有字段**    | 封装内部状态，防止外部直接修改               | `private _username: string`           |
+| **2. Getter 属性** | 只读访问内部状态                             | `public get username()`               |
+| **3. 工厂方法**    | 创建实例（`create`）和恢复实例（`from*DTO`） | `Account.create()`                    |
+| **4. 业务方法**    | 改变状态的核心业务逻辑                       | `updateProfile()`, `verifyEmail()`    |
+| **5. 查询方法**    | 不改变状态的查询逻辑                         | `canModify()`, `isDeleted()`          |
+| **6. 验证方法**    | 私有的验证逻辑，保护不变量                   | `isValidUsername()`                   |
+| **7. DTO 转换**    | 序列化/反序列化方法                          | `toServerDTO()`, `toPersistenceDTO()` |
+| **8. 领域事件**    | 发布状态变化事件                             | `this.addDomainEvent()`               |
 
 ---
 
@@ -635,10 +634,18 @@ export class PasswordPolicyService {
 
 export class Account extends AggregateRoot {
   // 内部状态 + 业务方法
-  public static create(params) { /* 创建逻辑 */ }
-  public updateProfile(data) { /* 更新逻辑 + 发布事件 */ }
-  public verifyEmail() { /* 验证逻辑 + 发布事件 */ }
-  public deactivate() { /* 停用逻辑 + 发布事件 */ }
+  public static create(params) {
+    /* 创建逻辑 */
+  }
+  public updateProfile(data) {
+    /* 更新逻辑 + 发布事件 */
+  }
+  public verifyEmail() {
+    /* 验证逻辑 + 发布事件 */
+  }
+  public deactivate() {
+    /* 停用逻辑 + 发布事件 */
+  }
 }
 ```
 
@@ -646,13 +653,14 @@ export class Account extends AggregateRoot {
 
 ## 🎯 总结：三层职责对比
 
-| 层次 | 职责 | 示例 |
-|------|------|------|
-| **ApplicationService** | 用例编排、事务控制、DTO 转换 | `RegistrationApplicationService` |
-| **DomainService** | 跨聚合根逻辑、复杂领域规则、多仓储协调 | `PasswordPolicyService`, `AccountDomainService` |
-| **Aggregate/Entity** | 单聚合根内的业务逻辑、不变量保护、状态管理 | `Account.verifyEmail()`, `Account.updateProfile()` |
+| 层次                   | 职责                                       | 示例                                               |
+| ---------------------- | ------------------------------------------ | -------------------------------------------------- |
+| **ApplicationService** | 用例编排、事务控制、DTO 转换               | `RegistrationApplicationService`                   |
+| **DomainService**      | 跨聚合根逻辑、复杂领域规则、多仓储协调     | `PasswordPolicyService`, `AccountDomainService`    |
+| **Aggregate/Entity**   | 单聚合根内的业务逻辑、不变量保护、状态管理 | `Account.verifyEmail()`, `Account.updateProfile()` |
 
 **关键原则**：
+
 1. **ApplicationService 不写业务逻辑，只编排**
 2. **DomainService 不操作数据库，只处理领域规则**
 3. **Aggregate/Entity 是业务逻辑的核心，保护不变量**

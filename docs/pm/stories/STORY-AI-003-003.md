@@ -4,7 +4,7 @@
 **Sprint**: Sprint 3  
 **Story Points**: 2 SP  
 **Priority**: P2  
-**Status**: 📋 Backlog  
+**Status**: 📋 Backlog
 
 ---
 
@@ -48,6 +48,7 @@ interface StatusRule {
 ```
 
 **Example Rules**:
+
 1. All KRs ≥80% → Status: "On Track"
 2. Any KR <30% and deadline <7 days → Status: "At Risk"
 3. All KRs 100% → Status: "Completed"

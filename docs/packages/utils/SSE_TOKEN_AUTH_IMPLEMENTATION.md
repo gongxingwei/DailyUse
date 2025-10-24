@@ -42,11 +42,13 @@ const accountUuid = decoded.accountUuid;
 ```
 
 **优点：**
+
 - 无需第三方库（如 `event-source-polyfill`）
 - 兼容所有支持 EventSource 的浏览器
 - 实现简单，易于维护
 
 **安全考虑：**
+
 - ✅ 使用 HTTPS 加密传输
 - ✅ Token 有过期时间
 - ✅ 后端验证 token 签名
@@ -87,6 +89,7 @@ export class SSEClient {
 ```
 
 **关键点：**
+
 - ✅ 使用 `AuthManager.getAccessToken()` 获取 token
 - ✅ Token 通过 `encodeURIComponent()` 编码
 - ✅ 不需要任何参数，完全自动化
@@ -118,7 +121,7 @@ export class SSEController {
     try {
       // 1. 从 URL 参数获取 token
       const token = req.query.token as string;
-      
+
       if (!token) {
         res.status(401).json({
           success: false,
@@ -173,6 +176,7 @@ export class SSEController {
 ```
 
 **关键点：**
+
 - ✅ 从 `req.query.token` 获取 token
 - ✅ 使用 `jwt.verify()` 验证 token
 - ✅ 提取 `accountUuid` 作为客户端 ID
@@ -233,16 +237,19 @@ router.get('/events', sseController.connect);
 ### 优势
 
 ✅ **Token 验证**
+
 - 使用 JWT 标准验证机制
 - 验证签名确保 token 未被篡改
 - 检查过期时间防止重放攻击
 
 ✅ **自动过期**
+
 - Token 有过期时间（通常几小时到几天）
 - 过期后自动断开 SSE 连接
 - 需要重新登录获取新 token
 
 ✅ **统一认证**
+
 - 与其他 API 使用相同的认证机制
 - 统一的 token 管理
 - 一处登录，全局可用
@@ -255,6 +262,7 @@ router.get('/events', sseController.connect);
 **影响：** Token 可能被记录在服务器日志、浏览器历史等
 
 **缓解措施：**
+
 1. 使用短期 token（1-2小时过期）
 2. 使用 HTTPS 加密传输
 3. 后端日志脱敏处理
@@ -266,6 +274,7 @@ router.get('/events', sseController.connect);
 **影响：** 攻击者可以使用泄露的 token 建立 SSE 连接
 
 **缓解措施：**
+
 1. Token 有过期时间
 2. 实现 token 刷新机制
 3. 监控异常连接
@@ -277,6 +286,7 @@ router.get('/events', sseController.connect);
 **影响：** 攻击者无法通过 SSE 修改数据
 
 **缓解措施：**
+
 1. SSE 只用于接收事件，不发送数据
 2. CORS 配置限制来源
 3. 验证 Referer header
@@ -285,17 +295,18 @@ router.get('/events', sseController.connect);
 
 ### 对比之前的实现
 
-| 特性 | 之前（手动传递 accountUuid） | 现在（Token 自动认证） |
-|------|---------------------------|---------------------|
-| **前端复杂度** | 需要获取并传递 accountUuid | 完全自动化，无需参数 |
-| **安全性** | accountUuid 可能被篡改 | Token 签名验证，防篡改 |
-| **认证机制** | 自定义参数 | 标准 JWT 认证 |
-| **代码维护** | 需要管理 accountUuid 传递 | 统一使用 AuthManager |
-| **用户体验** | 需要确保 accountUuid 可用 | 登录即可用 |
+| 特性           | 之前（手动传递 accountUuid） | 现在（Token 自动认证） |
+| -------------- | ---------------------------- | ---------------------- |
+| **前端复杂度** | 需要获取并传递 accountUuid   | 完全自动化，无需参数   |
+| **安全性**     | accountUuid 可能被篡改       | Token 签名验证，防篡改 |
+| **认证机制**   | 自定义参数                   | 标准 JWT 认证          |
+| **代码维护**   | 需要管理 accountUuid 传递    | 统一使用 AuthManager   |
+| **用户体验**   | 需要确保 accountUuid 可用    | 登录即可用             |
 
 ### 开发体验提升
 
 ✅ **前端开发者**
+
 ```typescript
 // 之前：需要知道 accountUuid
 const accountUuid = useAuthStore().user?.uuid;
@@ -306,6 +317,7 @@ await sseClient.connect();
 ```
 
 ✅ **后端开发者**
+
 ```typescript
 // 之前：从查询参数获取，不够安全
 const accountUuid = req.query.accountUuid;

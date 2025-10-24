@@ -131,9 +131,7 @@
                   >
                     需要变更
                   </v-chip>
-                  <v-chip v-else color="success" variant="flat">
-                    保持不变
-                  </v-chip>
+                  <v-chip v-else color="success" variant="flat"> 保持不变 </v-chip>
                 </div>
               </v-alert>
 
@@ -151,9 +149,7 @@
 
               <!-- 匹配的规则详情 -->
               <v-card v-if="suggestion.executionResult?.matched" variant="outlined" class="mb-3">
-                <v-card-title class="text-subtitle-1">
-                  匹配规则详情
-                </v-card-title>
+                <v-card-title class="text-subtitle-1"> 匹配规则详情 </v-card-title>
                 <v-card-text>
                   <div class="mb-2">
                     <strong>规则 ID:</strong> {{ suggestion.executionResult.ruleId }}
@@ -258,7 +254,7 @@ const suggestion = ref<RuleSuggestion | null>(null);
 const updateKeyResults = () => {
   const count = Math.max(0, Math.min(10, krCount.value));
   const krs = [];
-  
+
   for (let i = 0; i < count; i++) {
     krs.push({
       uuid: `kr-${i + 1}`,
@@ -305,7 +301,7 @@ const evaluateRules = () => {
 };
 
 const getStatusText = (status: string) => {
-  const option = statusOptions.find(opt => opt.value === status);
+  const option = statusOptions.find((opt) => opt.value === status);
   return option?.title || status;
 };
 </script>

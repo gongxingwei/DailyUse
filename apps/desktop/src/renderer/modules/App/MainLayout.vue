@@ -10,7 +10,6 @@
       </div>
       <!-- 主内容区 -->
       <div class="content">
-
         <v-main class="main-content">
           <router-view />
         </v-main>
@@ -22,8 +21,6 @@
 // components
 import Sidebar from './components/Sidebar.vue';
 import HeaderSection from './components/HeaderSection.vue';
-
-
 </script>
 <style scoped>
 .app-layout {
@@ -55,13 +52,4 @@ import HeaderSection from './components/HeaderSection.vue';
   display: flex;
   flex-direction: column;
 }
-
-
-
-
-
-
-
-
-
 </style>

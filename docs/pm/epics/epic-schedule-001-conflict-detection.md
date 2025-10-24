@@ -18,11 +18,13 @@
 自动检测日程时间重叠冲突，提供解决建议，避免日程安排错误。
 
 **核心问题**:
+
 - ❌ 无法检测时间段重叠
 - ❌ 同一时间安排多个日程导致冲突
 - ❌ 缺少冲突提醒和解决方案
 
 **解决方案**:
+
 - ✅ 实时检测时间段重叠
 - ✅ 创建日程时显示冲突警告
 - ✅ 提供自动调整建议
@@ -40,7 +42,7 @@ export interface ScheduleServerDTO {
   readonly startTime: number;
   readonly endTime: number;
   readonly hasConflict: boolean;
-  readonly conflictingSchedules?: string[];  // 冲突日程UUID
+  readonly conflictingSchedules?: string[]; // 冲突日程UUID
 }
 
 export interface ConflictDetectionResult {
@@ -61,28 +63,27 @@ export interface ConflictDetectionResult {
 ```
 
 **Domain 逻辑**:
+
 ```typescript
 export class Schedule {
   detectConflicts(otherSchedules: Schedule[]): ConflictDetectionResult {
-    const conflicts = otherSchedules.filter(other => 
-      this.isOverlapping(other)
-    );
-    
+    const conflicts = otherSchedules.filter((other) => this.isOverlapping(other));
+
     const suggestions = this.generateSuggestions(conflicts);
-    
+
     return {
       hasConflict: conflicts.length > 0,
-      conflicts: conflicts.map(c => ({
+      conflicts: conflicts.map((c) => ({
         scheduleUuid: c.uuid,
         scheduleTitle: c.title,
         overlapStart: Math.max(this.startTime, c.startTime),
         overlapEnd: Math.min(this.endTime, c.endTime),
-        overlapDuration: this.calculateOverlap(c)
+        overlapDuration: this.calculateOverlap(c),
       })),
-      suggestions
+      suggestions,
     };
   }
-  
+
   private isOverlapping(other: Schedule): boolean {
     return (
       (this.startTime < other.endTime && this.endTime > other.startTime) ||
@@ -102,27 +103,23 @@ export class ScheduleConflictService {
     userId: string,
     startTime: number,
     endTime: number,
-    excludeUuid?: string
+    excludeUuid?: string,
   ): Promise<ConflictDetectionResult> {
     // 查询时间范围内的所有日程
-    const schedules = await this.repo.findByTimeRange(
-      userId,
-      startTime,
-      endTime
-    );
-    
+    const schedules = await this.repo.findByTimeRange(userId, startTime, endTime);
+
     // 排除当前日程（编辑时）
-    const others = schedules.filter(s => s.uuid !== excludeUuid);
-    
+    const others = schedules.filter((s) => s.uuid !== excludeUuid);
+
     // 检测冲突
     const testSchedule = new Schedule({ startTime, endTime });
     return testSchedule.detectConflicts(others);
   }
-  
+
   async resolveConflict(
     scheduleUuid: string,
     resolution: 'move_earlier' | 'move_later' | 'shorten',
-    targetTime: { start: number; end: number }
+    targetTime: { start: number; end: number },
   ): Promise<void> {
     const schedule = await this.repo.findByUuid(scheduleUuid);
     schedule.updateTime(targetTime.start, targetTime.end);
@@ -138,12 +135,12 @@ export class ScheduleConflictService {
 ```prisma
 model Schedule {
   // ...existing fields...
-  
+
   startTime         BigInt   @map("start_time")
   endTime           BigInt   @map("end_time")
   hasConflict       Boolean  @default(false) @map("has_conflict")
   conflictingIds    Json?    @map("conflicting_ids")
-  
+
   @@index([userId, startTime, endTime])
   @@index([startTime, endTime])
 }
@@ -176,8 +173,7 @@ Body: { resolution: string, newStartTime: number, newEndTime: number }
 ```typescript
 export function useConflictDetection() {
   return useMutation({
-    mutationFn: (params: { startTime: number; endTime: number }) =>
-      service.detectConflicts(params),
+    mutationFn: (params: { startTime: number; endTime: number }) => service.detectConflicts(params),
   });
 }
 ```
@@ -193,24 +189,17 @@ export function useConflictDetection() {
       <el-form-item label="开始时间">
         <el-date-picker v-model="form.startTime" @change="checkConflicts" />
       </el-form-item>
-      
+
       <el-form-item label="结束时间">
         <el-date-picker v-model="form.endTime" @change="checkConflicts" />
       </el-form-item>
     </el-form>
 
     <!-- 冲突警告 -->
-    <el-alert
-      v-if="conflicts?.hasConflict"
-      type="error"
-      title="检测到时间冲突"
-      :closable="false"
-    >
+    <el-alert v-if="conflicts?.hasConflict" type="error" title="检测到时间冲突" :closable="false">
       <div v-for="conflict in conflicts.conflicts" :key="conflict.scheduleUuid">
         与"{{ conflict.scheduleTitle }}"冲突
-        <span class="overlap-time">
-          重叠 {{ formatDuration(conflict.overlapDuration) }}
-        </span>
+        <span class="overlap-time"> 重叠 {{ formatDuration(conflict.overlapDuration) }} </span>
       </div>
 
       <div class="suggestions">
@@ -241,7 +230,7 @@ async function checkConflicts() {
   if (form.value.startTime && form.value.endTime) {
     conflicts.value = await detectConflicts.mutateAsync({
       startTime: form.value.startTime.getTime(),
-      endTime: form.value.endTime.getTime()
+      endTime: form.value.endTime.getTime(),
     });
   }
 }
@@ -261,18 +250,18 @@ function applySuggestion(suggestion: any) {
 ```typescript
 test('检测并解决日程冲突', async ({ page }) => {
   await page.goto('/schedule/create');
-  
+
   // 设置时间（与已有日程冲突）
   await page.fill('[data-testid="start-time"]', '2025-10-21 14:00');
   await page.fill('[data-testid="end-time"]', '2025-10-21 15:00');
-  
+
   // 验证冲突警告
   await expect(page.locator('[data-testid="conflict-alert"]')).toBeVisible();
   await expect(page.locator('[data-testid="conflict-count"]')).toContainText('1');
-  
+
   // 应用建议
   await page.click('[data-testid="suggestion-move-later"]');
-  
+
   // 验证冲突解除
   await expect(page.locator('[data-testid="conflict-alert"]')).not.toBeVisible();
 });
@@ -292,6 +281,7 @@ test('检测并解决日程冲突', async ({ page }) => {
 ## 4. Release Plan
 
 **Sprint 5 (Week 9-10)**:
+
 - Week 1: Stories 001-004
 - Week 2: Stories 005-007
 
@@ -312,4 +302,4 @@ Feature: 日程冲突检测
 
 ---
 
-*文档创建: 2025-10-21 | Epic Owner: PM Agent*
+_文档创建: 2025-10-21 | Epic Owner: PM Agent_

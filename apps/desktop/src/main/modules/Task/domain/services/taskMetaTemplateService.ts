@@ -2,7 +2,7 @@ import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import { ITaskMetaTemplateRepository } from '../repositories/iTaskMetaTemplateRepository';
 import type { TaskTimeConfig, TaskReminderConfig } from '@common/modules/task/types/task';
 import { TaskMetaTemplateFactory } from '../utils/taskMetaTemplateFactory';
-import type { ApiResponse } from "@dailyuse/contracts";
+import type { ApiResponse } from '@dailyuse/contracts';
 
 /**
  * 任务元模板领域服务
@@ -28,7 +28,7 @@ export class TaskMetaTemplateService {
   mergeWithCustomConfig(
     metaTemplate: TaskMetaTemplate,
     customTimeConfig?: Partial<TaskTimeConfig>,
-    customReminderConfig?: Partial<TaskReminderConfig>
+    customReminderConfig?: Partial<TaskReminderConfig>,
   ): {
     timeConfig: TaskTimeConfig;
     reminderConfig: TaskReminderConfig;
@@ -36,19 +36,20 @@ export class TaskMetaTemplateService {
     const mergedTimeConfig = {
       ...metaTemplate.defaultTimeConfig,
       ...customTimeConfig,
-      timezone: customTimeConfig?.timezone ||
+      timezone:
+        customTimeConfig?.timezone ||
         metaTemplate.defaultTimeConfig.timezone ||
-        Intl.DateTimeFormat().resolvedOptions().timeZone
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
     } as TaskTimeConfig;
 
     const mergedReminderConfig = {
       ...metaTemplate.defaultReminderConfig,
-      ...customReminderConfig
+      ...customReminderConfig,
     } as TaskReminderConfig;
 
     return {
       timeConfig: mergedTimeConfig,
-      reminderConfig: mergedReminderConfig
+      reminderConfig: mergedReminderConfig,
     };
   }
 
@@ -73,7 +74,7 @@ export class TaskMetaTemplateService {
   getUsageStats(
     metaTemplate: TaskMetaTemplate,
     taskTemplateCount: number,
-    taskInstanceCount: number
+    taskInstanceCount: number,
   ): {
     templatesCreated: number;
     instancesGenerated: number;
@@ -84,7 +85,7 @@ export class TaskMetaTemplateService {
       templatesCreated: taskTemplateCount,
       instancesGenerated: taskInstanceCount,
       lastUsed: metaTemplate.lifecycle.updatedAt || metaTemplate.lifecycle.createdAt,
-      category: metaTemplate.category
+      category: metaTemplate.category,
     };
   }
 
@@ -118,7 +119,7 @@ export class TaskMetaTemplateService {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -137,7 +138,7 @@ export class TaskMetaTemplateService {
    */
   async initializeSystemTemplates(
     metaTemplateRepository: ITaskMetaTemplateRepository,
-    accountUuid: string
+    accountUuid: string,
   ): Promise<ApiResponse<void>> {
     try {
       // 检查是否已经初始化过
@@ -145,7 +146,7 @@ export class TaskMetaTemplateService {
       if (existingTemplates && existingTemplates.length > 0) {
         return {
           success: true,
-          message: '系统模板已存在，跳过初始化'
+          message: '系统模板已存在，跳过初始化',
         };
       }
 
@@ -155,7 +156,7 @@ export class TaskMetaTemplateService {
         TaskMetaTemplateFactory.createHabit(),
         TaskMetaTemplateFactory.createEvent(),
         TaskMetaTemplateFactory.createDeadline(),
-        TaskMetaTemplateFactory.createMeeting()
+        TaskMetaTemplateFactory.createMeeting(),
       ];
 
       // 批量保存
@@ -163,18 +164,21 @@ export class TaskMetaTemplateService {
         try {
           await metaTemplateRepository.save(accountUuid, template);
         } catch (error) {
-          console.error(`保存模板失败: ${template.name}`, error instanceof Error ? error.message : 'Unknown error');
+          console.error(
+            `保存模板失败: ${template.name}`,
+            error instanceof Error ? error.message : 'Unknown error',
+          );
         }
       }
 
       return {
         success: true,
-        message: `成功初始化 ${systemTemplates.length} 个系统模板`
+        message: `成功初始化 ${systemTemplates.length} 个系统模板`,
       };
     } catch (error) {
       return {
         success: false,
-        message: `初始化系统模板失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message: `初始化系统模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }

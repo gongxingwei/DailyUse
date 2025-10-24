@@ -47,7 +47,6 @@ export interface NotificationActionServerDTO {
   payload?: any;
 }
 
-
 /**
  * NotificationAction Persistence DTO
  */

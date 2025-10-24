@@ -31,7 +31,7 @@ Scenario: 定义完整的 UserPreference ServerDTO
   Then 应该包含所有必需字段
   And 使用 TypeScript 类型确保类型安全
   And 添加 JSDoc 注释说明每个字段用途
-  
+
   Examples:
   | Field           | Type                | Required | Description         |
   | uuid            | string              | Yes      | 用户偏好唯一标识    |
@@ -54,12 +54,12 @@ Scenario: 定义 ThemeType 枚举
   When 定义 ThemeType 类型
   Then 应该包含 'light', 'dark', 'auto' 三个选项
   And 使用 TypeScript enum 或 union type
-  
+
 Scenario: 定义 LanguageType 枚举
   Given 用户可以选择不同的语言
   When 定义 LanguageType 类型
   Then 应该包含 'zh-CN', 'en-US', 'ja-JP' 等选项
-  
+
 Scenario: 定义 NotificationSettings 接口
   Given 用户需要配置通知偏好
   When 定义 NotificationSettings 接口
@@ -70,7 +70,7 @@ Scenario: 定义 NotificationSettings 接口
   | doNotDisturbStart    | string    | 免打扰开始时间 (HH:mm)  |
   | doNotDisturbEnd      | string    | 免打扰结束时间 (HH:mm)  |
   | soundEnabled         | boolean   | 是否启用声音            |
-  
+
 Scenario: 定义 ShortcutSettings 接口
   Given 用户需要自定义快捷键
   When 定义 ShortcutSettings 接口
@@ -88,7 +88,7 @@ Scenario: 使用 Zod 验证 UserPreferenceServerDTO
   And 应该验证字段类型正确
   And 应该验证数值范围 (如 fontSize 12-24)
   And 应该验证枚举值在允许范围内
-  
+
   Examples: 验证失败案例
   | Invalid Data                    | Error Message                    |
   | fontSize: 8                     | fontSize must be between 12-24   |
@@ -107,14 +107,14 @@ Scenario: 创建 UserPreference 实体类
   And 提供 getter 方法访问属性
   And 实现业务逻辑方法 (updateTheme, updateLanguage, etc.)
   And 实现验证逻辑 (validateFontSize, validateTimeFormat)
-  
+
 Scenario: 实现 updateTheme 方法
   Given 用户想要更改主题
   When 调用 userPreference.updateTheme('dark')
   Then 应该更新 theme 属性为 'dark'
   And 应该更新 updatedAt 时间戳
   And 如果主题值无效则抛出 InvalidThemeError
-  
+
 Scenario: 实现 updateNotificationSettings 方法
   Given 用户想要更改通知设置
   When 调用 userPreference.updateNotificationSettings(newSettings)
@@ -132,18 +132,18 @@ Scenario: 测试 UserPreference 实体创建
   When 创建 UserPreference 实例
   Then 应该成功创建实例
   And 所有属性应该正确赋值
-  
+
 Scenario: 测试 updateTheme 方法
   Given 一个 UserPreference 实例
   When 调用 updateTheme('dark')
   Then theme 应该更新为 'dark'
   And updatedAt 应该更新为当前时间
-  
+
 Scenario: 测试 updateTheme 验证
   Given 一个 UserPreference 实例
   When 调用 updateTheme('invalid')
   Then 应该抛出 InvalidThemeError
-  
+
 Scenario: 测试覆盖率
   Given 所有测试用例已编写
   When 运行 npm test
@@ -220,6 +220,7 @@ Scenario: 测试覆盖率
 ### Contracts 层代码示例
 
 **src/setting/types.ts**:
+
 ```typescript
 /**
  * 主题类型
@@ -243,6 +244,7 @@ export type SidebarPosition = 'left' | 'right';
 ```
 
 **src/setting/NotificationSettings.ts**:
+
 ```typescript
 import type { NotificationChannel } from './types';
 
@@ -268,6 +270,7 @@ export interface NotificationSettings {
 ```
 
 **src/setting/UserPreferenceServerDTO.ts**:
+
 ```typescript
 import type { ThemeType, LanguageType, SidebarPosition } from './types';
 import type { NotificationSettings } from './NotificationSettings';
@@ -310,34 +313,38 @@ export interface UserPreferenceServerDTO {
 ```
 
 **src/setting/schemas.ts** (Zod 验证器):
+
 ```typescript
 import { z } from 'zod';
 
 // 时间格式验证 (HH:mm)
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-export const NotificationSettingsSchema = z.object({
-  enabled: z.boolean(),
-  channels: z.array(z.enum(['push', 'email', 'sms'])),
-  doNotDisturbStart: z.string().regex(timeFormatRegex, 'Time must be in HH:mm format'),
-  doNotDisturbEnd: z.string().regex(timeFormatRegex, 'Time must be in HH:mm format'),
-  soundEnabled: z.boolean(),
-}).refine(
-  (data) => {
-    if (!data.enabled) return true;
-    return data.channels.length > 0;
-  },
-  { message: 'At least one channel must be selected when notifications are enabled' }
-).refine(
-  (data) => {
-    const start = data.doNotDisturbStart.split(':').map(Number);
-    const end = data.doNotDisturbEnd.split(':').map(Number);
-    const startMinutes = start[0] * 60 + start[1];
-    const endMinutes = end[0] * 60 + end[1];
-    return startMinutes < endMinutes;
-  },
-  { message: 'doNotDisturbStart must be before doNotDisturbEnd' }
-);
+export const NotificationSettingsSchema = z
+  .object({
+    enabled: z.boolean(),
+    channels: z.array(z.enum(['push', 'email', 'sms'])),
+    doNotDisturbStart: z.string().regex(timeFormatRegex, 'Time must be in HH:mm format'),
+    doNotDisturbEnd: z.string().regex(timeFormatRegex, 'Time must be in HH:mm format'),
+    soundEnabled: z.boolean(),
+  })
+  .refine(
+    (data) => {
+      if (!data.enabled) return true;
+      return data.channels.length > 0;
+    },
+    { message: 'At least one channel must be selected when notifications are enabled' },
+  )
+  .refine(
+    (data) => {
+      const start = data.doNotDisturbStart.split(':').map(Number);
+      const end = data.doNotDisturbEnd.split(':').map(Number);
+      const startMinutes = start[0] * 60 + start[1];
+      const endMinutes = end[0] * 60 + end[1];
+      return startMinutes < endMinutes;
+    },
+    { message: 'doNotDisturbStart must be before doNotDisturbEnd' },
+  );
 
 export const ShortcutSettingsSchema = z.record(z.string(), z.string());
 
@@ -358,6 +365,7 @@ export const UserPreferenceServerDTOSchema = z.object({
 ### Domain 层代码示例
 
 **src/setting/errors/InvalidThemeError.ts**:
+
 ```typescript
 import { DomainError } from '@dailyuse/utils';
 
@@ -367,13 +375,14 @@ export class InvalidThemeError extends DomainError {
       'INVALID_THEME',
       `Invalid theme: ${theme}. Allowed values: light, dark, auto`,
       { theme },
-      400
+      400,
     );
   }
 }
 ```
 
 **src/setting/entities/UserPreference.ts** (核心实体):
+
 ```typescript
 import type {
   UserPreferenceServerDTO,
@@ -418,16 +427,36 @@ export class UserPreference {
   }
 
   // Getters
-  get uuid(): string { return this._uuid; }
-  get accountUuid(): string { return this._accountUuid; }
-  get theme(): ThemeType { return this._theme; }
-  get language(): LanguageType { return this._language; }
-  get notifications(): NotificationSettings { return this._notifications; }
-  get shortcuts(): ShortcutSettings { return this._shortcuts; }
-  get sidebarPosition(): SidebarPosition { return this._sidebarPosition; }
-  get fontSize(): number { return this._fontSize; }
-  get createdAt(): number { return this._createdAt; }
-  get updatedAt(): number { return this._updatedAt; }
+  get uuid(): string {
+    return this._uuid;
+  }
+  get accountUuid(): string {
+    return this._accountUuid;
+  }
+  get theme(): ThemeType {
+    return this._theme;
+  }
+  get language(): LanguageType {
+    return this._language;
+  }
+  get notifications(): NotificationSettings {
+    return this._notifications;
+  }
+  get shortcuts(): ShortcutSettings {
+    return this._shortcuts;
+  }
+  get sidebarPosition(): SidebarPosition {
+    return this._sidebarPosition;
+  }
+  get fontSize(): number {
+    return this._fontSize;
+  }
+  get createdAt(): number {
+    return this._createdAt;
+  }
+  get updatedAt(): number {
+    return this._updatedAt;
+  }
 
   /**
    * 更新主题
@@ -530,12 +559,16 @@ export class UserPreference {
     const startMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
     if (startMinutes >= endMinutes) {
-      throw new InvalidNotificationSettingsError('doNotDisturbStart must be before doNotDisturbEnd');
+      throw new InvalidNotificationSettingsError(
+        'doNotDisturbStart must be before doNotDisturbEnd',
+      );
     }
 
     // 验证启用通知时必须选择至少一个渠道
     if (settings.enabled && settings.channels.length === 0) {
-      throw new InvalidNotificationSettingsError('At least one channel must be selected when notifications are enabled');
+      throw new InvalidNotificationSettingsError(
+        'At least one channel must be selected when notifications are enabled',
+      );
     }
   }
 }
@@ -548,27 +581,32 @@ export class UserPreference {
 这个 Story 被认为完成，当且仅当：
 
 ### 功能完整性
+
 - [x] 所有 Contracts 类型定义完成并导出
 - [x] Zod 验证器覆盖所有 DTO 字段
 - [x] UserPreference 实体实现所有业务方法
 - [x] 所有验证逻辑正确实现
 
 ### 代码质量
+
 - [x] TypeScript strict 模式无错误
 - [x] ESLint 无警告
 - [x] 所有公共方法有 JSDoc 注释
 - [x] 单元测试覆盖率 ≥ 80%
 
 ### 测试
+
 - [x] 所有单元测试通过 (npm test)
 - [x] 测试覆盖成功场景和失败场景
 - [x] 错误抛出测试通过
 
 ### 文档
+
 - [x] README 已更新 (如有新依赖)
 - [x] 接口文档完整 (JSDoc)
 
 ### Code Review
+
 - [x] Code Review 完成 (至少 1 人)
 - [x] Code Review 反馈已解决
 
@@ -576,13 +614,13 @@ export class UserPreference {
 
 ## 📊 预估时间
 
-| 任务 | 预估时间 |
-|------|---------|
-| Contracts 层开发 | 1.5 小时 |
-| Domain 层开发 | 2 小时 |
-| 单元测试编写 | 1.5 小时 |
-| Code Review & 修复 | 1 小时 |
-| **总计** | **6 小时** |
+| 任务               | 预估时间   |
+| ------------------ | ---------- |
+| Contracts 层开发   | 1.5 小时   |
+| Domain 层开发      | 2 小时     |
+| 单元测试编写       | 1.5 小时   |
+| Code Review & 修复 | 1 小时     |
+| **总计**           | **6 小时** |
 
 **Story Points**: 2 SP (对应 6 小时工作量)
 
@@ -591,9 +629,11 @@ export class UserPreference {
 ## 🔗 依赖关系
 
 ### 上游依赖
+
 - 无 (这是 Sprint 1 的第一个 Story)
 
 ### 下游依赖
+
 - STORY-SETTING-001-002 (Application Service) 依赖此 Story
 - STORY-SETTING-001-003 (Infrastructure) 依赖此 Story
 
@@ -602,12 +642,14 @@ export class UserPreference {
 ## 🚨 风险与注意事项
 
 ### 技术风险
+
 1. **Zod 验证性能**: 复杂嵌套验证可能影响性能
    - 缓解: 考虑使用 lazy validation
 2. **JSON 类型复杂度**: shortcuts 是动态键名
    - 缓解: 使用 Record<string, string> 类型
 
 ### 业务风险
+
 1. **快捷键冲突检测**: 完整的冲突检测逻辑复杂
    - 缓解: 本 Story 只做基础实现，STORY-008 中完善
 
@@ -616,11 +658,13 @@ export class UserPreference {
 ## 📝 开发笔记
 
 ### 技术决策
+
 - 使用 Zod 而非 class-validator: 更轻量，更好的 TypeScript 集成
 - 使用 DomainError 基类: 统一错误处理
 - 使用 crypto.randomUUID(): 原生 UUID 生成，无需额外依赖
 
 ### 待讨论问题
+
 - 是否需要支持更多语言？(当前只有 3 种)
 - 快捷键设置是否需要版本控制？
 

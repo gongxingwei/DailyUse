@@ -14,12 +14,14 @@
 ## 🎯 Acceptance Criteria
 
 ### 1. Circular Dependency Detection ✅
+
 - **AC-1.1**: System detects circular dependencies before creating a new dependency
 - **AC-1.2**: User receives clear error message indicating the circular path (A → B → C → A)
 - **AC-1.3**: Validation runs in < 100ms for graphs up to 100 tasks
 - **AC-1.4**: Existing dependencies are not affected if validation fails
 
 ### 2. Dependency Validation Rules ✅
+
 - **AC-2.1**: Cannot create dependency if it would form a cycle
 - **AC-2.2**: Cannot create duplicate dependencies (same predecessor + successor + type)
 - **AC-2.3**: Task cannot depend on itself
@@ -27,17 +29,20 @@
 - **AC-2.5**: Lag time validation (if provided, must be valid number)
 
 ### 3. Auto-status Update ✅
+
 - **AC-3.1**: When all predecessors complete, successor status changes from BLOCKED → READY
 - **AC-3.2**: When a predecessor becomes incomplete, successors change from READY → BLOCKED
 - **AC-3.3**: Status updates are transitive (cascading through dependency chain)
 - **AC-3.4**: User receives notification when tasks become READY
 
 ### 4. Dependency Change Events ✅
+
 - **AC-4.1**: System emits events when dependencies are created/deleted/updated
 - **AC-4.2**: Events trigger status recalculation for affected tasks
 - **AC-4.3**: Event payload includes task UUIDs and change type
 
 ### 5. UI Feedback ✅
+
 - **AC-5.1**: Validation errors shown in real-time when creating dependencies
 - **AC-5.2**: Visual indicator for blocked tasks (red badge/icon)
 - **AC-5.3**: Tooltip shows which predecessors are blocking
@@ -113,42 +118,42 @@
 function detectCircularDependencies(
   taskUuid: string,
   predecessorUuid: string,
-  existingDependencies: Dependency[]
+  existingDependencies: Dependency[],
 ): CircularDependencyResult {
   // Build adjacency list
   const graph = buildGraph(existingDependencies);
-  
+
   // Add proposed edge
   graph[predecessorUuid].push(taskUuid);
-  
+
   // DFS with cycle detection
   const visited = new Set<string>();
   const recursionStack = new Set<string>();
-  
+
   function hasCycle(node: string, path: string[]): boolean {
     if (recursionStack.has(node)) {
       // Found cycle - extract cycle path
       const cycleStart = path.indexOf(node);
       return path.slice(cycleStart).concat(node);
     }
-    
+
     if (visited.has(node)) return false;
-    
+
     visited.add(node);
     recursionStack.add(node);
     path.push(node);
-    
+
     for (const neighbor of graph[node]) {
       const cyclePath = hasCycle(neighbor, [...path]);
       if (cyclePath) return cyclePath;
     }
-    
+
     recursionStack.delete(node);
     return false;
   }
-  
+
   const cyclePath = hasCycle(predecessorUuid, []);
-  
+
   return {
     hasCycle: !!cyclePath,
     cyclePath: cyclePath || [],
@@ -162,24 +167,19 @@ function detectCircularDependencies(
 /**
  * Calculate task status based on dependency state
  */
-function calculateTaskStatus(
-  task: Task,
-  predecessors: Task[]
-): TaskStatus {
+function calculateTaskStatus(task: Task, predecessors: Task[]): TaskStatus {
   // No dependencies -> READY
   if (predecessors.length === 0) {
     return task.status === 'PENDING' ? 'READY' : task.status;
   }
-  
+
   // Check if all predecessors are completed
-  const allPredecessorsCompleted = predecessors.every(
-    pred => pred.status === 'COMPLETED'
-  );
-  
+  const allPredecessorsCompleted = predecessors.every((pred) => pred.status === 'COMPLETED');
+
   if (allPredecessorsCompleted) {
     return task.status === 'BLOCKED' ? 'READY' : task.status;
   }
-  
+
   // Has incomplete predecessors -> BLOCKED
   return 'BLOCKED';
 }
@@ -190,15 +190,18 @@ function calculateTaskStatus(
 ## 📝 Implementation Tasks
 
 ### Task 1: Create Validation Service (3 hours)
+
 **File**: `apps/web/src/modules/task/application/services/TaskDependencyValidationService.ts`
 
 **Responsibilities**:
+
 - Circular dependency detection (DFS algorithm)
 - Dependency rule validation
 - Duplicate detection
 - Self-dependency check
 
 **Methods**:
+
 ```typescript
 class TaskDependencyValidationService {
   validateDependency(request: CreateDependencyRequest): ValidationResult;
@@ -209,15 +212,18 @@ class TaskDependencyValidationService {
 ```
 
 ### Task 2: Create Auto-status Service (3 hours)
+
 **File**: `apps/web/src/modules/task/application/services/TaskAutoStatusService.ts`
 
 **Responsibilities**:
+
 - Status calculation based on dependencies
 - Cascading status updates
 - Event emission
 - Notification trigger
 
 **Methods**:
+
 ```typescript
 class TaskAutoStatusService {
   updateTaskStatusOnDependencyChange(taskUuid: string): Promise<void>;
@@ -228,9 +234,11 @@ class TaskAutoStatusService {
 ```
 
 ### Task 3: Add Event System Integration (2 hours)
+
 **File**: `apps/web/src/shared/events/taskDependencyEvents.ts`
 
 **Events**:
+
 ```typescript
 // Event definitions
 type DependencyCreatedEvent = {
@@ -254,27 +262,34 @@ type TaskStatusChangedEvent = {
 ```
 
 ### Task 4: Create Validation UI Components (3 hours)
+
 **Files**:
+
 - `apps/web/src/modules/task/presentation/components/dependency/DependencyValidationDialog.vue`
 - `apps/web/src/modules/task/presentation/components/dependency/CircularDependencyWarning.vue`
 
 **Features**:
+
 - Real-time validation feedback
 - Error message display
 - Circular path visualization
 - Confirmation dialogs
 
 ### Task 5: Integrate into Task Edit Form (2 hours)
+
 **File**: `apps/web/src/modules/task/presentation/views/TaskEditView.vue`
 
 **Integration**:
+
 - Add validation before dependency creation
 - Show validation errors
 - Disable submit if validation fails
 - Display blocked status badge
 
 ### Task 6: Add Backend Validation Endpoint (2 hours)
+
 **Note**: Backend implementation (already exists in STORY-022)
+
 - Use existing `/tasks/dependencies/validate` endpoint
 - Enhance with additional rules if needed
 
@@ -339,6 +354,7 @@ type TaskStatusChangedEvent = {
 ### Unit Tests
 
 **TaskDependencyValidationService**:
+
 ```typescript
 describe('TaskDependencyValidationService', () => {
   it('should detect simple circular dependency (A → B → A)', () => {});
@@ -351,6 +367,7 @@ describe('TaskDependencyValidationService', () => {
 ```
 
 **TaskAutoStatusService**:
+
 ```typescript
 describe('TaskAutoStatusService', () => {
   it('should mark task as READY when all predecessors complete', () => {});
@@ -377,16 +394,19 @@ describe('TaskAutoStatusService', () => {
 ## 📊 Success Metrics
 
 ### Performance Metrics
+
 - Validation time: < 100ms for 100 tasks
 - Status update time: < 200ms for 50 affected tasks
 - Event propagation latency: < 50ms
 
 ### Quality Metrics
+
 - Zero false positives in cycle detection
 - 100% coverage of validation rules
 - < 1% error rate in status calculation
 
 ### User Metrics
+
 - Reduce manual status tracking by 80%
 - Decrease invalid dependency attempts by 90%
 - User satisfaction score > 4.5/5
@@ -396,10 +416,12 @@ describe('TaskAutoStatusService', () => {
 ## 🔗 Dependencies
 
 ### Requires (Must be complete first)
+
 - ✅ STORY-022: Task Dependency Data Model (complete)
 - ✅ STORY-023: Task DAG Visualization (for testing)
 
 ### Enables (Can start after this)
+
 - STORY-025: Critical Path Analysis (uses validation)
 - STORY-027: Dependency Templates (needs validation rules)
 
@@ -408,16 +430,19 @@ describe('TaskAutoStatusService', () => {
 ## 🚀 Implementation Plan
 
 ### Day 1 (4 hours)
+
 - ✅ Create planning document
 - ⏳ Implement TaskDependencyValidationService
 - ⏳ Write unit tests for circular detection
 
 ### Day 2 (4 hours)
+
 - ⏳ Implement TaskAutoStatusService
 - ⏳ Add event system integration
 - ⏳ Write unit tests for auto-status
 
 ### Day 3 (3 hours)
+
 - ⏳ Create validation UI components
 - ⏳ Integrate into task edit form
 - ⏳ E2E testing

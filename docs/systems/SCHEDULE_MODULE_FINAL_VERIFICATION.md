@@ -1,6 +1,7 @@
 # Schedule 模块最终验证报告
 
 ## ✅ 验证时间
+
 **2025-10-12**
 
 ## 🎯 完成状态：100% ✅
@@ -10,24 +11,27 @@
 ## 📋 任务清单
 
 ### ✅ 1. Prisma Schema 重构
+
 - **状态**: 完成
-- **详情**: 
+- **详情**:
   - 删除独立的 `schedule.schema.prisma` 文件
   - 在主 `schema.prisma` 中展开所有值对象字段
   - 添加关键索引优化查询性能
 - **文件**: `apps/api/prisma/schema.prisma`
 
 ### ✅ 2. Repository 层更新
+
 - **状态**: 完成
 - **详情**:
   - `PrismaScheduleTaskRepository` - 适配展开字段
   - `PrismaScheduleStatisticsRepository` - 适配新字段名
   - `findDueTasksForExecution` 优化为 SQL 索引查询
-- **文件**: 
+- **文件**:
   - `apps/api/src/modules/schedule/infrastructure/repositories/PrismaScheduleTaskRepository.ts`
   - `apps/api/src/modules/schedule/infrastructure/repositories/PrismaScheduleStatisticsRepository.ts`
 
 ### ✅ 3. Domain-Server 层补充
+
 - **状态**: 完成
 - **详情**:
   - `ScheduleTask.toServerDTO()` 方法
@@ -37,6 +41,7 @@
   - `packages/domain-server/src/schedule/aggregates/ScheduleStatistics.ts`
 
 ### ✅ 4. Application Service 层
+
 - **状态**: 完成
 - **详情**:
   - `ScheduleApplicationService` - 12+ 方法
@@ -67,11 +72,13 @@
   - `apps/api/src/modules/schedule/application/services/ScheduleStatisticsApplicationService.ts`
 
 ### ✅ 5. DI Container
+
 - **状态**: 完成
 - **详情**: 单例模式，懒加载 repositories
 - **文件**: `apps/api/src/modules/schedule/infrastructure/di/ScheduleContainer.ts`
 
 ### ✅ 6. HTTP Controllers
+
 - **状态**: 完成
 - **详情**:
   - `ScheduleTaskController` - 12 个端点
@@ -104,6 +111,7 @@
   - `apps/api/src/modules/schedule/interface/http/controllers/ScheduleStatisticsController.ts`
 
 ### ✅ 7. HTTP Routes
+
 - **状态**: 完成
 - **详情**:
   - 完整的 Swagger 文档注解
@@ -115,8 +123,9 @@
   - `apps/api/src/modules/schedule/interface/index.ts`
 
 ### ✅ 8. 集成到 app.ts
+
 - **状态**: 完成
-- **详情**: 
+- **详情**:
   - 在 `app.ts` 中启用 scheduleRouter
   - 挂载到 `/api/schedules`
   - 应用 `authMiddleware`
@@ -127,18 +136,23 @@
 ## 🧪 质量验证
 
 ### ✅ TypeScript 类型检查
+
 ```bash
 pnpm nx run api:typecheck
 ```
+
 **结果**: ✅ Successfully ran target typecheck for project api (3s)
 
 ### ✅ ESLint 代码质量检查
+
 ```bash
 pnpm nx run api:lint
 ```
+
 **结果**: ✅ All files pass linting (6s)
 
 ### 📊 统计数据
+
 - **创建文件数**: 22 个 TypeScript 文件
 - **代码行数**: 约 2000+ 行
 - **HTTP 端点**: 18 个
@@ -151,17 +165,19 @@ pnpm nx run api:lint
 ## 🏗️ 架构决策记录
 
 ### 1. **展开 JSON 字段** ✅
-- **原因**: 
+
+- **原因**:
   - 提升查询性能（可利用 SQL 索引）
   - 支持复杂的筛选条件
   - 类型安全
-- **影响**: 
+- **影响**:
   - ScheduleConfig: 5 个字段
   - ExecutionInfo: 4 个字段
   - RetryPolicy: 5 个字段
   - TaskMetadata: 4 个字段
 
 ### 2. **Repository 模式严格遵循** ✅
+
 - **原因**: 保持整个项目的架构一致性
 - **参考**: Repository 模块实现
 - **特点**:
@@ -171,6 +187,7 @@ pnpm nx run api:lint
   - 完整的日志记录
 
 ### 3. **SQL 索引优化** ✅
+
 - **关键索引**:
   ```prisma
   @@index([accountUuid, status, nextExecutionTime])
@@ -180,11 +197,13 @@ pnpm nx run api:lint
 - **优化效果**: `findDueTasksForExecution` 从 O(n) → O(log n)
 
 ### 4. **DTO 分离** ✅
+
 - **ServerDTO**: 用于 API 响应（domain-server）
 - **PersistenceDTO**: 用于数据库存储（domain-core）
 - **类型转换**: `this.toDTO() as unknown as ScheduleTaskServerDTO`
 
 ### 5. **认证和权限控制** ✅
+
 - **JWT 认证**: 所有端点要求 Bearer token
 - **所有权验证**: 所有操作前验证 `task.accountUuid === requestAccountUuid`
 - **错误响应**: 401 (未认证), 403 (无权限), 404 (未找到)
@@ -194,6 +213,7 @@ pnpm nx run api:lint
 ## 📁 文件清单
 
 ### Domain-Server 层 (2 文件)
+
 ```
 packages/domain-server/src/schedule/
 ├── aggregates/
@@ -202,6 +222,7 @@ packages/domain-server/src/schedule/
 ```
 
 ### Infrastructure 层 (4 文件)
+
 ```
 apps/api/src/modules/schedule/infrastructure/
 ├── repositories/
@@ -213,6 +234,7 @@ apps/api/src/modules/schedule/infrastructure/
 ```
 
 ### Application 层 (2 文件)
+
 ```
 apps/api/src/modules/schedule/application/services/
 ├── ScheduleApplicationService.ts                 ✅ 12 方法
@@ -220,6 +242,7 @@ apps/api/src/modules/schedule/application/services/
 ```
 
 ### Interface 层 (5 文件)
+
 ```
 apps/api/src/modules/schedule/interface/
 ├── http/
@@ -233,6 +256,7 @@ apps/api/src/modules/schedule/interface/
 ```
 
 ### 集成文件 (1 文件)
+
 ```
 apps/api/src/
 └── app.ts                                        ✅ 挂载 scheduleRouter
@@ -243,16 +267,19 @@ apps/api/src/
 ## 🚀 部署准备
 
 ### 数据库迁移
+
 ```bash
 pnpm nx run api:prisma:migrate:dev -- --name flatten_schedule_task_fields
 ```
 
 ### 启动服务
+
 ```bash
 pnpm nx serve api
 ```
 
 ### API 文档
+
 访问: `http://localhost:3000/api-docs`
 
 ---

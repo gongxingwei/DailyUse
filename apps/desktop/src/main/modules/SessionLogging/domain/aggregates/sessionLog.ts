@@ -1,13 +1,18 @@
-import { AggregateRoot } from "@dailyuse/utils";
-import { IPLocation } from "../valueObjects/ipLocation";
-import { AuditTrail } from "../entities/auditTrail";
-import { ISessionLog, OperationStatus, OperationType, RiskLevel, SessionLogDTO } from "@common/modules/sessionLog/types/sessionLog";
-import { isValid } from "date-fns";
-
+import { AggregateRoot } from '@dailyuse/utils';
+import { IPLocation } from '../valueObjects/ipLocation';
+import { AuditTrail } from '../entities/auditTrail';
+import {
+  ISessionLog,
+  OperationStatus,
+  OperationType,
+  RiskLevel,
+  SessionLogDTO,
+} from '@common/modules/sessionLog/types/sessionLog';
+import { isValid } from 'date-fns';
 
 /**
  * 会话日志聚合根
- * 
+ *
  * 职责：
  * - 记录用户登录/登出行为
  * - 审计异常登录（如异地登录）
@@ -141,7 +146,7 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
   }
 
   set auditTrails(trails: AuditTrail[]) {
-    this._auditTrails = new Map(trails.map(trail => [trail.uuid, trail]));
+    this._auditTrails = new Map(trails.map((trail) => [trail.uuid, trail]));
     this._updatedAt = new Date();
   }
 
@@ -195,12 +200,12 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
       aggregateId: this.uuid,
       eventType: 'SessionLogoutRecorded',
       occurredOn: new Date(),
-      payload: { 
+      payload: {
         accountUuid: this._accountUuid,
         sessionUuid: this._sessionUuid,
         duration: this._duration,
-        timestamp: this._logoutTime 
-      }
+        timestamp: this._logoutTime,
+      },
     });
   }
 
@@ -222,13 +227,13 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
       aggregateId: this.uuid,
       eventType: 'AnomalousSessionDetected',
       occurredOn: new Date(),
-      payload: { 
+      payload: {
         accountUuid: this._accountUuid,
         sessionUuid: this._sessionUuid,
         reason: reason,
         riskLevel: this._riskLevel,
-        timestamp: this._updatedAt 
-      }
+        timestamp: this._updatedAt,
+      },
     });
   }
 
@@ -247,13 +252,12 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
    * 添加审计轨迹
    */
   addAuditTrail(operationType: OperationType, description: string, riskLevel: RiskLevel): void {
-
     const audit = new AuditTrail({
       accountUuid: this._accountUuid,
       operationType,
       description,
       riskLevel,
-      ipLocation: this._ipLocation
+      ipLocation: this._ipLocation,
     });
 
     this._auditTrails.set(audit.uuid, audit);
@@ -265,14 +269,14 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
         aggregateId: this.uuid,
         eventType: 'HighRiskActivityDetected',
         occurredOn: new Date(),
-        payload: { 
+        payload: {
           accountUuid: this._accountUuid,
           auditUuid: audit.uuid,
           operationType: operationType,
           description: description,
           riskLevel: riskLevel,
-          timestamp: this._updatedAt 
-        }
+          timestamp: this._updatedAt,
+        },
       });
     }
   }
@@ -281,8 +285,8 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
    * 检测异地登录
    */
   detectRemoteLocationLogin(previousLocations: IPLocation[]): boolean {
-    const isNewLocation = !previousLocations.some(location => 
-      location.isSameRegion(this._ipLocation)
+    const isNewLocation = !previousLocations.some((location) =>
+      location.isSameRegion(this._ipLocation),
     );
 
     if (isNewLocation && previousLocations.length > 0) {
@@ -298,8 +302,8 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
    * 检测同时多设备登录
    */
   detectConcurrentDeviceLogin(activeDevices: string[]): boolean {
-    const deviceCount = activeDevices.filter(device => device !== this._deviceInfo).length;
-    
+    const deviceCount = activeDevices.filter((device) => device !== this._deviceInfo).length;
+
     if (deviceCount >= 3) {
       this.markAsAnomalous('Multiple concurrent device logins detected');
       this.addRiskFactor('multiple_concurrent_devices');
@@ -328,7 +332,7 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
   private assessRisk(): void {
     let score = 0;
 
-    this._riskFactors.forEach(factor => {
+    this._riskFactors.forEach((factor) => {
       switch (factor) {
         case 'remote_location_login':
           score += 30;
@@ -367,7 +371,7 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
   /**
    * 转换为DTO对象
    */
-  toDTO(): SessionLogDTO{
+  toDTO(): SessionLogDTO {
     return {
       uuid: this.uuid,
       accountUuid: this._accountUuid,
@@ -384,7 +388,7 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
       riskFactors: this._riskFactors,
       isAnomalous: this._isAnomalous,
       createdAt: this._createdAt.toISOString(),
-      updatedAt: this._updatedAt.toISOString()
+      updatedAt: this._updatedAt.toISOString(),
     };
   }
 
@@ -400,10 +404,12 @@ export class SessionLog extends AggregateRoot implements ISessionLog {
       operationStatus: dto.operationStatus,
       ipLocation: IPLocation.fromDTO(dto.ipLocation),
       userAgent: dto.userAgent,
-      deviceInfo: dto.deviceInfo
+      deviceInfo: dto.deviceInfo,
     });
-    sessionLog.loginTime = dto.loginTime && isValid(dto.loginTime) ? new Date(dto.loginTime) : undefined;
-sessionLog.logoutTime = dto.logoutTime && isValid(dto.logoutTime) ? new Date(dto.logoutTime) : undefined;
+    sessionLog.loginTime =
+      dto.loginTime && isValid(dto.loginTime) ? new Date(dto.loginTime) : undefined;
+    sessionLog.logoutTime =
+      dto.logoutTime && isValid(dto.logoutTime) ? new Date(dto.logoutTime) : undefined;
     sessionLog.riskFactors = dto.riskFactors || [];
     sessionLog.isAnomalous = dto.isAnomalous || false;
     sessionLog.duration = dto.duration;

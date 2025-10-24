@@ -12,15 +12,29 @@
           <li v-for="error in validationErrors" :key="error">{{ error }}</li>
         </ul>
       </v-alert>
-      <v-row> <v-col cols="12">
-          <v-text-field v-model="title" label="任务标题" placeholder="请输入任务标题" variant="outlined" required counter="100" />
+      <v-row>
+        <v-col cols="12">
+          <v-text-field
+            v-model="title"
+            label="任务标题"
+            placeholder="请输入任务标题"
+            variant="outlined"
+            required
+            counter="100"
+          />
         </v-col>
 
         <v-col cols="12">
-          <v-textarea v-model="description" label="任务描述" placeholder="请输入任务描述（可选）" variant="outlined" rows="3"
-            counter="1000" no-resize />
+          <v-textarea
+            v-model="description"
+            label="任务描述"
+            placeholder="请输入任务描述（可选）"
+            variant="outlined"
+            rows="3"
+            counter="1000"
+            no-resize
+          />
         </v-col>
-
       </v-row>
     </v-card-text>
   </v-card>
@@ -57,7 +71,7 @@ const title = computed({
       // 直接设置属性，因为TaskTemplate没有updateTitle方法
       (template as any)._title = value;
     });
-  }
+  },
 });
 
 const description = computed({
@@ -67,7 +81,7 @@ const description = computed({
       // 直接设置属性，因为TaskTemplate没有updateDescription方法
       (template as any)._description = value;
     });
-  }
+  },
 });
 
 watch(
@@ -76,9 +90,8 @@ watch(
     validate(title.value, description.value || '');
     emit('update:validation', isValid.value);
   },
-  { immediate: true }
+  { immediate: true },
 );
-
 </script>
 
 <style scoped>

@@ -1,7 +1,7 @@
 # Nx 使用指南
 
 > 📖 Nx monorepo 常用命令、优势、工作流和最佳实践
-> 
+>
 > 🚀 快速上手 Nx 开发，提升团队效率
 
 ---
@@ -39,6 +39,7 @@ nx serve api
 ```
 
 **原因**：
+
 - Nx CLI 安装在项目本地（`node_modules/.bin/nx`）
 - 未安装全局 Nx CLI
 - `pnpm` 会自动找到本地安装的 `nx` 可执行文件
@@ -84,15 +85,16 @@ nx affected:test  # vs. pnpm nx affected:test
 
 **全局 vs 本地 Nx CLI**：
 
-| 特性 | 全局安装 | 本地安装（pnpm nx） |
-|-----|---------|-------------------|
-| 命令长度 | 短（`nx ...`） | 长（`pnpm nx ...`） |
-| 安装位置 | 系统全局 | 项目 node_modules |
-| 多项目支持 | 共享一个版本 | 每个项目独立版本 |
-| 版本控制 | 需手动更新 | package.json 锁定版本 |
-| 推荐场景 | 日常开发 | CI/CD 环境 |
+| 特性       | 全局安装       | 本地安装（pnpm nx）   |
+| ---------- | -------------- | --------------------- |
+| 命令长度   | 短（`nx ...`） | 长（`pnpm nx ...`）   |
+| 安装位置   | 系统全局       | 项目 node_modules     |
+| 多项目支持 | 共享一个版本   | 每个项目独立版本      |
+| 版本控制   | 需手动更新     | package.json 锁定版本 |
+| 推荐场景   | 日常开发       | CI/CD 环境            |
 
 **最佳实践**：
+
 - ✅ 开发环境：安装全局 Nx CLI（方便日常使用）
 - ✅ CI/CD 环境：使用 `pnpm nx`（确保版本一致）
 - ✅ 团队协作：在 README 中说明两种用法
@@ -113,6 +115,7 @@ npx nx serve api
 ```
 
 **优缺点**：
+
 - ✅ 无需全局安装
 - ✅ 自动使用项目锁定的版本
 - ❌ 首次运行需要下载（稍慢）
@@ -125,6 +128,7 @@ npx nx serve api
 ### 2.1 智能缓存（Computation Caching）
 
 **原理**：
+
 - Nx 计算任务输入文件的哈希值
 - 如果输入未变化，直接从缓存恢复输出
 - 缓存存储在 `.nx/cache` 目录
@@ -146,16 +150,19 @@ $ pnpm nx build api
 ```
 
 **缓存失效条件**：
+
 - 源代码文件变化（`src/**/*`）
 - 配置文件变化（`tsconfig.json`、`vite.config.ts`）
 - 依赖项目的输出变化（`domain-client` 构建产物变化）
 
 **远程缓存（Nx Cloud）**：
+
 - 团队成员共享构建缓存
 - CI 和本地开发共享缓存
 - 显著减少整体构建时间（50%+ 提升）
 
 **示例场景**：
+
 ```
 开发者 A（周一）：
   构建 api 项目 → 上传缓存到 Nx Cloud
@@ -169,6 +176,7 @@ $ pnpm nx build api
 ### 2.2 受影响分析（Affected Analysis）
 
 **原理**：
+
 - Nx 分析 Git 变更的文件
 - 构建项目依赖图
 - 只运行受影响项目的任务
@@ -193,17 +201,18 @@ $ pnpm nx affected:test
 
 **对比传统 monorepo**：
 
-| 场景 | 传统 monorepo | Nx monorepo |
-|-----|--------------|-------------|
-| 修改 1 个包 | 测试所有 11 个项目 | 只测试 3 个受影响项目 |
-| 构建时间 | 每次都全量构建 | 只构建变更部分 |
-| CI/CD | 每次提交都跑全部测试 | 只跑受影响测试 |
+| 场景        | 传统 monorepo        | Nx monorepo           |
+| ----------- | -------------------- | --------------------- |
+| 修改 1 个包 | 测试所有 11 个项目   | 只测试 3 个受影响项目 |
+| 构建时间    | 每次都全量构建       | 只构建变更部分        |
+| CI/CD       | 每次提交都跑全部测试 | 只跑受影响测试        |
 
 ---
 
 ### 2.3 并行执行（Parallel Execution）
 
 **原理**：
+
 - Nx 分析任务依赖图
 - 并行执行无依赖关系的任务
 - 自动利用多核 CPU
@@ -241,6 +250,7 @@ $ pnpm nx run-many --target=build --all
 ```
 
 **性能提升**：
+
 - 4 核 CPU：理论上可提升 3-4 倍速度
 - 8 核 CPU：理论上可提升 6-8 倍速度
 
@@ -249,6 +259,7 @@ $ pnpm nx run-many --target=build --all
 ### 2.4 类型热更新（Type-safe Imports）
 
 **特性**：
+
 - TypeScript 项目引用（Project References）
 - 实时类型检查
 - 快速跳转到源代码定义
@@ -285,7 +296,7 @@ import { User } from '@daily-use/domain-client';
 const user: User = {
   id: '123',
   name: 'Alice',
-  email: 'invalid'  // ❌ TypeScript 立即报错（无需构建）
+  email: 'invalid', // ❌ TypeScript 立即报错（无需构建）
 };
 
 // ✅ Ctrl+Click 跳转到 domain-client 的源代码定义
@@ -295,12 +306,12 @@ const user: User = {
 
 **优势对比**：
 
-| 特性 | 传统方式（构建后导入） | Nx + TypeScript 项目引用 |
-|-----|---------------------|----------------------|
-| 类型检查 | 需要先构建依赖包 | 实时检查，无需构建 |
-| 跳转到定义 | 跳转到 .d.ts 文件 | 跳转到源代码 |
-| 开发体验 | 修改依赖包需重新构建 | 实时反馈 |
-| 调试 | 只能看到编译后代码 | 直接调试源代码 |
+| 特性       | 传统方式（构建后导入） | Nx + TypeScript 项目引用 |
+| ---------- | ---------------------- | ------------------------ |
+| 类型检查   | 需要先构建依赖包       | 实时检查，无需构建       |
+| 跳转到定义 | 跳转到 .d.ts 文件      | 跳转到源代码             |
+| 开发体验   | 修改依赖包需重新构建   | 实时反馈                 |
+| 调试       | 只能看到编译后代码     | 直接调试源代码           |
 
 ---
 
@@ -764,7 +775,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 获取完整 Git 历史（用于 affected 分析）
+          fetch-depth: 0 # 获取完整 Git 历史（用于 affected 分析）
 
       - uses: pnpm/action-setup@v2
         with:
@@ -791,6 +802,7 @@ jobs:
 ```
 
 **优势**：
+
 - ✅ 只运行受影响的任务（节省 50-90% CI 时间）
 - ✅ 并行执行（充分利用 CI 服务器资源）
 - ✅ 远程缓存（不同 CI 运行之间共享缓存）
@@ -803,9 +815,9 @@ jobs:
 
 ```yaml
 # ❌ 每次都全量构建（慢）
-- run: npm run lint    # 检查所有 11 个项目
-- run: npm run test    # 测试所有 11 个项目
-- run: npm run build   # 构建所有 11 个项目
+- run: npm run lint # 检查所有 11 个项目
+- run: npm run test # 测试所有 11 个项目
+- run: npm run build # 构建所有 11 个项目
 # ⏱️ 耗时：约 15-20 分钟
 ```
 
@@ -813,9 +825,9 @@ jobs:
 
 ```yaml
 # ✅ 只构建受影响项目（快）
-- run: pnpm nx affected:lint   # 只检查受影响项目（例如 2 个）
-- run: pnpm nx affected:test   # 只测试受影响项目（例如 3 个）
-- run: pnpm nx affected:build  # 只构建受影响项目（例如 2 个）
+- run: pnpm nx affected:lint # 只检查受影响项目（例如 2 个）
+- run: pnpm nx affected:test # 只测试受影响项目（例如 3 个）
+- run: pnpm nx affected:build # 只构建受影响项目（例如 2 个）
 # ⏱️ 耗时：约 3-5 分钟（节省 70-80% 时间）
 ```
 
@@ -940,6 +952,7 @@ pnpm nx run-many --target=build --all --parallel=1
 ```
 
 **原因**：
+
 - `build` 依赖 `lint` 和 `test` 会导致串行执行
 - 分离依赖允许 `lint`、`test`、`build` 并行执行
 
@@ -1074,42 +1087,47 @@ pnpm nx run-many --target=build --all
 
 ### 8.1 关键命令速查
 
-| 命令 | 作用 | 示例 |
-|-----|------|-----|
-| `nx serve <project>` | 启动开发服务器 | `pnpm nx serve api` |
-| `nx build <project>` | 构建项目 | `pnpm nx build web` |
-| `nx test <project>` | 运行测试 | `pnpm nx test domain-core` |
-| `nx lint <project>` | 代码检查 | `pnpm nx lint api` |
-| `nx affected:*` | 只运行受影响项目的任务 | `pnpm nx affected:test` |
-| `nx run-many --target=* --all` | 运行所有项目的任务 | `pnpm nx run-many --target=build --all` |
-| `nx graph` | 查看依赖图 | `pnpm nx graph` |
-| `nx reset` | 清除缓存 | `pnpm nx reset` |
+| 命令                           | 作用                   | 示例                                    |
+| ------------------------------ | ---------------------- | --------------------------------------- |
+| `nx serve <project>`           | 启动开发服务器         | `pnpm nx serve api`                     |
+| `nx build <project>`           | 构建项目               | `pnpm nx build web`                     |
+| `nx test <project>`            | 运行测试               | `pnpm nx test domain-core`              |
+| `nx lint <project>`            | 代码检查               | `pnpm nx lint api`                      |
+| `nx affected:*`                | 只运行受影响项目的任务 | `pnpm nx affected:test`                 |
+| `nx run-many --target=* --all` | 运行所有项目的任务     | `pnpm nx run-many --target=build --all` |
+| `nx graph`                     | 查看依赖图             | `pnpm nx graph`                         |
+| `nx reset`                     | 清除缓存               | `pnpm nx reset`                         |
 
 ---
 
 ### 8.2 最佳实践总结
 
 1. ✅ **安装全局 Nx CLI**（方便日常使用）
+
    ```bash
    pnpm add -g nx
    ```
 
 2. ✅ **使用受影响分析**（节省时间）
+
    ```bash
    pnpm nx affected:test  # 而不是 run-many --all
    ```
 
 3. ✅ **启用缓存**（显著提升速度）
+
    ```json
    { "cache": true }
    ```
 
 4. ✅ **配置项目边界**（防止循环依赖）
+
    ```json
    { "tags": ["scope:client"] }
    ```
 
 5. ✅ **使用 Nx Cloud**（团队协作必备）
+
    ```json
    { "nxCloudId": "..." }
    ```
@@ -1123,17 +1141,18 @@ pnpm nx run-many --target=build --all
 
 ### 8.3 性能提升对比
 
-| 场景 | 传统 monorepo | Nx monorepo | 提升幅度 |
-|-----|--------------|-------------|---------|
-| 全量构建（首次） | 15 分钟 | 5 分钟 | **3x** |
-| 全量构建（二次） | 15 分钟 | 30 秒 | **30x** |
-| 修改 1 个包后测试 | 测试 11 个项目（10 分钟） | 测试 3 个项目（2 分钟） | **5x** |
-| CI/CD 时间 | 每次 15 分钟 | 平均 3-5 分钟 | **3-5x** |
-| 类型检查 | 构建后检查 | 实时检查 | **即时反馈** |
+| 场景              | 传统 monorepo             | Nx monorepo             | 提升幅度     |
+| ----------------- | ------------------------- | ----------------------- | ------------ |
+| 全量构建（首次）  | 15 分钟                   | 5 分钟                  | **3x**       |
+| 全量构建（二次）  | 15 分钟                   | 30 秒                   | **30x**      |
+| 修改 1 个包后测试 | 测试 11 个项目（10 分钟） | 测试 3 个项目（2 分钟） | **5x**       |
+| CI/CD 时间        | 每次 15 分钟              | 平均 3-5 分钟           | **3-5x**     |
+| 类型检查          | 构建后检查                | 实时检查                | **即时反馈** |
 
 ---
 
 📚 **相关文档**：
+
 - [NX_CONFIGURATION_GUIDE.md](./NX_CONFIGURATION_GUIDE.md) - 配置文件详解
 - [Nx 官方文档](https://nx.dev/getting-started/intro)
 - [Nx Cloud 文档](https://nx.app/)

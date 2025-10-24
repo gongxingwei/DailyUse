@@ -1,21 +1,21 @@
-import { Database } from "better-sqlite3";
-import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
+import { Database } from 'better-sqlite3';
+import { IAuthCredentialRepository } from '../../domain/repositories/authenticationRepository';
 
-import { getDatabase } from "../../../../shared/database/index";
+import { getDatabase } from '../../../../shared/database/index';
 // repositories
-import { SqliteMFADeviceRepository } from "./sqliteMFADeviceRepository";
-import { SqliteSessionRepository } from "./sqliteUserSessionRepository";
-import { SqliteTokenRepository } from "./sqliteTokenRepository";
-import { TokenType } from "@common/modules/authentication/types/authentication";
+import { SqliteMFADeviceRepository } from './sqliteMFADeviceRepository';
+import { SqliteSessionRepository } from './sqliteUserSessionRepository';
+import { SqliteTokenRepository } from './sqliteTokenRepository';
+import { TokenType } from '@common/modules/authentication/types/authentication';
 // domains
-import { AuthCredential } from "../../domain/aggregates/authCredential";
-import { MFADevice } from "../../domain/entities/mfaDevice";
-import { Session } from "../../domain/entities/session";
+import { AuthCredential } from '../../domain/aggregates/authCredential';
+import { MFADevice } from '../../domain/entities/mfaDevice';
+import { Session } from '../../domain/entities/session';
 /**
  * SQLite 认证凭证仓库实现
  */
 export class SqliteAuthCredentialRepository implements IAuthCredentialRepository {
-    private db: Database | null = null;
+  private db: Database | null = null;
 
   constructor() {}
 
@@ -55,7 +55,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
       credential.lockedUntil ? credential.lockedUntil.getTime() : null,
       credential.lastAuthAt ? credential.lastAuthAt.getTime() : null,
       credential.createdAt.getTime(),
-      credential.updatedAt.getTime()
+      credential.updatedAt.getTime(),
     );
   }
 
@@ -64,7 +64,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const stmt = db.prepare(`
       SELECT * FROM auth_credentials WHERE id = ?
     `);
-    
+
     const row = stmt.get(uuid) as any;
     if (!row) return null;
 
@@ -76,7 +76,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const stmt = db.prepare(`
       SELECT * FROM auth_credentials WHERE account_uuid = ?
     `);
-    
+
     const row = stmt.get(accountUuid) as any;
     if (!row) return null;
 
@@ -91,7 +91,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
       INNER JOIN users u ON ac.account_uuid = u.uuid
       WHERE u.username = ?
     `);
-    
+
     const row = stmt.get(username) as any;
     if (!row) return null;
 
@@ -103,7 +103,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const stmt = db.prepare(`
       DELETE FROM auth_credentials WHERE id = ?
     `);
-    
+
     stmt.run(uuid);
   }
 
@@ -112,9 +112,9 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const stmt = db.prepare(`
       SELECT * FROM auth_credentials ORDER BY created_at DESC
     `);
-    
+
     const rows = stmt.all() as any[];
-    return Promise.all(rows.map(row => this.mapRowToAuthCredential(row)));
+    return Promise.all(rows.map((row) => this.mapRowToAuthCredential(row)));
   }
 
   async existsByAccountUuid(accountUuid: string): Promise<boolean> {
@@ -122,7 +122,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const stmt = db.prepare(`
       SELECT 1 FROM auth_credentials WHERE account_uuid = ? LIMIT 1
     `);
-    
+
     const result = stmt.get(accountUuid);
     return !!result;
   }
@@ -135,17 +135,17 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const tokens = await tokenRepo.findByAccountUuid(row.account_uuid);
     const rememberTokens = await tokenRepo.findByAccountUuidAndType(
       row.account_uuid,
-      TokenType.REMEMBER_ME
+      TokenType.REMEMBER_ME,
     );
-    const otherTokens = tokens.filter(t => t.type !== TokenType.REMEMBER_ME);
-    const rememberTokenMap = new Map(rememberTokens.map(t => [t.type, t]));
-    const tokenMap = new Map(otherTokens.map(t => [t.type, t]));
+    const otherTokens = tokens.filter((t) => t.type !== TokenType.REMEMBER_ME);
+    const rememberTokenMap = new Map(rememberTokens.map((t) => [t.type, t]));
+    const tokenMap = new Map(otherTokens.map((t) => [t.type, t]));
     const sessionRepo = new SqliteSessionRepository();
     const sessions = await sessionRepo.findByAccountUuid(row.account_uuid);
-    const sessionMap = new Map<string, Session>(sessions.map(s => [s.uuid, s]));
+    const sessionMap = new Map<string, Session>(sessions.map((s) => [s.uuid, s]));
     const mfaDeviceRepo = new SqliteMFADeviceRepository();
     const mfaDevices = await mfaDeviceRepo.findByAccountUuid(row.account_uuid);
-    const mfaDeviceMap = new Map<string, MFADevice>(mfaDevices.map(d => [d.uuid, d]));
+    const mfaDeviceMap = new Map<string, MFADevice>(mfaDevices.map((d) => [d.uuid, d]));
     const authCredential = AuthCredential.restoreFromPersistenceWithEntities({
       uuid: row.uuid,
       accountUuid: row.account_uuid,
@@ -163,7 +163,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
       tokens: tokenMap,
       rememberTokens: rememberTokenMap,
       sessions: sessionMap,
-      mfaDevices: mfaDeviceMap
+      mfaDevices: mfaDeviceMap,
     });
     return authCredential;
   }
@@ -179,13 +179,13 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     expiresAt: number | undefined;
   } {
     const passwordInfo = credential.getPasswordInfo();
-    
+
     return {
       hash: passwordInfo.hashedValue,
       salt: passwordInfo.salt,
       algorithm: passwordInfo.algorithm,
       createdAt: passwordInfo.createdAt.getTime(),
-      expiresAt: passwordInfo.expiresAt ? passwordInfo.expiresAt.getTime() : undefined
+      expiresAt: passwordInfo.expiresAt ? passwordInfo.expiresAt.getTime() : undefined,
     };
   }
 }

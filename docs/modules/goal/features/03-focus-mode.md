@@ -15,6 +15,7 @@
 ### 背景与痛点
 
 在目标管理中，用户常常面临"目标太多，无法聚焦"的困扰：
+
 - ❌ 同时追踪 10+ 个目标，注意力分散
 - ❌ 紧急目标被常规目标干扰，无法聚焦
 - ❌ 在冲刺阶段（如季度末、项目关键期）需要临时聚焦少数关键目标
@@ -31,6 +32,7 @@
 **一句话价值**: 临时开启聚焦模式，隐藏非关键目标，专注于 1-3 个紧急关注的目标
 
 **核心收益**:
+
 - ✅ 一键开启聚焦模式，UI 中只显示选中的关键目标
 - ✅ 支持设置聚焦周期（本周、本月、自定义时间段）
 - ✅ 聚焦期间其他目标自动归档/隐藏，减少视觉干扰
@@ -46,6 +48,7 @@
 用户进入关键冲刺期，需要临时聚焦 1-3 个紧急目标。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 开启聚焦模式，只显示少数关键目标
@@ -53,9 +56,11 @@ So that 我可以屏蔽其他干扰，全力推进关键目标
 ```
 
 **操作流程**:
+
 1. 用户打开目标列表页面
 2. 点击"聚焦模式"按钮（顶部操作栏）
 3. 系统弹出聚焦配置面板：
+
    ```
    🎯 开启聚焦模式
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -65,19 +70,20 @@ So that 我可以屏蔽其他干扰，全力推进关键目标
    ☑️ 新产品上线
    ☐ 技术债清理
    ☐ 知识库建设
-   
+
    聚焦周期：
    ⚪ 本周（2025-10-21 ~ 2025-10-27）
    🔘 本月（2025-10-01 ~ 2025-10-31）
    ⚪ 自定义时间段
-   
+
    聚焦期间其他目标：
    🔘 临时隐藏（推荐）
    ⚪ 折叠显示
    ⚪ 降低优先级标记
-   
+
    [取消]  [开启聚焦]
    ```
+
 4. 用户选择 2 个目标，设置聚焦周期为"本月"
 5. 点击"开启聚焦"
 6. 系统进入聚焦模式，UI 变化：
@@ -86,6 +92,7 @@ So that 我可以屏蔽其他干扰，全力推进关键目标
    - 其他 3 个目标被隐藏（可通过"查看全部"按钮临时查看）
 
 **预期结果**:
+
 - 用户表新增 `activeFocusMode` 字段：
   ```typescript
   readonly activeFocusMode?: FocusMode;
@@ -111,6 +118,7 @@ So that 我可以屏蔽其他干扰，全力推进关键目标
 聚焦模式开启后，用户专注于关键目标，UI 高度简洁。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 聚焦模式下 UI 只显示关键信息
@@ -120,6 +128,7 @@ So that 我可以全神贯注，不被其他内容分散注意力
 **UI 变化**:
 
 #### 目标列表页
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 聚焦模式（剩余 10 天） [退出聚焦] [查看全部]
@@ -150,12 +159,14 @@ So that 我可以全神贯注，不被其他内容分散注意力
 ```
 
 #### 仪表盘页面
+
 - **目标进度卡片**: 只显示聚焦目标的进度
 - **任务列表**: 只显示与聚焦目标关联的任务
 - **提醒**: 优先显示聚焦目标的提醒
 - **侧边栏**: 隐藏非聚焦目标的快捷入口
 
 **预期结果**:
+
 - 聚焦模式作为全局状态，影响所有目标相关页面
 - 用户可通过"查看全部"临时查看隐藏目标，但操作后仍回到聚焦状态
 - 导航栏显示聚焦状态指示器
@@ -168,6 +179,7 @@ So that 我可以全神贯注，不被其他内容分散注意力
 聚焦模式下，用户需要临时查看或更新其他目标。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 临时查看聚焦模式下隐藏的目标
@@ -175,27 +187,31 @@ So that 我可以在必要时更新其他目标，而不完全退出聚焦模式
 ```
 
 **操作流程**:
+
 1. 用户在聚焦模式下
 2. 点击"查看全部"按钮
 3. 系统展示所有目标，但聚焦目标高亮标记：
+
    ```
    🎯 所有目标（聚焦模式临时暂停）
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    📌 聚焦中（2 个）
    ⭐ Q4 收入增长目标 (65%)
    ⭐ 新产品上线 (45%)
-   
+
    🔇 已隐藏（3 个）
    ▸ 团队效能提升 (30%)
    ▸ 技术债清理 (20%)
    ▸ 知识库建设 (10%)
-   
+
    [返回聚焦模式]
    ```
+
 4. 用户可正常操作任何目标
 5. 点击"返回聚焦模式"恢复聚焦视图
 
 **预期结果**:
+
 - "查看全部"为临时操作，不退出聚焦模式
 - 隐藏目标用灰色或半透明显示，视觉弱化
 - 操作隐藏目标后自动返回聚焦模式（可配置）
@@ -208,6 +224,7 @@ So that 我可以在必要时更新其他目标，而不完全退出聚焦模式
 用户需要调整聚焦周期的持续时间。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 延长或缩短聚焦周期
@@ -217,26 +234,30 @@ So that 我可以根据实际情况灵活调整
 **操作流程**:
 
 #### 延长聚焦
+
 1. 用户在聚焦模式下，点击聚焦状态栏
 2. 系统显示聚焦详情：
+
    ```
    🎯 聚焦模式详情
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    聚焦目标：2 个
    - Q4 收入增长目标
    - 新产品上线
-   
+
    聚焦周期：
    开始时间：2025-10-01
    结束时间：2025-10-31（剩余 10 天）
-   
+
    [延长聚焦] [提前结束] [调整目标]
    ```
+
 3. 用户点击"延长聚焦"
 4. 选择新的结束时间："2025-11-15"
 5. 系统更新聚焦周期
 
 #### 提前结束聚焦
+
 1. 用户点击"提前结束"
 2. 系统确认："确定要退出聚焦模式吗？所有目标将恢复正常显示。"
 3. 用户确认
@@ -244,6 +265,7 @@ So that 我可以根据实际情况灵活调整
 5. 聚焦历史被记录
 
 **预期结果**:
+
 - 支持灵活调整聚焦周期
 - 提前结束时记录实际聚焦时长
 - 聚焦历史可追溯（用于分析效果）
@@ -256,6 +278,7 @@ So that 我可以根据实际情况灵活调整
 聚焦周期到期后，系统自动退出聚焦模式并发送通知。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 聚焦周期结束时自动恢复正常显示
@@ -263,6 +286,7 @@ So that 我无需手动操作，系统自动切换状态
 ```
 
 **操作流程**:
+
 1. 聚焦周期设置为 2025-10-01 ~ 2025-10-31
 2. 2025-10-31 23:59:59 聚焦周期到期
 3. 系统自动执行：
@@ -270,23 +294,26 @@ So that 我无需手动操作，系统自动切换状态
    - 记录聚焦历史到 `focusModeHistory`
    - 恢复所有目标显示
 4. 2025-11-01 00:00:00 用户登录时看到通知：
+
    ```
    🎯 聚焦模式已结束
-   
+
    您的 10 月聚焦周期已完成！
-   
+
    聚焦成果：
    - Q4 收入增长目标：65% → 80% (+15%)
    - 新产品上线：45% → 95% (+50%)
-   
+
    总聚焦时长：31 天
    平均每日进展：+2.1%
-   
+
    [查看详细报告] [开启新聚焦]
    ```
+
 5. 用户可查看聚焦效果报告
 
 **预期结果**:
+
 - 定时任务每天检查聚焦到期
 - 自动生成聚焦成果报告
 - 支持一键开启新的聚焦周期
@@ -299,6 +326,7 @@ So that 我无需手动操作，系统自动切换状态
 用户查看历史聚焦记录，分析聚焦模式的效果。
 
 **用户故事**:
+
 ```gherkin
 As a 目标负责人
 I want 查看历史聚焦记录和效果分析
@@ -306,8 +334,10 @@ So that 我可以了解聚焦模式对目标达成的帮助
 ```
 
 **操作流程**:
+
 1. 用户打开"聚焦历史"页面
 2. 系统展示历史聚焦记录：
+
    ```
    聚焦历史
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -316,40 +346,43 @@ So that 我可以了解聚焦模式对目标达成的帮助
    聚焦时长：31 天
    进展：平均 +2.1%/天
    成效评分：⭐⭐⭐⭐⭐（优秀）
-   
+
    📅 2025-09 月聚焦（已完成）
    聚焦目标：技术债清理
    聚焦时长：15 天（提前结束）
    进展：+18%
    成效评分：⭐⭐⭐（良好）
    ```
+
 3. 用户点击某条记录查看详情
 4. 系统展示聚焦效果分析：
+
    ```
    2025-10 月聚焦详情
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    聚焦目标进展对比
-   
+
    Q4 收入增长目标
    ├─ 聚焦前：65%
    ├─ 聚焦后：80%
    └─ 进展：+15% ✅
-   
+
    新产品上线
    ├─ 聚焦前：45%
    ├─ 聚焦后：95%
    └─ 进展：+50% 🚀
-   
+
    非聚焦目标进展
    ├─ 团队效能提升：+3%（维持）
    ├─ 技术债清理：+2%（缓慢）
    └─ 知识库建设：+1%（几乎停滞）
-   
+
    结论：聚焦模式显著提升关键目标进展
    建议：继续使用聚焦模式处理紧急目标
    ```
 
 **预期结果**:
+
 - 聚焦历史永久保存
 - 提供数据对比分析（聚焦前 vs 聚焦后）
 - 识别聚焦模式的有效性
@@ -371,12 +404,12 @@ So that 我可以了解聚焦模式对目标达成的帮助
 export interface FocusModeServerDTO {
   readonly uuid: string;
   readonly userUuid: string;
-  readonly focusedGoalUuids: string[];              // 聚焦的目标 UUID（1-3 个）
-  readonly startTime: number;                       // 聚焦开始时间
-  readonly endTime: number;                         // 聚焦结束时间
-  readonly hiddenGoalsMode: HiddenGoalsMode;        // 其他目标处理方式
-  readonly isActive: boolean;                       // 是否激活
-  readonly actualEndTime?: number;                  // 实际结束时间（提前结束时）
+  readonly focusedGoalUuids: string[]; // 聚焦的目标 UUID（1-3 个）
+  readonly startTime: number; // 聚焦开始时间
+  readonly endTime: number; // 聚焦结束时间
+  readonly hiddenGoalsMode: HiddenGoalsMode; // 其他目标处理方式
+  readonly isActive: boolean; // 是否激活
+  readonly actualEndTime?: number; // 实际结束时间（提前结束时）
   readonly createdAt: number;
   readonly updatedAt: number;
 }
@@ -385,9 +418,9 @@ export interface FocusModeServerDTO {
  * 隐藏目标处理方式
  */
 export enum HiddenGoalsMode {
-  HIDE = 'hide',               // 完全隐藏（推荐）
-  COLLAPSE = 'collapse',       // 折叠显示
-  DEPRIORITIZE = 'deprioritize' // 降低优先级标记
+  HIDE = 'hide', // 完全隐藏（推荐）
+  COLLAPSE = 'collapse', // 折叠显示
+  DEPRIORITIZE = 'deprioritize', // 降低优先级标记
 }
 
 /**
@@ -400,13 +433,13 @@ export interface FocusModeHistoryServerDTO {
   readonly focusedGoals: Array<{
     goalUuid: string;
     goalName: string;
-    progressBefore: number;      // 聚焦前进度
-    progressAfter: number;       // 聚焦后进度
-    progressDelta: number;       // 进度变化
+    progressBefore: number; // 聚焦前进度
+    progressAfter: number; // 聚焦后进度
+    progressDelta: number; // 进度变化
   }>;
-  readonly focusDuration: number;          // 聚焦时长（天）
-  readonly avgDailyProgress: number;       // 平均每日进展
-  readonly effectivenessScore: number;     // 成效评分 (0-100)
+  readonly focusDuration: number; // 聚焦时长（天）
+  readonly avgDailyProgress: number; // 平均每日进展
+  readonly effectivenessScore: number; // 成效评分 (0-100)
   readonly completedAt: number;
 }
 ```
@@ -418,9 +451,9 @@ export interface FocusModeHistoryServerDTO {
 ```typescript
 export interface UserServerDTO {
   // ...existing fields...
-  
+
   // 聚焦模式相关
-  readonly activeFocusMode?: FocusModeServerDTO;    // 当前激活的聚焦模式
+  readonly activeFocusMode?: FocusModeServerDTO; // 当前激活的聚焦模式
   readonly focusModeHistory?: FocusModeHistoryServerDTO[]; // 聚焦历史
 }
 ```
@@ -437,22 +470,22 @@ export interface UserServerDTO {
 
 #### 2. UI 聚焦状态指示
 
-| 位置 | 指示方式 |
-|------|---------|
-| 顶部导航栏 | 🎯 图标 + "聚焦中" |
-| 目标列表 | 聚焦目标带 ⭐ 标记 |
-| 侧边栏 | 只显示聚焦目标快捷入口 |
-| 仪表盘 | 聚焦状态卡片（剩余天数） |
+| 位置       | 指示方式                 |
+| ---------- | ------------------------ |
+| 顶部导航栏 | 🎯 图标 + "聚焦中"       |
+| 目标列表   | 聚焦目标带 ⭐ 标记       |
+| 侧边栏     | 只显示聚焦目标快捷入口   |
+| 仪表盘     | 聚焦状态卡片（剩余天数） |
 
 #### 3. 聚焦模式与其他功能的交互
 
-| 功能 | 聚焦模式行为 |
-|------|------------|
-| 创建新目标 | 询问是否加入聚焦（如未满 3 个） |
-| 删除聚焦目标 | 警告并询问是否退出聚焦 |
-| 任务列表 | 只显示关联聚焦目标的任务 |
-| 提醒 | 优先级提升聚焦目标相关提醒 |
-| 搜索 | 默认只搜索聚焦目标（可切换全局搜索） |
+| 功能         | 聚焦模式行为                         |
+| ------------ | ------------------------------------ |
+| 创建新目标   | 询问是否加入聚焦（如未满 3 个）      |
+| 删除聚焦目标 | 警告并询问是否退出聚焦               |
+| 任务列表     | 只显示关联聚焦目标的任务             |
+| 提醒         | 优先级提升聚焦目标相关提醒           |
+| 搜索         | 默认只搜索聚焦目标（可切换全局搜索） |
 
 ---
 
@@ -461,6 +494,7 @@ export interface UserServerDTO {
 ### MVP: 基础聚焦模式（1-1.5 周）
 
 **范围**:
+
 - ✅ 开启/退出聚焦模式（选择 1-3 个目标）
 - ✅ 设置聚焦周期（本周/本月/自定义）
 - ✅ 隐藏非聚焦目标（完全隐藏模式）
@@ -469,6 +503,7 @@ export interface UserServerDTO {
 - ✅ 聚焦到期自动退出
 
 **技术要点**:
+
 - Contracts: 定义 `FocusModeServerDTO`
 - Domain: User 聚合根添加 `activateFocusMode()` 方法
 - Application: `ActivateFocusModeService` 应用服务
@@ -477,6 +512,7 @@ export interface UserServerDTO {
 - UI: 聚焦配置面板 + 聚焦状态栏
 
 **验收标准**:
+
 ```gherkin
 Given 用户有 5 个目标
 When 用户开启聚焦模式，选择 2 个目标，周期为本月
@@ -491,6 +527,7 @@ And 用户可通过"查看全部"临时查看隐藏目标
 ### MMP: 聚焦效果分析（+1-2 周）
 
 **在 MVP 基础上新增**:
+
 - ✅ 聚焦历史记录
 - ✅ 聚焦效果分析（进度对比）
 - ✅ 成效评分算法
@@ -499,11 +536,13 @@ And 用户可通过"查看全部"临时查看隐藏目标
 - ✅ 多种隐藏模式（隐藏/折叠/降优先级）
 
 **技术要点**:
+
 - 进度快照对比（聚焦前 vs 聚焦后）
 - 成效评分算法（基于进度增长率）
 - 聚焦历史可视化
 
 **验收标准**:
+
 ```gherkin
 Given 用户完成了 1 个月的聚焦
 When 聚焦周期结束
@@ -517,6 +556,7 @@ And 用户可在聚焦历史中查看完整报告
 ### Full Release: 智能聚焦推荐（+2-3 周）
 
 **在 MMP 基础上新增**:
+
 - ✅ 智能推荐聚焦目标（基于截止日期、优先级、进度）
 - ✅ 聚焦模板（如"季度冲刺"、"紧急攻坚"）
 - ✅ 团队聚焦模式（团队成员同步聚焦同一目标）
@@ -524,11 +564,13 @@ And 用户可在聚焦历史中查看完整报告
 - ✅ 聚焦成就系统（连续聚焦徽章）
 
 **技术要点**:
+
 - 推荐算法（多维度评分）
 - 团队聚焦同步机制
 - 成就系统设计
 
 **验收标准**:
+
 ```gherkin
 Given 用户有 3 个目标即将到期
 When 系统检测到用户未开启聚焦
@@ -773,6 +815,7 @@ Feature: 专注周期聚焦模式
 | 提前退出率 | <20% | 提前退出次数 / 总开启次数 |
 
 **定性指标**:
+
 - 用户反馈"聚焦模式帮助我更专注"
 - 关键目标按时达成率提升
 - 多目标并行导致的焦虑感下降
@@ -795,9 +838,9 @@ model FocusMode {
   actualEndTime       BigInt?  @map("actual_end_time")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
-  
+
   user                Account  @relation(fields: [userUuid], references: [uuid])
-  
+
   @@index([userUuid, isActive])
   @@map("focus_modes")
 }
@@ -811,9 +854,9 @@ model FocusModeHistory {
   avgDailyProgress    Float    @map("avg_daily_progress")
   effectivenessScore  Int      @map("effectiveness_score")
   completedAt         BigInt   @map("completed_at")
-  
+
   user                Account  @relation(fields: [userUuid], references: [uuid])
-  
+
   @@index([userUuid, completedAt(sort: Desc)])
   @@map("focus_mode_histories")
 }
@@ -829,19 +872,19 @@ export class ActivateFocusModeService {
     userUuid: string,
     focusedGoalUuids: string[],
     endTime: number,
-    hiddenGoalsMode: HiddenGoalsMode
+    hiddenGoalsMode: HiddenGoalsMode,
   ): Promise<FocusMode> {
     // 校验聚焦目标数量（1-3 个）
     if (focusedGoalUuids.length < 1 || focusedGoalUuids.length > 3) {
       throw new Error('聚焦目标数量应为 1-3 个');
     }
-    
+
     // 检查是否已有激活的聚焦模式
     const existingFocusMode = await this.focusModeRepository.findActiveByUser(userUuid);
     if (existingFocusMode) {
       throw new Error('已有激活的聚焦模式，请先退出');
     }
-    
+
     // 创建聚焦模式
     const focusMode = new FocusMode({
       userUuid,
@@ -849,21 +892,21 @@ export class ActivateFocusModeService {
       startTime: Date.now(),
       endTime,
       hiddenGoalsMode,
-      isActive: true
+      isActive: true,
     });
-    
+
     // 保存
     await this.focusModeRepository.save(focusMode);
-    
+
     // 发布事件
     await this.eventBus.publish(
       new FocusModeActivatedEvent({
         userUuid,
         focusModeUuid: focusMode.uuid,
-        focusedGoalCount: focusedGoalUuids.length
-      })
+        focusedGoalCount: focusedGoalUuids.length,
+      }),
     );
-    
+
     return focusMode;
   }
 }
@@ -903,24 +946,26 @@ Response: FocusModeClientDTO | null
 
 ## 8. 风险与缓解
 
-| 风险 | 可能性 | 影响 | 缓解措施 |
-|------|-------|------|---------|
-| 用户忘记退出聚焦模式 | 中 | 中 | 自动到期 + 延期提醒 |
-| 隐藏目标被遗忘 | 中 | 中 | 每周发送隐藏目标提醒 + "查看全部"按钮 |
-| 聚焦目标选择不当 | 中 | 中 | 智能推荐 + 允许中途调整 |
-| 团队协作时目标被隐藏 | 低 | 高 | 团队视图不受聚焦影响 |
+| 风险                 | 可能性 | 影响 | 缓解措施                              |
+| -------------------- | ------ | ---- | ------------------------------------- |
+| 用户忘记退出聚焦模式 | 中     | 中   | 自动到期 + 延期提醒                   |
+| 隐藏目标被遗忘       | 中     | 中   | 每周发送隐藏目标提醒 + "查看全部"按钮 |
+| 聚焦目标选择不当     | 中     | 中   | 智能推荐 + 允许中途调整               |
+| 团队协作时目标被隐藏 | 低     | 高   | 团队视图不受聚焦影响                  |
 
 ---
 
 ## 9. 后续增强方向
 
 ### Phase 2 功能
+
 - 🔄 智能推荐聚焦目标（基于截止日期、进度、优先级）
 - 👥 团队聚焦模式（团队同步聚焦）
 - 📊 聚焦效果对比分析（聚焦 vs 非聚焦）
 - 🏆 聚焦成就系统（连续聚焦徽章）
 
 ### Phase 3 功能
+
 - 🤖 AI 聚焦助手（分析工作模式，推荐最佳聚焦策略）
 - 📱 聚焦模式移动端优化
 - 🔔 聚焦进展每日推送
@@ -942,7 +987,8 @@ Response: FocusModeClientDTO | null
 ---
 
 **文档维护**:
+
 - 创建: 2025-10-21
-- 创建者: PO Agent  
+- 创建者: PO Agent
 - 版本: 1.0
 - 下次更新: Sprint Planning 前

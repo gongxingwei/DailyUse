@@ -1,38 +1,65 @@
 <template>
-    <v-dialog :model-value="visible" max-width="500" persistent>
-        <v-card>
-            <v-card-title class="pa-4">
-                <v-icon size="24" class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-folder-plus' }}</v-icon>
-                {{ isEditing ? '编辑提醒分组' : '创建提醒分组' }}
-            </v-card-title>
+  <v-dialog :model-value="visible" max-width="500" persistent>
+    <v-card>
+      <v-card-title class="pa-4">
+        <v-icon size="24" class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-folder-plus' }}</v-icon>
+        {{ isEditing ? '编辑提醒分组' : '创建提醒分组' }}
+      </v-card-title>
 
-            <v-form ref="formRef">
-                <v-card-text class="pa-4">
-                    <!-- 分组名称 -->
-                    <v-text-field v-model="name" label="分组名称" variant="outlined" density="compact" :rules="nameRules"
-                        class="mb-3" @keyup.enter="handleSave" />
+      <v-form ref="formRef">
+        <v-card-text class="pa-4">
+          <!-- 分组名称 -->
+          <v-text-field
+            v-model="name"
+            label="分组名称"
+            variant="outlined"
+            density="compact"
+            :rules="nameRules"
+            class="mb-3"
+            @keyup.enter="handleSave"
+          />
 
-                    <!-- 描述 -->
-                    <v-textarea v-model="description" label="描述" variant="outlined" density="compact" rows="2"
-                        class="mb-3" />
+          <!-- 描述 -->
+          <v-textarea
+            v-model="description"
+            label="描述"
+            variant="outlined"
+            density="compact"
+            rows="2"
+            class="mb-3"
+          />
 
-                    <!-- 启用模式 -->
-                    <v-select v-model="enableMode" :items="enableModeOptions" label="启用模式" variant="outlined"
-                        density="compact" item-title="title" item-value="value" class="mb-3" />
+          <!-- 启用模式 -->
+          <v-select
+            v-model="enableMode"
+            :items="enableModeOptions"
+            label="启用模式"
+            variant="outlined"
+            density="compact"
+            item-title="title"
+            item-value="value"
+            class="mb-3"
+          />
 
-                    <!-- 启用开关 -->
-                    <v-switch v-model="enabled" label="启用分组" color="primary" class="mb-3" />
-                </v-card-text>
-            </v-form>
+          <!-- 启用开关 -->
+          <v-switch v-model="enabled" label="启用分组" color="primary" class="mb-3" />
+        </v-card-text>
+      </v-form>
 
-            <v-card-actions class="pa-4">
-                <v-btn variant="text" @click="handleCancel">取消</v-btn>
-                <v-btn color="primary" class="ml-2" @click="handleSave" variant="elevated" :disabled="!isFormValid">
-                    确定
-                </v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
+      <v-card-actions class="pa-4">
+        <v-btn variant="text" @click="handleCancel">取消</v-btn>
+        <v-btn
+          color="primary"
+          class="ml-2"
+          @click="handleSave"
+          variant="elevated"
+          :disabled="!isFormValid"
+        >
+          确定
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -51,108 +78,114 @@ const localReminderTemplateGroup = ref<ReminderTemplateGroup>(ReminderTemplateGr
 const isEditing = computed(() => !!propReminderTemplateGroup.value);
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
 const isFormValid = computed(() => {
-    return formRef.value?.isValid ?? false;
+  return formRef.value?.isValid ?? false;
 });
 
 const name = computed({
-    get: () => localReminderTemplateGroup.value.name,
-    set: (val: string) => {
-        localReminderTemplateGroup.value.updateBasicInfo({ name: val });
-    }
+  get: () => localReminderTemplateGroup.value.name,
+  set: (val: string) => {
+    localReminderTemplateGroup.value.updateBasicInfo({ name: val });
+  },
 });
 
 const description = computed({
-    get: () => localReminderTemplateGroup.value.description || '',
-    set: (val: string) => {
-        localReminderTemplateGroup.value.updateBasicInfo({ description: val });
-    }
+  get: () => localReminderTemplateGroup.value.description || '',
+  set: (val: string) => {
+    localReminderTemplateGroup.value.updateBasicInfo({ description: val });
+  },
 });
 
 const enabled = computed({
-    get: () => localReminderTemplateGroup.value.enabled,
-    set: (val: boolean) => {
-        localReminderTemplateGroup.value.toggleEnabled(val);
-    }
+  get: () => localReminderTemplateGroup.value.enabled,
+  set: (val: boolean) => {
+    localReminderTemplateGroup.value.toggleEnabled(val);
+  },
 });
 
 // EnableMode 需要特殊处理，类似 priority
-const enableMode = ref<ReminderContracts.ReminderTemplateEnableMode>(ReminderContracts.ReminderTemplateEnableMode.GROUP);
+const enableMode = ref<ReminderContracts.ReminderTemplateEnableMode>(
+  ReminderContracts.ReminderTemplateEnableMode.GROUP,
+);
 
 const enableModeOptions = [
-    { title: '按组启用', value: ReminderContracts.ReminderTemplateEnableMode.GROUP },
-    { title: '单独启用', value: ReminderContracts.ReminderTemplateEnableMode.INDIVIDUAL }
+  { title: '按组启用', value: ReminderContracts.ReminderTemplateEnableMode.GROUP },
+  { title: '单独启用', value: ReminderContracts.ReminderTemplateEnableMode.INDIVIDUAL },
 ];
 
 const nameRules = [
-    (v: string) => !!v || '分组名称不能为空',
-    (v: string) => (v && v.length >= 1) || '分组名称至少需要1个字符',
-    (v: string) => (v && v.length <= 50) || '分组名称不能超过50个字符'
+  (v: string) => !!v || '分组名称不能为空',
+  (v: string) => (v && v.length >= 1) || '分组名称至少需要1个字符',
+  (v: string) => (v && v.length <= 50) || '分组名称不能超过50个字符',
 ];
 
 const handleSave = async () => {
-    if (!isFormValid.value) return;
+  if (!isFormValid.value) return;
 
-    try {
-        if (propReminderTemplateGroup.value) {
-            // 编辑模式
-            await updateGroup(localReminderTemplateGroup.value.uuid, {
-                name: localReminderTemplateGroup.value.name,
-                description: localReminderTemplateGroup.value.description,
-                enabled: localReminderTemplateGroup.value.enabled,
-                enableMode: enableMode.value,
-            });
-        } else {
-            // 创建模式
-            await createGroup({
-                name: localReminderTemplateGroup.value.name,
-                description: localReminderTemplateGroup.value.description || '',
-                enabled: localReminderTemplateGroup.value.enabled,
-                enableMode: enableMode.value,
-            });
-        }
-        closeDialog();
-    } catch (error) {
-        console.error('保存提醒分组失败:', error);
+  try {
+    if (propReminderTemplateGroup.value) {
+      // 编辑模式
+      await updateGroup(localReminderTemplateGroup.value.uuid, {
+        name: localReminderTemplateGroup.value.name,
+        description: localReminderTemplateGroup.value.description,
+        enabled: localReminderTemplateGroup.value.enabled,
+        enableMode: enableMode.value,
+      });
+    } else {
+      // 创建模式
+      await createGroup({
+        name: localReminderTemplateGroup.value.name,
+        description: localReminderTemplateGroup.value.description || '',
+        enabled: localReminderTemplateGroup.value.enabled,
+        enableMode: enableMode.value,
+      });
     }
+    closeDialog();
+  } catch (error) {
+    console.error('保存提醒分组失败:', error);
+  }
 };
 
 const handleCancel = () => {
-    closeDialog();
+  closeDialog();
 };
 
 const openDialog = (reminderTemplateGroup?: ReminderTemplateGroup) => {
-    visible.value = true;
-    propReminderTemplateGroup.value = reminderTemplateGroup || null;
+  visible.value = true;
+  propReminderTemplateGroup.value = reminderTemplateGroup || null;
 };
 
 const openForCreate = () => {
-    openDialog();
+  openDialog();
 };
 
 const openForEdit = (reminderTemplateGroup: ReminderTemplateGroup) => {
-    openDialog(reminderTemplateGroup);
+  openDialog(reminderTemplateGroup);
 };
 
 const closeDialog = () => {
-    visible.value = false;
+  visible.value = false;
 };
 
 watch(
-    [() => visible.value, () => propReminderTemplateGroup.value],
-    ([show]) => {
-        if (show) {
-            localReminderTemplateGroup.value = propReminderTemplateGroup.value ? propReminderTemplateGroup.value.clone() : ReminderTemplateGroup.forCreate();
-            enableMode.value = (localReminderTemplateGroup.value as any).enableMode || ReminderContracts.ReminderTemplateEnableMode.GROUP;
-        } else {
-            localReminderTemplateGroup.value = ReminderTemplateGroup.forCreate();
-            enableMode.value = ReminderContracts.ReminderTemplateEnableMode.GROUP;
-        }
-    },
-    { immediate: true }
+  [() => visible.value, () => propReminderTemplateGroup.value],
+  ([show]) => {
+    if (show) {
+      localReminderTemplateGroup.value = propReminderTemplateGroup.value
+        ? propReminderTemplateGroup.value.clone()
+        : ReminderTemplateGroup.forCreate();
+      enableMode.value =
+        (localReminderTemplateGroup.value as any).enableMode ||
+        ReminderContracts.ReminderTemplateEnableMode.GROUP;
+    } else {
+      localReminderTemplateGroup.value = ReminderTemplateGroup.forCreate();
+      enableMode.value = ReminderContracts.ReminderTemplateEnableMode.GROUP;
+    }
+  },
+  { immediate: true },
 );
 
 defineExpose({
-    openForCreate,
-    openForEdit,
+  openForCreate,
+  openForEdit,
 });
 </script>

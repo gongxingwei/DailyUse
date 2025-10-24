@@ -1,4 +1,5 @@
 # Notification Domain-Client Implementation Summary
+
 # 通知模块 Domain-Client 实现总结
 
 ## 📋 实现概述
@@ -30,6 +31,7 @@ packages/domain-client/src/notification/
 ### 1. 聚合根 (Aggregates)
 
 #### NotificationClient (526 lines)
+
 - **核心属性**: uuid, accountUuid, title, content, type, category, importance, urgency, status, isRead, etc.
 - **UI 计算属性**: isDeleted, isExpired, isPending, isSent, isDelivered, statusText, typeText, categoryText, importanceText, urgencyText, timeAgo, formatted dates
 - **UI 业务方法**:
@@ -42,6 +44,7 @@ packages/domain-client/src/notification/
 - **时间格式化**: formatTimeAgo(), formatDateTime() 私有辅助方法
 
 #### NotificationTemplateClient (355 lines)
+
 - **核心属性**: uuid, name, description, type, category, template (NotificationTemplateConfigClientDTO), isActive, isSystemTemplate
 - **UI 计算属性**: displayName, statusText, channelText, formattedCreatedAt, formattedUpdatedAt
 - **UI 业务方法**:
@@ -52,6 +55,7 @@ packages/domain-client/src/notification/
 - **克隆**: clone()
 
 #### NotificationPreferenceClient (374 lines)
+
 - **核心属性**: uuid, accountUuid, enabled, channels (ChannelPreferences), categories (6种分类偏好), doNotDisturb, rateLimit
 - **UI 计算属性**: isAllEnabled, isAllDisabled, hasDoNotDisturb, isInDoNotDisturbPeriod, enabledChannelsCount, formatted dates
 - **UI 业务方法**:
@@ -64,12 +68,14 @@ packages/domain-client/src/notification/
 ### 2. 值对象 (Value Objects)
 
 #### NotificationActionClient (120 lines)
+
 - **属性**: id, label, type (4种: NAVIGATE, API_CALL, DISMISS, CUSTOM), payload
 - **UI 属性**: typeText, icon
 - **方法**: equals(), toServerDTO(), toClientDTO()
 - **静态工厂**: fromClientDTO(), fromServerDTO()
 
 #### NotificationMetadataClient (115 lines)
+
 - **属性**: icon, image, color, sound, badge, data
 - **UI 属性**: hasIcon, hasImage, hasBadge
 - **方法**: equals(), toServerDTO(), toClientDTO()
@@ -77,7 +83,8 @@ packages/domain-client/src/notification/
 
 ### 3. 实体 (Entities)
 
-**客户端简化设计**: 
+**客户端简化设计**:
+
 - ❌ 不实现 NotificationChannelClient
 - ❌ 不实现 NotificationHistoryClient
 - 原因: 客户端通常通过 API 按需加载子实体，不在内存中维护完整的子实体集合
@@ -86,17 +93,20 @@ packages/domain-client/src/notification/
 ## 🎯 设计原则
 
 ### 1. 客户端简化 (Client Simplification)
+
 - **子实体管理**: 聚合根中的子实体方法返回空数组或抛出错误，提示使用 API
 - **业务逻辑**: 复杂逻辑简化，仅保留 UI 必需的判断和格式化
 - **DTO 转换**: 保留完整的 DTO 转换以保证数据传输兼容性
 
 ### 2. UI 友好 (UI-Friendly)
+
 - **计算属性**: 提供大量 UI 计算属性 (statusText, typeText, timeAgo, etc.)
 - **格式化方法**: formatDateTime(), formatTimeAgo() 等辅助方法
 - **Badge/Icon**: 提供 getStatusBadge(), getTypeIcon() 等UI展示方法
 - **中文文案**: 所有文本都是中文，便于直接在 UI 中使用
 
 ### 3. 命名空间导入 (Namespace Import)
+
 ```typescript
 import type { NotificationContracts } from '@dailyuse/contracts';
 import { NotificationContracts as NC } from '@dailyuse/contracts';
@@ -109,7 +119,9 @@ const NotificationStatus = NC.NotificationStatus;
 ```
 
 ### 4. 克隆支持 (Clone Support)
+
 所有聚合根都实现 clone() 方法，用于表单编辑场景：
+
 ```typescript
 const editableNotification = notification.clone();
 // 修改 editableNotification...
@@ -121,10 +133,12 @@ const editableNotification = notification.clone();
 修正了枚举使用错误：
 
 ### ImportanceLevel (从 shared)
+
 - ✅ Vital, Important, Moderate, Minor, Trivial
 - ❌ 之前错误使用: Critical, High, Moderate, Low
 
 ### UrgencyLevel (从 shared)
+
 - ✅ Critical, High, Medium, Low, None
 - ❌ 之前错误使用: High, Medium, Low
 
@@ -147,15 +161,16 @@ const editableNotification = notification.clone();
 ## 📝 使用示例
 
 ### 创建通知
+
 ```typescript
 import { NotificationDomain } from '@dailyuse/domain-client';
 
 const notification = NotificationDomain.NotificationClient.fromServerDTO(serverDTO);
 
 // UI 展示
-console.log(notification.statusText);  // "已送达"
-console.log(notification.typeText);    // "提醒"
-console.log(notification.timeAgo);     // "3 分钟前"
+console.log(notification.statusText); // "已送达"
+console.log(notification.typeText); // "提醒"
+console.log(notification.timeAgo); // "3 分钟前"
 
 // 操作
 if (notification.canMarkAsRead()) {
@@ -164,6 +179,7 @@ if (notification.canMarkAsRead()) {
 ```
 
 ### 创建模板
+
 ```typescript
 const template = NotificationDomain.NotificationTemplateClient.forCreate();
 
@@ -175,6 +191,7 @@ const { title, content } = template.preview({
 ```
 
 ### 偏好设置
+
 ```typescript
 const preference = NotificationDomain.NotificationPreferenceClient.forCreate(accountUuid);
 
@@ -190,27 +207,31 @@ if (preference.isInDoNotDisturbPeriod) {
 ## 🎨 UI 集成要点
 
 ### 1. 状态徽章 (Status Badge)
+
 ```typescript
 const badge = notification.getStatusBadge();
 // { text: '已送达', color: 'green' }
 ```
 
 ### 2. 图标显示 (Icon Display)
+
 ```typescript
 const icon = notification.getTypeIcon();
 // 'i-carbon-reminder' (UnoCSS/Carbon Icons)
 ```
 
 ### 3. 时间展示 (Time Display)
+
 ```typescript
-notification.timeAgo            // "3 分钟前"
-notification.formattedCreatedAt // "2024-01-15 14:30"
+notification.timeAgo; // "3 分钟前"
+notification.formattedCreatedAt; // "2024-01-15 14:30"
 ```
 
 ### 4. 列表过滤 (List Filtering)
+
 ```typescript
-const unreadNotifications = notifications.filter(n => !n.isRead && !n.isDeleted);
-const urgentNotifications = notifications.filter(n => n.urgency === UrgencyLevel.Critical);
+const unreadNotifications = notifications.filter((n) => !n.isRead && !n.isDeleted);
+const urgentNotifications = notifications.filter((n) => n.urgency === UrgencyLevel.Critical);
 ```
 
 ## 🚀 下一步
