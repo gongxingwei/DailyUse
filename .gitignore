@@ -7,13 +7,23 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build outputs
 build
 dist
 dist-electron
 dist-ssr
 *.local
 release
+
+# Environment variables (should be in subprojects only)
+.env
+.env.local
+.env.*.local
+!apps/*/.env.example
+!apps/*/.env.development.example
 
 # Test coverage
 coverage
