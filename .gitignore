@@ -14,6 +14,28 @@ dist-electron
 dist-ssr
 *.local
 release
+
+# Test coverage
+coverage
+.nyc_output
+*.lcov
+
+# Code quality reports
+jscpd-report
+
+# Build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Test and debug files
+test-*.mjs
+test-*.html
+test-*.json
+test-*.txt
+temp-*.json
+debug.log
+lint-results.txt
+typecheck-errors.txt
 # Editor directories and files
 .vscode/*
 .vscode
