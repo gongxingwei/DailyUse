@@ -37,6 +37,7 @@ model Account {
 
   // Relations
   goals                Goal[]
+  goalFolders          GoalFolder[]
   goalStatistics       GoalStatistics?
   focusSessions        FocusSession[]
   repositories         Repository[]
@@ -596,6 +597,38 @@ model ReminderStatistics {
 // 目标模块 - DDD 设计
 // ============================================================
 
+/// GoalFolder 实体
+/// 目标文件夹，用于组织和管理目标
+model GoalFolder {
+  uuid               String    @id @default(cuid())
+  accountUuid        String    @map("account_uuid")
+  name               String
+  description        String?   @db.Text
+  color              String?
+  icon               String?
+  parentFolderUuid   String?   @map("parent_folder_uuid")
+  sortOrder          Int       @default(0) @map("sort_order")
+  isSystemFolder     Boolean   @default(false) @map("is_system_folder")
+  folderType         String?   @map("folder_type") // FolderType enum: 'DEFAULT', 'WORK', 'PERSONAL', 'PROJECT', 'CUSTOM'
+  goalCount          Int       @default(0) @map("goal_count")
+  completedGoalCount Int       @default(0) @map("completed_goal_count")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // Relations
+  account  Account      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parent   GoalFolder?  @relation("FolderHierarchy", fields: [parentFolderUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  children GoalFolder[] @relation("FolderHierarchy")
+  goals    Goal[]
+
+  @@index([accountUuid])
+  @@index([parentFolderUuid])
+  @@index([accountUuid, deletedAt])
+  @@index([accountUuid, sortOrder])
+  @@map("goal_folders")
+}
+
 model Goal {
   uuid                String    @id @default(cuid())
   accountUuid         String    @map("account_uuid")
@@ -623,6 +656,7 @@ model Goal {
 
   // Relations
   account         Account                   @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  folder          GoalFolder?               @relation(fields: [folderUuid], references: [uuid], onDelete: SetNull)
   parentGoal      Goal?                     @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
   childGoals      Goal[]                    @relation("GoalHierarchy")
   focusSessions   FocusSession[]

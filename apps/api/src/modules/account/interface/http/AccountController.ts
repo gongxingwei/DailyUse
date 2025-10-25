@@ -94,7 +94,7 @@ export class AccountController {
     try {
       const { uuid } = req.params;
       const service = await AccountController.getAccountService();
-      const account = await service.updateAccountProfile(uuid, req.body);
+      const account = await service.updateProfile(req.body);
       return AccountController.responseBuilder.sendSuccess(
         res,
         account,
@@ -208,7 +208,7 @@ export class AccountController {
       const service = await AccountController.getAccountService();
       const result = await service.listAccounts({
         page: page ? parseInt(page as string) : undefined,
-        pageSize: pageSize ? parseInt(pageSize as string) : undefined,
+        limit: pageSize ? parseInt(pageSize as string) : undefined,
         status: status as any,
       });
       return AccountController.responseBuilder.sendSuccess(

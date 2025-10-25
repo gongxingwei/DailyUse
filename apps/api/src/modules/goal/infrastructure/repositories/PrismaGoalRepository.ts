@@ -93,6 +93,7 @@ export class PrismaGoalRepository implements IGoalRepository {
             current_value: krData.currentValue,
             unit: krData.unit,
           }),
+          weight: krData.weight, // 添加 weight 属性
           order: krData.order,
           createdAt:
             krData.createdAt instanceof Date ? krData.createdAt.getTime() : krData.createdAt,

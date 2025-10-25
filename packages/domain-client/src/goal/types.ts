@@ -17,6 +17,10 @@ export type Goal = GoalClient;
 export type GoalFolder = GoalFolderClient;
 export type GoalStatistics = GoalStatisticsClient;
 
+// 兼容性别名（Web 项目历史命名）
+// TODO: 逐步迁移 Web 项目使用 GoalFolder
+export type GoalDir = GoalFolderClient;
+
 // 实体别名
 export type KeyResult = KeyResultClient;
 export type GoalRecord = GoalRecordClient;

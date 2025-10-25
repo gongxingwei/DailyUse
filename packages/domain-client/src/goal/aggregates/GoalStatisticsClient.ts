@@ -241,7 +241,16 @@ export class GoalStatisticsClient
     const values = Object.values(this._goalsByImportance);
     const colors = ['#EF4444', '#F59E0B', '#10B981', '#6B7280'];
 
-    return { labels, values, colors };
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Goals by Importance',
+          data: values,
+          backgroundColor: colors,
+        },
+      ],
+    };
   }
 
   getStatusChartData(): ChartData {
@@ -249,7 +258,16 @@ export class GoalStatisticsClient
     const values = Object.values(this._goalsByStatus);
     const colors = ['#3B82F6', '#10B981', '#94A3B8', '#F59E0B'];
 
-    return { labels, values, colors };
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Goals by Status',
+          data: values,
+          backgroundColor: colors,
+        },
+      ],
+    };
   }
 
   getProgressChartData(): ChartData {
@@ -266,7 +284,16 @@ export class GoalStatisticsClient
 
     const colors = ['#EF4444', '#F59E0B', '#3B82F6', '#10B981'];
 
-    return { labels: ranges, values, colors };
+    return {
+      labels: ranges,
+      datasets: [
+        {
+          label: 'Goals by Progress',
+          data: values,
+          backgroundColor: colors,
+        },
+      ],
+    };
   }
 
   getTimelineChartData(): TimelineData {

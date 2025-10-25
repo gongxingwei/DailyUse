@@ -218,7 +218,16 @@ export class TaskStatisticsClient extends AggregateRoot implements ITaskStatisti
     const values = Object.values(this._distributionStats.tasksByImportance);
     const colors = ['#EF4444', '#F59E0B', '#3B82F6', '#6B7280'];
 
-    return { labels, values, colors };
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Tasks by Importance',
+          data: values,
+          backgroundColor: colors,
+        },
+      ],
+    };
   }
 
   /**
@@ -229,7 +238,16 @@ export class TaskStatisticsClient extends AggregateRoot implements ITaskStatisti
     const values = Object.values(this._distributionStats.tasksByUrgency);
     const colors = ['#EF4444', '#F59E0B', '#10B981', '#6B7280'];
 
-    return { labels, values, colors };
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Tasks by Urgency',
+          data: values,
+          backgroundColor: colors,
+        },
+      ],
+    };
   }
 
   /**
@@ -246,7 +264,16 @@ export class TaskStatisticsClient extends AggregateRoot implements ITaskStatisti
     ];
     const colors = ['#94A3B8', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
-    return { labels: statusLabels, values, colors };
+    return {
+      labels: statusLabels,
+      datasets: [
+        {
+          label: 'Tasks by Status',
+          data: values,
+          backgroundColor: colors,
+        },
+      ],
+    };
   }
 
   /**

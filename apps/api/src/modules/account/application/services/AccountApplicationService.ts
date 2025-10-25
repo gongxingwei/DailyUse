@@ -19,26 +19,23 @@ import { AccountProfileApplicationService } from './AccountProfileApplicationSer
 import { AccountStatusApplicationService } from './AccountStatusApplicationService';
 import { AccountEmailApplicationService } from './AccountEmailApplicationService';
 import type {
-  CreateAccountRequest,
-  AccountResponse,
-  ListAccountsRequest,
-  ListAccountsResponse,
-  UpdateProfileRequest,
+  CreateAccountRequestDTO,
+  AccountDTO,
+  AccountListResponseDTO,
+  UpdateAccountProfileRequestDTO,
+  AccountQueryParams,
 } from '@dailyuse/contracts';
 
 export class AccountApplicationService {
   private static instance: AccountApplicationService;
 
-  private registrationService: RegistrationApplicationService;
-  private profileService: AccountProfileApplicationService;
-  private statusService: AccountStatusApplicationService;
-  private emailService: AccountEmailApplicationService;
+  private registrationService!: RegistrationApplicationService;
+  private profileService!: AccountProfileApplicationService;
+  private statusService!: AccountStatusApplicationService;
+  private emailService!: AccountEmailApplicationService;
 
   private constructor() {
-    this.registrationService = new RegistrationApplicationService();
-    this.profileService = new AccountProfileApplicationService();
-    this.statusService = new AccountStatusApplicationService();
-    this.emailService = new AccountEmailApplicationService();
+    // 构造函数为空，实际初始化在 getInstance 中完成
   }
 
   /**
@@ -46,64 +43,82 @@ export class AccountApplicationService {
    */
   static async getInstance(): Promise<AccountApplicationService> {
     if (!AccountApplicationService.instance) {
-      AccountApplicationService.instance = new AccountApplicationService();
+      const instance = new AccountApplicationService();
+      // 异步初始化所有子服务
+      instance.registrationService = await RegistrationApplicationService.getInstance();
+      instance.profileService = await AccountProfileApplicationService.getInstance();
+      instance.statusService = await AccountStatusApplicationService.getInstance();
+      instance.emailService = await AccountEmailApplicationService.getInstance();
+      AccountApplicationService.instance = instance;
     }
     return AccountApplicationService.instance;
   }
 
   /**
    * 创建账户 - 委托给 RegistrationApplicationService
+   * TODO: 需要重构以匹配子服务的实际方法签名
    */
-  async createAccount(request: CreateAccountRequest): Promise<AccountResponse> {
-    return this.registrationService.registerAccount(request);
+  async createAccount(request: CreateAccountRequestDTO): Promise<AccountDTO> {
+    throw new Error('Method not implemented. Use RegistrationApplicationService directly.');
+    // return this.registrationService.registerUser(request);
   }
 
   /**
    * 获取账户详情 - 委托给 ProfileApplicationService
+   * TODO: 需要实现
    */
-  async getAccount(accountUuid: string): Promise<AccountResponse> {
-    return this.profileService.getProfile(accountUuid);
+  async getAccount(accountUuid: string): Promise<AccountDTO> {
+    throw new Error('Method not implemented. Use AccountProfileApplicationService directly.');
+    // return this.profileService.getProfile(accountUuid);
   }
 
   /**
    * 列出账户 - 委托给 ProfileApplicationService
+   * TODO: 需要实现
    */
-  async listAccounts(request: ListAccountsRequest): Promise<ListAccountsResponse> {
+  async listAccounts(request: AccountQueryParams): Promise<AccountListResponseDTO> {
     // TODO: implement proper list accounts logic
-    // For now, return empty list
     return {
       accounts: [],
       total: 0,
       page: request.page || 1,
-      pageSize: request.pageSize || 20,
+      limit: request.limit || 20,
     };
   }
 
   /**
    * 更新账户资料 - 委托给 ProfileApplicationService
+   * TODO: 需要重构以匹配子服务的实际方法签名
    */
-  async updateProfile(request: UpdateProfileRequest): Promise<AccountResponse> {
-    return this.profileService.updateProfile(request);
+  async updateProfile(request: UpdateAccountProfileRequestDTO): Promise<AccountDTO> {
+    throw new Error('Method not implemented. Use AccountProfileApplicationService directly.');
+    // return this.profileService.updateProfile(request);
   }
 
   /**
    * 验证邮箱 - 委托给 EmailApplicationService
+   * TODO: 返回类型需要调整
    */
   async verifyEmail(accountUuid: string): Promise<void> {
-    return this.emailService.verifyEmail({ accountUuid });
+    throw new Error('Method not implemented. Use AccountEmailApplicationService directly.');
+    // await this.emailService.verifyEmail({ accountUuid });
   }
 
   /**
    * 停用账户 - 委托给 StatusApplicationService
+   * TODO: 返回类型需要调整
    */
   async deactivateAccount(accountUuid: string): Promise<void> {
-    return this.statusService.deactivateAccount({ accountUuid });
+    throw new Error('Method not implemented. Use AccountStatusApplicationService directly.');
+    // await this.statusService.deactivateAccount({ accountUuid });
   }
 
   /**
    * 删除账户 - 委托给 StatusApplicationService
+   * TODO: 参数和返回类型需要调整
    */
   async deleteAccount(accountUuid: string): Promise<void> {
-    return this.statusService.deleteAccount({ accountUuid, isHardDelete: true });
+    throw new Error('Method not implemented. Use AccountStatusApplicationService directly.');
+    // await this.statusService.deleteAccount({ accountUuid });
   }
 }

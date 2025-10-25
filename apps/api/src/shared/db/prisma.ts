@@ -7,6 +7,9 @@ declare global {
 let prisma: PrismaClient;
 
 // Performance monitoring configuration with connection retry
+// Note: __internal config removed as it's not supported in Prisma 6.17+
+// Connection pool and timeout should be configured via DATABASE_URL parameters
+// Example: DATABASE_URL="postgresql://user:pass@localhost:5432/db?connect_timeout=30&pool_timeout=60"
 const prismaConfig = {
   log: [
     { emit: 'event' as const, level: 'query' as const },
@@ -14,21 +17,9 @@ const prismaConfig = {
     { emit: 'stdout' as const, level: 'warn' as const },
     { emit: 'stdout' as const, level: 'error' as const },
   ],
-  // Connection pool configuration for unstable connections
   datasources: {
     db: {
       url: process.env.DATABASE_URL,
-    },
-  },
-  // Add connection retry configuration
-  __internal: {
-    engine: {
-      // Increase connection timeout for slow/unstable networks
-      connection_timeout: 30, // 30 seconds (default is 10)
-      // Increase query timeout
-      query_timeout: 60, // 60 seconds
-      // Connection pool size
-      connection_limit: 10,
     },
   },
 };

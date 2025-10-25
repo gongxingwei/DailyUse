@@ -240,6 +240,18 @@ export interface GoalFoldersResponse {
   total: number;
 }
 
+// ============ 类型别名（兼容性） ============
+// 为了与 Web 项目的历史命名保持兼容，提供 GoalDir 别名
+// TODO: 逐步迁移 Web 项目使用 GoalFolder 命名
+
+export type CreateGoalDirRequest = CreateGoalFolderRequest;
+export type UpdateGoalDirRequest = UpdateGoalFolderRequest;
+export type QueryGoalDirsRequest = QueryGoalFoldersRequest;
+export type GoalDirResponse = GoalFolderResponse;
+export type GoalDirListResponse = GoalFoldersResponse;
+export type GoalDirServerDTO = GoalFolderServerDTO;
+export type GoalDirClientDTO = GoalFolderClientDTO;
+
 // ============ GoalStatistics 请求/响应 ============
 
 /**

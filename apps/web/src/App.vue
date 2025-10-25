@@ -28,7 +28,7 @@ import { useAccountStore } from '@/modules/account/presentation/stores/accountSt
 import GlobalSnackbar from '@/shared/components/GlobalSnackbar.vue';
 import CommandPalette from '@/shared/components/command-palette/CommandPalette.vue';
 import { searchDataProvider } from '@/shared/services/SearchDataProvider';
-import { logo128 as logo } from '@dailyuse/assets/images';
+import { logo128 as logo } from '@dailyuse/assets';
 
 const isLoading = ref(true);
 const showCommandPalette = ref(false);
