@@ -114,7 +114,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import VChart from 'vue-echarts';
-import { useWeightSnapshot } from '../../composables/useWeightSnapshot';
+import { useWeightSnapshot } from '../../../application/composables/useWeightSnapshot';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -133,7 +133,12 @@ const props = defineProps<{
   goalUuid: string;
 }>();
 
-const { comparisonData, isLoading, hasComparisonData, fetchWeightComparison } = useWeightSnapshot();
+const {
+  weightComparison: comparisonData,
+  isFetchingComparison: isLoading,
+  hasWeightComparison: hasComparisonData,
+  fetchWeightComparison,
+} = useWeightSnapshot();
 
 // 时间点选择
 interface TimePoint {

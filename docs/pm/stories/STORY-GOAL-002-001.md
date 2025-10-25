@@ -2,11 +2,13 @@
 
 > **Story ID**: STORY-GOAL-002-001  
 > **Epic**: EPIC-GOAL-002 - KR 权重快照  
-> **Sprint**: Sprint 2a  
+> **Sprint**: Sprint 6  
 > **Story Points**: 3 SP  
 > **优先级**: P0 (Must Have)  
 > **负责人**: Backend Developer  
-> **状态**: 待开始 (To Do)
+> **状态**: To Do  
+> **创建日期**: 2025-10-24  
+> **Week**: Week 1 Day 2 (2025-11-06)
 
 ---
 

@@ -20,6 +20,15 @@ export * from './aggregates/ScheduleTaskServer';
 export * from './aggregates/ScheduleTaskClient';
 export * from './aggregates/ScheduleStatisticsServer';
 export * from './aggregates/ScheduleStatisticsClient';
+export * from './aggregates/ScheduleServer'; // Story 9.1 - User-facing schedules with conflict detection
+export * from './aggregates/ScheduleClient'; // Story 9.1 - Client-side schedule DTO
+
+// ============ 冲突检测 ============
+// Story 9.1 (EPIC-SCHEDULE-001)
+export * from './ConflictDetectionResult';
+
+// ============ DTOs (Story 9.4) ============
+export * from './dto';
 
 // ============ API 请求/响应 ============
 export * from './api-requests';

@@ -5,3 +5,4 @@
 
 export * from './PrismaScheduleTaskRepository';
 export * from './PrismaScheduleStatisticsRepository';
+export * from './PrismaScheduleRepository';

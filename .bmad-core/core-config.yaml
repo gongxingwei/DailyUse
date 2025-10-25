@@ -5,8 +5,8 @@ prd:
   prdFile: docs/prd.md
   prdVersion: v4
   prdSharded: true
-  prdShardedLocation: docs/prd
-  epicFilePattern: epic-{n}*.md
+  prdShardedLocation: docs/pm/epics
+  epicFilePattern: epic-*.md
 architecture:
   architectureFile: docs/architecture.md
   architectureVersion: v4
@@ -18,5 +18,5 @@ devLoadAlwaysFiles:
   - docs/architecture/tech-stack.md
   - docs/architecture/source-tree.md
 devDebugLog: .ai/debug-log.md
-devStoryLocation: docs/stories
+devStoryLocation: docs/pm/stories
 slashPrefix: BMad

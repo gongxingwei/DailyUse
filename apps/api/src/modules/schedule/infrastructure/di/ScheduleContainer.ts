@@ -1,9 +1,11 @@
 import type {
   IScheduleTaskRepository,
   IScheduleStatisticsRepository,
+  IScheduleRepository,
 } from '@dailyuse/domain-server';
 import { PrismaScheduleTaskRepository } from '../repositories/PrismaScheduleTaskRepository';
 import { PrismaScheduleStatisticsRepository } from '../repositories/PrismaScheduleStatisticsRepository';
+import { PrismaScheduleRepository } from '../repositories/PrismaScheduleRepository';
 import { prisma } from '@/config/prisma';
 
 /**
@@ -14,6 +16,7 @@ export class ScheduleContainer {
   private static instance: ScheduleContainer;
   private scheduleTaskRepository: IScheduleTaskRepository | null = null;
   private scheduleStatisticsRepository: IScheduleStatisticsRepository | null = null;
+  private scheduleRepository: IScheduleRepository | null = null;
 
   private constructor() {}
 
@@ -61,5 +64,23 @@ export class ScheduleContainer {
    */
   setScheduleStatisticsRepository(repository: IScheduleStatisticsRepository): void {
     this.scheduleStatisticsRepository = repository;
+  }
+
+  /**
+   * 获取用户日程（calendar schedule）仓储
+   * 使用懒加载，第一次访问时创建实例
+   */
+  getScheduleRepository(): IScheduleRepository {
+    if (!this.scheduleRepository) {
+      this.scheduleRepository = new PrismaScheduleRepository(prisma);
+    }
+    return this.scheduleRepository;
+  }
+
+  /**
+   * 设置 Schedule 仓储（用于测试或运行时注入）
+   */
+  setScheduleRepository(repository: IScheduleRepository): void {
+    this.scheduleRepository = repository;
   }
 }

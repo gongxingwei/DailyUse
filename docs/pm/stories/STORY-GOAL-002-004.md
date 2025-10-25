@@ -2,11 +2,13 @@
 
 > **Story ID**: STORY-GOAL-002-004  
 > **Epic**: EPIC-GOAL-002 - KR 权重快照  
-> **Sprint**: Sprint 2a  
-> **Story Points**: 4 SP  
+> **Sprint**: Sprint 6  
+> **Story Points**: 3 SP  
 > **优先级**: P0 (Must Have)  
 > **负责人**: Backend Developer  
-> **状态**: 待开始 (To Do)
+> **状态**: To Do  
+> **创建日期**: 2025-10-24  
+> **Week**: Week 2 Day 1 (2025-11-11)
 
 ---
 
@@ -513,7 +515,7 @@ export default router;
 | Code Review & 修复       | 1 小时      |
 | **总计**                 | **12 小时** |
 
-**Story Points**: 4 SP
+**Story Points**: 3 SP
 
 ---
 

@@ -59,6 +59,7 @@ model Account {
   reminderInstances    ReminderInstance[]
   scheduleTasks        ScheduleTask[]
   scheduleStatistics   ScheduleStatistics?
+  schedules            Schedule[] // 日程/日历事件
 
   @@index([username])
   @@index([email])
@@ -950,15 +951,15 @@ model TaskTemplate {
   folderUuid        String?   @map("folder_uuid")
   lastGeneratedDate DateTime? @map("last_generated_date")
   generateAheadDays Int       @map("generate_ahead_days")
-  
+
   // Dependency status fields
   isBlocked        Boolean @default(false) @map("is_blocked")
   dependencyStatus String  @default("NONE") @map("dependency_status") // DependencyStatus: 'NONE', 'WAITING', 'READY', 'BLOCKED'
   blockingReason   String? @map("blocking_reason") @db.Text
-  
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  deletedAt         DateTime? @map("deleted_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   // Flattened time_config
   timeConfigType            String    @map("time_config_type") // 'POINT', 'RANGE', 'ALL_DAY'
@@ -990,7 +991,7 @@ model TaskTemplate {
   account   Account               @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   instances TaskInstance[]
   history   TaskTemplateHistory[]
-  
+
   // Dependency relations
   predecessors TaskDependency[] @relation("TaskSuccessors")
   successors   TaskDependency[] @relation("TaskPredecessors")
@@ -1356,4 +1357,41 @@ model ScheduleStatistics {
 
   @@index([accountUuid])
   @@map("schedule_statistics")
+}
+
+/// Schedule 聚合根
+/// 日程安排（日历事件），支持冲突检测
+/// Story 9.3 (EPIC-SCHEDULE-001)
+model Schedule {
+  uuid        String  @id @default(cuid())
+  accountUuid String  @map("account_uuid")
+  title       String
+  description String? @db.Text
+
+  // 时间字段（BigInt 存储 Unix timestamp in milliseconds）
+  startTime BigInt @map("start_time")
+  endTime   BigInt @map("end_time")
+  duration  Int // 时长（分钟），calculated field
+
+  // 冲突检测字段
+  hasConflict          Boolean @default(false) @map("has_conflict")
+  conflictingSchedules String? @map("conflicting_schedules") @db.Text // JSON array of UUIDs: ["uuid1", "uuid2"]
+
+  // 可选字段
+  priority  Int? // 优先级 (1-5)
+  location  String? // 地点
+  attendees String? @db.Text // JSON array of attendee emails
+
+  // 时间戳
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  // Indexes（性能关键）
+  @@index([accountUuid])
+  @@index([accountUuid, startTime, endTime]) // ⭐ 冲突检测核心索引
+  @@index([startTime, endTime]) // 时间范围查询优化
+  @@map("schedules")
 }

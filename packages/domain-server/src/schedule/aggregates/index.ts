@@ -5,3 +5,4 @@
 
 export * from './ScheduleTask';
 export * from './ScheduleStatistics';
+export * from './Schedule'; // Story 9.1 - User-facing schedules with conflict detection

@@ -48,7 +48,7 @@
         <v-progress-linear v-if="isLoading" indeterminate color="primary" />
 
         <!-- 空状态 -->
-        <v-alert v-else-if="!hasSnapshots" type="info" variant="tonal"> 暂无权重变更记录 </v-alert>
+        <v-alert v-else-if="!hasGoalSnapshots" type="info" variant="tonal"> 暂无权重变更记录 </v-alert>
 
         <!-- 快照列表 -->
         <v-list v-else>
@@ -131,7 +131,7 @@
 
         <!-- 分页 -->
         <v-pagination
-          v-if="hasSnapshots && pagination.totalPages > 1"
+          v-if="hasGoalSnapshots && pagination && pagination.totalPages > 1"
           v-model="currentPage"
           :length="pagination.totalPages"
           class="mt-4"
@@ -143,7 +143,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useWeightSnapshot } from '../../composables/useWeightSnapshot';
+import { useWeightSnapshot } from '../../../application/composables/useWeightSnapshot';
 import { useGoal } from '../../composables/useGoal';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -152,7 +152,13 @@ const props = defineProps<{
   goalUuid: string;
 }>();
 
-const { snapshots, pagination, isLoading, hasSnapshots, fetchGoalSnapshots } = useWeightSnapshot();
+const {
+  goalSnapshots,
+  pagination,
+  isLoading,
+  hasGoalSnapshots,
+  fetchGoalSnapshots,
+} = useWeightSnapshot();
 const { goals } = useGoal();
 
 // 筛选状态
@@ -194,7 +200,7 @@ const krOptions = computed(() => {
 
 // 筛选后的快照
 const filteredSnapshots = computed(() => {
-  let filtered = snapshots.value;
+  let filtered = goalSnapshots.value;
 
   // 按 KR 筛选
   if (selectedKRUuid.value) {

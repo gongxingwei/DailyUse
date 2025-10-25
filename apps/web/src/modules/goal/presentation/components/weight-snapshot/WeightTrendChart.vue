@@ -57,7 +57,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import VChart from 'vue-echarts';
-import { useWeightSnapshot } from '../../composables/useWeightSnapshot';
+import { useWeightSnapshot } from '../../../application/composables/useWeightSnapshot';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -75,7 +75,12 @@ const props = defineProps<{
   goalUuid: string;
 }>();
 
-const { trendData, isLoading, hasTrendData, fetchWeightTrend } = useWeightSnapshot();
+const {
+  weightTrend: trendData,
+  isFetchingTrend: isLoading,
+  hasWeightTrend: hasTrendData,
+  fetchWeightTrend,
+} = useWeightSnapshot();
 
 const selectedRange = ref<'7d' | '30d' | '90d' | '180d'>('30d');
 

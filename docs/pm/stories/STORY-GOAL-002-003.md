@@ -2,11 +2,13 @@
 
 > **Story ID**: STORY-GOAL-002-003  
 > **Epic**: EPIC-GOAL-002 - KR 权重快照  
-> **Sprint**: Sprint 2a  
-> **Story Points**: 3 SP  
+> **Sprint**: Sprint 6  
+> **Story Points**: 2 SP  
 > **优先级**: P0 (Must Have)  
 > **负责人**: Backend Developer  
-> **状态**: 待开始 (To Do)
+> **状态**: To Do  
+> **创建日期**: 2025-10-24  
+> **Week**: Week 1 Day 4 (2025-11-08)
 
 ---
 
@@ -484,7 +486,7 @@ export class PrismaWeightSnapshotRepository implements WeightSnapshotRepository 
 | Code Review & 修复  | 1 小时     |
 | **总计**            | **9 小时** |
 
-**Story Points**: 3 SP
+**Story Points**: 2 SP
 
 ---
 

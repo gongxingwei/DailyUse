@@ -179,6 +179,70 @@ export class ScheduleApiClient {
   async deleteStatistics(): Promise<void> {
     await apiClient.delete(`${this.baseUrl}/statistics`);
   }
+
+  // ===== Schedule Conflict Detection (Story 9.5) =====
+
+  /**
+   * 检测日程冲突
+   * POST /api/v1/schedules/detect-conflicts
+   * 
+   * @param params 冲突检测参数
+   * @returns 冲突检测结果
+   */
+  async detectConflicts(params: {
+    userId: string;
+    startTime: number;
+    endTime: number;
+    excludeUuid?: string;
+  }): Promise<ScheduleContracts.ConflictDetectionResult> {
+    const data = await apiClient.post(`${this.baseUrl}/detect-conflicts`, params);
+    return data;
+  }
+
+  /**
+   * 创建日程（带冲突检测）
+   * POST /api/v1/schedules
+   * 
+   * @param request 创建日程请求
+   * @returns 创建的日程和冲突检测结果
+   */
+  async createSchedule(
+    request: ScheduleContracts.CreateScheduleRequestDTO,
+  ): Promise<{
+    schedule: ScheduleContracts.ScheduleClientDTO;
+    conflicts?: ScheduleContracts.ConflictDetectionResult;
+  }> {
+    const data = await apiClient.post(this.baseUrl, request);
+    return data;
+  }
+
+  /**
+   * 解决日程冲突
+   * POST /api/v1/schedules/:id/resolve-conflict
+   * 
+   * @param scheduleUuid 日程UUID
+   * @param request 解决冲突请求
+   * @returns 解决结果（更新的日程、重新检测的冲突、应用的变更）
+   */
+  async resolveConflict(
+    scheduleUuid: string,
+    request: ScheduleContracts.ResolveConflictRequestDTO,
+  ): Promise<{
+    schedule: ScheduleContracts.ScheduleClientDTO;
+    conflicts: ScheduleContracts.ConflictDetectionResult;
+    applied: {
+      strategy: string;
+      previousStartTime?: number;
+      previousEndTime?: number;
+      changes: string[];
+    };
+  }> {
+    const data = await apiClient.post(
+      `${this.baseUrl}/${scheduleUuid}/resolve-conflict`,
+      request,
+    );
+    return data;
+  }
 }
 
 // 导出单例实例

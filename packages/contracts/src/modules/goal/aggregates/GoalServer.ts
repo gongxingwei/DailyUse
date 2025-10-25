@@ -7,6 +7,7 @@ import type { GoalStatus } from '../enums';
 import type { KeyResultServer, KeyResultServerDTO } from '../entities/KeyResultServer';
 import type { GoalReviewServer, GoalReviewServerDTO } from '../entities/GoalReviewServer';
 import type { GoalReminderConfigServerDTO } from '../value-objects';
+import type { KeyResultWeightSnapshotServerDTO } from '../value-objects/KeyResultWeightSnapshot';
 
 // ============ DTO 定义 ============
 
@@ -41,6 +42,7 @@ export interface GoalServerDTO {
   // ===== 子实体 DTO (聚合根包含子实体) =====
   keyResults?: KeyResultServerDTO[] | null; // 关键结果列表（可选加载）
   reviews?: GoalReviewServerDTO[] | null; // 复盘列表（可选加载）
+  weightSnapshots?: KeyResultWeightSnapshotServerDTO[] | null; // KR 权重快照历史（可选加载）
 }
 
 /**

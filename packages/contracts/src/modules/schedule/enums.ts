@@ -119,3 +119,21 @@ export enum Timezone {
   /** 伦敦时区 */
   LONDON = 'Europe/London',
 }
+
+/**
+ * 冲突严重程度
+ * Conflict Severity Enum
+ *
+ * @description 定义日程冲突的严重程度（基于重叠时长）
+ * @since Story 9.1 (EPIC-SCHEDULE-001)
+ */
+export enum ConflictSeverity {
+  /** 轻微冲突 - 重叠时长 < 15 分钟 */
+  MINOR = 'minor',
+
+  /** 中度冲突 - 重叠时长 15-60 分钟 */
+  MODERATE = 'moderate',
+
+  /** 严重冲突 - 重叠时长 > 60 分钟或完全重叠 */
+  SEVERE = 'severe',
+}

@@ -5,6 +5,7 @@
 
 import { ref, onMounted } from 'vue';
 import { scheduleWebApplicationService } from '../../services/ScheduleWebApplicationService';
+import { scheduleApiClient } from '../../infrastructure/api/scheduleApiClient';
 import { ScheduleContracts } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
 
@@ -25,6 +26,31 @@ export function useSchedule() {
   const isLoading = ref(false);
   const isLoadingStats = ref(false);
   const error = ref<string | null>(null);
+
+  // ===== 冲突检测状态 (Story 9.5) =====
+  const conflicts = ref<ScheduleContracts.ConflictDetectionResult | null>(null);
+  const isDetectingConflicts = ref(false);
+  const conflictError = ref<string | null>(null);
+
+  const lastCreatedSchedule = ref<{
+    schedule: ScheduleContracts.ScheduleClientDTO;
+    conflicts?: ScheduleContracts.ConflictDetectionResult;
+  } | null>(null);
+  const isCreatingSchedule = ref(false);
+  const createScheduleError = ref<string | null>(null);
+
+  const resolvedConflict = ref<{
+    schedule: ScheduleContracts.ScheduleClientDTO;
+    conflicts: ScheduleContracts.ConflictDetectionResult;
+    applied: {
+      strategy: string;
+      previousStartTime?: number;
+      previousEndTime?: number;
+      changes: string[];
+    };
+  } | null>(null);
+  const isResolvingConflict = ref(false);
+  const resolveConflictError = ref<string | null>(null);
 
   // ===== 任务管理方法 =====
 
@@ -163,6 +189,122 @@ export function useSchedule() {
     }
   }
 
+  // ===== 冲突检测方法 (Story 9.5) =====
+
+  /**
+   * 检测日程冲突
+   * 
+   * @param userId 用户ID
+   * @param startTime 开始时间（Unix毫秒时间戳）
+   * @param endTime 结束时间（Unix毫秒时间戳）
+   * @param excludeUuid 可选：排除的日程UUID（编辑场景）
+   */
+  async function detectConflicts(
+    userId: string,
+    startTime: number,
+    endTime: number,
+    excludeUuid?: string,
+  ) {
+    isDetectingConflicts.value = true;
+    conflictError.value = null;
+
+    try {
+      logger.info('Detecting schedule conflicts', { userId, startTime, endTime, excludeUuid });
+
+      const result = await scheduleApiClient.detectConflicts({
+        userId,
+        startTime,
+        endTime,
+        excludeUuid,
+      });
+
+      conflicts.value = result;
+
+      logger.info('Conflicts detected', {
+        hasConflict: result.hasConflict,
+        conflictCount: result.conflicts.length,
+      });
+
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to detect conflicts';
+      conflictError.value = message;
+      logger.error('Error detecting conflicts', { error: err });
+      throw err;
+    } finally {
+      isDetectingConflicts.value = false;
+    }
+  }
+
+  /**
+   * 创建日程（带冲突检测）
+   * 
+   * @param request 创建日程请求
+   */
+  async function createSchedule(request: ScheduleContracts.CreateScheduleRequestDTO) {
+    isCreatingSchedule.value = true;
+    createScheduleError.value = null;
+
+    try {
+      logger.info('Creating schedule with conflict detection', { title: request.title });
+
+      const result = await scheduleApiClient.createSchedule(request);
+
+      lastCreatedSchedule.value = result;
+
+      logger.info('Schedule created', {
+        scheduleUuid: result.schedule.uuid,
+        hasConflicts: result.conflicts?.hasConflict,
+      });
+
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create schedule';
+      createScheduleError.value = message;
+      logger.error('Error creating schedule', { error: err });
+      throw err;
+    } finally {
+      isCreatingSchedule.value = false;
+    }
+  }
+
+  /**
+   * 解决日程冲突
+   * 
+   * @param scheduleUuid 日程UUID
+   * @param request 解决冲突请求
+   */
+  async function resolveConflict(
+    scheduleUuid: string,
+    request: ScheduleContracts.ResolveConflictRequestDTO,
+  ) {
+    isResolvingConflict.value = true;
+    resolveConflictError.value = null;
+
+    try {
+      logger.info('Resolving conflict', { scheduleUuid, strategy: request.resolution });
+
+      const result = await scheduleApiClient.resolveConflict(scheduleUuid, request);
+
+      resolvedConflict.value = result;
+
+      logger.info('Conflict resolved', {
+        scheduleUuid,
+        strategy: result.applied.strategy,
+        hasConflicts: result.conflicts.hasConflict,
+      });
+
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to resolve conflict';
+      resolveConflictError.value = message;
+      logger.error('Error resolving conflict', { error: err, scheduleUuid });
+      throw err;
+    } finally {
+      isResolvingConflict.value = false;
+    }
+  }
+
   // ===== 统计信息方法 =====
 
   /**
@@ -280,5 +422,25 @@ export function useSchedule() {
     initialize,
     refresh,
     clearError,
+
+    // ===== 冲突检测 (Story 9.5) =====
+
+    // Conflict detection state & methods
+    conflicts,
+    isDetectingConflicts,
+    conflictError,
+    detectConflicts,
+
+    // Create schedule state & methods
+    lastCreatedSchedule,
+    isCreatingSchedule,
+    createScheduleError,
+    createSchedule,
+
+    // Resolve conflict state & methods
+    resolvedConflict,
+    isResolvingConflict,
+    resolveConflictError,
+    resolveConflict,
   };
 }

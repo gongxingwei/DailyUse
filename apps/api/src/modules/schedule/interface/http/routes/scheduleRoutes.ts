@@ -1,5 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { ScheduleTaskController } from '../controllers/ScheduleTaskController';
+import { ScheduleConflictController } from '../controllers/ScheduleConflictController';
 import scheduleStatisticsRoutes from './scheduleStatisticsRoutes';
 
 /**
@@ -9,6 +10,8 @@ import scheduleStatisticsRoutes from './scheduleStatisticsRoutes';
  *     description: 调度任务管理相关接口（DDD 聚合根控制模式）
  *   - name: Schedule Statistics
  *     description: 调度任务统计信息
+ *   - name: Schedule Conflict Detection
+ *     description: 日程冲突检测和解决 (Story 9.4)
  */
 
 /**
@@ -30,6 +33,191 @@ const router: ExpressRouter = Router();
 // ===== 聚合根控制：统计信息 =====
 // 统计信息路由已独立到 scheduleStatisticsRoutes.ts
 router.use('/statistics', scheduleStatisticsRoutes);
+
+// ============ 日程冲突检测路由 (Story 9.4) ============
+// 注意：这些路由必须在通用 CRUD 路由之前注册，避免与 /:id 冲突
+
+/**
+ * @swagger
+ * /schedules/detect-conflicts:
+ *   post:
+ *     tags: [Schedule Conflict Detection]
+ *     summary: 检测日程冲突
+ *     description: 检测给定时间范围内的日程冲突
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userId, startTime, endTime]
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: 用户ID
+ *               startTime:
+ *                 type: number
+ *                 description: 开始时间（Unix毫秒时间戳）
+ *               endTime:
+ *                 type: number
+ *                 description: 结束时间（Unix毫秒时间戳）
+ *               excludeUuid:
+ *                 type: string
+ *                 format: uuid
+ *                 description: 可选：排除指定日程UUID（编辑场景）
+ *     responses:
+ *       200:
+ *         description: 冲突检测完成
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: number
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     result:
+ *                       type: object
+ *                       properties:
+ *                         hasConflict:
+ *                           type: boolean
+ *                         conflicts:
+ *                           type: array
+ *                         suggestions:
+ *                           type: array
+ *       400:
+ *         description: 验证错误
+ *       401:
+ *         description: 未授权
+ */
+router.post('/detect-conflicts', ScheduleConflictController.detectConflicts);
+
+/**
+ * @swagger
+ * /schedules/{id}/resolve-conflict:
+ *   post:
+ *     tags: [Schedule Conflict Detection]
+ *     summary: 解决日程冲突
+ *     description: 通过指定策略解决日程冲突
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 日程UUID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [resolution]
+ *             properties:
+ *               resolution:
+ *                 type: string
+ *                 enum: [RESCHEDULE, CANCEL, ADJUST_DURATION, IGNORE]
+ *                 description: 解决策略
+ *               newStartTime:
+ *                 type: number
+ *                 description: 新的开始时间（RESCHEDULE策略必需）
+ *               newEndTime:
+ *                 type: number
+ *                 description: 新的结束时间（RESCHEDULE策略必需）
+ *               newDuration:
+ *                 type: number
+ *                 description: 新的时长（分钟）（ADJUST_DURATION策略必需）
+ *     responses:
+ *       200:
+ *         description: 冲突解决成功
+ *       400:
+ *         description: 验证错误
+ *       401:
+ *         description: 未授权
+ *       404:
+ *         description: 日程不存在
+ */
+router.post('/:id/resolve-conflict', ScheduleConflictController.resolveConflict);
+
+/**
+ * @swagger
+ * /schedules:
+ *   post:
+ *     tags: [Schedule Conflict Detection]
+ *     summary: 创建日程（带冲突检测）
+ *     description: 创建新的日程，自动检测冲突
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [accountUuid, title, startTime, endTime, duration]
+ *             properties:
+ *               accountUuid:
+ *                 type: string
+ *                 format: uuid
+ *                 description: 用户账户UUID
+ *               title:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 100
+ *                 description: 日程标题
+ *               description:
+ *                 type: string
+ *                 maxLength: 500
+ *                 description: 日程描述（可选）
+ *               startTime:
+ *                 type: number
+ *                 description: 开始时间（Unix毫秒时间戳）
+ *               endTime:
+ *                 type: number
+ *                 description: 结束时间（Unix毫秒时间戳）
+ *               duration:
+ *                 type: number
+ *                 description: 时长（分钟）
+ *               priority:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 description: 优先级（可选）
+ *               location:
+ *                 type: string
+ *                 description: 地点（可选）
+ *               attendees:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 参与者列表（可选）
+ *               autoDetectConflicts:
+ *                 type: boolean
+ *                 default: true
+ *                 description: 是否自动检测冲突
+ *     responses:
+ *       201:
+ *         description: 日程创建成功
+ *       400:
+ *         description: 验证错误
+ *       401:
+ *         description: 未授权
+ *       409:
+ *         description: UUID冲突
+ */
+router.post('/', ScheduleConflictController.createSchedule);
 
 // ===== 聚合根控制：任务操作 =====
 
