@@ -286,6 +286,266 @@ export class Account extends AggregateRoot implements IAccountClient {
     return Account.fromClientDTO(this.toClientDTO());
   }
 
+  // ===== 业务方法 =====
+
+  /**
+   * 更新用户资料
+   */
+  public updateProfile(profile: Partial<Account['_profile']>): void {
+    this._profile = {
+      ...this._profile,
+      ...profile,
+    };
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 更新用户偏好设置
+   */
+  public updatePreferences(preferences: Partial<Account['_preferences']>): void {
+    this._preferences = {
+      ...this._preferences,
+      ...preferences,
+      notifications: {
+        ...this._preferences.notifications,
+        ...(preferences.notifications || {}),
+      },
+      privacy: {
+        ...this._preferences.privacy,
+        ...(preferences.privacy || {}),
+      },
+    };
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 验证邮箱
+   */
+  public verifyEmail(): void {
+    this._emailVerified = true;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 验证手机号
+   */
+  public verifyPhone(): void {
+    this._phoneVerified = true;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 更新邮箱
+   */
+  public updateEmail(email: string): void {
+    this._email = email;
+    this._emailVerified = false; // 新邮箱需要重新验证
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 更新手机号
+   */
+  public updatePhone(phoneNumber: string): void {
+    this._phoneNumber = phoneNumber;
+    this._phoneVerified = false; // 新手机号需要重新验证
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 激活账户
+   */
+  public activate(): void {
+    this._status = AccountStatus.ACTIVE;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 停用账户
+   */
+  public deactivate(): void {
+    this._status = AccountStatus.INACTIVE;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 暂停账户
+   */
+  public suspend(): void {
+    this._status = AccountStatus.SUSPENDED;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 软删除账户
+   */
+  public softDelete(): void {
+    this._status = AccountStatus.DELETED;
+    this._deletedAt = Date.now();
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 恢复账户
+   */
+  public restore(): void {
+    if (this._status === AccountStatus.DELETED) {
+      this._status = AccountStatus.INACTIVE;
+      this._deletedAt = null;
+      this._updatedAt = Date.now();
+    }
+  }
+
+  /**
+   * 启用两步验证
+   */
+  public enableTwoFactor(): void {
+    this._security.twoFactorEnabled = true;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 禁用两步验证
+   */
+  public disableTwoFactor(): void {
+    this._security.twoFactorEnabled = false;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 记录密码更改
+   */
+  public recordPasswordChange(): void {
+    this._security.lastPasswordChange = Date.now();
+    this._security.loginAttempts = 0; // 重置登录尝试次数
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 增加登录失败尝试次数
+   */
+  public incrementLoginAttempts(): void {
+    this._security.loginAttempts += 1;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 重置登录尝试次数
+   */
+  public resetLoginAttempts(): void {
+    this._security.loginAttempts = 0;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 锁定账户
+   */
+  public lockAccount(durationMinutes: number): void {
+    const now = Date.now();
+    this._security.lockedUntil = now + durationMinutes * 60 * 1000;
+    this._updatedAt = now;
+  }
+
+  /**
+   * 解锁账户
+   */
+  public unlockAccount(): void {
+    this._security.lockedUntil = null;
+    this._security.loginAttempts = 0;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 检查账户是否被锁定
+   */
+  public isLocked(): boolean {
+    if (!this._security.lockedUntil) return false;
+    return Date.now() < this._security.lockedUntil;
+  }
+
+  /**
+   * 更新订阅
+   */
+  public updateSubscription(subscription: Subscription): void {
+    this._subscription = subscription;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 取消订阅
+   */
+  public cancelSubscription(): void {
+    this._subscription = null;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 检查存储配额
+   */
+  public checkStorageQuota(requiredBytes: number): boolean {
+    return this._storage.used + requiredBytes <= this._storage.quota;
+  }
+
+  /**
+   * 更新存储使用量
+   */
+  public updateStorageUsage(bytesUsed: number): void {
+    this._storage.used = bytesUsed;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 添加历史记录
+   */
+  public addHistory(history: AccountHistory): void {
+    this._history.push(history);
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 更新统计信息
+   */
+  public updateStats(stats: Partial<Account['_stats']>): void {
+    this._stats = {
+      ...this._stats,
+      ...stats,
+    };
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 记录登录
+   */
+  public recordLogin(): void {
+    const now = Date.now();
+    this._stats.lastLoginAt = now;
+    this._stats.loginCount += 1;
+    this._lastActiveAt = now;
+    this._updatedAt = now;
+  }
+
+  /**
+   * 记录活动
+   */
+  public recordActivity(): void {
+    this._lastActiveAt = Date.now();
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 检查账户是否激活
+   */
+  public isActive(): boolean {
+    return this._status === AccountStatus.ACTIVE;
+  }
+
+  /**
+   * 检查账户是否已删除
+   */
+  public isDeleted(): boolean {
+    return this._status === AccountStatus.DELETED;
+  }
+
   // ===== DTO 转换方法 =====
 
   public toClientDTO(): AccountClientDTO {

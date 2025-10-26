@@ -170,6 +170,134 @@ export class AuthSession extends AggregateRoot implements IAuthSessionClient {
     return AuthSession.fromClientDTO(this.toClientDTO());
   }
 
+  // ===== 业务方法 =====
+
+  /**
+   * 刷新访问令牌
+   */
+  public refreshAccessToken(newToken: string, expiresAt: number): void {
+    this._accessToken = newToken;
+    this._accessTokenExpiresAt = expiresAt;
+    this._lastActivityAt = Date.now();
+  }
+
+  /**
+   * 更新刷新令牌
+   */
+  public updateRefreshToken(refreshToken: RefreshToken): void {
+    this._refreshToken = refreshToken;
+  }
+
+  /**
+   * 记录活动
+   */
+  public recordActivity(activityType?: string): void {
+    const now = Date.now();
+    this._lastActivityAt = now;
+    this._lastActivityType = activityType ?? null;
+  }
+
+  /**
+   * 撤销会话
+   */
+  public revoke(): void {
+    this._status = SessionStatus.REVOKED;
+    this._revokedAt = Date.now();
+  }
+
+  /**
+   * 锁定会话
+   */
+  public lock(): void {
+    this._status = SessionStatus.LOCKED;
+  }
+
+  /**
+   * 解锁会话
+   */
+  public unlock(): void {
+    if (this._status === SessionStatus.LOCKED) {
+      this._status = SessionStatus.ACTIVE;
+    }
+  }
+
+  /**
+   * 设置会话为过期
+   */
+  public expire(): void {
+    this._status = SessionStatus.EXPIRED;
+  }
+
+  /**
+   * 更新位置信息
+   */
+  public updateLocation(location: {
+    country?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+  }): void {
+    this._location = { ...location };
+  }
+
+  /**
+   * 添加会话历史
+   */
+  public addHistory(history: SessionHistory): void {
+    this._history.push(history);
+  }
+
+  /**
+   * 检查访问令牌是否过期
+   */
+  public isAccessTokenExpired(): boolean {
+    return Date.now() > this._accessTokenExpiresAt;
+  }
+
+  /**
+   * 检查会话是否过期
+   */
+  public isExpired(): boolean {
+    return Date.now() > this._expiresAt || this._status === SessionStatus.EXPIRED;
+  }
+
+  /**
+   * 检查会话是否激活
+   */
+  public isActive(): boolean {
+    return this._status === SessionStatus.ACTIVE && !this.isExpired();
+  }
+
+  /**
+   * 检查会话是否被撤销
+   */
+  public isRevoked(): boolean {
+    return this._status === SessionStatus.REVOKED;
+  }
+
+  /**
+   * 检查会话是否被锁定
+   */
+  public isLocked(): boolean {
+    return this._status === SessionStatus.LOCKED;
+  }
+
+  /**
+   * 获取会话剩余时间（秒）
+   */
+  public getRemainingTime(): number {
+    const remaining = this._expiresAt - Date.now();
+    return Math.max(0, Math.floor(remaining / 1000));
+  }
+
+  /**
+   * 获取访问令牌剩余时间（秒）
+   */
+  public getAccessTokenRemainingTime(): number {
+    const remaining = this._accessTokenExpiresAt - Date.now();
+    return Math.max(0, Math.floor(remaining / 1000));
+  }
+
   // ===== DTO 转换方法 =====
 
   public toClientDTO(): AuthSessionClientDTO {

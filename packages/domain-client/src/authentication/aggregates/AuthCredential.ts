@@ -180,6 +180,227 @@ export class AuthCredential extends AggregateRoot implements IAuthCredentialClie
     return AuthCredential.fromClientDTO(this.toClientDTO());
   }
 
+  // ===== 业务方法 =====
+
+  /**
+   * 添加 API 密钥
+   */
+  public addApiKey(apiKey: ApiKeyCredential): void {
+    this._apiKeyCredentials.push(apiKey);
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 移除 API 密钥
+   */
+  public removeApiKey(apiKeyUuid: string): boolean {
+    const index = this._apiKeyCredentials.findIndex((k) => k.uuid === apiKeyUuid);
+    if (index === -1) return false;
+    this._apiKeyCredentials.splice(index, 1);
+    this._updatedAt = Date.now();
+    return true;
+  }
+
+  /**
+   * 获取 API 密钥
+   */
+  public getApiKey(uuid: string): ApiKeyCredential | null {
+    return this._apiKeyCredentials.find((k) => k.uuid === uuid) ?? null;
+  }
+
+  /**
+   * 添加记住我令牌
+   */
+  public addRememberMeToken(token: RememberMeToken): void {
+    this._rememberMeTokens.push(token);
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 移除记住我令牌
+   */
+  public removeRememberMeToken(tokenUuid: string): boolean {
+    const index = this._rememberMeTokens.findIndex((t) => t.uuid === tokenUuid);
+    if (index === -1) return false;
+    this._rememberMeTokens.splice(index, 1);
+    this._updatedAt = Date.now();
+    return true;
+  }
+
+  /**
+   * 清除所有记住我令牌
+   */
+  public clearRememberMeTokens(): void {
+    this._rememberMeTokens = [];
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 启用两步验证
+   */
+  public enableTwoFactor(method: TwoFactorMethod): void {
+    this._twoFactor = {
+      enabled: true,
+      method,
+      verifiedAt: Date.now(),
+    };
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 禁用两步验证
+   */
+  public disableTwoFactor(): void {
+    this._twoFactor = null;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 启用生物识别
+   */
+  public enableBiometric(type: BiometricType, deviceId: string): void {
+    this._biometric = {
+      enabled: true,
+      type,
+      deviceId,
+      enrolledAt: Date.now(),
+    };
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 禁用生物识别
+   */
+  public disableBiometric(): void {
+    this._biometric = null;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 激活凭证
+   */
+  public activate(): void {
+    this._status = CredentialStatus.ACTIVE;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 暂停凭证
+   */
+  public suspend(): void {
+    this._status = CredentialStatus.SUSPENDED;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 撤销凭证
+   */
+  public revoke(): void {
+    this._status = CredentialStatus.REVOKED;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 设置凭证过期
+   */
+  public expire(): void {
+    this._status = CredentialStatus.EXPIRED;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 记录登录失败
+   */
+  public recordFailedLogin(): void {
+    this._security.failedLoginAttempts += 1;
+    this._security.lastFailedLoginAt = Date.now();
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 重置失败尝试次数
+   */
+  public resetFailedAttempts(): void {
+    this._security.failedLoginAttempts = 0;
+    this._security.lastFailedLoginAt = null;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 锁定凭证
+   */
+  public lock(durationMinutes: number): void {
+    const now = Date.now();
+    this._security.lockedUntil = now + durationMinutes * 60 * 1000;
+    this._updatedAt = now;
+  }
+
+  /**
+   * 解锁凭证
+   */
+  public unlock(): void {
+    this._security.lockedUntil = null;
+    this._security.failedLoginAttempts = 0;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 检查凭证是否被锁定
+   */
+  public isLocked(): boolean {
+    if (!this._security.lockedUntil) return false;
+    return Date.now() < this._security.lockedUntil;
+  }
+
+  /**
+   * 要求更改密码
+   */
+  public requirePasswordChange(): void {
+    this._security.requirePasswordChange = true;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 记录密码更改
+   */
+  public recordPasswordChange(): void {
+    this._security.requirePasswordChange = false;
+    this._security.lastPasswordChangeAt = Date.now();
+    this._security.passwordExpiresAt = null;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 设置密码过期时间
+   */
+  public setPasswordExpiration(expiresAt: number): void {
+    this._security.passwordExpiresAt = expiresAt;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 检查密码是否过期
+   */
+  public isPasswordExpired(): boolean {
+    if (!this._security.passwordExpiresAt) return false;
+    return Date.now() > this._security.passwordExpiresAt;
+  }
+
+  /**
+   * 添加历史记录
+   */
+  public addHistory(history: CredentialHistory): void {
+    this._history.push(history);
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 检查凭证是否激活
+   */
+  public isActive(): boolean {
+    return this._status === CredentialStatus.ACTIVE && !this.isLocked() && !this.isPasswordExpired();
+  }
+
   // ===== DTO 转换方法 =====
 
   public toClientDTO(): AuthCredentialClientDTO {
