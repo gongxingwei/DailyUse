@@ -105,7 +105,7 @@
               </v-row>
 
               <v-select
-                v-model="goalDirUuid"
+                v-model="GoalFolderUuid"
                 :items="directoryOptions"
                 item-title="text"
                 item-value="value"
@@ -528,7 +528,7 @@ const goalColor = computed({
   },
 });
 
-const goalDirUuid = computed({
+const GoalFolderUuid = computed({
   get: () => goalModel.value.dirUuid || '',
   set: (val: string) => {
     goalModel.value.updateInfo({ dirUuid: val });
@@ -601,11 +601,11 @@ const updateEndTime = (val: string) => {
   endTimeFormatted.value = val;
 };
 
-const allGoalDirs = computed(() => goalStore.getAllGoalDirs);
+const allGoalFolders = computed(() => goalStore.getAllGoalFolders);
 
 const directoryOptions = computed(() =>
-  allGoalDirs.value
-    .filter((dir) => !goalStore.isSystemGoalDir(dir.uuid))
+  allGoalFolders.value
+    .filter((dir) => !goalStore.isSystemGoalFolder(dir.uuid))
     .map((dir) => ({
       text: dir.name,
       value: dir.uuid,

@@ -1,6 +1,6 @@
 import { ref, computed, reactive } from 'vue';
 import type { GoalContracts } from '@dailyuse/contracts';
-import { Goal, GoalDir } from '@dailyuse/domain-client';
+import { Goal, GoalFolder } from '@dailyuse/domain-client';
 import { GoalWebApplicationService } from '../../application/services/GoalWebApplicationService';
 import { getGoalStore } from '../stores/goalStore';
 import { useSnackbar } from '../../../../shared/composables/useSnackbar';
@@ -18,7 +18,7 @@ export function useGoal() {
   const isLoading = computed(() => goalStore.isLoading);
   const error = computed(() => goalStore.error);
   const goals = computed(() => goalStore.getAllGoals);
-  const goalDirs = computed(() => goalStore.getAllGoalDirs);
+  const GoalFolders = computed(() => goalStore.getAllGoalFolders);
   const currentGoal = computed(() => goalStore.getSelectedGoal);
 
   // ===== 本地状态 =====
@@ -78,7 +78,7 @@ export function useGoal() {
    * @param forceRefresh 是否强制从API刷新
    * @param params 查询参数
    */
-  const fetchGoalDirs = async (
+  const fetchGoalFolders = async (
     forceRefresh = false,
     params?: {
       page?: number;
@@ -92,17 +92,17 @@ export function useGoal() {
       const needsRefresh =
         forceRefresh ||
         !goalStore.isInitialized ||
-        goalStore.goalDirs.length === 0 ||
+        goalStore.GoalFolders.length === 0 ||
         goalStore.shouldRefreshCache();
 
       if (needsRefresh) {
         // 从 API 获取目录数据时不需要用户提示
-        await goalService.getGoalDirs(params);
+        await goalService.getGoalFolders(params);
       } else {
         // 使用缓存的目录数据也不需要用户提示
       }
 
-      return goalStore.getAllGoalDirs;
+      return goalStore.getAllGoalFolders;
     } catch (error) {
       snackbar.showError('获取目标目录列表失败');
       throw error;
@@ -147,7 +147,7 @@ export function useGoal() {
       // 使用 ApplicationService 的同步方法
       const result = await goalService.syncAllGoals();
       snackbar.showSuccess(
-        `Goal 数据初始化完成: ${result.goalsCount} 个目标, ${result.goalDirsCount} 个目录`,
+        `Goal 数据初始化完成: ${result.goalsCount} 个目标, ${result.GoalFoldersCount} 个目录`,
       );
     } catch (error) {
       snackbar.showError('Goal 数据初始化失败');
@@ -268,14 +268,14 @@ export function useGoal() {
     }
   };
 
-  // ===== GoalDir 操作 =====
+  // ===== GoalFolder 操作 =====
 
   /**
    * 创建目标目录
    */
-  const createGoalDir = async (data: GoalContracts.CreateGoalDirRequest) => {
+  const createGoalFolder = async (data: GoalContracts.CreateGoalFolderRequest) => {
     try {
-      const response = await goalService.createGoalDir(data);
+      const response = await goalService.createGoalFolder(data);
       snackbar.showSuccess('目标目录创建成功');
       return response;
     } catch (error) {
@@ -287,9 +287,9 @@ export function useGoal() {
   /**
    * 更新目标目录
    */
-  const updateGoalDir = async (uuid: string, data: GoalContracts.UpdateGoalDirRequest) => {
+  const updateGoalFolder = async (uuid: string, data: GoalContracts.UpdateGoalFolderRequest) => {
     try {
-      const response = await goalService.updateGoalDir(uuid, data);
+      const response = await goalService.updateGoalFolder(uuid, data);
       snackbar.showSuccess('目标目录更新成功');
       return response;
     } catch (error) {
@@ -301,9 +301,9 @@ export function useGoal() {
   /**
    * 删除目标目录
    */
-  const deleteGoalDir = async (uuid: string) => {
+  const deleteGoalFolder = async (uuid: string) => {
     try {
-      await goalService.deleteGoalDir(uuid);
+      await goalService.deleteGoalFolder(uuid);
       snackbar.showSuccess('目标目录删除成功');
     } catch (error) {
       snackbar.showError('删除目标目录失败');
@@ -748,7 +748,7 @@ export function useGoal() {
   const refresh = async () => {
     await Promise.all([
       fetchGoals(true), // 强制刷新
-      fetchGoalDirs(true), // 强制刷新
+      fetchGoalFolders(true), // 强制刷新
     ]);
     snackbar.showInfo('数据刷新完成');
   };
@@ -785,8 +785,8 @@ export function useGoal() {
   /**
    * 目录统计信息
    */
-  const goalDirStats = computed(() => {
-    return goalStore.getGoalDirStatistics;
+  const GoalFolderStats = computed(() => {
+    return goalStore.getGoalFolderStatistics;
   });
 
   /**
@@ -827,11 +827,11 @@ export function useGoal() {
     isLoading,
     error,
     goals,
-    goalDirs,
+    GoalFolders,
     currentGoal,
     filteredGoals,
     goalStats,
-    goalDirStats,
+    GoalFolderStats,
     hasSelection,
 
     // 本地状态
@@ -843,7 +843,7 @@ export function useGoal() {
 
     // 数据获取方法（缓存优先）
     fetchGoals,
-    fetchGoalDirs,
+    fetchGoalFolders,
     fetchGoalById,
     initializeData,
 
@@ -858,10 +858,10 @@ export function useGoal() {
     completeGoal,
     archiveGoal,
 
-    // GoalDir 操作
-    createGoalDir,
-    updateGoalDir,
-    deleteGoalDir,
+    // GoalFolder 操作
+    createGoalFolder,
+    updateGoalFolder,
+    deleteGoalFolder,
 
     // 搜索和筛选
     searchGoals,

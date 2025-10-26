@@ -49,10 +49,10 @@
           <!-- 侧边栏 - 目标分类 -->
           <v-col cols="12" md="3" class="pr-md-6 mb-6 mb-md-0 h-100">
             <goal-dir-component
-              :goal-dirs="goalDirs"
-              @selected-goal-dir="onSelectedGoalDir"
-              @create-goal-dir="goalDirDialogRef?.openForCreate"
-              @edit-goal-dir="goalDirDialogRef?.openForEdit"
+              :goal-dirs="GoalFolders"
+              @selected-goal-dir="onSelectedGoalFolder"
+              @create-goal-dir="GoalFolderDialogRef?.openForCreate"
+              @edit-goal-dir="GoalFolderDialogRef?.openForEdit"
               class="h-100"
             />
           </v-col>
@@ -168,7 +168,7 @@
             {{ snackbar.message }}
         </v-snackbar> -->
     <GoalDialog ref="goalDialogRef" />
-    <GoalDirDialog ref="goalDirDialogRef" />
+    <GoalFolderDialog ref="GoalFolderDialogRef" />
   </v-container>
 </template>
 
@@ -177,13 +177,13 @@ import { ref, computed, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useGoal } from '../composables/useGoal';
 import { useGoalStore } from '../stores/goalStore';
-import type { Goal, GoalDir } from '@dailyuse/domain-client';
+import type { Goal, GoalFolder } from '@dailyuse/domain-client';
 
 // 组件导入
 import GoalCard from '../components/cards/GoalCard.vue';
-import GoalDirComponent from '../components/GoalDir.vue';
+import GoalFolderComponent from '../components/GoalFolder.vue';
 import GoalDialog from '../components/dialogs/GoalDialog.vue';
-import GoalDirDialog from '../components/dialogs/GoalDirDialog.vue';
+import GoalFolderDialog from '../components/dialogs/GoalFolderDialog.vue';
 // composables
 
 const router = useRouter();
@@ -192,9 +192,9 @@ const {
   isLoading,
   error,
   goals,
-  goalDirs,
+  GoalFolders,
   fetchGoals,
-  fetchGoalDirs,
+  fetchGoalFolders,
   deleteGoal,
   refresh,
   initialize,
@@ -209,7 +209,7 @@ const selectedStatusIndex = ref(0);
 
 // dialogs
 const goalDialogRef = ref<InstanceType<typeof GoalDialog> | null>(null);
-const goalDirDialogRef = ref<InstanceType<typeof GoalDirDialog> | null>(null);
+const GoalFolderDialogRef = ref<InstanceType<typeof GoalFolderDialog> | null>(null);
 
 const deleteDialog = reactive({
   show: false,
@@ -283,7 +283,7 @@ const getGoalCountByStatus = (status: string) => {
 /**
  * 选择目录
  */
-const onSelectedGoalDir = (dirUuid: string) => {
+const onSelectedGoalFolder = (dirUuid: string) => {
   selectedDirUuid.value = dirUuid;
 };
 
@@ -338,7 +338,7 @@ const openCreateDirDialog = () => {
 /**
  * 打开编辑目录对话框
  */
-const openEditDirDialog = (goalDir: GoalDir) => {
+const openEditDirDialog = (GoalFolder: GoalFolder) => {
   // TODO: 实现编辑目录对话框
 };
 
@@ -348,7 +348,7 @@ onMounted(async () => {
   try {
     await initialize();
     await fetchGoals();
-    await fetchGoalDirs();
+    await fetchGoalFolders();
   } catch (error) {
     console.error('初始化失败:', error);
   }

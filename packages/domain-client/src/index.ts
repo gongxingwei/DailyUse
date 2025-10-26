@@ -35,7 +35,7 @@ export * as AuthenticationDomain from './authentication';
 export type {
   Goal,
   GoalFolder,
-  GoalDir, // 兼容性别名
+  GoalFolder, // 兼容性别名
   GoalStatistics,
   KeyResult,
   GoalRecord,

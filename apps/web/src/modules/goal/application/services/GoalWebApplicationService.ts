@@ -1,8 +1,12 @@
 import type { GoalContracts } from '@dailyuse/contracts';
-import { Goal, GoalDir } from '@dailyuse/domain-client';
-import { goalApiClient, goalDirApiClient } from '../../infrastructure/api/goalApiClient';
+import { GoalDomain } from '@dailyuse/domain-client';
+import { goalApiClient, goalFolderApiClient } from '../../infrastructure/api/goalApiClient';
 import { getGoalStore } from '../../presentation/stores/goalStore';
 import { useSnackbar } from '../../../../shared/composables/useSnackbar';
+
+// 导入类实现（用于实例化）
+const GoalClient = GoalDomain.GoalClient;
+const GoalFolderClient = GoalDomain.GoalFolderClient;
 
 /**
  * Goal Web 应用服务
@@ -30,7 +34,7 @@ export class GoalWebApplicationService {
       const goalData = await goalApiClient.createGoal(request);
 
       // 创建客户端实体并同步到 store
-      const goal = Goal.fromClientDTO(goalData);
+      const goal = GoalClient.fromClientDTO(goalData);
       this.goalStore.addOrUpdateGoal(goal);
 
       return goalData;
@@ -50,7 +54,7 @@ export class GoalWebApplicationService {
     dirUuid?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<GoalContracts.GoalListResponse> {
+  }): Promise<GoalContracts.GoalsResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
@@ -58,7 +62,7 @@ export class GoalWebApplicationService {
       const goalsData = await goalApiClient.getGoals(params);
 
       // 批量创建客户端实体并同步到 store
-      const goals = (goalsData.data || []).map((goalData) => Goal.fromClientDTO(goalData));
+      const goals = (goalsData.data || []).map((goalData: any) => GoalClient.fromClientDTO(goalData));
       this.goalStore.setGoals(goals);
 
       // 更新分页信息
@@ -86,7 +90,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.getGoalById(uuid);
 
       // 创建客户端实体并同步到 store
-      const goal = Goal.fromClientDTO(data);
+      const goal = GoalClient.fromClientDTO(data);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -110,7 +114,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.updateGoal(uuid, request);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromClientDTO(data);
+      const goal = GoalClient.fromClientDTO(data);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -151,7 +155,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.activateGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromClientDTO(data);
+      const goal = GoalClient.fromClientDTO(data);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -172,7 +176,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.pauseGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromClientDTO(data);
+      const goal = GoalClient.fromClientDTO(data);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -193,7 +197,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.completeGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromClientDTO(data);
+      const goal = GoalClient.fromClientDTO(data);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -214,7 +218,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.archiveGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromClientDTO(data);
+      const goal = GoalClient.fromClientDTO(data);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -227,20 +231,20 @@ export class GoalWebApplicationService {
     }
   }
 
-  // ===== GoalDir 管理 =====
+  // ===== GoalFolder 管理 =====
 
-  async createGoalDir(
-    request: GoalContracts.CreateGoalDirRequest,
-  ): Promise<GoalContracts.GoalDirClientDTO> {
+  async createGoalFolder(
+    request: GoalContracts.CreateGoalFolderRequest,
+  ): Promise<GoalContracts.GoalFolderClientDTO> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const data = await goalDirApiClient.createGoalDir(request);
+      const data = await goalFolderApiClient.createGoalFolder(request);
 
       // 创建客户端实体并同步到 store
-      const goalDir = GoalDir.fromClientDTO(data);
-      this.goalStore.addOrUpdateGoalDir(goalDir);
+      const goalFolder = GoalFolderClient.fromClientDTO(data);
+      this.goalStore.addOrUpdateGoalFolder(goalFolder);
 
       return data;
     } catch (error) {
@@ -252,21 +256,21 @@ export class GoalWebApplicationService {
     }
   }
 
-  async getGoalDirs(params?: {
+  async getGoalFolders(params?: {
     page?: number;
     limit?: number;
     status?: string;
     parentUuid?: string;
-  }): Promise<GoalContracts.GoalDirListResponse> {
+  }): Promise<GoalContracts.GoalFolderListResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const data = await goalDirApiClient.getGoalDirs(params);
+      const data = await goalFolderApiClient.getGoalFolders(params);
 
       // 批量创建客户端实体并同步到 store
-      const goalDirs = (data?.data || []).map((dirData) => GoalDir.fromClientDTO(dirData));
-      this.goalStore.setGoalDirs(goalDirs);
+      const goalFolders = (data?.folders || []).map((dirData: any) => GoalFolderClient.fromClientDTO(dirData));
+      this.goalStore.setGoalFolders(goalFolders);
 
       return data;
     } catch (error) {
@@ -278,19 +282,19 @@ export class GoalWebApplicationService {
     }
   }
 
-  async updateGoalDir(
+  async updateGoalFolder(
     uuid: string,
-    request: GoalContracts.UpdateGoalDirRequest,
-  ): Promise<GoalContracts.GoalDirClientDTO> {
+    request: GoalContracts.UpdateGoalFolderRequest,
+  ): Promise<GoalContracts.GoalFolderClientDTO> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const data = await goalDirApiClient.updateGoalDir(uuid, request);
+      const data = await goalFolderApiClient.updateGoalFolder(uuid, request);
 
       // 更新客户端实体并同步到 store
-      const goalDir = GoalDir.fromClientDTO(data);
-      this.goalStore.addOrUpdateGoalDir(goalDir);
+      const goalFolder = GoalFolderClient.fromClientDTO(data);
+      this.goalStore.addOrUpdateGoalFolder(goalFolder);
 
       return data;
     } catch (error) {
@@ -302,15 +306,15 @@ export class GoalWebApplicationService {
     }
   }
 
-  async deleteGoalDir(uuid: string): Promise<void> {
+  async deleteGoalFolder(uuid: string): Promise<void> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      await goalDirApiClient.deleteGoalDir(uuid);
+      await goalFolderApiClient.deleteGoalFolder(uuid);
 
       // 从 store 中移除
-      this.goalStore.removeGoalDir(uuid);
+      this.goalStore.removeGoalFolder(uuid);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '删除目标目录失败';
       this.goalStore.setError(errorMessage);
@@ -328,7 +332,7 @@ export class GoalWebApplicationService {
     limit?: number;
     status?: string;
     dirUuid?: string;
-  }): Promise<GoalContracts.GoalListResponse> {
+  }): Promise<GoalContracts.GoalsResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
@@ -352,12 +356,12 @@ export class GoalWebApplicationService {
     await this.getGoals();
   }
 
-  async refreshGoalDirs(): Promise<void> {
-    await this.getGoalDirs();
+  async refreshGoalFolders(): Promise<void> {
+    await this.getGoalFolders();
   }
 
   async refreshAll(): Promise<void> {
-    await Promise.all([this.refreshGoals(), this.refreshGoalDirs()]);
+    await Promise.all([this.refreshGoals(), this.refreshGoalFolders()]);
   }
 
   // ===== 数据同步方法 =====
@@ -368,7 +372,7 @@ export class GoalWebApplicationService {
    */
   async syncAllGoals(): Promise<{
     goalsCount: number;
-    goalDirsCount: number;
+    goalFoldersCount: number;
   }> {
     try {
       this.goalStore.setLoading(true);
@@ -376,26 +380,26 @@ export class GoalWebApplicationService {
 
       // 并行获取所有目标和目录数据
       console.log('📡 开始发起 API 请求...');
-      const [goalsData, goalDirsData] = await Promise.all([
+      const [goalsData, goalFoldersData] = await Promise.all([
         goalApiClient.getGoals({ limit: 1000 }), // 获取所有目标，设置较大的 limit
-        goalDirApiClient.getGoalDirs({ limit: 1000 }), // 获取所有目录
+        goalFolderApiClient.getGoalFolders({ limit: 1000 }), // 获取所有目录
       ]);
       console.log('🔍 API 响应数据:', {
         goalsData,
-        goalDirsData,
+        goalFoldersData,
         goalsType: typeof goalsData,
-        goalDirsType: typeof goalDirsData,
+        goalFoldersType: typeof goalFoldersData,
         goalsDataStructure: goalsData ? Object.keys(goalsData) : 'null/undefined',
-        goalDirsDataStructure: goalDirsData ? Object.keys(goalDirsData) : 'null/undefined',
+        goalFoldersDataStructure: goalFoldersData ? Object.keys(goalFoldersData) : 'null/undefined',
       });
 
       // 转换为客户端实体
-      const goals = (goalsData?.data || []).map((goalData) => Goal.fromClientDTO(goalData));
-      const goalDirs = (goalDirsData?.data || []).map((dirData) => GoalDir.fromClientDTO(dirData));
+      const goals = (goalsData?.data || []).map((goalData: any) => GoalClient.fromClientDTO(goalData));
+      const goalFolders = (goalFoldersData?.data || []).map((dirData: any) => GoalFolderClient.fromClientDTO(dirData));
 
       // 批量同步到 store
       this.goalStore.setGoals(goals);
-      this.goalStore.setGoalDirs(goalDirs);
+      this.goalStore.setGoalFolders(goalFolders);
 
       // 更新分页信息（如果有）
       if (goalsData?.page) {
@@ -406,11 +410,11 @@ export class GoalWebApplicationService {
         });
       }
 
-      console.log(`成功同步数据: ${goals.length} 个目标, ${goalDirs.length} 个目录`);
+      console.log(`成功同步数据: ${goals.length} 个目标, ${goalFolders.length} 个目录`);
 
       return {
         goalsCount: goals.length,
-        goalDirsCount: goalDirs.length,
+        goalFoldersCount: goalFolders.length,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '同步所有目标数据失败';
@@ -463,7 +467,7 @@ export class GoalWebApplicationService {
   /**
    * 获取目标的所有关键结果
    */
-  async getKeyResultsByGoal(goalUuid: string): Promise<GoalContracts.KeyResultListResponse> {
+  async getKeyResultsByGoal(goalUuid: string): Promise<GoalContracts.KeyResultsResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
@@ -539,7 +543,7 @@ export class GoalWebApplicationService {
         weight: number;
       }>;
     },
-  ): Promise<GoalContracts.KeyResultListResponse> {
+  ): Promise<GoalContracts.KeyResultsResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
@@ -606,7 +610,7 @@ export class GoalWebApplicationService {
       limit?: number;
       dateRange?: { start?: string; end?: string };
     },
-  ): Promise<GoalContracts.GoalRecordListResponse> {
+  ): Promise<GoalContracts.GoalRecordsResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
@@ -633,7 +637,7 @@ export class GoalWebApplicationService {
       limit?: number;
       dateRange?: { start?: string; end?: string };
     },
-  ): Promise<GoalContracts.GoalRecordListResponse> {
+  ): Promise<GoalContracts.GoalRecordsResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
@@ -681,7 +685,7 @@ export class GoalWebApplicationService {
   /**
    * 获取目标的所有复盘
    */
-  async getGoalReviewsByGoal(goalUuid: string): Promise<GoalContracts.GoalReviewListResponse> {
+  async getGoalReviewsByGoal(goalUuid: string): Promise<GoalContracts.GoalReviewsResponse> {
     try {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
@@ -704,7 +708,7 @@ export class GoalWebApplicationService {
   async updateGoalReview(
     goalUuid: string,
     reviewUuid: string,
-    request: Partial<GoalContracts.GoalReviewDTO>,
+    request: Partial<GoalContracts.GoalReviewClientDTO>,
   ): Promise<GoalContracts.GoalReviewClientDTO> {
     try {
       this.goalStore.setLoading(true);
@@ -760,7 +764,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.getGoalAggregateView(goalUuid);
 
       // 将聚合根数据同步到store
-      const goal = Goal.fromClientDTO(data.goal);
+      const goal = GoalClient.fromClientDTO(data.goal as GoalContracts.GoalClientDTO);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -792,7 +796,7 @@ export class GoalWebApplicationService {
       const data = await goalApiClient.cloneGoal(goalUuid, request);
 
       // 将克隆的目标添加到store
-      const goal = Goal.fromClientDTO(data);
+      const goal = GoalClient.fromClientDTO(data);
       this.goalStore.addOrUpdateGoal(goal);
 
       return data;
@@ -814,7 +818,7 @@ export class GoalWebApplicationService {
   private async refreshGoalWithKeyResults(goalUuid: string): Promise<void> {
     try {
       const goalResponse = await goalApiClient.getGoalById(goalUuid);
-      const goal = Goal.fromClientDTO(goalResponse);
+      const goal = GoalClient.fromClientDTO(goalResponse);
       this.goalStore.addOrUpdateGoal(goal);
     } catch (error) {
       console.warn('刷新Goal和KeyResults失败:', error);
@@ -828,7 +832,7 @@ export class GoalWebApplicationService {
   private async refreshGoalWithReviews(goalUuid: string): Promise<void> {
     try {
       const goalResponse = await goalApiClient.getGoalById(goalUuid);
-      const goal = Goal.fromClientDTO(goalResponse);
+      const goal = GoalClient.fromClientDTO(goalResponse);
       this.goalStore.addOrUpdateGoal(goal);
     } catch (error) {
       console.warn('刷新Goal和Reviews失败:', error);
@@ -841,7 +845,7 @@ export class GoalWebApplicationService {
    */
   async syncIncrementalData(lastSyncTime?: Date): Promise<{
     goalsCount: number;
-    goalDirsCount: number;
+    goalFoldersCount: number;
   }> {
     try {
       this.goalStore.setLoading(true);
@@ -855,26 +859,26 @@ export class GoalWebApplicationService {
         : { limit: 1000 };
 
       // 并行获取更新的数据
-      const [goalsResponse, goalDirsResponse] = await Promise.all([
+      const [goalsResponse, goalFoldersResponse] = await Promise.all([
         goalApiClient.getGoals(params),
-        goalDirApiClient.getGoalDirs(params),
+        goalFolderApiClient.getGoalFolders(params),
       ]);
 
       // 转换为客户端实体
-      const goals = (goalsResponse?.data || []).map((goalData) => Goal.fromClientDTO(goalData));
-      const goalDirs = (goalDirsResponse?.data || []).map((dirData) =>
-        GoalDir.fromClientDTO(dirData),
+      const goals = (goalsResponse?.data || []).map((goalData: any) => GoalClient.fromClientDTO(goalData));
+      const goalFolders = (goalFoldersResponse?.folders || []).map((dirData: any) =>
+        GoalFolderClient.fromClientDTO(dirData),
       );
 
       // 逐个同步到 store（保持现有数据）
-      goals.forEach((goal) => this.goalStore.addOrUpdateGoal(goal));
-      goalDirs.forEach((goalDir) => this.goalStore.addOrUpdateGoalDir(goalDir));
+      goals.forEach((goal: any) => this.goalStore.addOrUpdateGoal(goal));
+      goalFolders.forEach((goalFolder: any) => this.goalStore.addOrUpdateGoalFolder(goalFolder));
 
-      console.log(`增量同步完成: ${goals.length} 个目标, ${goalDirs.length} 个目录`);
+      console.log(`增量同步完成: ${goals.length} 个目标, ${goalFolders.length} 个目录`);
 
       return {
         goalsCount: goals.length,
-        goalDirsCount: goalDirs.length,
+        goalFoldersCount: goalFolders.length,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '增量同步数据失败';
@@ -902,7 +906,7 @@ export class GoalWebApplicationService {
   /**
    * 获取 Goal Store 实例
    */
-  getStore() {
+  getStore(): ReturnType<typeof getGoalStore> {
     return this.goalStore;
   }
 

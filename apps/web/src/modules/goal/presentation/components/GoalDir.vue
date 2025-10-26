@@ -68,7 +68,7 @@
 
         <!-- 动态目标分类 -->
         <v-list-item
-          v-for="dir in goalDirs"
+          v-for="dir in GoalFolders"
           :key="dir.uuid"
           :class="{ 'goal-dir-item--active': selectedDirUuid === dir.uuid }"
           class="goal-dir-item mx-2 my-1"
@@ -148,17 +148,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import type { GoalDir } from '@dailyuse/domain-client';
+import type { GoalFolder } from '@dailyuse/domain-client';
 import { useGoalStore } from '../stores/goalStore';
 
 interface Props {
-  goalDirs: GoalDir[];
+  GoalFolders: GoalFolder[];
 }
 
 interface Emits {
   (e: 'selected-goal-dir', dirUuid: string): void;
   (e: 'create-goal-dir'): void;
-  (e: 'edit-goal-dir', goalDir: GoalDir): void;
+  (e: 'edit-goal-dir', GoalFolder: GoalFolder): void;
 }
 
 const props = defineProps<Props>();

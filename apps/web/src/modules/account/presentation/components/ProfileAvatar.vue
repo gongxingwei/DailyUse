@@ -31,10 +31,9 @@
           </v-avatar>
           <div class="user-info-basic">
             <div class="user-name ml-3">
-              {{ localAccount?.username || '未设置昵称'
-              }}<v-icon>{{
-                localAccount?.user.sex.value === 0 ? 'mdi-gender-male' : 'mdi-gender-female'
-              }}</v-icon>
+              {{ localAccount?.username || '未设置昵称' }}
+              <v-icon v-if="localAccount?.profile.gender === 'MALE'">mdi-gender-male</v-icon>
+              <v-icon v-else-if="localAccount?.profile.gender === 'FEMALE'">mdi-gender-female</v-icon>
             </div>
             <div class="user-uuid ml-3">{{ localAccount?.uuid || '未设置UUID' }}</div>
           </div>
@@ -51,7 +50,7 @@
     <!-- 用户信息编辑框 -->
     <profile-dialog
       :model-value="profileDialog.show"
-      :user="user as User"
+      :account="profileDialog.account as Account"
       @update:model-value="profileDialog.show = $event"
       @handle-update-profile="handleUpdateUserProfile"
     />
@@ -60,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Account, User } from '@dailyuse/domain-client';
+import { Account } from '@dailyuse/domain-client';
 import { useAccountStore } from '@/modules/account/presentation/stores/useAccountStore';
 
 // components
@@ -74,13 +73,6 @@ const { handleUpdateUserProfile } = useAccountService();
 defineProps<{ avatarUrl?: string; size: string }>();
 
 const localAccount = computed(() => accountStore.currentAccount);
-
-const user = computed(() => {
-  if (localAccount.value && localAccount.value?.user) {
-    return localAccount.value.user;
-  }
-  return User.forCreate();
-});
 
 const profileDialog = ref<{
   show: boolean;
