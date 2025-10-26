@@ -23,6 +23,12 @@ export * as TaskDomain from './task';
 // 设置模块
 export * as SettingDomain from './setting';
 
+// ============ Account 模块 ============
+export * as AccountDomain from './account';
+
+// ============ Authentication 模块 ============
+export * as AuthenticationDomain from './authentication';
+
 // ============ 直接导出（便于直接导入常用类型） ============
 
 // Goal 模块 - 从实现导出
@@ -66,10 +72,21 @@ export type {
   RepositoryStats,
 } from './repository';
 
-// Account 模块 - 从 contracts 导出（domain-client 中暂无实现）
-import type { AccountContracts } from '@dailyuse/contracts';
+// Account 模块 - 直接从实现导出
+export { Account } from './account/aggregates/Account';
+export { Subscription } from './account/entities/Subscription';
+export { AccountHistory } from './account/entities/AccountHistory';
 
-export type Account = AccountContracts.AccountClientDTO;
+// Authentication 模块 - 直接从实现导出
+export { AuthCredential } from './authentication/aggregates/AuthCredential';
+export { AuthSession } from './authentication/aggregates/AuthSession';
+export { PasswordCredential } from './authentication/entities/PasswordCredential';
+export { ApiKeyCredential } from './authentication/entities/ApiKeyCredential';
+export { RememberMeToken } from './authentication/entities/RememberMeToken';
+export { RefreshToken } from './authentication/entities/RefreshToken';
+export { CredentialHistory } from './authentication/entities/CredentialHistory';
+export { SessionHistory } from './authentication/entities/SessionHistory';
+export { DeviceInfo } from './authentication/value-objects/DeviceInfo';
 
 // Reminder 模块 - 从 contracts 导出（domain-client 中暂无实现）
 // 注意：这些是 DTO 类型，不是类实现
