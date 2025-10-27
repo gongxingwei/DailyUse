@@ -31,11 +31,18 @@ export * as AuthenticationDomain from './authentication';
 
 // ============ 直接导出（便于直接导入常用类型） ============
 
-// Goal 模块 - 从实现导出
+// Goal 模块 - 直接从实现导出
+export { GoalClient } from './goal/aggregates/GoalClient';
+export { GoalFolderClient } from './goal/aggregates/GoalFolderClient';
+export { GoalStatisticsClient } from './goal/aggregates/GoalStatisticsClient';
+export { KeyResultClient } from './goal/entities/KeyResultClient';
+export { GoalRecordClient } from './goal/entities/GoalRecordClient';
+export { GoalReviewClient } from './goal/entities/GoalReviewClient';
+
+// Goal 模块 - 类型别名（为了向后兼容）
 export type {
   Goal,
   GoalFolder,
-  GoalFolder, // 兼容性别名
   GoalStatistics,
   KeyResult,
   GoalRecord,
@@ -47,7 +54,7 @@ export type {
   KeyResultSnapshot,
 } from './goal/types';
 
-// Task 模块 - 从实现导出
+// Task 模块 - 类型别名（推荐使用 TaskDomain.TaskTemplate 等）
 export type {
   TaskTemplate,
   TaskInstance,
@@ -59,7 +66,7 @@ export type {
   TaskGoalBinding,
 } from './task/types';
 
-// Repository 模块 - 从实现导出
+// Repository 模块 - 类型别名（推荐使用 RepositoryDomain.Repository 等）
 export type {
   Repository,
   Resource,

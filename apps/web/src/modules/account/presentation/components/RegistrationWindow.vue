@@ -18,6 +18,17 @@
         />
       </v-row>
       <v-row>
+        <v-text-field
+          v-model="form.email"
+          label="邮箱"
+          type="email"
+          :rules="emailRules"
+          prepend-inner-icon="mdi-email"
+          clearable
+          required
+        />
+      </v-row>
+      <v-row>
         <!-- 密码输入 -->
         <v-text-field
           v-model="form.password"
@@ -138,13 +149,50 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { type RegistrationByUsernameAndPasswordForm, AccountType } from '@dailyuse/contracts';
+import type { AuthenticationContracts } from '@dailyuse/contracts';
 // composables
-import { useAccountService } from '../composables/useAccountService';
+import { useAuth } from '@/modules/authentication/presentation/composables/useAuth';
+import { useSnackbar } from '@/shared/composables/useSnackbar';
 // utils
-import { passwordRules, usernameRules } from '@/shared/utils/validations/rules';
+import { passwordRules, usernameRules, emailRules } from '@/shared/utils/validations/rules';
 
-const { snackbar, handleRegistration } = useAccountService();
+const { register } = useAuth();
+const { snackbar, showSuccess, showError } = useSnackbar();
+
+// 注册表单类型
+interface RegistrationByUsernameAndPasswordForm {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  agree: boolean;
+}
+
+// 注册处理函数
+const handleRegistration = async (formData: RegistrationByUsernameAndPasswordForm) => {
+  if (!formData.agree) {
+    showError('请先同意服务条款');
+    return;
+  }
+
+  loading.value = true;
+  try {
+    const request: AuthenticationContracts.RegisterRequestDTO = {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    };
+
+    await register(request);
+    showSuccess('注册成功！');
+    resetForm();
+  } catch (error: any) {
+    showError(error.message || '注册失败，请重试');
+  } finally {
+    loading.value = false;
+  }
+};
 const valid = ref(false);
 const loading = ref(false);
 const agreeTerms = ref(false);
@@ -154,6 +202,7 @@ const showConfirmPassword = ref(false);
 
 const form = reactive<RegistrationByUsernameAndPasswordForm>({
   username: '',
+  email: '',
   password: '',
   confirmPassword: '',
   agree: false,

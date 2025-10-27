@@ -224,10 +224,10 @@ type KeyResultLink = TaskContracts.KeyResultLink;
 
 // composables
 import { useTaskUtils } from '../../composables/useTaskUtils';
-import { useTask } from '../../composables/useTask';
+import { useTaskTemplate } from '../../composables/useTaskTemplate';
 import { de } from 'date-fns/locale';
 const { getTaskTemplateTimeText, getTaskTemplateRecurrenceText } = useTaskUtils();
-const { deleteTaskTemplate, pauseTaskTemplate, activateTaskTemplate } = useTask();
+const { deleteTaskTemplate, pauseTaskTemplate, activateTaskTemplate } = useTaskTemplate();
 
 interface Props {
   template: TaskTemplate;

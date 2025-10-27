@@ -76,26 +76,26 @@
 <script setup lang="ts">
 import { ref, computed, watch, reactive } from 'vue';
 
-import { Account } from '@dailyuse/domain-client';
+import type { AccountContracts } from '@dailyuse/contracts';
 import { Gender } from '@dailyuse/contracts';
 
 type ProfileData = {
   displayName: string;
-  avatar?: string | null;
-  bio?: string | null;
-  location?: string | null;
-  dateOfBirth?: number | null;
-  gender?: Gender | null;
+  avatar?: string;
+  bio?: string;
+  location?: string;
+  dateOfBirth?: number;
+  gender?: Gender;
 };
 
 const props = defineProps<{
   modelValue: boolean;
-  account: Account;
+  account: AccountContracts.AccountDTO | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
-  (e: 'handle-update-profile', formData: ProfileData): void;
+  (e: 'handle-update-profile', formData: AccountContracts.UpdateAccountProfileRequestDTO): void;
 }>();
 
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
@@ -107,11 +107,11 @@ const isFormValid = computed(() => {
 
 const formData = reactive<ProfileData>({
   displayName: '',
-  avatar: null,
-  bio: null,
-  location: null,
-  dateOfBirth: null,
-  gender: null,
+  avatar: undefined,
+  bio: undefined,
+  location: undefined,
+  dateOfBirth: undefined,
+  gender: undefined,
 });
 
 const sexOptions = [
@@ -159,12 +159,12 @@ const closeDialog = () => {
 watch([() => props.account, () => props.modelValue], ([account, modelValue]) => {
   if (modelValue && account) {
     Object.assign(formData, {
-      displayName: account.profile.displayName ?? '',
-      avatar: account.profile.avatar ?? null,
-      bio: account.profile.bio ?? null,
-      location: account.profile.location ?? null,
-      dateOfBirth: account.profile.dateOfBirth ?? null,
-      gender: account.profile.gender ?? null,
+      displayName: account.profile?.displayName ?? '',
+      avatar: account.profile?.avatar ?? undefined,
+      bio: account.profile?.bio ?? undefined,
+      location: account.profile?.location ?? undefined,
+      dateOfBirth: account.profile?.dateOfBirth ?? undefined,
+      gender: account.profile?.gender ?? undefined,
     });
   }
 });

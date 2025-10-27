@@ -14,7 +14,12 @@ const GoalFolderClient = GoalDomain.GoalFolderClient;
  * 集成全局 Snackbar 提示系统
  */
 export class GoalWebApplicationService {
-  private snackbar = useSnackbar();
+  /**
+   * 延迟获取 Snackbar（避免在 Pinia 初始化前访问）
+   */
+  private get snackbar() {
+    return useSnackbar();
+  }
 
   /**
    * 懒加载获取 Goal Store

@@ -50,7 +50,7 @@
     <!-- 用户信息编辑框 -->
     <profile-dialog
       :model-value="profileDialog.show"
-      :account="profileDialog.account as Account"
+      :account="profileDialog.account"
       @update:model-value="profileDialog.show = $event"
       @handle-update-profile="handleUpdateUserProfile"
     />
@@ -59,16 +59,16 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Account } from '@dailyuse/domain-client';
-import { useAccountStore } from '@/modules/account/presentation/stores/useAccountStore';
+import type { AccountContracts } from '@dailyuse/contracts';
+import { useAccountStore } from '@/modules/account/presentation/stores/accountStore';
 
 // components
 import ProfileDialog from './ProfileDialog.vue';
 // composables
-import { useAccountService } from '@/modules/account/presentation/composables/useAccountService';
+import { useAccount } from '@/modules/account/presentation/composables/useAccount';
 
 const accountStore = useAccountStore();
-const { handleUpdateUserProfile } = useAccountService();
+const { updateProfile } = useAccount();
 
 defineProps<{ avatarUrl?: string; size: string }>();
 
@@ -76,7 +76,7 @@ const localAccount = computed(() => accountStore.currentAccount);
 
 const profileDialog = ref<{
   show: boolean;
-  account: Account | null;
+  account: AccountContracts.AccountDTO | null;
 }>({
   show: false,
   account: null,
@@ -84,7 +84,21 @@ const profileDialog = ref<{
 
 const startEditProfile = () => {
   profileDialog.value.show = true;
-  profileDialog.value.account = localAccount.value as Account;
+  profileDialog.value.account = localAccount.value;
+};
+
+const handleUpdateUserProfile = async (profileData: AccountContracts.UpdateAccountProfileRequestDTO) => {
+  if (!localAccount.value?.uuid) {
+    console.error('未找到当前用户');
+    return;
+  }
+  
+  try {
+    await updateProfile(localAccount.value.uuid, profileData);
+    console.log('用户资料更新成功');
+  } catch (error) {
+    console.error('更新用户资料失败:', error);
+  }
 };
 
 const showInfo = ref(false);

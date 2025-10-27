@@ -1,7 +1,10 @@
 import { ref, computed, reactive } from 'vue';
 import type { GoalContracts } from '@dailyuse/contracts';
-import { Goal, GoalFolder } from '@dailyuse/domain-client';
-import { GoalWebApplicationService } from '../../application/services/GoalWebApplicationService';
+import { GoalClient, GoalFolderClient } from '@dailyuse/domain-client';
+import {
+  goalManagementApplicationService,
+  goalFolderApplicationService,
+} from '../../application/services';
 import { getGoalStore } from '../stores/goalStore';
 import { useSnackbar } from '../../../../shared/composables/useSnackbar';
 
@@ -10,7 +13,6 @@ import { useSnackbar } from '../../../../shared/composables/useSnackbar';
  * 基于缓存优先的数据获取策略
  */
 export function useGoal() {
-  const goalService = new GoalWebApplicationService();
   const goalStore = getGoalStore();
   const snackbar = useSnackbar();
 
@@ -61,7 +63,7 @@ export function useGoal() {
 
       if (needsRefresh) {
         // 从 API 获取数据时不需要用户提示，这是内部操作
-        await goalService.getGoals(params);
+        await goalManagementApplicationService.getGoals(params);
       } else {
         // 使用缓存数据也不需要用户提示
       }
@@ -97,7 +99,7 @@ export function useGoal() {
 
       if (needsRefresh) {
         // 从 API 获取目录数据时不需要用户提示
-        await goalService.getGoalFolders(params);
+        await goalFolderApplicationService.getGoalFolders(params);
       } else {
         // 使用缓存的目录数据也不需要用户提示
       }
@@ -126,7 +128,7 @@ export function useGoal() {
       }
 
       // 从API获取目标详情，不需要用户提示这是内部操作
-      const response = await goalService.getGoalById(uuid);
+      const response = await goalManagementApplicationService.getGoalById(uuid);
 
       if (response) {
         goalStore.setSelectedGoal(uuid);
@@ -162,7 +164,7 @@ export function useGoal() {
    */
   const createGoal = async (data: GoalContracts.CreateGoalRequest) => {
     try {
-      const response = await goalService.createGoal(data);
+      const response = await goalManagementApplicationService.createGoal(data);
       showCreateDialog.value = false;
 
       // 数据已经在 ApplicationService 中自动同步到 store
@@ -179,7 +181,7 @@ export function useGoal() {
    */
   const updateGoal = async (uuid: string, data: GoalContracts.UpdateGoalRequest) => {
     try {
-      const response = await goalService.updateGoal(uuid, data);
+      const response = await goalManagementApplicationService.updateGoal(uuid, data);
       showEditDialog.value = false;
       editingGoal.value = null;
 
@@ -196,7 +198,7 @@ export function useGoal() {
    */
   const deleteGoal = async (uuid: string) => {
     try {
-      await goalService.deleteGoal(uuid);
+      await goalManagementApplicationService.deleteGoal(uuid);
 
       // 如果删除的是当前目标，清除选中状态
       if (currentGoal.value?.uuid === uuid) {
@@ -217,7 +219,7 @@ export function useGoal() {
    */
   const activateGoal = async (uuid: string) => {
     try {
-      const result = await goalService.activateGoal(uuid);
+      const result = await goalManagementApplicationService.activateGoal(uuid);
       snackbar.showSuccess('目标激活成功');
       return result;
     } catch (error) {
@@ -231,7 +233,7 @@ export function useGoal() {
    */
   const pauseGoal = async (uuid: string) => {
     try {
-      const result = await goalService.pauseGoal(uuid);
+      const result = await goalManagementApplicationService.pauseGoal(uuid);
       snackbar.showSuccess('目标暂停成功');
       return result;
     } catch (error) {
@@ -245,7 +247,7 @@ export function useGoal() {
    */
   const completeGoal = async (uuid: string) => {
     try {
-      const result = await goalService.completeGoal(uuid);
+      const result = await goalManagementApplicationService.completeGoal(uuid);
       snackbar.showSuccess('目标完成成功');
       return result;
     } catch (error) {
@@ -259,7 +261,7 @@ export function useGoal() {
    */
   const archiveGoal = async (uuid: string) => {
     try {
-      const result = await goalService.archiveGoal(uuid);
+      const result = await goalManagementApplicationService.archiveGoal(uuid);
       snackbar.showSuccess('目标归档成功');
       return result;
     } catch (error) {
@@ -275,7 +277,7 @@ export function useGoal() {
    */
   const createGoalFolder = async (data: GoalContracts.CreateGoalFolderRequest) => {
     try {
-      const response = await goalService.createGoalFolder(data);
+      const response = await goalFolderApplicationService.createGoalFolder(data);
       snackbar.showSuccess('目标目录创建成功');
       return response;
     } catch (error) {
@@ -289,7 +291,7 @@ export function useGoal() {
    */
   const updateGoalFolder = async (uuid: string, data: GoalContracts.UpdateGoalFolderRequest) => {
     try {
-      const response = await goalService.updateGoalFolder(uuid, data);
+      const response = await goalFolderApplicationService.updateGoalFolder(uuid, data);
       snackbar.showSuccess('目标目录更新成功');
       return response;
     } catch (error) {
@@ -303,7 +305,7 @@ export function useGoal() {
    */
   const deleteGoalFolder = async (uuid: string) => {
     try {
-      await goalService.deleteGoalFolder(uuid);
+      await goalFolderApplicationService.deleteGoalFolder(uuid);
       snackbar.showSuccess('目标目录删除成功');
     } catch (error) {
       snackbar.showError('删除目标目录失败');
@@ -326,7 +328,7 @@ export function useGoal() {
     },
   ) => {
     try {
-      return await goalService.searchGoals({
+      return await goalManagementApplicationService.searchGoals({
         query,
         ...options,
       });
