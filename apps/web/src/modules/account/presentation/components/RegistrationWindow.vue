@@ -156,8 +156,13 @@ import { useSnackbar } from '@/shared/composables/useSnackbar';
 // utils
 import { passwordRules, usernameRules, emailRules } from '@/shared/utils/validations/rules';
 
-const { register } = useAuth();
+const { register, login } = useAuth();
 const { snackbar, showSuccess, showError } = useSnackbar();
+
+// 定义 emit（用于切换到登录模式）
+const emit = defineEmits<{
+  'change-mode': [mode: string];
+}>();
 
 // 注册表单类型
 interface RegistrationByUsernameAndPasswordForm {
@@ -184,8 +189,27 @@ const handleRegistration = async (formData: RegistrationByUsernameAndPasswordFor
       confirmPassword: formData.confirmPassword,
     };
 
-    await register(request);
-    showSuccess('注册成功！');
+    // 注册成功（返回账户信息和提示消息）
+    const response = await register(request);
+    showSuccess(response.message || '注册成功！正在为您登录...');
+    
+    // 自动登录：使用刚注册的账号和密码登录
+    setTimeout(async () => {
+      try {
+        await login({
+          identifier: formData.username,
+          password: formData.password,
+          rememberMe: false,
+        });
+        showSuccess('登录成功！');
+        // 登录成功后会自动跳转到主页（由 useAuth composable 处理）
+      } catch (loginError: any) {
+        showError('注册成功，但自动登录失败，请手动登录');
+        // 跳转到登录表单
+        emit('change-mode', 'login');
+      }
+    }, 1000);
+    
     resetForm();
   } catch (error: any) {
     showError(error.message || '注册失败，请重试');

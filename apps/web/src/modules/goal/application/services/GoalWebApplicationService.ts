@@ -964,3 +964,8 @@ export class GoalWebApplicationService {
     await this.syncAllGoals();
   }
 }
+
+/**
+ * Goal Web 应用服务单例
+ */
+export const goalWebApplicationService = new GoalWebApplicationService();

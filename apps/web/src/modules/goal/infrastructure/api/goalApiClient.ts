@@ -305,7 +305,7 @@ export class GoalApiClient {
  * GoalFolder API 客户端
  */
 export class GoalFolderApiClient {
-  private readonly baseUrl = '/goal-dirs';
+  private readonly baseUrl = '/goal-folders';
 
   // ===== GoalFolder CRUD =====
 

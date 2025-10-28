@@ -23,7 +23,7 @@
         </template>
 
         <v-list class="py-2" min-width="180">
-          <v-list-item @click="$emit('create-goal-dir')" class="px-4">
+          <v-list-item @click="$emit('create-goal-folder')" class="px-4">
             <template v-slot:prepend>
               <v-icon color="primary">mdi-folder-plus</v-icon>
             </template>
@@ -68,44 +68,44 @@
 
         <!-- 动态目标分类 -->
         <v-list-item
-          v-for="dir in GoalFolders"
-          :key="dir.uuid"
-          :class="{ 'goal-dir-item--active': selectedDirUuid === dir.uuid }"
+          v-for="folder in goalFolders"
+          :key="folder.uuid"
+          :class="{ 'goal-dir-item--active': selectedDirUuid === folder.uuid }"
           class="goal-dir-item mx-2 my-1"
-          @click="selectDir(dir.uuid)"
+          @click="selectDir(folder.uuid)"
           rounded="lg"
         >
           <template v-slot:prepend>
-            <v-icon :color="selectedDirUuid === dir.uuid ? 'primary' : 'medium-emphasis'">
-              {{ dir.icon || 'mdi-folder' }}
+            <v-icon :color="selectedDirUuid === folder.uuid ? 'primary' : 'medium-emphasis'">
+              {{ folder.icon || 'mdi-folder' }}
             </v-icon>
           </template>
 
           <v-list-item-title class="font-weight-medium">
-            {{ dir.name }}
+            {{ folder.name }}
           </v-list-item-title>
 
           <template v-slot:append>
             <div class="d-flex align-center">
               <v-chip
-                :color="selectedDirUuid === dir.uuid ? 'primary' : 'surface-bright'"
-                :text-color="selectedDirUuid === dir.uuid ? 'on-primary' : 'on-surface-variant'"
+                :color="selectedDirUuid === folder.uuid ? 'primary' : 'surface-bright'"
+                :text-color="selectedDirUuid === folder.uuid ? 'on-primary' : 'on-surface-variant'"
                 size="small"
                 variant="flat"
                 class="font-weight-bold"
               >
-                {{ getGoalCountByDir(dir.uuid) }}
+                {{ getGoalCountByDir(folder.uuid) }}
               </v-chip>
 
               <!-- 系统目录不显示编辑按钮 -->
               <v-btn
-                v-if="!dir.isSystemDir"
+                v-if="!folder.isSystemFolder"
                 icon="mdi-pencil"
                 size="x-small"
                 variant="text"
                 color="medium-emphasis"
                 class="ml-1"
-                @click.stop="$emit('edit-goal-dir', dir)"
+                @click.stop="$emit('edit-goal-folder', folder)"
               >
                 <v-icon size="12">mdi-pencil</v-icon>
               </v-btn>
@@ -148,17 +148,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import type { GoalFolder } from '@dailyuse/domain-client';
+import type { GoalFolderClient } from '@dailyuse/domain-client';
 import { useGoalStore } from '../stores/goalStore';
 
 interface Props {
-  GoalFolders: GoalFolder[];
+  goalFolders: GoalFolderClient[];
 }
 
 interface Emits {
-  (e: 'selected-goal-dir', dirUuid: string): void;
-  (e: 'create-goal-dir'): void;
-  (e: 'edit-goal-dir', GoalFolder: GoalFolder): void;
+  (e: 'selected-goal-folder', folderUuid: string): void;
+  (e: 'create-goal-folder'): void;
+  (e: 'edit-goal-folder', goalFolder: GoalFolderClient): void;
 }
 
 const props = defineProps<Props>();
@@ -180,7 +180,7 @@ const totalGoalsCount = computed(() => {
  * 已归档目标数量
  */
 const archivedGoalsCount = computed(() => {
-  return goalStore.getGoalsByStatus('archived').length;
+  return goalStore.getGoalsByStatus('ARCHIVED').length;
 });
 
 // ===== 方法 =====
@@ -197,7 +197,7 @@ const getGoalCountByDir = (dirUuid: string) => {
  */
 const selectDir = (dirUuid: string) => {
   selectedDirUuid.value = dirUuid;
-  emit('selected-goal-dir', dirUuid);
+  emit('selected-goal-folder', dirUuid);
 };
 
 // ===== 生命周期 =====

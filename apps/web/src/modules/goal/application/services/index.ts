@@ -15,3 +15,6 @@ export {
 
 // 保留旧的导出用于向后兼容（如果需要）
 export { GoalWebApplicationService } from './GoalWebApplicationService';
+
+// Web Application Service 单例
+export { goalWebApplicationService } from './GoalWebApplicationService';

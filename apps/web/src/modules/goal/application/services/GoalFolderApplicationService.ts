@@ -74,7 +74,7 @@ export class GoalFolderApplicationService {
       const response = await goalFolderApiClient.getGoalFolders(params);
 
       // 批量创建客户端实体并同步到 store
-      const folders = response.map((folderData: any) => GoalFolderClient.fromClientDTO(folderData));
+      const folders = response.folders.map((folderData: any) => GoalFolderClient.fromClientDTO(folderData));
       this.goalStore.setGoalFolders(folders);
 
       return response;

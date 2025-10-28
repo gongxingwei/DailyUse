@@ -41,23 +41,24 @@ export class RegistrationApplicationService {
 
   /**
    * 用户注册
+   * 
+   * ⚠️ 注意：当前后端采用事件驱动架构，注册接口只返回 account 信息
+   * 前端需要在注册成功后引导用户登录
+   * 
+   * @returns 包含账户信息和提示消息
    */
   async register(
     request: AuthenticationContracts.RegisterRequestDTO,
-  ): Promise<AuthenticationContracts.LoginResponseDTO> {
+  ): Promise<{ account: any; message: string }> {
     try {
       this.authStore.setLoading(true);
       this.authStore.clearError();
 
       const response = await authApiClient.register(request);
 
-      // 注册成功后自动保存tokens和会话信息
-      this.authStore.setAccessToken(response.accessToken);
-      this.authStore.setRefreshToken(response.refreshToken);
-      this.authStore.setCurrentSessionId(response.sessionId);
-      this.authStore.setTokenExpiresAt(response.accessTokenExpiresAt);
-
-      return response;
+      // ⚠️ 注册成功，但不自动登录（后端不返回 token）
+      // 返回账户信息和消息，由调用方决定下一步操作
+      return response; // { account: AccountClientDTO, message: string }
     } catch (error) {
       console.error('Registration failed:', error);
       this.authStore.setError('Registration failed');

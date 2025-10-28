@@ -68,10 +68,12 @@ export function useAuth() {
 
   /**
    * 注册
+   * 
+   * @returns 包含账户信息和提示消息
    */
   async function register(
     request: AuthenticationContracts.RegisterRequestDTO,
-  ): Promise<AuthenticationContracts.LoginResponseDTO> {
+  ): Promise<{ account: any; message: string }> {
     return await registrationApplicationService.register(request);
   }
 

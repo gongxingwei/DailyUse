@@ -78,8 +78,6 @@ const loading = ref(false);
 const taskTemplateDialogRef = ref<InstanceType<typeof TaskTemplateDialog> | null>(null);
 
 // TaskMetaTemplate 功能已移除，此组件可能需要重构或移除
-  }
-};
 
 const selectMetaTemplate = (metaTemplateUuid: string) => {
   selectedmetaTemplateUuid.value = metaTemplateUuid;

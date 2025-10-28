@@ -43,12 +43,18 @@ export class AuthApiClient {
 
   /**
    * 注册
+   * 
+   * ⚠️ 注意：使用 postWithMessage 保留后端返回的 message
+   * 因为注册接口返回的 message 包含重要提示信息
    */
   async register(
     request: AuthenticationContracts.RegisterRequestDTO,
-  ): Promise<AuthenticationContracts.LoginResponseDTO> {
-    const data = await apiClient.post(`${this.baseUrl}/register`, request);
-    return data;
+  ): Promise<{ account: any; message: string }> {
+    const response = await apiClient.postWithMessage(`${this.baseUrl}/register`, request);
+    return {
+      account: response.data.account,
+      message: response.message,
+    };
   }
 
   /**

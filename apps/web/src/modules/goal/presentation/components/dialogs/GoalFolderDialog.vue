@@ -56,16 +56,20 @@
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue';
-import { GoalFolder } from '@dailyuse/domain-client';
+import type { GoalFolderClient } from '@dailyuse/domain-client';
+import { GoalFolderClient as GoalFolder } from '@dailyuse/domain-client';
 // composables
-import { useGoal } from '../../composables/useGoal';
+import { useGoalFolder } from '../../composables/useGoalFolder';
+import { useAccountStore } from '@/modules/account/presentation/stores/useAccountStore';
 import { vi } from 'date-fns/locale';
 
-const { createGoalFolder, updateGoalFolder } = useGoal();
+const goalFolderComposable = useGoalFolder();
+const { createFolder, updateFolder } = goalFolderComposable;
+const accountStore = useAccountStore();
 
 const visible = ref(false);
-const propGoalFolder = ref<GoalFolder | null>(null);
-const localGoalFolder = ref<GoalFolder>(GoalFolder.forCreate({ accountUuid: '' }));
+const propGoalFolder = ref<GoalFolderClient | null>(null);
+const localGoalFolder = ref<GoalFolderClient>(GoalFolder.forCreate(''));
 
 const isEditing = computed(() => !!propGoalFolder.value);
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
@@ -76,14 +80,14 @@ const isFormValid = computed(() => {
 const name = computed({
   get: () => localGoalFolder.value.name,
   set: (val: string) => {
-    localGoalFolder.value.updateInfo({ name: val });
+    localGoalFolder.value.updateName(val);
   },
 });
 
 const icon = computed({
   get: () => localGoalFolder.value.icon,
   set: (val: string) => {
-    localGoalFolder.value.updateInfo({ icon: val });
+    localGoalFolder.value.updateIcon(val);
   },
 });
 
@@ -115,11 +119,34 @@ const nameRules = [
 const handleSave = () => {
   if (!isFormValid.value) return;
   if (propGoalFolder.value) {
-    // 编辑模式
-    updateGoalFolder(localGoalFolder.value.uuid, localGoalFolder.value.toDTO());
+    // 编辑模式 - 转换为请求格式（null -> undefined）
+    const updateRequest = {
+      name: localGoalFolder.value.name,
+      description: localGoalFolder.value.description || undefined,
+      icon: localGoalFolder.value.icon || undefined,
+      color: localGoalFolder.value.color || undefined,
+      parentFolderUuid: localGoalFolder.value.parentFolderUuid || undefined,
+      sortOrder: localGoalFolder.value.sortOrder,
+    };
+    updateFolder(localGoalFolder.value.uuid, updateRequest);
   } else {
-    // 创建模式
-    createGoalFolder(localGoalFolder.value.toDTO());
+    // 创建模式：注入 accountUuid
+    const accountUuid = accountStore.accountUuid || accountStore.getAccountUuid;
+    if (!accountUuid) {
+      console.error('❌ GoalFolderDialog: 无法获取 accountUuid');
+      return;
+    }
+    
+    // 转换为请求格式（null -> undefined）
+    const createRequest = {
+      accountUuid: accountUuid,
+      name: localGoalFolder.value.name,
+      description: localGoalFolder.value.description || undefined,
+      icon: localGoalFolder.value.icon || undefined,
+      color: localGoalFolder.value.color || undefined,
+      parentFolderUuid: localGoalFolder.value.parentFolderUuid || undefined,
+    };
+    createFolder(createRequest);
   }
   closeDialog();
 };
@@ -128,17 +155,17 @@ const handleCancel = () => {
   closeDialog();
 };
 
-const openDialog = (GoalFolder?: GoalFolder) => {
+const openDialog = (goalFolder?: GoalFolderClient) => {
   visible.value = true;
-  propGoalFolder.value = GoalFolder || null;
+  propGoalFolder.value = goalFolder || null;
 };
 
 const openForCreate = () => {
   openDialog();
 };
 
-const openForEdit = (GoalFolder: GoalFolder) => {
-  openDialog(GoalFolder);
+const openForEdit = (goalFolder: GoalFolderClient) => {
+  openDialog(goalFolder);
 };
 
 const closeDialog = () => {
@@ -151,9 +178,9 @@ watch(
     if (show) {
       localGoalFolder.value = propGoalFolder.value
         ? propGoalFolder.value.clone()
-        : GoalFolder.forCreate({ accountUuid: '' });
+        : GoalFolder.forCreate('');
     } else {
-      localGoalFolder.value = GoalFolder.forCreate({ accountUuid: '' });
+      localGoalFolder.value = GoalFolder.forCreate('');
     }
   },
   { immediate: true },

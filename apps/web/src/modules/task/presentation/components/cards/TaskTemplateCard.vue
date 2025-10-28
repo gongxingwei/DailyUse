@@ -218,7 +218,7 @@ import { ImportanceLevel } from '@dailyuse/contracts';
 import { UrgencyLevel } from '@dailyuse/contracts';
 // types
 import type { TaskContracts } from '@dailyuse/contracts';
-import { TaskTemplate, KeyResult, Goal } from '@dailyuse/domain-client';
+import { TaskTemplate, KeyResultClient, GoalClient } from '@dailyuse/domain-client';
 
 type KeyResultLink = TaskContracts.KeyResultLink;
 

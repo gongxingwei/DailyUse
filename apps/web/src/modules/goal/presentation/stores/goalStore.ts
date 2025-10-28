@@ -98,25 +98,25 @@ export const useGoalStore = defineStore('goal', {
     /**
      * 根据状态获取目标
      */
-    getGoalsByStatus(): (status: 'active' | 'completed' | 'paused' | 'archived') => any[] {
-      return (status) => this.goals.filter((g) => g.lifecycle?.status === status);
+    getGoalsByStatus(): (status: 'ACTIVE' | 'COMPLETED' | 'DRAFT' | 'ARCHIVED') => any[] {
+      return (status) => this.goals.filter((g) => g.status === status);
     },
 
     /**
      * 获取活跃目标
      */
     getActiveGoals(): any[] {
-      return this.goals.filter((g) => g.lifecycle?.status === 'active');
+      return this.goals.filter((g) => g.status === 'ACTIVE');
     },
 
     /**
      * 获取需要关注的目标
      */
     getGoalsNeedingAttention(): any[] {
-      const now = new Date();
+      const now = Date.now();
       return this.goals.filter((goal) => {
         // 逾期的目标
-        if (goal.endTime && goal.endTime < now && goal.lifecycle?.status === 'active') {
+        if (goal.targetDate && goal.targetDate < now && goal.status === 'ACTIVE') {
           return true;
         }
         return false;
@@ -127,15 +127,15 @@ export const useGoalStore = defineStore('goal', {
      * 获取即将截止的目标
      */
     getGoalsDueSoon(): any[] {
-      const now = new Date();
-      const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const now = Date.now();
+      const threeDaysLater = now + 3 * 24 * 60 * 60 * 1000;
 
       return this.goals.filter(
         (goal) =>
-          goal.endTime &&
-          goal.endTime >= now &&
-          goal.endTime <= threeDaysLater &&
-          goal.lifecycle?.status === 'active',
+          goal.targetDate &&
+          goal.targetDate >= now &&
+          goal.targetDate <= threeDaysLater &&
+          goal.status === 'ACTIVE',
       );
     },
 
@@ -143,9 +143,9 @@ export const useGoalStore = defineStore('goal', {
      * 获取已逾期的目标
      */
     getOverdueGoals(): any[] {
-      const now = new Date();
+      const now = Date.now();
       return this.goals.filter(
-        (goal) => goal.endTime && goal.endTime < now && goal.lifecycle?.status === 'active',
+        (goal) => goal.targetDate && goal.targetDate < now && goal.status === 'ACTIVE',
       );
     },
 
@@ -153,7 +153,7 @@ export const useGoalStore = defineStore('goal', {
      * 获取已暂停的目标
      */
     getPausedGoals(): any[] {
-      return this.goals.filter((g) => g.lifecycle?.status === 'paused');
+      return this.goals.filter((g) => g.status === 'DRAFT');
     },
 
     /**
@@ -229,9 +229,9 @@ export const useGoalStore = defineStore('goal', {
       return {
         total: this.goals.length,
         active: this.getActiveGoals.length,
-        completed: this.getGoalsByStatus('completed').length,
-        paused: this.getGoalsByStatus('paused').length,
-        archived: this.getGoalsByStatus('archived').length,
+        completed: this.getGoalsByStatus('COMPLETED').length,
+        paused: this.getGoalsByStatus('DRAFT').length,
+        archived: this.getGoalsByStatus('ARCHIVED').length,
         overdue: this.getOverdueGoals.length,
         dueSoon: this.getGoalsDueSoon.length,
         needingAttention: this.getGoalsNeedingAttention.length,

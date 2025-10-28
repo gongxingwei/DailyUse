@@ -48,11 +48,11 @@
         <v-row no-gutters class="h-100">
           <!-- 侧边栏 - 目标分类 -->
           <v-col cols="12" md="3" class="pr-md-6 mb-6 mb-md-0 h-100">
-            <goal-dir-component
-              :goal-dirs="GoalFolders"
-              @selected-goal-dir="onSelectedGoalFolder"
-              @create-goal-dir="GoalFolderDialogRef?.openForCreate"
-              @edit-goal-dir="GoalFolderDialogRef?.openForEdit"
+            <GoalFolderComponent
+              :goal-folders="GoalFolders"
+              @selected-goal-folder="onSelectedGoalFolder"
+              @create-goal-folder="GoalFolderDialogRef?.openForCreate"
+              @edit-goal-folder="GoalFolderDialogRef?.openForEdit"
               class="h-100"
             />
           </v-col>
@@ -175,9 +175,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { useGoal } from '../composables/useGoal';
+import { useGoalManagement } from '../composables/useGoalManagement';
+import { useGoalFolder } from '../composables/useGoalFolder';
 import { useGoalStore } from '../stores/goalStore';
-import type { Goal, GoalFolder } from '@dailyuse/domain-client';
+import type { GoalClient, GoalFolderClient } from '@dailyuse/domain-client';
 
 // 组件导入
 import GoalCard from '../components/cards/GoalCard.vue';
@@ -188,17 +189,22 @@ import GoalFolderDialog from '../components/dialogs/GoalFolderDialog.vue';
 
 const router = useRouter();
 
+// 使用拆分后的 composables
+const goalManagement = useGoalManagement();
+const goalFolderComposable = useGoalFolder();
+
+// 解构需要的方法和状态
 const {
   isLoading,
   error,
   goals,
-  GoalFolders,
   fetchGoals,
-  fetchGoalFolders,
   deleteGoal,
   refresh,
-  initialize,
-} = useGoal();
+  initializeData,
+} = goalManagement;
+
+const { folders: GoalFolders, fetchFolders: fetchGoalFolders } = goalFolderComposable;
 
 const goalStore = useGoalStore();
 
@@ -243,7 +249,7 @@ const filteredGoals = computed(() => {
   // 按目录过滤
   if (selectedDirUuid.value && selectedDirUuid.value !== 'all') {
     if (selectedDirUuid.value === 'archived') {
-      result = goalStore.getGoalsByStatus('archived');
+      result = goalStore.getGoalsByStatus('ARCHIVED');
     } else {
       result = goalStore.getGoalsByDir(selectedDirUuid.value);
     }
@@ -252,7 +258,7 @@ const filteredGoals = computed(() => {
   // 按状态过滤
   const currentStatus = statusTabs[selectedStatusIndex.value]?.value;
   if (currentStatus && currentStatus !== 'all') {
-    result = result.filter((goal: Goal) => goal.lifecycle?.status === currentStatus);
+    result = result.filter((goal: GoalClient) => goal.status === currentStatus.toUpperCase());
   }
 
   return result;
@@ -266,10 +272,10 @@ const filteredGoals = computed(() => {
 const goalCountByStatus = computed(() => {
   return {
     all: goals.value.length,
-    active: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'active').length,
-    paused: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'paused').length,
-    completed: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'completed').length,
-    archived: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'archived').length,
+    active: goals.value.filter((goal: GoalClient) => goal.status === 'ACTIVE').length,
+    paused: goals.value.filter((goal: GoalClient) => goal.status === 'DRAFT').length,
+    completed: goals.value.filter((goal: GoalClient) => goal.status === 'COMPLETED').length,
+    archived: goals.value.filter((goal: GoalClient) => goal.status === 'ARCHIVED').length,
   };
 });
 
@@ -338,7 +344,7 @@ const openCreateDirDialog = () => {
 /**
  * 打开编辑目录对话框
  */
-const openEditDirDialog = (GoalFolder: GoalFolder) => {
+const openEditDirDialog = (folder: GoalFolderClient) => {
   // TODO: 实现编辑目录对话框
 };
 
@@ -346,7 +352,7 @@ const openEditDirDialog = (GoalFolder: GoalFolder) => {
 
 onMounted(async () => {
   try {
-    await initialize();
+    await initializeData();
     await fetchGoals();
     await fetchGoalFolders();
   } catch (error) {
